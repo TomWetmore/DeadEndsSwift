@@ -1,0 +1,204 @@
+\section{Import Stack -- \texttt{ImportStack.swift}}
+%==================================================
+%
+% INTRODUCTION
+%
+%==================================================
+\subsection{Introduction}
+The \emph{import stack} consists of the functions that read Gedcom
+files and create the \texttt{Array}s of \texttt{GedcomNode} trees,
+one for each Gedom record found in the file.
+Each record consists of a tree of
+\texttt{GedcomNode}s
+where the root corresponds a level 0 (e.g., \texttt{0 INDI},
+\texttt{0 FAM}) line. After the records are created validation
+takes place and a Database may be created. Validation is
+covered in Section~\ref{sec:validation} and the Database
+in Section~\ref{sec:database}.
+
+The functions making up the import stack are each described
+in a section below.
+
+%======================================================
+%
+% EXTRACT FIELDS
+%
+%=======================================================
+
+\subsection{\texttt{extractFields}}
+\begin{verbatim}
+enum ReadResult {
+    case success(level: Int, key: String?, tag: String, value: String?)
+    case failure(errmsg: String)
+
+func extractFields(from line: String) -> ReadResult 
+\end{verbatim}
+
+\texttt{extractFields} extracts the level, key, tag and value from a
+String that holds a single Gedcom line.
+The field values are returned via a \texttt{ReadResult} value, an
+enumeration with one value for successful returns and another for errors.
+
+\texttt{extractFields} is called only by \texttt{getDataNodesFromPath}.
+\subsubsection{Note on Errors}
+As far as is possible errors that occur when running the input stack do not stop
+ processing.
+Errors accumulate so the user can be apprised of as many errors as possible.
+
+%======================================================
+%
+% GET DATA NODES FROM PATH
+%
+%=======================================================	
+
+\subsection{\texttt{getDataNodesFromPath}}
+\begin{verbatim}
+struct DataNodes<Type> { var nodes: [(GedcomNode, Type)] ... }
+ 
+func getDataNodesFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
+    errlog: inout ErrorLog) -> DataNodes<Int>?
+\end{verbatim}
+
+\texttt{getDataNodesFromPath} returns all lines from a Gedcom source as
+elements in a flat
+\texttt{[DataNodes<Int>]} array.
+Elements of the array are (\texttt{GedcomNode,~Int}) tuples, where the
+\texttt{GedcomNode}
+holds the fields returned by \texttt{extractFields}, and the integer holds
+the the node's level -- a
+\texttt{GedcomNode} does not have a level field, but the next step needs
+the levels in order to build the trees.
+
+Input parameters:
+
+\texttt{path} -- path to a Gedcom file.
+
+\texttt{tagmap} -- \texttt{inout TagMap} of unique tag strings. See Section ????.
+
+\texttt{keyMap} -- \texttt{inout [String:Int]} dictionary that maps
+a record's key to its starting line number in the Gedcom file.
+It is used when generating error messages.
+
+\texttt{errlog} -- \texttt{inout ErrorLog} where errors found when
+processing the Gedcom file are recorded. The source is fully processed regardless of errors.
+If there are errors \texttt{nil} is returned.
+
+Summary: \texttt{getDataNodesFromPath} reads a Gedcom file and breaks it
+into an array of lines.
+It calls \texttt{extractFields} on each line to get its \texttt{GedcomNode}.
+It then adds a (\texttt{GedcomNode}, level)
+tuple to the return array.
+
+\texttt{getDataNodesFromPath} is called by \texttt{getRecordsFromPath} as
+the first step in reading the Gedcom records from a file.
+
+%======================================================
+%
+% GET RECORDS FROM DATA NODES
+%
+%=======================================================	
+
+\subsection{\texttt{getRecordsFromDataNodes}}
+\begin{verbatim}
+typealias RootList = [GedcomNode]
+
+func getRecordsFromDataNodes(datanodes: DataNodes<Int>, keymap: KeyMap,
+    errlog: inout ErrorLog) -> RootList {
+\end{verbatim}
+
+\texttt{getRecordsFromDataNodes} converts an array of
+\texttt{GedcomNode}s, in the form of (\texttt{GedcomNode}, level)
+pairs in a \texttt{DataNodes<Int>} array, from a Gedcom source,
+into a \texttt{RootList}, the array of root
+\texttt{GedcomNodes} of all records from the Gedcom file.
+
+Because the input is a sequential list of all the \texttt{GedcomNode}s
+from the file, \texttt{gedRecordsFromDataNodes} also needs the levels
+of the \texttt{GedcomNode}s to be able to construct the trees.
+This is why its input is a \texttt{DataNodes<Int>} object rather
+than a simple \texttt{[GedcomNode]} array. It needs the levels to
+guide the tree building.
+It converts a flat array of all \texttt{GedcomNode}s, into an array
+of root nodes with their trees attached.
+It builds the trees using a simple state machine.
+
+\texttt{getRecordsFromDataNodes} is called by
+\texttt{getRecordsFromPath},
+immediately after it calls \texttt{get\-Data\-Nodes\-From\-Path}.
+This completes the two step process where the first gets the
+full list of
+\texttt{GedcomNode}s
+from the file, and the second builds the \texttt{GedcomNode} trees
+and returns the array of the root \texttt{GedcomNode}s.
+\texttt{RootList} is an alias for \texttt{[GedcomNode]}
+to be used when the array of nodes contains only roots.
+
+%======================================================
+%
+% GET RECORDS FROM PATH
+%
+%=======================================================
+
+\subsection{\texttt{getRecordsFromPath}}
+
+\begin{verbatim}
+func getRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
+    errorlog: inout ErrorLog) -> RootList?
+\end{verbatim}
+\texttt{getRecordsFromPath} returns the Gedcom records from a source. It uses
+\texttt{getDataNodesFromPath} and \texttt{getRecordsFromDataNodes} to
+create a \texttt{RootList} of records.
+
+See the previous two function for details on the process and the
+meanings of the parameters.
+
+\texttt{getRecordsFromPath} and the functions it calls make up
+the input stack.
+The function that follows is located in
+\texttt{InputStack.swift}, but could
+have been included in the validation software.
+
+
+%======================================================
+%
+% GET VALID RECORDS FROM PATH
+%
+%=======================================================
+
+\subsection{\texttt{getValidRecordsFromPath}}
+\begin{verbatim}
+func getValidRecordsFromPath(path: String, tagmap: inout TagMap,
+    keymap: inout KeyMap, errlog: inout ErrorLog)
+    -> (index: RecordIndex, persons: RootList, families: RootList)?
+\end{verbatim}
+\texttt{getValidRecordsFromPath} uses the input stack by calling
+\texttt{getRecordsFromPath} to get the Gedcom
+records from a file, and it then validates those records by
+calling:
+\begin{verbatim}
+checkKeysAndReferences
+validatePersons
+validateFamilies
+\end{verbatim}
+
+\texttt{getValidRecordsFromPath} returns a triple consisting of:
+
+\texttt{index} -- \texttt{[String:GedcomNode]} dictionary mapping
+record keys to their root \texttt{GedcomNode}s.
+
+persons -- RootList, an Array listing all GedcomNode roots of
+persons from the file.
+
+families: RootList list all GedcomNode roots of famlies
+from the file.
+
+See the Validation Section for the documentation on validation and
+these validation functions.
+
+
+
+
+
+\subsection{Looseends}
+ValidationContext is defined in ImportStack.swift, though not
+used there.

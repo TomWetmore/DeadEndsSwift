@@ -1,0 +1,81 @@
+----------------------------------------------
+METHOD func validatePerson
+----------------------------------------------
+Overview:
+    1. All 1 NAME lines must have values.
+    2. There must be one 1 SEX line and it must have a value of M, F, or U.
+    3. Each 1 FAMC line must refer to a different family record, and that record must have one 1 CHIL link back to the person.
+    4. Each 1 FAMS line must refer to a different family record, and that record must have one 1 HUSB or 1 WIFE link back to the person.
+    5. If a person has 1 SEX value of U, it must not have any 1 FAMS links.
+Parameters:
+    self: Person       -- person being validated
+    index: RecordIndex -- overall record index
+    source: String     -- name of source
+    keymap: KeyMap     -- map of record keys to line numbers
+    errlog: &ErrorLog  -- error log
+Pseudocode:
+    1. Get the person's key.
+    2. Get the line where the person is defined in the source.
+    3. Create a set to hold all family keys found on the 1 FAMC and 1 FAMs lines
+    4. Set errorCount to 0. NOTE: THIS MAY NOT BE NEEDED.
+    5. Traverse the children of the person root.
+       a. If child is FAMC or FAMS call validateFamilyLink.
+
+----------------------------------------------
+METHOD validateFamilyLink
+----------------------------------------------
+Overview
+    1. Called on each 1 FAMC and 1 FAMC line in a person record.
+----------------------------------------------
+Parameters:
+    self: Node                  -- the 1 FAMC or 1 FAMS node being checked
+    person: Node                -- the person being validated (used in link back check)
+    role: FamilyRole            -- family role: basically whether this is a FAMC or FAMS case (redundant)
+    seenkeys: inout Set<String> -- the family keys seen on previous FAMC and FAMS checks for the person
+    index: RecordIndex          -- the record index
+    source: String              -- name of source (for error messages)
+    line: Int                   -- line where person record starts in source (for error messages)
+    errlog: &ErrorLog           -- error log
+    NOTE: The role and tag of the node convey the same information -- redundance can be removed.
+
+Pseudocode:
+    a. Make sure the node (FAMC or FAMS) has a key value; append error and return if not.
+    b. Make sure the family key has not been seen before; append error and return if it has.
+    c. Add family key to set of seen keys.
+    d. Make sure the family with the key is in the index; append error and return if it is not.
+    e. Call the "back link" function (method?) to check the family links to the person; append error if not.
+QUESTIONS::
+    a. If return an error message rather than the error log, could we avoid passing down the name, line, and errorlog parameters?
+    b. Can we avoid sending down the family role argument by just checking FAMC or FAMS Node directly?
+
+---------------------------------------------
+METHOD func validateReciprocalLink(to personKey: String, for type: FamilyRole, source: String, line: Int, errlog: inout ErrorLog) -> Bool {
+---------------------------------------------
+Parameters:
+    [self]:              -- self is the family node derived by looking up a key from a FAMC or FAMS link from the index.
+    to personKey: String -- the key of the person that the family must link back to
+    for type: FamilyRole -- HUSB, WIFE, or CHIL 
+    source: String       -- name of source (for error messages)
+    line: Int            -- line number where family  record starts in source (for error messages)
+    errlog: &ErrorLog    -- error log
+Returns:
+    Bool: whether the check was successful
+
+Pseudocode:
+    a. If role is CHIL call hasChildLink; if returns false append error and return false; else return true
+    b. If role is HUSB or WIFE  call hasSpouseLink; if returns false append error and return false; else return true
+---------------------------------
+METHOD func hasChildLink(to personKey: String) -> Bool {
+---------------------------------
+METHOD func hasChildLink(to personKey: String) -> Bool {
+    [self]: --    
+    to personKey: String -- person key we need a child link for
+
+Pseudo code:
+    a. Set found to false.
+    a. Traverse children of [self] looking for 1 CHIL node with correct key; if found set found to true.
+    b. Return found
+-----------------------------------------
+TODO LIST FOR IMPROVING THIS VALIDATION SOFTWARE. SOME OF THESE IDEAS MIGHT NOT BE SO USEFUL. WE'LL SEE.
+------------------------------
+1. Make validatePerson a method.

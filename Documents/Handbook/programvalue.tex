@@ -1,0 +1,82 @@
+\section{PROGRAMVALUE}
+
+\subsection{Introduction}
+\texttt{ProgramValue} is the enumeration that holds all values that are
+evaluated by the \texttt{evaluate} functions when DeadEnds program are
+interpreted.
+
+\subsection{enum ProgramValue}
+\begin{verbatim}
+enum ProgramValue
+    case null
+    case any
+    case integer(Int)
+    case double(Double)
+    case boolean(Bool)
+    case string(String)
+    case gnode(GedcomNode)
+    case list
+    case table
+    case sequence
+\end{verbatim}
+
+Each value in a running DeadEnds program has a unique type
+as defined in this \texttt{enum}.
+The list is incomplete -- some cases are missing their
+associated values, and there are likely more enums to add.
+In a DeadEnds program all values (ProgramValues) have a given
+type. However variables are not typed -- their current type is
+whatever type their current value has.
+
+An internalized DeadEnds program consists of ProgramNodes. To run a
+DeadEnds program the ProgramNodes are \emph{interpreted}.
+Many ProgramNodes hold expressions build from other ProgramNodes.
+The ProgramNodes holding the expressions are evaluated when required.
+
+ProgramNodes represent the static structure of a DeadEnds program,
+both statements and expressions. ProgramValues on the other hand
+hold the current runtime values of variables and other expressions
+in the running program.
+
+\begin{verbatim}
+	// PValue is an enumeration type with associated types.
+
+	func isNodeType(type: ProgramValue) -> Bool
+	var	description: String
+	public static func == (lhs: ProgramValue, rhs: ProgramValue) -> 
+
+extension ProgramValue {
+    static let truePValue: ProgramValue = .boolean(true)
+    static let falsePValue: ProgramValue = .boolean(false)
+}
+
+extension ProgramValue {
+    func toBool() -> Bool {
+}
+
+extension ProgramValue {
+    static func addPValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func subPValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func mulPValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func divPValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func modPValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func negPValue(ProgramValue) -> ProgramValue
+    static func incrPValue(ProgramValue) -> ProgramValue
+    static func decrPValue(ProgramValue) -> ProgramValue
+    static func expPValues(ProgramValue, ProgramValue) -> ProgramValue
+
+extension ProgramValue
+    static func compare(ProgramValue, ProgramValue, comparator: (Int, Int) -> Bool) -> ProgramValue 
+    static func ltPValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func lePValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func gtPValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func gePValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func eqPValues(ProgramValue, ProgramValue) -> ProgramValue
+    static func nePValues(ProgramValue, ProgramValue) -> ProgramValue 
+
+extension ProgramValue {
+    static func isNumeric(ProgramValue) -> Bool
+\end{verbatim}
+
+   
+

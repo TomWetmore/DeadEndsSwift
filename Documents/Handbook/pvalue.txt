@@ -1,0 +1,52 @@
+//  PValue.swift
+public enum PValue
+    case null
+    case any
+    case integer(Int)
+    case double(Double)
+    case boolean(Bool)
+    case string(String)
+    case gnode(GNode)
+    case person(GNode)
+    case family(GNode)
+    case source(GNode)
+    case event(GNode)
+    case other(GNode)
+    case list
+    case table
+    case sequence
+
+    func isNodeType(type: PValue) -> Bool
+    var description: String
+
+    public static func == (PValue, PValue) -> Bool -- to conform to Equatable
+
+extension PValue
+    static let truePValue: PValue = .boolean(true)
+    static let falsePValue: PValue = .boolean(false)
+
+extension PValue
+    func toBool() -> Bool -- converts arbitrary PValue to a .bool using C-like rules
+
+extension PValue -- for numeric (and string) operations
+    static func addPValues(PValue, PValue) -> PValue
+    static func subPValues(PValue, PValue) -> PValue
+    static func mulPValues(PValue, PValue) -> PValue
+    static func divPValues(PValue, PValue) -> PValue
+    static func modPValues(PValue, PValue) -> PValue
+    static func negPValue(Value) -> PValue
+    static func incrPValue(Value) -> PValue
+    static func decrPValue(Value) -> PValue
+    static func expPValues(PValue, PValue) -> PValue
+
+extension PValue -- for comparison operations
+    static func compare(PValue, PValue, using comparator: (Int, Int) -> Bool) -> PValue
+    static func ltPValues(PValue, PValue) -> PValue
+    static func lePValues(PValue, PValue) -> PValue
+    static func gtPValues(PValue, PValue) -> PValue
+    static func gePValues(PValue, PValue) -> PValue
+    static func eqPValues(PValue, PValue) -> PValue
+    static func nePValues(PValue, PValue) -> PValue
+
+extension PValue -- misc
+    static func isNumeric(PValue) -> Bool

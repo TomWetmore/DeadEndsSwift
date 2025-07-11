@@ -1,0 +1,21 @@
+April 11, 2025.
+
+Notes on how I'm testing the developing program intepreting feature in Swift DeadEnds.
+
+Overview:
+
+1. If the C command that converts DeadEnds scripts to S-Expressions changes, run the command:
+          getgensexprs
+   It copies the C program from XCode's derived data to my bin with the name 'gensexprs'.
+
+2. To change the test program edit the file:
+          /Users/ttw4/Desktop/DeadEndsVSCode/Scripts/sexprtest
+
+3. To convert the test program to S-Expressions run the command:
+          rungensexprs
+   This runs the gensexprs command on the program and write the S-Expression to file
+          /Users/ttw4/xfer
+
+4. Run the DeadEndsSwift target ReadPNodes
+
+

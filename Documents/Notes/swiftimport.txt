@@ -1,0 +1,81 @@
+---------------------------------------------------------------------
+SWIFT GEDCOM IMPORT STACK OUTLINE
+---------------------------------------------------------------------
+func getDatabasesFromPaths(paths, errorlog) -> [Database]?
+    call getDatabaseFromPath(path errorlog -> Database?
+        create keymap and tagmap
+        call getValidRecordsFromPath(path, tagmap, keymap, errlog) -> (index, persons, families)
+            call getRecordsFromPath(path, tagmap, keymap, errlog) -> (index, persons, families)
+                call getDataNodesFromPath} to get the list of all nodes and levels.
+                call getRecordsFromDataNodes(dataNodes, keymap: &keymap, errlog: &errorlog)
+            call checkKeysAndReferences
+            create (index, persons and families)
+            call validatePersons
+            call validateFamilies
+            return (index, persons, families)
+        call getNameIndex
+        call getRefnIndex
+        create and return database
+    return array of databases
+---------------------------------------------------------------------
+STACK FUNCTION DESCRIPTIONS
+---------------------------------------------------------------------
+I. func getDatabasesFromPaths(paths, errlog) -> databases
+    1. Create list of Databases.
+    2. For each path call {getDatabaseFromPath} and add returned Database to list.
+    3. Return the array of Databases
+---------------------------------------------------------------------
+II. func getDatabaseFromPath(path, errlog) -> database
+    1. Create keymap and tagmap.
+    2. Call {getValidRecordsFromPath} to get (index, persons, families).
+    3. Create the nameIndex and refnIndex.
+    4. Create and return the database using index, persons, families nameIndex, refindex, and tagmap.
+    N. Can be called directly (not via getDatabasesFromPaths}.
+---------------------------------------------------------------------
+III. func getValidRecordsFromPath(path, tagmap, keymap, errlog) -> (index, persons, families)
+    1. Call {getRecordsFromPath} to get the list of all records from the Gedcom source.
+    2. Call {checkKeysAndReferences} to check closure on the keys.
+    3. Build the record index and persons and families lists from the list of all records.
+    4. Build a ValidationContext from the index, keymap, and source (path)).
+    [DO VALIDATION, DO VALIDATION, DO VALIDATION]
+    5. Return (index, persons, families)
+    N. Can be called directly (not through the database functions).
+    N. The records are validated though the name and reference indexes don't exist.
+---------------------------------------------------------------------
+IV.  func getRecordsFromPath(path, tagmap, keymap, errlog) -> records
+    1. Call {getDataNodesFromPath} to get the list of all nodes and levels.
+    2. Call {getRecordsFromDataNodes(dataNodes, keymap: &keymap, errlog: &errorlog)
+    3. Return the list of records.
+---------------------------------------------------------------------
+V. func getDataNodesFromPath(path, tagmap, keymap, errlog) -> DataNodes<Int>?
+    1. Create data list to return.
+    2. Read file into a string and break the string into lines.
+    3. For each line:
+       a. Skip if empy.
+       b. Call {fileToLine} to get (level, key, tag, value) from line.
+       c. Create (node, level) and add it to data list
+    4. Return list of nodes and levels.
+--------------------------------------------------------------------
+VI. func getRecordsFromDataNodes(nodeList, keymap, errlog) -> records
+    1. Create list to hold records.
+    2. Enter .initial state
+    3. Set pnode and rnode to nil and plevel to 0.
+    4. For each (node, level) in the nodelist:
+       a. If in .initial:
+          1. If level is 0, set rnode to node and go to .main.
+          2. else generate error and go to .error.
+       b. If in .main:
+          1. If level == 0 add rnode to records, set rnode to node.
+          2. If level == plevel make node sibling of pnode.
+          3. If level == plevel + 1 node child of pnode. 
+          4. If level < plevel make node sibling of an ancestor of pnode. Go to .error if if problem found.
+       c. If in .error stage
+          1. If level == 0 go to .main
+       d. Set plevel to level and pnode to node.
+    5. If in .main state add root to records.
+    6. Return the records.
+--------------------------------------------------------------------
+VII. func extractFields(line: String) -> ReadResult
+    1. Attempt to get a level, key?, tag, value? from the string.
+    2. If sucessfull return .success(level, key, tag, value)
+    3. If unsuccessful return .failure(errmsg)

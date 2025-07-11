@@ -1,0 +1,45 @@
+//  BuiltinPerson.swift
+
+EXTENSION FOR Person-based Builtins
+extension Program {
+    func builtinName(_ args: [PNode]) throws -> PValue
+    func builtinFullName(_ args: [PNode]) throws -> PValue
+    func builtinSurname(_ args: [PNode]) throws -> PValue
+    func builtinGivens(_ args: [PNode]) throws -> PValue
+    func builtinTrimName(_ args: [PNode]) throws -> PValue
+    func builtinBirth(_ args: [PNode]) throws -> PValue
+    func builtinDeath(_ args: [PNode]) throws -> PValue
+    func builtinBaptism(_ args: [PNode]) throws -> PValue
+    func builtinBurial(_ args: [PNode]) throws -> PValue
+    func builtinFather(_ args: [PNode]) throws -> PValue
+    func builtinMother(_ args: [PNode]) throws -> PValue
+    func builtinNextSibling(_ args: [PNode]) throws -> PValue
+    func builtinPrevSibling(_ args: [PNode]) throws -> PValue
+    func builtinSex(_ args: [PNode]) throws -> PValue
+    func builtinMale(_ args: [PNode]) throws -> PValue
+    func builtinFemale(_ args: [PNode]) throws -> PValue
+    func builtinPronouns(_ args: [PNode]) throws -> PValue
+    func builtinNSpouses(_ args: [PNode]) throws -> PValue
+    func builtinNFamilies(_ args: [PNode]) throws -> PValue
+    func builtinParents(_ args: [PNode]) throws -> PValue
+    func builtinTitle(_ args: [PNode]) throws -> PValue
+    func builtinKey(_ args: [PNode]) throws -> PValue
+    func builtinSoundes(_ args: [PNode]) throws -> PValue
+    func builtinINode(_ args: [PNode]) throws -> PValue
+    func builtinRoot(_ args: [PNode]) throws -> PValue
+    func builtinIndi(_ args: [PNode]) throws -> PValue
+    func builtinFirstIndi(_ args: [PNode]) throws -> PValue
+    func builtinNextIndi(_ args: [PNode]) throws -> PValue
+    func builtinPrevIndi(_ args: [PNode]) throws -> PValue {
+
+    //spouses (INDI, INDI, FAM, INT) { }
+    //loop through all spouses of
+    //
+    //families (INDI, FAM, INDI, INT) { }
+    //loop through all families (as spouse) of
+    //
+    //forindi (INDI, INT) { }
+    //loop through all persons in database
+
+}
+

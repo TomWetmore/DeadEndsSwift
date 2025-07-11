@@ -1,0 +1,171 @@
+\section{SEXPRESSION}
+
+\subsection{Introduction}
+
+\texttt{SExpression}s transfer DeadEnds programs between executables.
+A LifeLines-based program parses LifeLines programs and
+writes them as \texttt{SExpressions} to files. DeadEnds 
+parses the files and uses the expressions to build \texttt{ProgramNode}
+trees that are interpreted by the interpreter
+component.
+
+It would be possible to interpret SExpressions's directly; this may
+be a future enhancement.
+
+\subsection{enum SExpression}
+
+\begin{verbatim}
+public enum SExpression {
+    case atom(String, line: Int?) // Atoms (strings and optional line number).
+    case list([SExpression])  // Lists (nested expressions).
+
+\end{verbatim}
+An \texttt{SExpression} is an enumeration with two cases. The first is \texttt{.atom},
+a string with optional integer, and the second is .list, an array
+of SExpressions. The optional integer ties .atoms back
+to their line numbers in the original script.
+
+\subsection{SExpressionParser}
+\begin{verbatim}
+public struct SExpressionParser {
+
+    public init(String)
+    public mutating func parseProgramSExpression() throws -> SExpression
+    
+    private mutating func parseSExpression(Int = 0) throws -> SExpression
+    private static func tokenize(String) -> [String]
+    private static func splitAtomAndLine(String) -> (String, Int?)
+    public func tokenArray() ->  [String] // debug
+
+\end{verbatim}
+
+\texttt{SExpressionParser} is a struct whose methods parse SExpressions. The initializer tokenizes an
+SExpression by calling \texttt{tokenize}. \texttt{parseProgramSExpression}
+parses the tokens and returns the program-level SExpression.
+\texttt{tokenize} uses a long and undecipherable regular expression; I want to
+convert it to a hand-crafted lexer. \texttt{splitAtomAndLine} returns a
+\texttt{(String, Int?)} tuple with an .atom's value.
+
+\texttt{parseProgramSExpression} parses and returns the program level SExpression and checks
+there is nothing left over. This SExpression is the \texttt{.list} of the procedure and function
+definitions and the global declarations that make up the program.
+This is checked in the \texttt{convertToTables} function.
+
+\texttt{parseSExpression} is the general purpose, recursive SExpression parser.
+It keeps track of the recursive depth of the parse, though it
+is not used.
+
+
+\subsection{convertToTables}
+
+\begin{verbatim}
+public func convertToTables(SExpression) throws -> (procs, funcs, globals)
+\end{verbatim}
+
+\texttt{convertToProgram} loads the program SExpression created
+by the parser into dictionaries of ProgramNodes.
+The program SExpression is a \texttt{.list} whose elements are procedure definitions,
+function definitions, and/or global variable declarations (in any order).
+This function finds those elements, creates their ProgramNode equivalents, and builds a
+dictionary for each type (.procedureDef, .functionDef, .globalDeclaration).
+All ProgramNodes are created via calls to the \texttt{toProgramNode} routines made
+in this function. 
+
+\subsection{SExpression extension for toProgramNode method}
+
+\begin{verbatim}
+extension SExpression {
+    public func toProgramNode() throws -> ProgramNode
+}
+\end{verbatim}
+
+\texttt{toProgramNode} creates a ProgramNode from an SExpression. Conversion
+to ProgramNodes based on \texttt{.atoms} is done\texttt{} in this method.
+Conversion to ProgramNodes from \texttt{.lists} is done by functions called from
+here.
+
+\texttt{.integer} and \texttt{.float} ProgramNodes are created from \texttt{.atoms} whose string are numeric.
+\texttt{.string} ProgramNodes are created from \texttt{.atoms} whose strings are surrounded by
+quotes, and \texttt{.identifier} ProgramNodes from all other .atoms.
+
+\texttt{.list} SExpressions represent statement types and blocks. The
+first \texttt{.atom} in each \texttt{.list} identifies the statement type, and there is a
+function for each.
+
+\subsection{Statement toProgramNode Functions}
+\begin{verbatim}
+func ifToProgramNode([SExpression]) throws -> ProgramNode
+func whileToProgramNode([SExpression]) throws -> ProgramNode
+func conditionToProgramNode(SExpression) throws -> [ProgramNode]
+func returnToProgramNode([SExpression]) throws -> ProgramNode
+func builtInCallToProgramNode([SExpression]) throws -> ProgramNode
+func procedureCallToProgramNode([SExpression]) throws -> ProgramNode
+func functionCallToProgramNode([SExpression]) throws -> ProgramNode
+... many more to come ...
+\end{verbatim}
+
+While \texttt{toProgramNode} is a method on \texttt{SExpression}, the remainder of the
+of the \texttt{...toProgramNode} routines are functions.
+
+\texttt{ifToProgramNode} and \texttt{whileToProgramNode} create
+\texttt{ProgramNodes} for \texttt{if} and \texttt{while} statements.
+They call \texttt{conditionToProgramNode} to create the
+\texttt{ProgramNodes} of their conditions.
+\texttt{ifToProgramNode} calls \texttt{toProgramNode} on the \emph{then}
+and \emph{else} clauses, and
+\texttt{whileToProgramNode} calls \texttt{toProgramNode} on the loop body.
+\texttt{conditionToProgramNode} distinguishes between one and two
+element \texttt{.lists}.
+
+\texttt{returnToProgramNode} returns a \texttt{.returnState}
+\texttt{ProgramNode} with an optional
+\texttt{ProgramNode} for the return expression.
+
+\texttt{builtInCallToProgramNode} handles \texttt{SExpressions} for
+bulitin function calls. It gets the builtin's name as a string,
+creates its arguments as a list \texttt{ProgramNodes} and returns
+a \texttt{.builtinCall} \texttt{ProgramNode}
+
+\texttt{procedureCallToProgramNode} handles \texttt{SExpressions} for
+calls to user defined procedures. It gets the procedure's name as a string,
+creates its arguments as a list of \texttt{ProgramsNodes} and returns
+a \texttt{.procedureCall} \texttt{ProgramNode}.
+
+\texttt{funtionCallToProgramNode} handles \texttt{SExpressions} for
+calls to user defined functions. It gets the function's name as a string,
+creates its arguments as a list of \texttt{ProgramsNodes} and returns
+a \texttt{.functionCall} \texttt{ProgramNode}.
+    
+\subsection{Procedure and Function Definitions}
+\begin{verbatim}
+func procedureDefToProgramNode(SExpression) throws -> ProgramNode
+func functionDefToProgramNode(SExpression) throws -> ProgramNode 
+\end{verbatim}
+
+The \texttt{SExpression}s passed to \texttt{procedureDefToProgramNode} and
+\texttt{functionDefToProgramNode} are four-element \texttt{.lists}.
+The first element is the \texttt{.atom} that distinguishes procedures from functions. The
+second is an \texttt{.atom} with the name.
+The third is a \texttt{.list} of \texttt{.atom}
+identifiers with parameter names. The fourth is a \texttt{.list} with the
+body.
+
+ \texttt{procedureDefToProgramNode} handles \texttt{SExpressions}
+ holding user defined procedure definitions.
+ It gets the procedure's name as a string, creates its parameters as an array
+ of strings, and creates a \texttt{.block} \texttt{ProgramNode} for the body.
+ It returns a \texttt{.procedureDef} \texttt{ProgramNode}.\
+ 
+
+\texttt{functioneDefToProgramNode} handles \texttt{SExpressions}
+holding user defined function definitions.
+It gets the function's name as a string, creates its parameters as an array
+of strings, and creates a \texttt{.block} \texttt{ProgramNode} from the body.
+It returns a \texttt{.functionDef} \texttt{ProgramNode}.
+
+\subsection{Utilities}
+\begin{verbatim}
+func isIdentifier(String) -> String?
+\end{verbatim}
+
+\texttt{isIdentifier} checks whether a string is an identifier.

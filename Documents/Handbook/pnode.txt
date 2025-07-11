@@ -1,0 +1,89 @@
+
+//  PNode.swift
+public class PNode
+    enum Kind
+        case integer(Int)
+        case float(Double)
+        case string(String)
+        case identifier(String)
+        case procedureDef(name, params: [String], body PNode)
+        case functionDef(name, params: [String], body PNode)
+        case procedureCall(name, args: [PNode])
+        case functionCall(name, args: [PNode])
+        case builtinCall(name, args: [PNode])
+        case globalDecl(String)
+        case ifState(condition: [PNode], thenc: PNode, elsec: PNode?)
+        case whileState(condition: [PNode], body)
+        case returnState(result: PNode?)
+        case breakState
+        case continueState
+        case block(statements: [PNode])
+        case children(family: PNode, child: String, count: String)
+        case persons(person: String, count: String, body)
+        case families(family: String, count: String, body)
+        case sources(source: String, count: String, body)
+        case events(event: String, count: String, body)
+        case others(other: String, count: String, body)
+        case list(list: PNode, element: String, count: String, body)
+        case sequence(sequence: PNode, element: String, count: String, body)
+        case table(table: PNode, body)
+        case fathers(person: PNode, father: String, body)
+        case mothers(person: PNode, mother: String, body)
+        case famsAsSpouse(person: PNode, family: String, body)
+        case famsAsChild(person: PNode, family: String, body)
+        case traverse(root: PNode, node: String, level: String, body)
+        case nodes
+        case notes
+    let kind: Kind -- kind of this PNode
+    let line: Int? -- line number of this PNode
+    let file: String? -- file of this PNode
+    init(kind: PNode.Kind, line, file)
+    public var description: String -- returns description of PNode
+
+extension PNode -- Factory methods that create PNodes
+    static func integer(integer line, file) -> PNode
+    static func float(double: Double, line, file) -> PNode
+    static func string(string line, file) -> PNode
+    static func identifier(name line, file) -> PNode
+    static func ifStatement(cond: [PNode], thenC: PNode, elseC: PNode?, line,
+    static func whileStatement(cond: [PNode], body, line, file) -> PNode
+    static func returnState(result: PNode?, line, file) -> PNode
+    static func continueState(line, file) -> PNode
+    static func breakState(line, file) -> PNode
+    static func procedureDef(name, params: [String], body, line, file) -> PNode
+    static func functionDef(name, params: [String], body, line, file) -> PNode
+    static func procedureCall(name, args: [PNode], line, file) -> PNode
+    static func functionCall(name, args: [PNode], line, file) -> PNode
+    static func builtinCall(name, args: [PNode], line, file) -> PNode
+    static func persons(person: String, count: String, body PNode, line, file) -> PNode
+    static func families(family: String, count: String, body PNode, line, file) -> PNode
+    static func sources(source: String, count: String, body PNode, line, file) -> PNode
+    static func events(event: String, count: String, body PNode, line, file) -> PNode
+    static func others(other: String, count: String, body PNode, line, file) -> PNode
+    static func traverse(root: PNode, node: String, level: String, body PNode, line,
+    static func children(family: PNode, child: String, count: String, line, file) -> PNode {
+}
+
+extension PNode -- specific description functions.
+    func ifDescription(ifState: PNode) -> String {
+    func whileDescription(whileState: PNode) -> String {
+    func conditionDescription(condition: [PNode]) -> String {
+
+extension PNode -- computed properties that simplify access to some PNode associated values
+    // asProcedureDef takes an assumed .procedureDef PNode and returns its name, parameters, and body.
+    var asProcedureDef: (name, params: [String], body)? -- return 
+    // asFunctionDef takes an assumed .functionDef PNode and returns its name, parameters, and body.
+    var asFunctionDef: (name, params: [String], body)?
+
+
+// asProcedureDef takes an assumed .procedureDef PNode and returns its name, parameters, and body.
+    var asProcedureDef: (name, params: [String], body)? {
+        if case let .procedureDef(name, params, body) = self.kind { return (name, params, body) }
+        return nil
+    }
+
+    // asFunctionDef takes an assumed .functionDef PNode and returns its name, parameters, and body.
+    var asFunctionDef: (name, params: [String], body)? {
+        if case let .functionDef(name, params, body) = self.kind { return (name, params, body) }
+        return nil
+    }

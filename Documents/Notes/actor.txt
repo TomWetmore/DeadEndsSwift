@@ -1,0 +1,425 @@
+
+ME:
+------------------------------------------------------
+In this main program:
+
+static func main() async {
+		let gedcomFilePath = "/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged"
+		var errorLog = ErrorLog()
+		do {
+			print("Starting GEDCOM processing...")
+			if let database = await getDatabaseFromPath(path: gedcomFilePath, errorLog: &errorLog) {
+				print("Database successfully created!")
+				print("Number of persons: \(database.persons.roots.count)")
+				print("Number of families: \(database.families.roots.count)")
+				for person in database.persons.roots.prefix(5) {
+					print("Person: \(person.tag) \(person.key ?? "No Key")")
+				}
+			} else {
+				print("Failed to create database.")
+			}
+		} catch {
+			print("An unexpected error occurred: \(error.localizedDescription)")
+		}
+		if !errorLog.isEmpty {
+			print("\n--- Errors ---")
+			for error in errorLog {
+				print("Error: \(error.message) (Line: \(String(describing: error.line)))")
+
+CHATGPT:
+------------------------------------------------------
+The error indicates that the Database type (or one of its components) is not marked as Sendable and is being used across an actor boundary, such as within the await call in your asynchronous function. Swift enforces thread safety when passing data between tasks or actors, and types used in asynchronous contexts must conform to the Sendable protocol to ensure they can safely move between threads.
+
+Breaking It Down
+	1.	The Sendable Protocol:
+	•	Sendable is a marker protocol that indicates a type is safe to transfer across concurrency boundaries.
+	•	Value types like struct and immutable types often conform automatically, but reference types (class) or types with mutable properties may not.
+	2.	The Problem:
+	•	Database or one of its properties (like persons, families, or recordIndex) likely contains a class, mutable var properties, or another non-Sendable type.
+	•	Swift’s concurrency model prevents these types from being accessed across different threads or actors without explicit conformance to Sendable.
+	3.	The Implicit Asynchronous Call:
+	•	The await getDatabaseFromPath call attempts to return a Database? across an actor boundary.
+	•	Since Database isn’t marked Sendable, this violates Swift’s thread-safety rules.
+
+Solution
+
+1. Audit the Database Type
+
+Examine Database and its properties. If they are mutable or reference types, you need to either:
+	•	Make them thread-safe.
+	•	Declare them explicitly as immutable where appropriate.
+
+For example:
+
+struct Database: Sendable { // Add Sendable conformance
+    let recordIndex: RecordIndex
+    let persons: RootList
+    let families: RootList
+    let nameIndex: NameIndex
+    let refnIndex: RefnIndex
+}
+
+If Database cannot be made Sendable due to internal mutability, consider alternatives:
+	•	Redesign mutable parts to be thread-safe.
+	•	Use actor for encapsulation (see below).
+
+2. Use an actor for Database Creation
+
+If Database inherently relies on mutable reference types or unsafe components, wrap its creation in an actor to isolate concurrency issues.
+
+actor DatabaseManager {
+    func getDatabase(path: String, errorLog: inout ErrorLog) async -> Database? {
+        await getDatabaseFromPath(path: path, errorLog: &errorLog)
+    }
+}
+
+Then, in your main function:
+
+static func main() async {
+    let databaseManager = DatabaseManager()
+    let database = await databaseManager.getDatabase(path: gedcomFilePath, errorLog: &errorLog)
+}
+
+This ensures Database creation occurs within the safety of an actor.
+
+3. Use @unchecked Sendable (Temporary Solution)
+
+If you’re confident Database is thread-safe despite Swift’s restrictions, you can override the compiler checks with @unchecked Sendable. This should be a last resort.
+
+final class Database: @unchecked Sendable {
+    // Ensure all components are thread-safe manually.
+}
+
+4. Refactor Problematic Components
+
+If specific properties like RootList or RecordIndex are causing the issue, refactor them to conform to Sendable. For example:
+
+struct RecordIndex: Sendable { ... }
+struct RootList: Sendable { ... }
+
+Debugging Steps
+	1.	Temporarily add @Sendable or @unchecked Sendable to Database to identify specific types that cannot conform.
+	2.	Analyze mutable properties in Database and its components.
+	3.	Refactor or isolate mutable components using Swift’s concurrency tools (actor, immutability, etc.).
+
+Would you like help with auditing or redesigning Database and its components for concurrency safety?
+
+Yes I would.
+
+Let’s start by auditing and redesigning your Database type and its components to ensure they are concurrency-safe. We will focus on making them Sendable or redesigning components that are inherently unsafe for Swift’s concurrency model.
+
+1. Database Type
+
+Here’s an example of how your Database might look, based on previous discussions:
+
+struct Database {
+    var recordIndex: RecordIndex
+    var persons: RootList
+    var families: RootList
+    var nameIndex: NameIndex
+    var refnIndex: RefnIndex
+}
+
+Potential Issues:
+	•	RecordIndex, RootList, NameIndex, and RefnIndex might contain reference types (class) or mutable properties that make Database non-Sendable.
+
+Plan:
+	1.	Inspect each component type (RecordIndex, RootList, etc.).
+	2.	Identify non-Sendable types and refactor them to be safe.
+	3.	Add Sendable conformance to Database once its components are safe.
+
+2. Component Analysis
+
+a. RecordIndex
+
+If RecordIndex is defined as:
+
+typealias RecordIndex = [String: Node]
+
+or
+
+struct RecordIndex {
+    var table: [String: Node]
+}
+
+The dictionary [String: Node] is a value type and implicitly Sendable if:
+	•	Node is Sendable.
+Inspect the Node type:
+
+class Node {
+    var key: String?
+    var tag: String
+    var value: String?
+    var nextSibling: Node?
+    var firstChild: Node?
+    var parent: Node?
+}
+
+	•	Problem: Node is a class, making it inherently a reference type and not Sendable.
+	•	Solution: Refactor Node as a struct or wrap RecordIndex in an actor.
+
+Refactored Node
+
+Here’s a thread-safe version of Node:
+
+final class Node: @unchecked Sendable {
+    let key: String?
+    let tag: String
+    let value: String?
+    weak var parent: Node?
+    var nextSibling: Node?
+    var firstChild: Node?
+
+    init(key: String?, tag: String, value: String?) {
+        self.key = key
+        self.tag = tag
+        self.value = value
+    }
+}
+
+Changes:
+	1.	Added @unchecked Sendable to suppress warnings, requiring you to manually ensure thread safety.
+	2.	Made parent a weak reference to avoid retain cycles.
+
+b. RootList
+
+If RootList is defined as:
+
+typealias RootList = [Node]
+
+or
+
+struct RootList {
+    var roots: [Node]
+}
+
+	•	Problem: Same as RecordIndex—Node is non-Sendable.
+	•	Solution: Depends on Node being made Sendable (or @unchecked Sendable).
+
+c. NameIndex and RefnIndex
+
+If these are defined as dictionaries:
+
+typealias NameIndex = [String: Set<String>]
+typealias RefnIndex = [String: Set<String>]
+
+	•	These are inherently Sendable because they consist of Swift value types.
+	•	No changes needed.
+
+3. Proposed Database Structure
+
+Once components are fixed:
+
+struct Database: Sendable {
+    var recordIndex: RecordIndex
+    var persons: RootList
+    var families: RootList
+    var nameIndex: NameIndex
+    var refnIndex: RefnIndex
+}
+
+4. Alternative: Actor-Based Design
+
+If significant mutable state exists, wrap the entire Database in an actor:
+
+actor Database {
+    var recordIndex: RecordIndex
+    var persons: RootList
+    var families: RootList
+    var nameIndex: NameIndex
+    var refnIndex: RefnIndex
+
+    init(recordIndex: RecordIndex, persons: RootList, families: RootList,
+         nameIndex: NameIndex, refnIndex: RefnIndex) {
+        self.recordIndex = recordIndex
+        self.persons = persons
+        self.families = families
+        self.nameIndex = nameIndex
+        self.refnIndex = refnIndex
+    }
+}
+
+This ensures all access to Database is thread-safe without requiring individual components to be Sendable.
+
+Next Steps
+	1.	Update Node to make it Sendable or @unchecked Sendable.
+	2.	Refactor RecordIndex and RootList to depend on the updated Node.
+	3.	Choose between a struct-based or actor-based Database.
+
+Let me know if you’d like detailed examples of refactoring any specific component or additional guidance on testing for concurrency issues!
+
+ME:
+-------------------------------------
+This is a lot for me to grasp right now. The reason I have awaits in the current code is because of the [String:String] tag table that stands alone. If I make it local to an index or database this issue may go away. If I have no awaits in my code, does this Sendable issue go away. When I add a SwiftUI iinterface to this code does the Sendable problem reoccur?
+
+CHATGPT:
+-------------------------------------
+Impact of Removing await and Sendable Issues
+
+1. If You Remove All await Calls
+	•	The Sendable issue arises because asynchronous calls (await) involve actor boundaries or task concurrency. If you eliminate await from your code:
+	•	No crossing of actor boundaries occurs, so Sendable conformance is no longer required.
+	•	You can treat your Database and other types as regular Swift types without worrying about concurrency rules enforced by Sendable.
+
+2. Moving the Tag Table to Be Local
+	•	Making the tag table ([String: String]) local to an index or database eliminates its dependency on @MainActor or await.
+	•	Without the global tag table:
+	•	Your code becomes simpler and doesn’t involve asynchronous constructs for tag management.
+	•	Sendable conformance would no longer be needed for your types.
+
+2. Moving the Tag Table to Be Local
+	•	Making the tag table ([String: String]) local to an index or database eliminates its dependency on @MainActor or await.
+	•	Without the global tag table:
+	•	Your code becomes simpler and doesn’t involve asynchronous constructs for tag management.
+	•	Sendable conformance would no longer be needed for your types.
+
+When You Add a SwiftUI Interface
+
+SwiftUI introduces a reactive programming model that relies on state management and often interacts with actors. Here’s how it impacts the Sendable issue:
+
+a. Using @State, @Binding, and @ObservedObject
+	•	SwiftUI property wrappers (e.g., @State, @Binding, @ObservedObject) handle reactivity and UI updates.
+	•	These property wrappers typically don’t require Sendable conformance for your custom types unless you’re working with concurrent tasks in the SwiftUI lifecycle.
+
+b. Using Task or Asynchronous Code in SwiftUI
+	•	If you introduce asynchronous tasks (e.g., Task { ... }, .task { await ... } modifiers), the Sendable requirement will reappear because SwiftUI creates these tasks in a concurrent context.
+	•	To avoid this:
+	•	Keep your SwiftUI interface synchronous.
+	•	Perform all asynchronous operations outside SwiftUI (e.g., in a model layer or service).
+
+
+3. Recommendations
+
+Short Term
+	•	Remove await and make the tag table local to an index or database.
+	•	Avoid asynchronous calls in the model layer if they are not strictly necessary.
+	•	Ensure your Database and related types are value types or rely on thread-safe class constructs.
+
+Long Term (When Adding SwiftUI)
+	•	SwiftUI is heavily asynchronous if you use .task, .refreshable, or similar modifiers.
+	•	Prepare your model layer (e.g., Database, RecordIndex) for concurrency by:
+	•	Ensuring they are thread-safe.
+	•	Using Sendable conformance or actor to encapsulate mutable state.
+
+Key Takeaways
+	•	If you remove await, the Sendable issue disappears for now.
+	•	When introducing a SwiftUI interface:
+	•	If no concurrency is involved in SwiftUI, Sendable isn’t required.
+	•	If concurrency is involved (e.g., .task {} or Task {}), revisit Sendable or actor approaches for your model layer.
+
+Would you like help with refactoring the tag table to make it local and remove await? Or guidance on integrating SwiftUI in a minimal way to avoid Sendable issues?
+
+ME:
+----------------------------------
+I believe the only object that must be a Class is Node, becuase they always exist structured into trees using parent, child and sibling links.
+
+CHATGPT
+-------------------------------
+Your reasoning is solid: Node is inherently a reference type because its structure represents interconnected trees using parent, child, and sibling links. In Swift, classes are ideal for this type of data because they are reference types by design.
+
+Here’s why Node must remain a class and considerations for ensuring its proper use:
+
+Why Node Must Be a Class
+	1.	Reference Semantics:
+	•	Trees depend on shared references: A Node instance must be accessible from multiple places (e.g., as a parent, child, or sibling) without creating unnecessary copies.
+	•	With a struct, any modification to a Node would create a new copy, breaking the tree structure.
+	2.	Recursive Relationships:
+	•	Each Node has references to its parent, firstChild, and nextSibling. These recursive relationships are inherently more compatible with reference semantics.
+	3.	Memory Efficiency:
+	•	Using a class ensures that the tree operates efficiently in memory without duplicating nodes when passed around or modified.
+
+Making Node Safe
+
+Even as a class, Node can be designed to avoid common pitfalls like retain cycles or unexpected side effects.
+
+Current Structure
+
+Your Node class might look like this:
+
+class Node {
+    var key: String?
+    var tag: String
+    var value: String?
+    var nextSibling: Node?
+    var firstChild: Node?
+    weak var parent: Node? // Weak reference to prevent retain cycles
+
+    init(key: String?, tag: String, value: String?) {
+        self.key = key
+        self.tag = tag
+        self.value = value
+    }
+}
+
+Key Considerations
+	1.	Weak Reference for Parent:
+	•	parent must be declared as weak to avoid retain cycles, which would cause memory leaks in the tree structure.
+	2.	Encapsulation:
+	•	Provide methods to safely add or remove child/sibling nodes, ensuring the tree structure remains consistent.
+
+func addChild(_ child: Node) {
+    child.parent = self
+    if let lastChild = self.firstChild?.lastSibling() {
+        lastChild.nextSibling = child
+    } else {
+        self.firstChild = child
+    }
+}
+
+func lastSibling() -> Node {
+    var node: Node = self
+    while let next = node.nextSibling {
+        node = next
+    }
+    return node
+}
+
+	3.	Thread Safety:
+	•	If Node trees are modified concurrently, encapsulate mutation logic in an actor or protect it with locks.
+
+Other Components in Your Model
+
+For other components like RecordIndex or RootList, which hold collections of Node instances, value types (structs) are still appropriate. For example:
+
+RecordIndex as a Struct
+
+struct RecordIndex {
+    var table: [String: Node] // Holds references to `Node` instances
+}
+
+	•	This keeps RecordIndex light and avoids unnecessary reference semantics for the container itself.
+	•	The nodes within the index are reference types (Node), maintaining shared connections within the tree.
+
+RootList as a Struct
+
+Similarly, a RootList can be:
+
+struct RootList {
+    var roots: [Node]
+}
+
+	•	The roots array holds references to Node objects, ensuring the trees remain intact.
+
+Concurrency Considerations
+
+Even though Node must be a class, you can use Swift’s concurrency tools to safely work with nodes and their trees.
+	1.	Single-Threaded Access:
+	•	If all tree operations occur on the main thread or a single background thread, you don’t need to worry about thread safety.
+	2.	Actor Wrapping:
+	•	If concurrent modifications are needed, encapsulate the tree operations in an actor to guarantee safe access.
+
+actor NodeManager {
+    private var rootNode: Node?
+
+    func addNode(_ node: Node) {
+        // Safe mutation logic
+    }
+}
+
+Conclusion
+	•	Node remains a class: Its reference semantics are essential for representing trees.
+	•	Ensure weak references: Prevent retain cycles by making parent weak.
+	•	Value types for collections: Use struct for RecordIndex and RootList, which hold references to Node instances.
+	•	Consider thread safety: Use actor or single-threaded access if concurrent modifications are a possibility.
+
+Let me know if you’d like help with implementing any of these refinements!

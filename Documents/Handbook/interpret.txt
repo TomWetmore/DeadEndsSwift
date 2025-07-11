@@ -1,0 +1,34 @@
+//  Interpret.swift
+
+public enum InterpResult -- return values of the interpret functions.
+    case okay
+    case returning(PValue?)
+    case breaking
+    case continuing
+    case error
+
+public func runProgram(program: Program) throws  -- TODO: NOT IMPLEMENTED: IS IT NEEDED?
+
+extension Program -- the interpreter functions are Program methods because they can access context
+    // interpret -- top level interpreter
+    func interpret(PNode) throws -> InterpResult -- 'top' level interpreter
+        case .string -- outputs the string
+        case .integer, .float -- ignores
+        case .identifier -- calls evaluateIndi and outputs value if a string
+        case .builtinCall -- calls evaluateBuildin and outputs value if string
+        case .procedureCall -- calls interpProcedure to run user defined procedure
+        case .functionCall -- calls evaluateFunction and outputs string if returned
+        case .ifState(condition, thenc, elsec) -- if statement, calls evaluateCondition and interpret
+        case .whileState(condition, body) -- while statement, calls evaluateCondition and interpret
+        case .breakState -- returns .breaking
+        case .continueState -- returns .continuing
+        case .returnState(resultExpr) -- may call evaluate and returns returning
+        case .block -- calls interpretBlock
+
+    func interpretBlock( PNode) throws -> InterpResult  -- interprets and .block PNode
+        iterates over the statements in the block calling interpret on each
+
+    func interpretProcedure(PNode) throws -> InterpResult -- interprets a .procedureCall PNode
+        looks up procedure in table and checks argument count;
+        evaluates args (using evaluate) into new symbol table;
+        calls interpret(body)

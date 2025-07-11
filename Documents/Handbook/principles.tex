@@ -1,0 +1,26 @@
+\section{DeadEnds}
+\subsection{Introduction}
+
+DeadEnds is a software package for genealogical computing written in
+the Swift language.
+It is based loosely on LifeLines, a genealogical program written in
+C in the 1990s.
+
+\subsection{Gedcom and Database}
+
+Gedcom is a language for storing genealogical data in computer files.
+There are several official and non-official standards for Gedcom.
+DeadEnds attempts to accommodate as many
+standards as possible.
+
+DeadEnds uses a non-persistent, in-RAM database to hold genealogical
+data when program is running. The database disappears when
+the program finishes.
+
+The backing store for DeadEnds programs are the Gedcom files. When a
+DeadEnd programs begins one or more Gedcom files are read via the
+DeadEnds \emph{import stack} into one or more databases.
+Those files maybe rewritten when the program finishes.
+
+
+

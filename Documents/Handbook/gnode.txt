@@ -1,0 +1,24 @@
+INTERFACE HANDBOOK
+
+GNODE.SWIFT -- Gedcom Nodes
+
+class TagMap -- map that ensures one copy of each tag
+        intern(String) -> String -- add tag
+
+class GNode: CustomStringConvertible -- Gedcom Node
+        var key: String? -- only on root nodes.
+        var tag: String --Gedcom tag; mandatory.
+        var value: String? -- optional Value
+        var nextSibling: GNode? -- optional sibling
+        var firstChild: GNode?  -- optional child
+        weak var parent: GNode? -- parent on all but roots
+
+        var description: String
+        init(key: String? = nil, tag: String, value: String? = nil)
+        func printTree(level: Int = 0, indent: String = "")
+	BIG LAZY COMPUTED PROPERTY: BIG GUNS: BANG BANG
+        lazy var childrenByTag: [String: [GNode]] -- map from tags to children with tags
+        func valueForTag(_ tag: String) -> String? -- value of first child with tag
+        func valuesForTag(_ tag: String) -> [String] -- values of all children with tag
+        func childWithTag(_ tag: String) -> GNode? -- first child with tag.
+        func childrenWithTag(_ tag: String) -> [GNode] -- children with tag.

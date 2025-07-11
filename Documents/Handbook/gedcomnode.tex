@@ -1,0 +1,94 @@
+\section{GedcomNode}
+\subsection{Introduction}
+
+A \texttt{GedcomNode} encodes a line from a Gedcom file.
+It is a key class in DeadEnds.
+Records in a
+DeadEnds database are GedcomNode trees.
+
+DeadEnds does not have records for persons, families, etc.
+All DeadEnds records are references to roots of node trees.
+DeadEnds records are stored in a Database.
+
+Other genealogical systems define
+specific types for genealogical entities.
+Of course DeadEnds has routines that deal specifically
+with persons and families, etc., 
+but all their interfaces use references to \texttt{GedcomNode}s.
+
+\subsection{Class GedcomNode}
+\begin{verbatim}
+public class GedcomNode: CustomStringConvertible {
+
+    var key: String? // Key; only on root nodes.
+    var tag: String  // Gedcom tag; mandatory.
+    var value: String? // Value; optional.
+    var nextSibling: GedcomNode? // Next sibling; optional.
+    var firstChild: GedcomNode?  // First child; optional.
+    weak var parent: GedcomNode? // Parent; not on root nodes.
+    
+    public var description: String
+    init(key: String? = nil, tag: String, value: String? = nil)
+    func printTree(level: Int = 0, indent: String = "")
+    lazy var childrenByTag: [String: [GedcomNode]]
+    static func == (lhs: GedcomNode, rhs: GedcomNode) -> Bool
+
+\end{verbatim}
+\texttt{key}, \texttt{tag} and
+\texttt{value} hold the key (\emph{cross reference identifier}), tag,
+and value of a Gedcom line. The line's level in not stored because it
+can be computed.
+\texttt{firstChild}, \texttt{nextSibling} and \texttt{parent} hold
+the tree structure.
+
+\texttt{description} returns a description of a node.
+
+\texttt{init} initializes and returns a new node.
+
+\texttt{printTree} is a debug method that prints the tree rooted at a node.
+
+\texttt{childrenByTag} gets the dictionary of arrays of child nodes
+indexed by a tag. It is a lazy computed property.
+\subsection{Convenience Accessors}
+
+\begin{verbatim}
+extension GedcomNode
+    func valueForTag(tag: String) -> String?
+    func valuesForTag(tag: String) -> [String] {
+    func childWithTag(tag: String) -> GedcomNode?
+    func childrenWithTag(tag: String) -> [GedcomNode]
+    
+	
+\end{verbatim}
+
+These accessor methods give access to the children of a
+\texttt{GedcomNode} with certain properties:
+
+\texttt{valueForTag} returns the value of the first child with a given tag.
+
+\texttt{valuesForTag} returns the array of non-nil values from a list of children with a given tag.
+
+\texttt{childWithTag} finds the first child node a given tag.
+
+\texttt{childrenWithTag} finds the array of children with a given tag.
+
+\subsection{TagMap}
+Gedcom files can be large; the same tags may occur thousands of times.
+The TagMap class provides a way for every GedcomNode with the same tag
+to share the same string.
+\begin{verbatim}
+class TagMap
+    private var map: [String:String] = [:]
+    func intern(tag: String) -> String
+\end{verbatim}
+
+\texttt{intern} returns the unique copy of a string.
+\subsection{Notes and ToDo's}
+How about a computed property for level?
+
+Contrast the DeadEnds way of encoding all information in trees of
+\texttt{GedcomNode}s, rather than as specialized records with specialized
+types for things like names, events, dates, places, relationships.
+
+
+

@@ -1,0 +1,40 @@
+//  Evaluate.swift
+
+extension Program -- the evaluate functions are methods on Program to give them context access
+    func evaluate(ProgframNode) throws -> PValue -- generic evaluator
+        case .identifier --  returns evaluateIdent(pnode) to lookup in symbol tables
+        case .builtinCall -- returns evaluateBuiltin(pnode)
+        case .functionCall -- returns evaluateFunction(pnode)
+        case .integer(integer) -- returns PValue.integer(integer)
+        case .string(string) -- returns PValue.string(string)
+        case .float(float) -- returns PValue.double(float)
+        default -- all other kinds are errors (can't be evaluated)
+    func evaluateCondition([ProgramNode]) throws -> Bool -- evaluates conditions (if and while)
+        if one arg evaluate and coerce to bool and return
+        if two args evaluates the second, assign to first (must be ident), coerce to Bool and return
+
+extension Program -- extension with methods that evaluate functions
+    func evaluateBuiltin(PNode) throws -> PValue -- evaluate a builtin function
+        check that there are the right number of arguments
+        call the builtin with its arguments and return the result
+    func evaluateFunction(PNode) throws -> PValue -- evaluate a user defined function
+        get the function from the function table;
+        make sure args and param match;
+        evaluate the arguments using evaluate() and bind them to the params in a symbol table
+        call interpret on the body of the procedure
+        figure out what to return
+
+extension Program -- extension with more evaluate functions.
+    func evaluateIdent(PNode) throws -> PValue -- evaluates an identifier
+        call lookupSymbol to get identifer's PValue in symbol table; throw if undefined
+        return the value
+    func evaluateBoolean(PNode) throws -> PValue -- evaluates a PNode to a .boolean PValue
+        TODO: NEEDED?
+        let pvalue = try evaluate(pnode)
+        return PValue.boolean(pvalueToBoolean(pvalue))
+    func pvalueToBoolean(PValue) -> Bool  -- coerces a PValue to a bool
+        TODO: Coercion is also do elsewhere.
+        TODO: Why is this done in the extension?
+    func evaluatePerson(PNode) throws -> GNode? -- evaluates a PNode to a Person (root GNode)
+    func evaluateFamily(PNode) throws -> GNode?  -- evaluates a PNode to a Family (root GNode)
+    func evaluateGNode(PNode) throws -> GNode?  -- evaluate a PNode to a GNode (with any tag or level)

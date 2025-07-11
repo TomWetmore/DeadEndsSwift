@@ -1,0 +1,35 @@
+
+About checking the loops from INDI to FAM to INDI via FAMC to CHIL and INDI via FAMS to FAM to HUSB or WIFE
+And checking the loops from FAM to INDI to FAM via CHIL, HUSB and WIFE
+
+Validating persons.
+
+For each 1 FAMC line
+    Get the family referred to.
+        If the FAMC value is empty or not a key, add error and continue.
+        Lookup up family in index. If it isn't found, add error and continue.
+	[The family must have exactly 1 CHIL link back to the person. If it doesn't add error and continue.
+
+For each 1 FAMS line
+
+
+
+Validaing families:
+
+For each 1 CHIL line ...
+For each 1 HUSB line ...
+For each 1 WIFE line ...
+
+
+Look at a person searching for FAMC lines.
+    If there are more than one make sure they have different values.
+    For each FAMC found:
+        Look at the family it points to.
+            If the family does not exist it is an error.
+            Search the family for its CHIL lines.
+                There must be exactly one CHIL line with a value to has the key of the original person.
+                If this is not the case it is an error.
+
+var famcKeys = Set<String>()
+var famsKeys = Set<String>()
+

@@ -1,0 +1,92 @@
+\section{EVALUATE}
+\texttt{ProgramNode}s represent statements and expressions. The functions in
+Evaluate.swift evaluate the six types of \texttt{ProgramNode}s that
+hold expressions.
+
+The \texttt{evaluate} and \texttt{...evaluate} functions it calls are all methods
+on the \texttt{Program} class. This gives
+them access to the static and dynamic state of the \texttt{Program}
+that is being interpreted.
+
+Evaluation always converts a \texttt{ProgramNode} (and others it may contain)
+into a \texttt{ProgramValue}.
+
+\subsection{Evaluate}
+
+\begin{verbatim}
+extension Program
+    func evaluate(PNode) throws -> ProgramValue
+        case .integer(integer)... // return ProgramValue.integer(integer)
+        case .double(double)...   // return ProgramValue.double(double)
+        case .string(string)...   // return ProgramValue.string(string)
+        case .identifier...       // call evaluateIdent
+        case .builtinCall...      // call evaluateBuiltin
+        case .functionCall...     // call evaluateFunction
+\end{verbatim}
+
+\texttt{evaluate} is the generic evaluator. There are six types of \texttt{ProgramNode}s
+that it evaluates: .\texttt{integer}, \texttt{.float}, \texttt{.string},
+\texttt{.identifier}, \texttt{.builtinCall}, and \texttt{.functionCall}.
+
+\subsection{Secondary Evaluate Functions}
+
+\begin{verbatim}
+extension Program
+    func evaluateIdent(ProgramNode) throws -> ProgramValue
+    func evaluateBuiltin(ProgramNode) throws -> ProgramValue
+    func evaluateFunction(ProgramNode) throws -> ProgramValue
+\end{verbatim}
+
+\texttt{evaluateIdent} evaluates an \texttt{.identifier} node by
+looking up the identifier in the symbol tables. The ProgramValue of
+the identifier is returned.
+
+\texttt{evaluateBuiltin} evaluates a \texttt{.builtinCall} node.
+It checks the numbers of arguments and parameters; it calls
+\texttt{evaluate} on the arguments to get their values, it creates a
+SymbolTable for the new frame, and then
+it calls the builtin function (a Swift closure).
+
+\texttt{evaluateFunction} evaluates a \texttt{.functionCall} node.
+It checks the numbers of arguments and parameters; it calls
+evaluate on the arguments to get their values; it looks up the
+function in the table of of user defined functions; it creates a
+SymbolTable for the new frama; and then it calls the defined function, make
+of ProgramNodes.
+
+\subsection{Support Evaluate Functions}
+
+\begin{verbatim}
+extension Program
+    func evaluateCondition([ProgramNode]) throws -> Bool
+    func evaluateBoolean(ProgramNode) throws -> ProgramValue
+    func pvalueToBoolean(PValue) -> Bool
+    func evaluatePerson(ProgramNode) throws -> GedcomNode?
+    func evaluateFamily(ProgramNode) throws -> GedcomNode?
+    func evaluateGedcomNode(PNode) throws -> GNode?
+\end{verbatim}
+
+\texttt{evaluateCondition} evaluates the conditions found in if
+and while statements. The array can have one or two nodes. If there
+is one it is evaluated, coerced to boolean and returned.
+If there are two nodes the first is an .identifier. The second is
+evaluated and assigned to the identifer. The second value is coerced
+to boolean and returned.(
+
+\texttt{evaluateBoolean} evaluates a ProgramNode to a \texttt{.boolean}
+ProgramValue. NEEDED?
+
+\texttt{pvalueToBoolean} coerces a ProgramValue to a boolean. NEEDED?
+
+\texttt{evaluatePerson} evaluates a \texttt{.gnode ProgramNode} to the root
+GedcomNode of a person. Several builtin functions take persons as
+parameters, and this function is convenient way to evaluate those
+arguments.
+
+\texttt{evaluateFamily} evaluates a \texttt{.gnode ProgramNode} the
+root GedcomNode of a family. Several builtin function take families
+as parameters, and this function is a convenient way to evaluage those
+arguments.
+
+\texttt{evaluateGedcomNode} evaluates a \texttt{.gnode ProgramNode} to a
+\texttt{GedcomNode}, which can have any tag or be at any level.
