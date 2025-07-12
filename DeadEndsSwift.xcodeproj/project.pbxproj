@@ -33,9 +33,17 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		263B5D1D2E22C0E400593B62 /* Exceptions for "Warehouse" folder in "Warehouse" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				IntraInter.swift,
+			);
+			target = 2673AD282E22A6B10078C61B /* Warehouse */;
+		};
 		2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				IntraInter.swift,
 				MoreTraversalCode.swift,
 				TraverseCode.swift,
 			);
@@ -94,6 +102,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */,
+				263B5D1D2E22C0E400593B62 /* Exceptions for "Warehouse" folder in "Warehouse" target */,
 			);
 			path = Warehouse;
 			sourceTree = "<group>";
@@ -152,10 +161,10 @@
 		268206592D13370F0051544B = {
 			isa = PBXGroup;
 			children = (
-				2673AD2D2E22A7000078C61B /* Warehouse */,
 				26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */,
 				263408B12E21680900F4E6DE /* DeadEndsApp */,
 				263408DB2E216A7200F4E6DE /* RunScript */,
+				2673AD2D2E22A7000078C61B /* Warehouse */,
 				26106FAE2D7BC96400994B2C /* Frameworks */,
 				268206632D13370F0051544B /* Products */,
 				2686ABA92D94F1BC00FE56DC /* Documents */,
@@ -303,6 +312,7 @@
 					};
 					2673AD282E22A6B10078C61B = {
 						CreatedOnToolsVersion = 16.4;
+						LastSwiftMigration = 1640;
 					};
 					2682068A2D1337930051544B = {
 						CreatedOnToolsVersion = 16.2;
@@ -457,24 +467,29 @@
 		2673AD2B2E22A6B10078C61B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 22WT5TK79S;
 				EXECUTABLE_PREFIX = lib;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		2673AD2C2E22A6B10078C61B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 22WT5TK79S;
 				EXECUTABLE_PREFIX = lib;
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
