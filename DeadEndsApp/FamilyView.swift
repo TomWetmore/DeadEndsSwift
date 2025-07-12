@@ -1,8 +1,10 @@
+<<<<<<< HEAD
 //
 //  FamilyView.swift
 //  DeadEndsSwift
 //
-//  Created by Thomas Wetmore on 7/11/25.
+//  Created by Thomas Wetmore on 11 July 2025.
+//  Last changed on 12 July 2025.
 //
 
 

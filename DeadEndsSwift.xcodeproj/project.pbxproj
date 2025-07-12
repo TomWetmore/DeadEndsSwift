@@ -26,12 +26,21 @@
 /* Begin PBXFileReference section */
 		263408B02E21680900F4E6DE /* DeadEndsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeadEndsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		263408DA2E216A7200F4E6DE /* RunScript */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RunScript; sourceTree = BUILT_PRODUCTS_DIR; };
+		2673AD292E22A6B10078C61B /* libWarehouse.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWarehouse.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2682068B2D1337930051544B /* libDeadEndsLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDeadEndsLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2686ABAA2D94F1E300FE56DC /* SExprPNode.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SExprPNode.md; sourceTree = "<group>"; };
 		268F3D732D9D91FC00304D51 /* ImportStack.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ImportStack.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				MoreTraversalCode.swift,
+				TraverseCode.swift,
+			);
+			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
+		};
 		26CA3E052DBFD1A9001DA273 /* Exceptions for "DeadEndsLib" folder in "DeadEndsLib" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -81,6 +90,14 @@
 			path = RunScript;
 			sourceTree = "<group>";
 		};
+		2673AD2D2E22A7000078C61B /* Warehouse */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */,
+			);
+			path = Warehouse;
+			sourceTree = "<group>";
+		};
 		26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -108,6 +125,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2673AD272E22A6B10078C61B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		268206892D1337930051544B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -128,6 +152,7 @@
 		268206592D13370F0051544B = {
 			isa = PBXGroup;
 			children = (
+				2673AD2D2E22A7000078C61B /* Warehouse */,
 				26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */,
 				263408B12E21680900F4E6DE /* DeadEndsApp */,
 				263408DB2E216A7200F4E6DE /* RunScript */,
@@ -143,6 +168,7 @@
 				2682068B2D1337930051544B /* libDeadEndsLib.a */,
 				263408B02E21680900F4E6DE /* DeadEndsApp.app */,
 				263408DA2E216A7200F4E6DE /* RunScript */,
+				2673AD292E22A6B10078C61B /* libWarehouse.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -159,6 +185,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		2673AD252E22A6B10078C61B /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		268206872D1337930051544B /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -183,6 +216,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				263408B12E21680900F4E6DE /* DeadEndsApp */,
+				2673AD2D2E22A7000078C61B /* Warehouse */,
 			);
 			name = DeadEndsApp;
 			packageProductDependencies = (
@@ -212,6 +246,25 @@
 			productName = RunScript;
 			productReference = 263408DA2E216A7200F4E6DE /* RunScript */;
 			productType = "com.apple.product-type.tool";
+		};
+		2673AD282E22A6B10078C61B /* Warehouse */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2673AD2A2E22A6B10078C61B /* Build configuration list for PBXNativeTarget "Warehouse" */;
+			buildPhases = (
+				2673AD252E22A6B10078C61B /* Headers */,
+				2673AD262E22A6B10078C61B /* Sources */,
+				2673AD272E22A6B10078C61B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Warehouse;
+			packageProductDependencies = (
+			);
+			productName = Warehouse;
+			productReference = 2673AD292E22A6B10078C61B /* libWarehouse.a */;
+			productType = "com.apple.product-type.library.static";
 		};
 		2682068A2D1337930051544B /* DeadEndsLib */ = {
 			isa = PBXNativeTarget;
@@ -248,6 +301,9 @@
 					263408D92E216A7200F4E6DE = {
 						CreatedOnToolsVersion = 16.4;
 					};
+					2673AD282E22A6B10078C61B = {
+						CreatedOnToolsVersion = 16.4;
+					};
 					2682068A2D1337930051544B = {
 						CreatedOnToolsVersion = 16.2;
 						LastSwiftMigration = 1620;
@@ -271,6 +327,7 @@
 				2682068A2D1337930051544B /* DeadEndsLib */,
 				263408AF2E21680900F4E6DE /* DeadEndsApp */,
 				263408D92E216A7200F4E6DE /* RunScript */,
+				2673AD282E22A6B10078C61B /* Warehouse */,
 			);
 		};
 /* End PBXProject section */
@@ -294,6 +351,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		263408D62E216A7200F4E6DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2673AD262E22A6B10078C61B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -387,6 +451,30 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		2673AD2B2E22A6B10078C61B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 22WT5TK79S;
+				EXECUTABLE_PREFIX = lib;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		2673AD2C2E22A6B10078C61B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 22WT5TK79S;
+				EXECUTABLE_PREFIX = lib;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -552,6 +640,15 @@
 			buildConfigurations = (
 				263408DF2E216A7200F4E6DE /* Debug */,
 				263408E02E216A7200F4E6DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2673AD2A2E22A6B10078C61B /* Build configuration list for PBXNativeTarget "Warehouse" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2673AD2B2E22A6B10078C61B /* Debug */,
+				2673AD2C2E22A6B10078C61B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
