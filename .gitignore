@@ -1,0 +1,66 @@
+#--------------------------------------------------
+# Xcode
+#--------------------------------------------------
+
+# Build and intermediate files
+build/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+
+# Per-user workspace and scheme settings
+*.xcuserdatad/
+*.xcscmblueprint
+*.xcuserstate
+
+#--------------------------------------------------
+# Swift Package Manager
+#--------------------------------------------------
+
+.swiftpm/
+.build/
+Package.resolved
+
+#--------------------------------------------------
+# CocoaPods
+#--------------------------------------------------
+
+Pods/
+Podfile.lock
+
+#--------------------------------------------------
+# Carthage
+#--------------------------------------------------
+
+Carthage/
+Carthage.build/
+
+#--------------------------------------------------
+# Fastlane
+#--------------------------------------------------
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+#--------------------------------------------------
+# macOS system files
+#--------------------------------------------------
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+#--------------------------------------------------
+# Xcode Preview files (optional)
+#--------------------------------------------------
+
+*.canvas
