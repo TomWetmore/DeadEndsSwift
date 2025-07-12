@@ -2,8 +2,8 @@
 //  SplitJoin.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 12/23/24.
-//  Last changed on 12/24/24.
+//  Created by Thomas Wetmore on 23 December 2024.
+//  Last changed on 12 July 2025.
 //
 
 import Foundation
@@ -27,31 +27,31 @@ func splitPerson(indi: GedcomNode) -> (name: GedcomNode?, refn: GedcomNode?, sex
 	var lfms: GedcomNode? = nil
 	var last: GedcomNode? = nil
 
-	var node = indi.firstChild
-	indi.firstChild = nil
+	var node = indi.child
+	indi.child = nil
 
 	while let current = node {
 		let tag = current.tag
-		node = current.nextSibling
-		current.nextSibling = nil
+		node = current.sibling
+		current.sibling = nil
 
 		switch tag {
 		case "NAME":
-			if name == nil { name = current } else { lnam?.nextSibling = current }
+			if name == nil { name = current } else { lnam?.sibling = current }
 			lnam = current
 		case "REFN":
-			if refn == nil { refn = current } else { lref?.nextSibling = current }
+			if refn == nil { refn = current } else { lref?.sibling = current }
 			lref = current
 		case "SEX":
 			sex = current
 		case "FAMC":
-			if famc == nil { famc = current } else { lfmc?.nextSibling = current }
+			if famc == nil { famc = current } else { lfmc?.sibling = current }
 			lfmc = current
 		case "FAMS":
-			if fams == nil { fams = current } else { lfms?.nextSibling = current }
+			if fams == nil { fams = current } else { lfms?.sibling = current }
 			lfms = current
 		default:
-			if body == nil { body = current } else { last?.nextSibling = current }
+			if body == nil { body = current } else { last?.sibling = current }
 			last = current
 		}
 	}
@@ -66,18 +66,18 @@ func joinPerson(indi: GedcomNode, name: GedcomNode?, refn: GedcomNode?, sex: Ged
 	}
 
 	var last: GedcomNode? = nil
-	indi.firstChild = nil
+	indi.child = nil
 
 	func append(_ part: GedcomNode?) {
 		guard let part = part else { return }
-		if indi.firstChild == nil {
-			indi.firstChild = part
+		if indi.child == nil {
+			indi.child = part
 		} else {
-			last?.nextSibling = part
+			last?.sibling = part
 		}
 		last = part
-		while last?.nextSibling != nil {
-			last = last?.nextSibling
+		while last?.sibling != nil {
+			last = last?.sibling
 		}
 	}
 
@@ -107,29 +107,29 @@ func splitFamily(fam: GedcomNode) -> (refn: GedcomNode?, husb: GedcomNode?, wife
 	var lchl: GedcomNode? = nil
 	var last: GedcomNode? = nil
 
-	var node = fam.firstChild
-	fam.firstChild = nil
+	var node = fam.child
+	fam.child = nil
 
 	while let current = node {
 		let tag = current.tag
-		node = current.nextSibling
-		current.nextSibling = nil
+		node = current.sibling
+		current.sibling = nil
 
 		switch tag {
 		case "REFN":
-			if refn == nil { refn = current } else { lref?.nextSibling = current }
+			if refn == nil { refn = current } else { lref?.sibling = current }
 			lref = current
 		case "HUSB":
-			if husb == nil { husb = current } else { lhsb?.nextSibling = current }
+			if husb == nil { husb = current } else { lhsb?.sibling = current }
 			lhsb = current
 		case "WIFE":
-			if wife == nil { wife = current } else { lwfe?.nextSibling = current }
+			if wife == nil { wife = current } else { lwfe?.sibling = current }
 			lwfe = current
 		case "CHIL":
-			if chil == nil { chil = current } else { lchl?.nextSibling = current }
+			if chil == nil { chil = current } else { lchl?.sibling = current }
 			lchl = current
 		default:
-			if rest == nil { rest = current } else { last?.nextSibling = current }
+			if rest == nil { rest = current } else { last?.sibling = current }
 			last = current
 		}
 	}
@@ -144,18 +144,18 @@ func joinFamily(fam: GedcomNode, refn: GedcomNode?, husb: GedcomNode?, wife: Ged
 	}
 
 	var last: GedcomNode? = nil
-	fam.firstChild = nil
+	fam.child = nil
 
 	func append(_ part: GedcomNode?) {
 		guard let part = part else { return }
-		if fam.firstChild == nil {
-			fam.firstChild = part
+		if fam.child == nil {
+			fam.child = part
 		} else {
-			last?.nextSibling = part
+			last?.sibling = part
 		}
 		last = part
-		while last?.nextSibling != nil {
-			last = last?.nextSibling
+		while last?.sibling != nil {
+			last = last?.sibling
 		}
 	}
 

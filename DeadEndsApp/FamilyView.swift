@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 //
 //  FamilyView.swift
 //  DeadEndsSwift
@@ -57,15 +56,3 @@ struct FamilyView: View {
 }
 
 // Reuse your PersonRow or PersonButton view for showing persons here.
-
-extension GedcomNode {
-    func father(of person: Person, index: RecordIndex) -> GedcomNode? {
-        if let famc = person.child(withTag: "FAMC"),
-           let fkey = famc.value,
-           let fam = index[fkey],
-           let husb = fam.child(withTag: "HUSB"),
-           let hkey = husb.value,
-           let husb = index[hkey] { return husb}
-        return nil
-    }
-}

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 January 2025.
-//  Last changed on 18 April 2025.
+//  Last changed on 12 July 2025.
 //
 
 import Foundation
@@ -13,51 +13,51 @@ extension GedcomNode {
 
 	// Void Closure (Default Behavior)
 	func traverseChildren(_ action: (GedcomNode) -> Void) {
-		var currentChild = self.firstChild
+		var currentChild = self.child
 		while let child = currentChild {
 			action(child)
-			currentChild = child.nextSibling
+			currentChild = child.sibling
 		}
 	}
 
 	// Boolean Closure (Early Exit)
 	func traverseChildrenBool(_ action: (GedcomNode) -> Bool) {
-		var currentChild = self.firstChild
+		var currentChild = self.child
 		while let child = currentChild {
 			if action(child) { return } // Early exit
-			currentChild = child.nextSibling
+			currentChild = child.sibling
 		}
 	}
 
 	// Accumulator Closure (Returns a Value)
 	func traverseChildren<Result>(_ initial: Result, _ action: (GedcomNode, inout Result) -> Void) -> Result {
 		var result = initial
-		var currentChild = self.firstChild
+		var currentChild = self.child
 		while let child = currentChild {
 			action(child, &result)
-			currentChild = child.nextSibling
+			currentChild = child.sibling
 		}
 		return result
 	}
 
 	// Filtering Closure (Conditional Traversal)
 	func traverseChildren(where condition: (GedcomNode) -> Bool, _ action: (GedcomNode) -> Void) {
-		var currentChild = self.firstChild
+		var currentChild = self.child
 		while let child = currentChild {
 			if condition(child) {
 				action(child)
 			}
-			currentChild = child.nextSibling
+			currentChild = child.sibling
 		}
 	}
 
 	// Generic Transform Closure (Map-Like Behavior)
 	func mapChildren<Result>(_ transform: (GedcomNode) -> Result) -> [Result] {
 		var results = [Result]()
-		var currentChild = self.firstChild
+		var currentChild = self.child
 		while let child = currentChild {
 			results.append(transform(child))
-			currentChild = child.nextSibling
+			currentChild = child.sibling
 		}
 		return results
 	}
@@ -65,10 +65,10 @@ extension GedcomNode {
 	// Reduce-Like Traversal
 	func reduceChildren<Result>(_ initial: Result, _ nextPartialResult: (Result, GedcomNode) -> Result) -> Result {
 		var result = initial
-		var currentChild = self.firstChild
+		var currentChild = self.child
 		while let child = currentChild {
 			result = nextPartialResult(result, child)
-			currentChild = child.nextSibling
+			currentChild = child.sibling
 		}
 		return result
 	}
@@ -97,10 +97,10 @@ extension GedcomNode {
 	// Top-Down, Left-to-Right
 	func traverseTopDownLeftToRight(_ action: (GedcomNode) -> Void) {
 		action(self) // Process the current node first
-		var child = self.firstChild
+		var child = self.child
 		while let curchild = child {
 			curchild.traverseTopDownLeftToRight(action) // Recursively traverse children
-			child = curchild.nextSibling
+			child = curchild.sibling
 		}
 	}
 
@@ -108,10 +108,10 @@ extension GedcomNode {
 	func traverseTopDownRightToLeft(_ action: (GedcomNode) -> Void) {
 		action(self) // Process the current node first
 		var children: [GedcomNode] = []
-		var child = self.firstChild
+		var child = self.child
 		while let curchild = child {
 			children.append(curchild)
-			child = curchild.nextSibling
+			child = curchild.sibling
 		}
 		for child in children.reversed() {
 			child.traverseTopDownRightToLeft(action)
@@ -120,10 +120,10 @@ extension GedcomNode {
 
 	// Bottom-Up, Left-to-Right
 	func traverseBottomUpLeftToRight(_ action: (GedcomNode) -> Void) {
-		var child = self.firstChild
+		var child = self.child
 		while let curchild = child {
 			curchild.traverseBottomUpLeftToRight(action) // Recursively traverse children
-			child = curchild.nextSibling
+			child = curchild.sibling
 		}
 		action(self) // Process the current node last
 	}
@@ -131,10 +131,10 @@ extension GedcomNode {
 	// Bottom-Up, Right-to-Left
 	func traverseBottomUpRightToLeft(_ action: (GedcomNode) -> Void) {
 		var children: [GedcomNode] = []
-		var child = self.firstChild
+		var child = self.child
 		while let curchild = child {
 			children.append(curchild)
-			child = curchild.nextSibling
+			child = curchild.sibling
 		}
 		for child in children.reversed() {
 			child.traverseBottomUpRightToLeft(action)
@@ -159,10 +159,10 @@ extension GedcomNode {
 
 	private func collectChildren(order: TreeTraversalOrder) -> [GedcomNode] {
 		var children: [GedcomNode] = []
-		var child = self.firstChild
+		var child = self.child
 		while let curchild = child {
 			children.append(curchild)
-			child = curchild.nextSibling
+			child = curchild.sibling
 		}
 		if order.isRightToLeft {
 			children.reverse()
@@ -186,10 +186,10 @@ extension GedcomNode {
 	// Top-down traversal with level tracking
 	func topDown(_ action: (GedcomNode, Int) -> Void, level: Int = 0) {
 		action(self, level)
-		var child = self.firstChild
+		var child = self.child
 		while let currentChild = child {
 			currentChild.topDown(action, level: level + 1)
-			child = currentChild.nextSibling
+			child = currentChild.sibling
 		}
 	}
 }
@@ -206,10 +206,10 @@ extension GedcomNode: Sequence {
 		public mutating func next() -> GedcomNode? {
 			guard !stack.isEmpty else { return nil }
 			let node = stack.removeFirst()
-			var child = node.firstChild
+			var child = node.child
 			while let curchild = child {
 				stack.append(curchild)
-				child = curchild.nextSibling
+				child = curchild.sibling
 			}
 			return node
 		}

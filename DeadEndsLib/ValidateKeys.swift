@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 25 April 2025.
+//  Last changed on 12 July 2025.
 //
 
 import Foundation
@@ -55,20 +55,20 @@ extension GedcomNode {
     // traverse traverses the nodes in a tree doing an action. The order is top down, left to right.
     func traverse(_ action: (GedcomNode) -> Void) {
         action(self)
-        var child = self.firstChild
+        var child = self.child
         while let curr = child {
             curr.traverse(action)
-            child = curr.nextSibling
+            child = curr.sibling
         }
     }
 
     // count returns the number of nodes in the tree rooted at this node.
     func count() -> Int {
         var count = 1
-        var child = self.firstChild
+        var child = self.child
         while let curchild = child {
             count += curchild.count()
-            child = curchild.nextSibling
+            child = curchild.sibling
         }
         return count
     }
@@ -81,10 +81,10 @@ extension GedcomNode {
         while let node = curNode, let parent = node.parent {
             loops += 1
             if loops > 100000 { fatalError("Cycle detected in tree.") }
-            var sibling = parent.firstChild // Count siblings that occur before.
+            var sibling = parent.child // Count siblings that occur before.
             while let cursibling = sibling, cursibling !== node {
                 count += cursibling.count()
-                sibling = cursibling.nextSibling
+                sibling = cursibling.sibling
             }
             curNode = parent // Move up tree.
             count += 1 // Include parent.

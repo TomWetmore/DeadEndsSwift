@@ -2,8 +2,8 @@
 //  ValidatePerson.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 12/23/24.
-//  Last changed on 1/12/25.
+//  Created by Thomas Wetmore on 23 December 2024.
+//  Last changed on 12 July 2025.
 //
 
 import Foundation
@@ -349,10 +349,10 @@ extension GedcomNode {
 	// hasChildLink checks whether the family (self) has a CHIL link to the person.
 	func orighasChildLink(to person: GedcomNode) -> Bool {
 		let family = self // self is a family root.
-		var curnode = family.firstChild
+		var curnode = family.child
 		while let node = curnode {
 			if node.tag == "CHIL" && node.value == person.key { return true }
-			curnode = node.nextSibling
+			curnode = node.sibling
 		}
 		return false
 	}
@@ -365,10 +365,10 @@ extension GedcomNode {
 			return false
 		}
 		let tag = sex == .male ? "HUSB" : "WIFE"
-		var curnode = family.firstChild
+		var curnode = family.child
 		while let node = curnode {
 			if node.tag == tag && node.value == person.key { return true }
-			curnode = node.nextSibling
+			curnode = node.sibling
 		}
 		return false
 	}
@@ -400,7 +400,7 @@ extension GedcomNode {
 
 	// getSex return the sex of a person (self)
 	func getSex() -> SexType {
-		let node = self.firstChild
+		let node = self.child
 		while let curnode = node {
 			if curnode.tag == "SEX" {
 				let value = curnode.tag

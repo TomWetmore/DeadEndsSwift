@@ -2,8 +2,8 @@
 //  ValidateFamily.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 1/2/25.
-//  Last changed 1/12/25.
+//  Created by Thomas Wetmore on 2 January 2025.
+//  Last changed 12 July 2025.
 //
 
 import Foundation
@@ -28,7 +28,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 	var husbKeys: Set<String> = []
 	var wifeKeys: Set<String> = []
 	var chilKeys: Set<String> = []
-	var curnode = family.firstChild
+	var curnode = family.child
 	while let node = curnode {
 		switch node.tag {
 		case "HUSB":
@@ -123,7 +123,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 		default:
 			break
 		}
-		curnode = node.nextSibling
+		curnode = node.sibling
 	}
 }
 
@@ -140,10 +140,10 @@ extension GedcomNode {
 	// hasFamilyAsChildLink checks whether a person (self) has a FAMC link to the family.
 	func hasFamilyAsChildLink(to family: GedcomNode) -> Bool {
 		let person = self // self is a person root.
-		var curnode = person.firstChild
+		var curnode = person.child
 		while let node = curnode {
 			if node.tag == "FAMC" && node.value == family.key { return true }
-			curnode = node.nextSibling
+			curnode = node.sibling
 		}
 		return false
 	}
@@ -151,10 +151,10 @@ extension GedcomNode {
 	// hasFamilyAsSpouseLink checks whether a person (self) has a FAMS link to the family.
 	func hasFamilyAsSpouseLink(to family: GedcomNode) -> Bool {
 		let person = self // self is a person root.
-		var curnode = person.firstChild
+		var curnode = person.child
 		while let node = curnode {
 			if node.tag == "FAMS" && node.value == family.key { return true }
-			curnode = node.nextSibling
+			curnode = node.sibling
 		}
 		return false
 	}

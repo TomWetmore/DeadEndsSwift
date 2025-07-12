@@ -2,8 +2,8 @@
 //  ImportStack.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 12/19/24.
-//  Last changed on 1/27/25.
+//  Created by Thomas Wetmore on 19 December 2024.
+//  Last changed on 12 July 2025.
 //
 
 import Foundation
@@ -109,10 +109,10 @@ func getRecordsFromDataNodes(datanodes: DataNodes<Int>, keymap: KeyMap, errlog: 
 				rnode = node; // Set current root of the next tree.
 			} else if (level == plevel) { // Found the sibling of previous Node.
 				node.parent = pnode!.parent;
-				pnode!.nextSibling = node
+				pnode!.sibling = node
 			} else if (level == plevel + 1) { // Found the child of previous Node.
 				node.parent = pnode
-				pnode!.firstChild = node
+				pnode!.child = node
 			} else if (level < plevel) { // Found an uncle of previous Node.
 				var count = 0;
 				while (level < plevel) {
@@ -128,7 +128,7 @@ func getRecordsFromDataNodes(datanodes: DataNodes<Int>, keymap: KeyMap, errlog: 
 					plevel -= 1;
 				}
 				node.parent = pnode!.parent
-				pnode!.nextSibling = node
+				pnode!.sibling = node
 			} else { // level > plevel + 1 is illegal
 				let error = Error(type: .syntax, severity: .fatal, message: "Invalid level")
 				errlog.append(error)
