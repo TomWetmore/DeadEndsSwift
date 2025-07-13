@@ -163,3 +163,61 @@ extension GedcomNode {
 
 
 
+enum TraversalStep {
+    case tag(String)             // Intra-record descent to a child tag
+    case follow(String)          // Inter-record pointer dereference
+    case followAll(String)       // Follow all tags with this label (1-to-many links)
+}
+
+extension GedcomNode {
+    /// Traverses through this node following the path and returns the first node matching the predicate.
+    func firstMatch(
+        path: [TraversalStep],
+        index: RecordIndex,
+        where predicate: (GedcomNode) -> Bool
+    ) -> GedcomNode? {
+        func search(from node: GedcomNode, remaining: ArraySlice<TraversalStep>) -> GedcomNode? {
+            guard let step = remaining.first else {
+                return predicate(node) ? node : nil
+            }
+
+            let nextSteps = remaining.dropFirst()
+
+            switch step {
+            case .tag(let tag):
+                guard let child = node.child(withTag: tag) else { return nil }
+                return search(from: child, remaining: nextSteps)
+
+            case .follow(let tag):
+                guard let key = node.child(withTag: tag)?.value,
+                      let next = index[key] else { return nil }
+                return search(from: next, remaining: nextSteps)
+
+            case .followAll(let tag):
+                let keys = node.children(withTag: tag).compactMap { $0.value }
+                for key in keys {
+                    if let next = index[key],
+                       let match = search(from: next, remaining: nextSteps) {
+                        return match
+                    }
+                }
+                return nil
+            }
+        }
+
+        return search(from: self, remaining: path[...])
+    }
+}
+
+extension GedcomNode {
+    /// Same as `firstMatch`, but returns the `.value` of the matched node.
+    func firstValue(
+        path: [TraversalStep],
+        index: RecordIndex,
+        where predicate: (GedcomNode) -> Bool
+    ) -> String? {
+        return firstMatch(path: path, index: index, where: predicate)?.value
+    }
+}
+
+
