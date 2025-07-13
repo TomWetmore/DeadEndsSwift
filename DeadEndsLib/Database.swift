@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 Deceber 2024.
-//  Last changed on 29 June 2025.
+//  Last changed on 13 July 2025.
 //
 
 import Foundation
@@ -20,8 +20,6 @@ public typealias RootList = [GedcomNode]
 // Database is the struct for the DeadEnds in-RAM Database.
 public class Database {
 	public private(set) var recordIndex: RecordIndex // Complete record index.
-	public private(set) var personIndex: RootList // Array of all persons.
-	public private(set) var familyIndex: RootList // Array of all familes.
     public private(set) var header: GedcomNode? // Header record.
 	public private(set) var nameIndex: NameIndex // Index of all 1 NAME values to record key sets.
 	public private(set) var refnIndex: RefnIndex // Index of all 1 REFN vaules to ...
@@ -31,13 +29,31 @@ public class Database {
     init(recordIndex: RecordIndex, persons: RootList, families: RootList, nameIndex: NameIndex,
          refnIndex: RefnIndex, tagmap: TagMap, dirty: Bool = false) {
         self.recordIndex = recordIndex
-        self.personIndex = persons
-        self.familyIndex = families
         self.nameIndex = nameIndex
         self.refnIndex = refnIndex
         self.tagmap = tagmap
         self.dirty = dirty
+    }
+}
 
+extension Database {
+
+    // persons returns an Array of all Persons in the Database.
+    var persons: [GedcomNode] {
+        recordIndex.values.filter { $0.tag == "INDI" }
+    }
+
+    // families returns an Array of all Families in the Database.
+    var families: [GedcomNode] {
+        recordIndex.values.filter { $0.tag == "FAM" }
+    }
+
+    var personCount: Int {
+        recordIndex.values.lazy.filter { $0.tag == "INDI" }.count
+    }
+
+    var familyCount: Int {
+        recordIndex.values.lazy.filter { $0.tag == "FAM" }.count
     }
 }
 

@@ -2,8 +2,8 @@
 //  Test.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 12/30/24.
-//  Last changed on 1/12/25.
+//  Created by Thomas Wetmore on 30 December 2025.
+//  Last changed on 13 July 2025.
 //
 
 import Foundation
@@ -44,19 +44,19 @@ struct DeadEndsMain {
 //			}
 //		}
 		print("Database created!")
-		print("Number of persons: \(database.personIndex.count)")
-		print("Number of families: \(database.familyIndex.count)")
+		print("Number of persons: \(database.personCount)")
+		print("Number of families: \(database.familyCount)")
 		var count = 0
-		for person in database.personIndex {
+		for person in database.persons {
 			count += person.count()
 		}
 		print("Number of nodes in persons: \(count)")
 		count = 0
-		for family in database.familyIndex {
+		for family in database.families {
 			count += family.count()
 		}
 		print("Number of nodes in families: \(count)")
-		for person in database.personIndex.prefix(5) {
+        for person in database.persons.prefix(5) {
 			print("Person: \(person.tag) \(person.key ?? "No Key")")
 		}
         let persons = database.persons(withName: "t t/wtmr/iv")
