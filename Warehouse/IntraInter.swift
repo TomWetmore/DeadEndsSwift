@@ -220,4 +220,124 @@ extension GedcomNode {
     }
 }
 
+//--------------------- ANOTHER IMPLEMENTATION ------------------
 
+//enum TraversalStep2 {
+//    case tag(String)             // Child tag within current node
+//    case follow(String)          // Cross-ref to another record
+//    case followAll(String)       // Follow multiple refs (e.g., FAMS)
+//}
+
+struct TraversalPath {
+    let steps: [TraversalStep]
+
+    init(_ steps: [TraversalStep]) {
+        self.steps = steps
+    }
+
+    func appending(_ step: TraversalStep) -> TraversalPath {
+        TraversalPath(steps + [step])
+    }
+
+    static func tag(_ t: String) -> TraversalPath {
+        TraversalPath([.tag(t)])
+    }
+
+    static func follow(_ t: String) -> TraversalPath {
+        TraversalPath([.follow(t)])
+    }
+
+    static func followAll(_ t: String) -> TraversalPath {
+        TraversalPath([.followAll(t)])
+    }
+
+    func tag(_ t: String) -> TraversalPath { appending(.tag(t)) }
+    func follow(_ t: String) -> TraversalPath { appending(.follow(t)) }
+    func followAll(_ t: String) -> TraversalPath { appending(.followAll(t)) }
+}
+
+protocol GedcomNavigator {
+    var recordIndex: RecordIndex { get }
+
+    func traverse(from root: GedcomNode, path: TraversalPath) -> GedcomNode?
+    func firstMatch(from root: GedcomNode, path: TraversalPath, where predicate: (GedcomNode) -> Bool) -> GedcomNode?
+    func firstValue(from root: GedcomNode, path: TraversalPath, where predicate: (GedcomNode) -> Bool) -> String?
+    func allMatches(from root: GedcomNode, path: TraversalPath) -> [GedcomNode]
+}
+
+
+extension GedcomNavigator {
+    func traverse(from root: GedcomNode, path: TraversalPath) -> GedcomNode? {
+        var current: GedcomNode? = root
+        for step in path.steps {
+            switch step {
+            case .tag(let tag):
+                current = current?.child(withTag: tag)
+
+            case .follow(let tag):
+                guard let key = current?.child(withTag: tag)?.value else { return nil }
+                current = recordIndex[key]
+
+            case .followAll:
+                // Invalid in single-traversal context
+                return nil
+            }
+        }
+        return current
+    }
+
+    func firstMatch(from root: GedcomNode, path: TraversalPath, where predicate: (GedcomNode) -> Bool) -> GedcomNode? {
+        func recurse(_ node: GedcomNode, _ remaining: ArraySlice<TraversalStep>) -> GedcomNode? {
+            guard let step = remaining.first else {
+                return predicate(node) ? node : nil
+            }
+
+            let tail = remaining.dropFirst()
+            switch step {
+            case .tag(let tag):
+                if let child = node.child(withTag: tag) {
+                    return recurse(child, tail)
+                }
+
+            case .follow(let tag):
+                if let key = node.child(withTag: tag)?.value,
+                   let target = recordIndex[key] {
+                    return recurse(target, tail)
+                }
+
+            case .followAll(let tag):
+                let keys = node.children(withTag: tag).compactMap { $0.value }
+                for key in keys {
+                    if let target = recordIndex[key],
+                       let match = recurse(target, tail) {
+                        return match
+                    }
+                }
+            }
+
+            return nil
+        }
+
+        return recurse(root, path.steps[...])
+    }
+
+    func firstValue(from root: GedcomNode, path: TraversalPath, where predicate: (GedcomNode) -> Bool) -> String? {
+        firstMatch(from: root, path: path, where: predicate)?.value
+    }
+
+    func allMatches(from root: GedcomNode, path: TraversalPath) -> [GedcomNode] {
+        // Future: support collecting all matches if `followAll` is present
+        []
+    }
+}
+
+/*
+ let path = TraversalPath.follow("FAMC").follow("HUSB")
+ let dad = navigator.traverse(from: person, path: path)
+
+ let birthDate = navigator.firstValue(
+     from: person,
+     path: .tag("BIRT").tag("DATE"),
+     where: { _ in true }
+ )
+ */
