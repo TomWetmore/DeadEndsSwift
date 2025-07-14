@@ -34,7 +34,7 @@ extension GedcomNode {
     }
 
     // father returns the first father (first HUSB in first FAMC) of this person.
-    func father(index: RecordIndex) -> GedcomNode? {
+    func fatherSimple(index: RecordIndex) -> GedcomNode? {
         guard let famKey = self.value(forTag: "FAMC"),
               let fam = index[famKey],
               let fatherKey = fam.value(forTag: "HUSB") else {
@@ -43,7 +43,9 @@ extension GedcomNode {
         return index[fatherKey]
     }
 
-    func revisedFather(index: RecordIndex) -> GedcomNode? {
+    // father returns the father a person. This version will scan multiple FAMC nodes, if there,
+    // and return the first father found.
+    public func father(index: RecordIndex) -> GedcomNode? {
         for famcKey in self.values(forTag: "FAMC") {
             guard let fam = index[famcKey],
                   let husbKey = fam.value(forTag: "HUSB"),
@@ -55,34 +57,29 @@ extension GedcomNode {
         return nil
     }
 
-    // Find the father of this individual.
-    func RRRfather(in index: RecordIndex) -> GedcomNode? {
+    public func fathers(in index: RecordIndex) -> [GedcomNode] {
+        var result: [GedcomNode] = []
+        var seenKeys: Set<String> = []
+
         for famc in children(withTag: "FAMC") {
-            guard let famKey = famc.value else { continue }
-            guard let family = index[famKey] else { continue }
-            if let husb = family.child(withTag: "HUSB"),
-               let husbKey = husb.value,
-               let father = index[husbKey] {
-                return father
+            guard let famKey = famc.value,
+                  let family = index[famKey] else { continue }
+
+            for husb in family.children(withTag: "HUSB") {
+                guard let husbKey = husb.value,
+                      !seenKeys.contains(husbKey),
+                      let father = index[husbKey] else { continue }
+
+                result.append(father)
+                seenKeys.insert(husbKey)
             }
         }
-        return nil
-    }
 
-    func myFather(in index: RecordIndex) -> GedcomNode? {
-        for famc in children(withTag: "FAMC") {
-            guard let fkey = famc.value else { continue }
-            guard let family = index[fkey] else { continue }
-            guard let husb = family.child(withTag: "HUSB") else { continue }
-            guard let hkey = husb.value else { continue }
-            guard let father = index[hkey] else { continue }
-            return father
-        }
-        return nil
+        return result
     }
 
     // mother returns the first mother (first WIFE in first FAMC of this person.
-    func mother(index: RecordIndex) -> GedcomNode? {
+    public func mother(index: RecordIndex) -> GedcomNode? {
         guard let famKey = self.value(forTag: "FAMC"),
               let fam = index[famKey],
               let motherKey = fam.value(forTag: "WIFE") else { return nil
