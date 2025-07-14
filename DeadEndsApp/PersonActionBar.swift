@@ -30,6 +30,20 @@ struct PersonActionBar: View {
             Button("Pedigree") {
                 model.path.append(Route.pedigree(person))
             }
+            Button("Family") {
+                guard let ri = model.database?.recordIndex else {
+                    model.status = "No database loaded"
+                    return
+                }
+                if let famsNode = person.child(withTag: "FAMS"),
+                   let famKey = famsNode.value,
+                   let family = ri[famKey] {
+                    model.path.append(Route.family(family))
+                    model.status = nil
+                } else {
+                    model.status = "No family (as spouse) found"
+                }
+            }
         }
         .buttonStyle(.bordered)
         //.buttonStyle(.borderedProminent)

@@ -3,9 +3,8 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 11 July 2025.
-//  Last changed on 12 July 2025.
+//  Last changed on 14 July 2025.
 //
-
 
 import SwiftUI
 import DeadEndsLib
@@ -16,26 +15,20 @@ struct FamilyView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Family View")
-                .font(.title)
-                .padding(.bottom)
+            Text("Family View").font(.title).padding(.bottom)
 
             if let husband = resolveRole("HUSB") {
-                PersonRow(person: husband, relation: "Husband")
+                PersonRow(person: husband, label: "Husband")
             }
-
             if let wife = resolveRole("WIFE") {
-                PersonRow(person: wife, relation: "Wife")
+                PersonRow(person: wife, label: "Wife")
             }
-
             Divider()
-            Text("Children:")
-                .font(.headline)
+            Text("Children:").font(.headline)
 
-            ForEach(children, id: \.self) { child in
-                PersonRow(person: child, relation: "Child")
+            ForEach(children, id: \.self) { child in
+                PersonRow(person: child, label: "Child")
             }
-
             Spacer()
         }
         .padding()
@@ -54,5 +47,3 @@ struct FamilyView: View {
         }
     }
 }
-
-// Reuse your PersonRow or PersonButton view for showing persons here.

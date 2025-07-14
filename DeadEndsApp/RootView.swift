@@ -3,8 +3,9 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 5 July 2025.
+//  Last changed on 14 July 2025.
 //
+
 import SwiftUI
 import DeadEndsLib
 
@@ -27,6 +28,8 @@ struct RootView: View {
                     PersonView(person: person)
                 case .pedigree(let person):
                     PedigreeView(person: person, generations: 4, buttonWidth: 200)
+                case .family(let family):
+                    FamilyView(family: family)
                 }
             }
         }
@@ -36,4 +39,5 @@ struct RootView: View {
 enum Route: Hashable {
     case person(GedcomNode)
     case pedigree(GedcomNode)
+    case family(GedcomNode)
 }
