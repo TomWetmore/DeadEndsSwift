@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 12 July 2025.
+//  Last changed on 14 July 2025.
 //
 
 import Foundation
@@ -388,15 +388,21 @@ extension GedcomNode {
 		return [] // Implement based on GNode structure
 	}
 
-	func husband(recordIndex: RecordIndex) -> GedcomNode? {
-		// Return husband of a family node
-		return nil // Implement based on GNode structure
-	}
+    public func husband(recordIndex: RecordIndex) -> GedcomNode? {
+        // Find the child node tagged "HUSB"
+        guard let key = self.child(withTag: "HUSB")?.value else {
+            return nil
+        }
+        return recordIndex[key]
+    }
 
-	func wife(recordIndex: RecordIndex) -> GedcomNode? {
-		// Return wife of a family node
-		return nil // Implement based on GNode structure
-	}
+    public func wife(recordIndex: RecordIndex) -> GedcomNode? {
+        // Find the child node tagged "HUSB"
+        guard let key = self.child(withTag: "WIFE")?.value else {
+            return nil
+        }
+        return recordIndex[key]
+    }
 
 	// getSex return the sex of a person (self)
 	func getSex() -> SexType {

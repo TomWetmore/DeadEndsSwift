@@ -15,6 +15,8 @@ import DeadEndsLib
 // Example use in PersonSeletionView:
 // PersonRow(person: somePerson, isInteractive: false)
 
+
+// PersonRow is a 
 struct PersonRow: View {
     @EnvironmentObject var model: AppModel
     let person: GedcomNode
@@ -30,7 +32,7 @@ struct PersonRow: View {
                     Text("\(label):")
                         .fontWeight(.semibold)
                 }
-                Text(displayName(for: person))
+                Text(person.displayName())
             }
             if showSummary {
                 HStack(spacing: 8) {
@@ -41,11 +43,12 @@ struct PersonRow: View {
                         Text("d. \(death)").foregroundColor(.secondary)
                     }
                 }
-                .font(.footnote)
+                //.font(.footnote)
+                .font(.body)
             }
         }
         .padding(8)
-        .background(tint ?? Color(.yellow))
+        //.background(tint ?? Color(.yellow))
         .cornerRadius(6)
         .frame(maxWidth: .infinity, alignment: .leading)
 

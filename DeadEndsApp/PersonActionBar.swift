@@ -3,53 +3,65 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 2 July 2025.
+//  Last changed on 14 July 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
+struct GedcomNodeList: Identifiable {
+    let id = UUID()
+    let nodes: [GedcomNode]
+}
+
 struct PersonActionBar: View {
     @EnvironmentObject var model: AppModel
     let person: GedcomNode
+    @State private var familyList: GedcomNodeList? = nil
 
     var body: some View {
         HStack {
-            Button("↑ Father") {
+            Button("Father") {
                 navigateToParent(sex: "M")
             }
-            Button("↓ Mother") {
+            Button("Mother") {
                 navigateToParent(sex: "F")
             }
-            Button("← Older Sibling") {
+            Button("Older Sibling") {
                 navigateToSibling(offset: -1)
             }
-            Button("→ Younger Sibling") {
+            Button("Younger Sibling") {
                 navigateToSibling(offset: +1)
             }
             Button("Pedigree") {
                 model.path.append(Route.pedigree(person))
             }
             Button("Family") {
-                guard let ri = model.database?.recordIndex else {
-                    model.status = "No database loaded"
-                    return
+                guard let ri = model.database?.recordIndex else { return }
+                let families = person.children(withTag: "FAMS").compactMap {
+                    $0.value.flatMap { ri[$0] }
                 }
-                if let famsNode = person.child(withTag: "FAMS"),
-                   let famKey = famsNode.value,
-                   let family = ri[famKey] {
-                    model.path.append(Route.family(family))
-                    model.status = nil
+                if families.count == 1 {
+                    model.path.append(Route.family(families[0]))
+                } else if families.count > 1 {
+                    familyList = GedcomNodeList(nodes: families)
                 } else {
-                    model.status = "No family (as spouse) found"
+                    model.status = "\(person.displayName) is not a spouse in any family."
                 }
             }
         }
         .buttonStyle(.bordered)
-        //.buttonStyle(.borderedProminent)
-        .font(.caption)
+        .font(.body)
         .tint(.secondary)
         .padding(.top)
+
+        .sheet(item: $familyList) { wrapped in
+            FamilySelectionSheet(families: wrapped.nodes) { selectedFamily in
+                familyList = nil
+                model.path.append(Route.family(selectedFamily))
+            }
+            .environmentObject(model)
+        }
     }
 
     private func navigateToParent(sex: String) {
@@ -75,7 +87,6 @@ struct PersonActionBar: View {
             model.status = "No family found"
             return
         }
-
         let siblings = family.children(withTag: "CHIL").compactMap { $0.value.flatMap { ri[$0] } }
         guard let index = siblings.firstIndex(of: person) else {
             model.status = "Could not locate person in siblings"
@@ -87,7 +98,6 @@ struct PersonActionBar: View {
             model.status = offset < 0 ? "No older sibling" : "No younger sibling"
             return
         }
-
         model.path.append(Route.person(siblings[newIndex]))
         model.status = nil
     }

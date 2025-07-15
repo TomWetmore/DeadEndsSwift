@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 14 July 2025.
+//  Last changed on 15 July 2025.
 //
 
 import SwiftUI
@@ -11,6 +11,8 @@ import DeadEndsLib
 
 struct RootView: View {
     @EnvironmentObject var model: AppModel
+    @State private var testSheet: Bool = false
+    @State private var testFamilies: [GedcomNode] = []
 
     var body: some View {
         NavigationStack(path: $model.path) {
@@ -40,4 +42,5 @@ enum Route: Hashable {
     case person(GedcomNode)
     case pedigree(GedcomNode)
     case family(GedcomNode)
+    //case selectFamily([GedcomNode])
 }

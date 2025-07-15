@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 3 July 2025
+//  Last changed on 15 July 2025
 //
 
 import Foundation
@@ -11,6 +11,8 @@ import SwiftUI
 import DeadEndsLib
 
 struct PersonView: View {
+    @State private var showFamilySelector = false
+    @State private var candidateFamilies: [GedcomNode] = []
     @EnvironmentObject var model: AppModel
     let person: GedcomNode
 
@@ -18,7 +20,7 @@ struct PersonView: View {
 
         VStack(alignment: .leading, spacing: 10) {
 
-            Text(displayName(for: person, uppercaseSurname: true))
+            Text(person.displayName(uppercaseSurname: true))
                 .font(.title3)
                 .fontWeight(.semibold)
                 .padding(8)
@@ -38,7 +40,7 @@ struct PersonView: View {
                 if let ri = model.database?.recordIndex,
                    let father = person.resolveParent(sex: "M", recordIndex: ri) {
                     PersonRow(person: father, label: "Father", tint: .blue)
-                    //PersonButton(person: father, relation: "father")
+                    PersonButton(person: father, relation: "father")
                 }
 
                 // Mother
@@ -63,7 +65,7 @@ struct PersonView: View {
                             node.value.flatMap { ri[$0] }
                         }
 
-                        ForEach(children, id: \.self) { child in
+                        ForEach(children, id: \.self) { child in // Works here but not in family selection??
                             PersonButton(person: child, relation: "child")
                         }
                     }
@@ -127,27 +129,6 @@ public extension GedcomNode {
     }
 }
 
-// displayName returns the name of a Person ready for display.
-func displayName(for person: GedcomNode, uppercaseSurname: Bool = false) -> String {
-    guard let raw = person.child(withTag: "NAME")?.value else { return "(no name)" }
-
-    // Split the name into components, with surname delimited by slashes
-    let parts = raw.components(separatedBy: "/")
-    switch parts.count {
-    case 3: // Given /Surname/ suffix
-        let given = parts[0].trimmingCharacters(in: .whitespaces)
-        let surname = uppercaseSurname ? parts[1].uppercased() : parts[1]
-        let suffix = parts[2].trimmingCharacters(in: .whitespaces)
-        return "\(given) \(surname)\(suffix.isEmpty ? "" : " \(suffix)")"
-    case 2: // Given /Surname/
-        let given = parts[0].trimmingCharacters(in: .whitespaces)
-        let surname = uppercaseSurname ? parts[1].uppercased() : parts[1]
-        return "\(given) \(surname)"
-    default:
-        return raw // Fallback if format isn't slash-delimited
-    }
-}
-
 struct PersonButton: View {
     @EnvironmentObject var model: AppModel
     let person: GedcomNode
@@ -162,7 +143,7 @@ struct PersonButton: View {
                     Text("\(relation):")
                         .fontWeight(.semibold)
                 }
-                Text(displayName(for: person))
+                Text(person.displayName())
             }
             .padding(4)
             .frame(maxWidth: .infinity, alignment: .leading)

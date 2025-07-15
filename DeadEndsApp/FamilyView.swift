@@ -9,6 +9,7 @@
 import SwiftUI
 import DeadEndsLib
 
+// FamilyView is the 'top-level' View of a Family.
 struct FamilyView: View {
     @EnvironmentObject var model: AppModel
     let family: GedcomNode
@@ -23,13 +24,16 @@ struct FamilyView: View {
             if let wife = resolveRole("WIFE") {
                 PersonRow(person: wife, label: "Wife")
             }
-            Divider()
-            Text("Children:").font(.headline)
+            //Divider()
+            ScrollView {
 
-            ForEach(children, id: \.self) { child in
-                PersonRow(person: child, label: "Child")
+                ForEach(children, id: \.self) { child in
+                    PersonRow(person: child, label: "Child")
+                }
+                Spacer()
             }
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding()
         }
         .padding()
         .navigationTitle("Family")

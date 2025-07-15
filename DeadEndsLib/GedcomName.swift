@@ -129,3 +129,28 @@ extension GedcomNode {
         return "(no name)"
     }
 }
+
+
+// displayName returns the name of a Person ready for display.
+extension GedcomNode {
+    public func displayName(uppercaseSurname: Bool = false) -> String {
+        guard let raw = self.child(withTag: "NAME")?.value else { return "(no name)" }
+
+        // Split the name into components, with surname delimited by slashes
+        let parts = raw.components(separatedBy: "/")
+        switch parts.count {
+        case 3: // Given /Surname/ suffix
+            let given = parts[0].trimmingCharacters(in: .whitespaces)
+            let surname = uppercaseSurname ? parts[1].uppercased() : parts[1]
+            let suffix = parts[2].trimmingCharacters(in: .whitespaces)
+            return "\(given) \(surname)\(suffix.isEmpty ? "" : " \(suffix)")"
+        case 2: // Given /Surname/
+            let given = parts[0].trimmingCharacters(in: .whitespaces)
+            let surname = uppercaseSurname ? parts[1].uppercased() : parts[1]
+            return "\(given) \(surname)"
+        default:
+            return raw // Fallback if format isn't slash-delimited
+        }
+    }
+}
+

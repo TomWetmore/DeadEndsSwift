@@ -15,14 +15,14 @@ struct PersonMatch: Identifiable {
     let node: GedcomNode
 
     var olddisplayLine: String {
-        let name = displayName(for: node)
+        let name = node.displayName()
         let birth = node.eventSummary(tag: "BIRT") ?? "?"
         let death = node.eventSummary(tag: "DEAT") ?? "?"
         return "\(name) (b. \(birth) — d. \(death))"
     }
 
     var displayLine: String {
-        let name = displayName(for: node)
+        let name = node.displayName()
         let birth = node.eventSummary(tag: "BIRT")
         let death = node.eventSummary(tag: "DEAT")
         switch (birth, death) {
