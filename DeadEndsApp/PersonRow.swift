@@ -16,7 +16,7 @@ import DeadEndsLib
 // PersonRow(person: somePerson, isInteractive: false)
 
 
-// PersonRow is a 
+// PersonRow is a wideish button.
 struct PersonRow: View {
     @EnvironmentObject var model: AppModel
     let person: GedcomNode
@@ -47,21 +47,23 @@ struct PersonRow: View {
                 .font(.body)
             }
         }
-        .padding(8)
-        //.background(tint ?? Color(.yellow))
-        .cornerRadius(6)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(backgroundColor(for: person))
+        .cornerRadius(6)
 
         if isInteractive {
             Button {
                 model.path.append(Route.person(person))
             } label: {
                 content
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             //.buttonStyle(.plain)
             .buttonStyle(PlainButtonStyle())
         } else {
             content
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

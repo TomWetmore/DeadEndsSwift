@@ -54,8 +54,9 @@ struct PersonActionBar: View {
         .font(.body)
         .tint(.secondary)
         .padding(.top)
-
-        .sheet(item: $familyList) { wrapped in
+        // Learn a little Swift. .sheet takes an optional. If nil nothing happens. If non-nil
+        // the content closure is called. It takes the unwrapped item and returns a View.
+        .sheet(item: $familyList) { wrapped in // shown if familyList is non-nil
             FamilySelectionSheet(families: wrapped.nodes) { selectedFamily in
                 familyList = nil
                 model.path.append(Route.family(selectedFamily))

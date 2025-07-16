@@ -3,16 +3,17 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 14 July 2025.
-//  Last changed on 14 July 2025.
+//  Last changed on 16 July 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-
+// FamilySelectionSheet allows the user to select among families represented as an array
+// of FAM GedcomNodes.
 struct FamilySelectionSheet: View {
-    let families: [GedcomNode]
-    let onSelect: (GedcomNode) -> Void
+    let families: [GedcomNode] // Array of FAM GedcomNodes
+    let onSelect: (GedcomNode) -> Void // Closure to call on selected FAM node.
 
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
@@ -36,7 +37,7 @@ struct FamilySelectionSheet: View {
                             .padding(4)
                     }
                 }
-                .frame(minHeight: 200) // <-- Ensures the List has enough space
+                .frame(minHeight: 200) // Ensures the List has enough space
             } else {
                 Text("No database loaded")
             }

@@ -35,18 +35,24 @@ struct PersonView: View {
             Text("Death: \(person.eventSummary(tag: "DEAT") ?? "")").padding(.horizontal)
 
             Divider()
+                .frame(height: 1)
+                .padding(.horizontal)
+                .padding(.bottom, 0)
+                //.background(Color.gray.opacity(0.5))
+
             ScrollView {
                 // Father
                 if let ri = model.database?.recordIndex,
                    let father = person.resolveParent(sex: "M", recordIndex: ri) {
                     PersonRow(person: father, label: "Father", tint: .blue)
-                    PersonButton(person: father, relation: "father")
+                    //PersonButton(person: father, relation: "father")
                 }
 
                 // Mother
                 if let ri = model.database?.recordIndex,
                    let mother = person.resolveParent(sex: "F", recordIndex: ri) {
-                    PersonButton(person: mother, relation: "mother")
+                    //PersonButton(person: mother, relation: "mother")
+                    PersonRow(person: mother, label: "Mother", tint: .pink)
                 }
 
                 Divider()
@@ -58,7 +64,8 @@ struct PersonView: View {
 
                     ForEach(families, id: \.self) { family in
                         if let spouse = family.resolveSpouse(for: person, recordIndex: ri) {
-                            PersonButton(person: spouse, relation: "spouse")
+                            //PersonButton(person: spouse, relation: "spouse")
+                            PersonRow(person: spouse, label: "Spouse", tint: backgroundColor(for: spouse))
                         }
 
                         let children = family.children(withTag: "CHIL").compactMap { node in
@@ -66,13 +73,15 @@ struct PersonView: View {
                         }
 
                         ForEach(children, id: \.self) { child in // Works here but not in family selection??
-                            PersonButton(person: child, relation: "child")
+                            //PersonButton(person: child, relation: "child")
+                            PersonRow(person: child, label: "Child", tint: backgroundColor(for: child))
                         }
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding()
+            .padding([.top], 0)
+            .padding([.leading, .trailing], 8)
 
             // Status area to give user important messages.
             VStack(alignment: .leading, spacing: 4) {

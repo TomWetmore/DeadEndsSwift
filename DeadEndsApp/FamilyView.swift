@@ -15,20 +15,22 @@ struct FamilyView: View {
     let family: GedcomNode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Family View").font(.title).padding(.bottom)
 
+        VStack(alignment: .leading, spacing: 12) {
             if let husband = resolveRole("HUSB") {
                 PersonRow(person: husband, label: "Husband")
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             if let wife = resolveRole("WIFE") {
                 PersonRow(person: wife, label: "Wife")
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             //Divider()
             ScrollView {
 
                 ForEach(children, id: \.self) { child in
                     PersonRow(person: child, label: "Child")
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Spacer()
             }
