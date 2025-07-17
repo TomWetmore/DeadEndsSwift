@@ -3,16 +3,15 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 15 July 2025.
+//  Last changed on 17 July 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
+// RootView is ...
 struct RootView: View {
     @EnvironmentObject var model: AppModel
-    @State private var testSheet: Bool = false
-    @State private var testFamilies: [GedcomNode] = []
 
     var body: some View {
         NavigationStack(path: $model.path) {
@@ -20,7 +19,6 @@ struct RootView: View {
                 if model.database == nil {
                     LoaderView()
                 } else if model.path.isEmpty {
-                    //SelectPersonView()
                     PersonSelectionView()
                 }
             }
@@ -38,9 +36,9 @@ struct RootView: View {
     }
 }
 
+// Route is in enumeration of the values that are pushed on a NavigationStack.
 enum Route: Hashable {
     case person(GedcomNode)
     case pedigree(GedcomNode)
     case family(GedcomNode)
-    //case selectFamily([GedcomNode])
 }
