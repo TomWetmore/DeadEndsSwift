@@ -133,3 +133,34 @@ public extension GedcomNode {
     }
 }
 
+public extension GedcomNode {
+
+    /// Return GEDCOM text for this node and its descendants.
+    /// - Parameters:
+    ///   - level: The current level number (defaults to 0).
+    ///   - indent: If `true`, indent lines to improve human readability.
+    func gedcomText(level: Int = 0, indent: Bool = false) -> String {
+        var lines: [String] = []
+
+        let spacer = indent ? String(repeating: "  ", count: level) : ""
+
+        var line = spacer + "\(level)"
+        if level == 0, let key = self.key {
+            line += " \(key)"
+        }
+        line += " \(tag)"
+        if let value = value, !value.isEmpty {
+            line += " \(value)"
+        }
+        lines.append(line)
+
+        var child = self.child
+        while let node = child {
+            lines.append(node.gedcomText(level: level + 1, indent: indent))
+            child = node.sibling
+        }
+
+        return lines.joined(separator: "\n")
+    }
+}
+

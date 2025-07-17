@@ -18,6 +18,7 @@ struct PersonActionBar: View {
     @EnvironmentObject var model: AppModel
     let person: GedcomNode
     @State private var familyList: GedcomNodeList? = nil
+    @State private var showEditSheet = false
 
     var body: some View {
         HStack {
@@ -48,6 +49,13 @@ struct PersonActionBar: View {
                 } else {
                     model.status = "\(person.displayName) is not a spouse in any family."
                 }
+            }
+            Button("Edit") {
+                showEditSheet = true
+            }
+            .sheet(isPresented: $showEditSheet) {
+                PersonEditView(person: person)
+                    .environmentObject(model)
             }
         }
         .buttonStyle(.bordered)
