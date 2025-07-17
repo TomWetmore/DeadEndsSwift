@@ -3,14 +3,14 @@
 //  DeadEndsApp.swift
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 11 July 2025.
+//  Last changed on 17 July 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
 @main
-struct DisplayPersonApp: App {
+struct DeadEndsApp: App {
     @StateObject private var model = AppModel()
 
     var body: some Scene {
