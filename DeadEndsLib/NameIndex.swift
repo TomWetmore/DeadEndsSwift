@@ -8,7 +8,7 @@
 
 import Foundation
 
-// NameIndex is an index that maps name keys to the sets of keys to the person with a name that matches the name key.
+/// A `NameIndex` maps name keys to the sets of record keys of person with a name that matches the name key.
 public struct NameIndex {
 
 	static let map: [Character: String] = [ // Soundex based map used to generate name keys (not for phonetics).
@@ -24,15 +24,33 @@ public struct NameIndex {
 	// NOTE: MIGHT WANT TO MAKE INDEX PRIVATE AND ADD A PUBLIC ACCESSOR.
 	var index = [String: Set<String>]()
 
-	// add adds a name key and record key to a name index. The name argument is converted to the name key used.
-	mutating func add(name: String, recordKey: String) {
+	/// Adds an entry to the `NameIndex`; `name` is converted to its name key.
+	public mutating func add(name: String, recordKey: String) {
 		self.add(nameKey: nameKey(from: name), recordKey: recordKey)
 	}
 
-	// add adds a name key and record key to the name index.
+	/// Adds an entry to the `NameIndex`.
 	mutating func add(nameKey: String, recordKey: String) {
 		index[nameKey, default: Set()].insert(recordKey)
 	}
+
+    /// Removes an entry from the `NameIndex`; `name` is converted to its name key.
+    public mutating func remove(name: String, recordKey: String) {
+        remove(nameKey: nameKey(from: name), recordKey: recordKey)
+    }
+
+    /// Removes an entry from the `NameIndex` using a name key.
+    mutating func remove(nameKey: String, recordKey: String) {
+        if var records = index[nameKey] {
+            records.remove(recordKey)
+            // Remove record key set if now empty.
+            if records.isEmpty {
+                index.removeValue(forKey: nameKey)
+            } else {
+                index[nameKey] = records // Update the modified set
+            }
+        }
+    }
 
 	// Retrieve the record keys of a name key.
 	func getKeys(forName name: String) -> Set<String>? {
@@ -117,13 +135,13 @@ func nameKey(from name: String) -> String {
 	return "\(firstChar)\(soundex(for: surname))"
 }
 
-// Person is an alias for a GedcomNode that is the root of a 0 INDI record.
+/// Alias for a `GedcomNode` that is the root of a person record.
 public typealias Person = GedcomNode
 
 // Extension of GedcomNode where self is a Person root.
 extension Person {
 
-	// names returns the array of non-nil values for the 1 NAME lines in a Person.
+	/// Returns the array of non-nil values of the `1 NAME` lines in a person record.
     func names() -> [String] {
         return values(forTag: "NAME")
     }

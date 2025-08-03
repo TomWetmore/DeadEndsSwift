@@ -31,7 +31,7 @@ public struct Error {
 	let severity: Severity
 	let source: String?
 	let line: Int?
-	let message: String
+	public let message: String
 
 	init(type: ErrorType, severity: Severity, source: String? = nil, line: Int? = 0,
 		 message: String) {

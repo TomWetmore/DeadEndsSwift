@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 12 July 2025.
+//  Last changed on 20 July 2025.
 //
 
 import Foundation
@@ -73,8 +73,8 @@ extension GedcomNode {
         return count
     }
 
-    // offset returns the number of nodes before this node in its tree.
-    func offset() -> Int {
+    /// Returns the number of `GedcomNode`s before `self` in its tree.
+    public func offset() -> Int {
         var count = 0
         var curNode: GedcomNode? = self
         var loops = 0
@@ -92,8 +92,8 @@ extension GedcomNode {
         return count
     }
 
-    // level returns the level of a node in a tree by getting the length of the path to the root.
-    func level() -> Int {
+    /// Return the level of `self` in its tree.
+    public func level() -> Int {
         var level = -1
         var curr: GedcomNode? = self
         while let node = curr {
@@ -105,10 +105,12 @@ extension GedcomNode {
     }
 }
 
-// isKey returns true if a String has the form of a Gedcom key.
-func isKey(_ value: String) -> Bool {
+/// Return `true` if a `String` has the form of a Gedcom key.
+public func isKey(_ value: String) -> Bool {
     return value.hasPrefix("@") && value.hasSuffix("@")
 }
+
+
 enum RecordType {
     case header, trailer, person, family, other
 }

@@ -3,13 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 12 July 2025.
+//  Last changed on 22 July 2025.
 //
 
 import Foundation
 
 // Splits a person GNode tree into its components.
-func splitPerson(indi: GedcomNode) -> (name: GedcomNode?, refn: GedcomNode?, sex: GedcomNode?, body: GedcomNode?, famc: GedcomNode?, fams: GedcomNode?) {
+public func splitPerson(indi: GedcomNode) -> (name: GedcomNode?, refn: GedcomNode?, sex: GedcomNode?, body: GedcomNode?, famc: GedcomNode?, fams: GedcomNode?) {
 	guard indi.tag == "INDI" else {
 		fatalError("splitPerson called on non-person node")
 	}
@@ -60,7 +60,7 @@ func splitPerson(indi: GedcomNode) -> (name: GedcomNode?, refn: GedcomNode?, sex
 }
 
 // Joins a person GNode tree from its components.
-func joinPerson(indi: GedcomNode, name: GedcomNode?, refn: GedcomNode?, sex: GedcomNode?, body: GedcomNode?, famc: GedcomNode?, fams: GedcomNode?) {
+public func joinPerson(indi: GedcomNode, name: GedcomNode?, refn: GedcomNode?, sex: GedcomNode?, body: GedcomNode?, famc: GedcomNode?, fams: GedcomNode?) {
 	guard indi.tag == "INDI" else {
 		fatalError("joinPerson called on non-person node")
 	}
@@ -90,7 +90,7 @@ func joinPerson(indi: GedcomNode, name: GedcomNode?, refn: GedcomNode?, sex: Ged
 }
 
 // Splits a family GNode tree into its components.
-func splitFamily(fam: GedcomNode) -> (refn: GedcomNode?, husb: GedcomNode?, wife: GedcomNode?, chil: GedcomNode?, rest: GedcomNode?) {
+public func splitFamily(fam: GedcomNode) -> (refn: GedcomNode?, husb: GedcomNode?, wife: GedcomNode?, chil: GedcomNode?, rest: GedcomNode?) {
 	guard fam.tag == "FAM" else {
 		fatalError("splitFamily called on non-family node")
 	}
@@ -138,7 +138,7 @@ func splitFamily(fam: GedcomNode) -> (refn: GedcomNode?, husb: GedcomNode?, wife
 }
 
 // Joins a family GNode tree from its components.
-func joinFamily(fam: GedcomNode, refn: GedcomNode?, husb: GedcomNode?, wife: GedcomNode?, chil: GedcomNode?, rest: GedcomNode?) {
+public func joinFamily(fam: GedcomNode, refn: GedcomNode?, husb: GedcomNode?, wife: GedcomNode?, chil: GedcomNode?, rest: GedcomNode?) {
 	guard fam.tag == "FAM" else {
 		fatalError("joinFamily called on non-family node")
 	}
@@ -167,13 +167,13 @@ func joinFamily(fam: GedcomNode, refn: GedcomNode?, husb: GedcomNode?, wife: Ged
 }
 
 // normalizePerson puts a person GNode tree into a standard format.
-func normalizePerson(_ indi: GedcomNode) {
+public func normalizePerson(_ indi: GedcomNode) {
 	let (names, refns, sex, body, famcs, famss) = splitPerson(indi: indi)
 	joinPerson(indi: indi, name: names, refn: refns, sex: sex, body: body, famc: famcs, fams: famss)
 }
 
 // normalizeFamily puts a family GNode tree into a standard format.
-func normalizeFamily(_ fam: GedcomNode) {
+public func normalizeFamily(_ fam: GedcomNode) {
 	let (refns, husb, wife, chil, body) = splitFamily(fam: fam)
 	joinFamily(fam: fam, refn: refns, husb: husb, wife: wife, chil: chil, rest: body)
 }

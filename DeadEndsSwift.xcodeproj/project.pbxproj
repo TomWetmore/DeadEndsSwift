@@ -24,6 +24,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		260186FD2E3D6423006A7ECC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		263408B02E21680900F4E6DE /* DeadEndsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeadEndsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		263408DA2E216A7200F4E6DE /* RunScript */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RunScript; sourceTree = BUILT_PRODUCTS_DIR; };
 		2673AD292E22A6B10078C61B /* libWarehouse.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWarehouse.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -43,6 +44,7 @@
 		2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				File.swift,
 				IntraInter.swift,
 				MoreTraversalCode.swift,
 				TraverseCode.swift,
@@ -171,6 +173,7 @@
 		268206592D13370F0051544B = {
 			isa = PBXGroup;
 			children = (
+				260186FD2E3D6423006A7ECC /* README.md */,
 				26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */,
 				263408B12E21680900F4E6DE /* DeadEndsApp */,
 				263408DB2E216A7200F4E6DE /* RunScript */,

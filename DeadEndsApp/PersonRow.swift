@@ -30,9 +30,10 @@ struct PersonRow: View {
             HStack {
                 if let label = label {
                     Text("\(label):")
-                        .fontWeight(.semibold)
+                        .fontWeight(.medium)
                 }
                 Text(person.displayName())
+                    .fontWeight(.semibold)
             }
             if showSummary {
                 HStack(spacing: 8) {

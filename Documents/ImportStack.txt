@@ -1,0 +1,101 @@
+-------------------------------------------------------------------------------------------------------
+1. getDatabasesFromPaths trys to create a database for each Gedcom file in an array of paths.
+Defined in Database.swift. Not currently called.
+
+public func getDatabasesFromPaths(paths, errlog) -> [Database]?
+	getDatabaseFromPath [2.]
+
+-------------------------------------------------------------------------------------------------------
+2. getDatabaseFromPath trys to create a database from a Gedcom file at given path. If there are errors
+no database is created and errlog holds the reasons.
+Defined in Database.swift.
+
+public func getDatabaseFromPath(path, errlog) -> Database? {
+	getValidRecordsFromPath [3.]
+
+This function is called by application code to create Databases. The user supplys the path to a
+Gedcom file, and a reference to an ErrorLog.
+
+var errLog: [Error] = []
+
+
+----------------------------------------------------------------------------------------
+3. getValidRecordsFromPath -- reads a Gedcom file and load the main database containers.
+ImportStack.swift
+func getValidRecordsFromPath(path, tagmap, keymap, errlog) -> (index, persons, families)
+	getRecordsFromPath [4.]
+	checkKeysAndReferences
+	validatePersons
+	validateFamilies
+
+
+4. getRecordsFromPath -- reads a Gedcom file to a list of records.
+ImportStack.swift
+func getRecordsFromPath(path, tagmap, keymap, errorlog) -> RootList?
+	getDataNodesFromPath [5.]
+	getRecordsFromDataNodes [6.]
+
+
+5. getDataNodesFromPath -- reads a Gedcom file and returns the list of DataNodes
+importStack.swift
+func getDataNodesFromPath(path, tagmap, keymap, errlog) -> DataNodes<Int>? {
+	getDataNodesFromLines [7.]
+
+
+6. getRecordsFromDataNodes -- returns the records from a list of data nodes.
+   This is one of the workhorses implementing the Gedcom syntax state machine.
+importStack.swift
+func getRecordsFromDataNodes(datanodes, keymap, errlog) -> RootList
+
+
+7. getDataNodesFromLines -- converts an array of lines to an array of data nodes
+ImportStack.swift
+func getDataNodesFromLines(lines, source, tagmap, keymap, errlog) -> DataNodes<Int>? {
+	extractFields [8.]
+
+8. extractFields -- 'lexer' that etracts the level, key, tag and value from a Gedcom line string.
+importStack.swift
+func extractFields(from) -> ReadResult
+
+
+
+
+/// Gets Gedcom records from a String.
+n. getRecordsFromString(sourceText, tagmap, keymap, errorlog) -> RootList? 
+	getDataNodesFromString
+	getRecordsFromDataNodes
+
+o. getDataNodesFromString
+
+
+HOW TO CREATE A DATABASE.
+
+The normal way to create a DeadEnds database is to call:
+
+	getDatabaseFromPath(path: String, errlog: inout ErrorLog) -> Database?
+
+supply the path to a Gedcom file, and an ErrorLog.
+
+getDatabaseFromPath calls getValidRecordsFromPath. 
+
+// getValidRecordsFromPath reads a Gedcom file into the main database containers. If keymap is nil one is created.
+func getValidRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap, errlog: inout ErrorLog)
+		-> (index: RecordIndex, persons: RootList, families: RootList)? {
+
+	let rootlist = getRecordsFromPath(path: path, tagmap: &tagmap, keymap: &keymap, errorlog: &errlog)
+	if errlog.count > 0 || rootlist == nil { return nil }
+	checkKeysAndReferences(records: rootlist!, path: path, keymap: keymap, errlog: &errlog)
+	if errlog.count > 0 { return nil }
+	var index = RecordIndex()
+	var persons = RootList()
+	var	families = RootList()
+	for root in rootlist! {
+		if let key = root.key { index[key] = root }
+		if root.tag == "INDI" { persons.append(root) }
+		if root.tag == "FAM" { families.append(root) }
+	}
+	let context = ValidationContext(index: index, keymap: keymap, source: path)
+	validatePersons(persons: persons, context: context, errlog: &errlog)
+	//validateFamilies(families: families, context: context, errlog: &errlog)
+	return (index, persons, families)
+}

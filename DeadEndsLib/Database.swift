@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 Deceber 2024.
-//  Last changed on 13 July 2025.
+//  Last changed on 18 July 2025.
 //
 
 import Foundation
@@ -11,23 +11,39 @@ import Foundation
 // RecordIndex is a dictionary that maps record keys to records.
 public typealias RecordIndex = [String: GedcomNode]
 
-// KeyMap is a dictionary used when building a database; it maps record keys to the lines where records begin.
-typealias KeyMap = [String : Int]
+/// KeyMap is a dictionary used when building a database; it maps record keys to the lines where records begin.
+public typealias KeyMap = [String : Int]
 
-// RootList is an array of records, that is, 0 level nodes.
+/// `RootList` is an array of records (level 0 `GedcomNode`s).
 public typealias RootList = [GedcomNode]
 
-// Database is the struct for the DeadEnds in-RAM Database.
+/// `Database` is the DeadEnds in-RAM database.
+///
+/// A `Database` is created from a Gedcom file.
 public class Database {
-	public private(set) var recordIndex: RecordIndex // Complete record index.
-    public private(set) var header: GedcomNode? // Header record.
-	public private(set) var nameIndex: NameIndex // Index of all 1 NAME values to record key sets.
-	public private(set) var refnIndex: RefnIndex // Index of all 1 REFN vaules to ...
-	var tagmap: TagMap // Single copies of all tag strings.
+
+    /// Index of all GedcomNode records in the database.
+	public private(set) var recordIndex: RecordIndex
+
+    /// Copy of the header record from the Gedcom file.
+    public private(set) var header: GedcomNode?
+
+    /// Index of Person names; maps the keys of 1 NAME values to person record sets.
+	public var nameIndex: NameIndex
+
+    /// Index of 1 REFN values.
+	public var refnIndex: RefnIndex
+
+    /// Single copies of tag strings.
+	public var tagmap: TagMap
+
+    /// Set when `Database` changes.
 	var dirty: Bool = false
 
-    init(recordIndex: RecordIndex, persons: RootList, families: RootList, nameIndex: NameIndex,
-         refnIndex: RefnIndex, tagmap: TagMap, dirty: Bool = false) {
+    /// Creates and initializes a `Database`.
+    init(recordIndex: RecordIndex, nameIndex: NameIndex,
+             refnIndex: RefnIndex, tagmap: TagMap, dirty: Bool = false)
+     {
         self.recordIndex = recordIndex
         self.nameIndex = nameIndex
         self.refnIndex = refnIndex
@@ -38,27 +54,29 @@ public class Database {
 
 extension Database {
 
-    // persons returns an Array of all Persons in the Database.
+    /// Returns the Array of all Persons in the database.
     var persons: [GedcomNode] {
         recordIndex.values.filter { $0.tag == "INDI" }
     }
 
-    // families returns an Array of all Families in the Database.
+    /// Returns the array of all Families in the database.
     var families: [GedcomNode] {
         recordIndex.values.filter { $0.tag == "FAM" }
     }
 
+    /// Returns the number of Persons in the database.
     var personCount: Int {
         recordIndex.values.lazy.filter { $0.tag == "INDI" }.count
     }
 
+    /// Returns the number of Families in the database.
     var familyCount: Int {
         recordIndex.values.lazy.filter { $0.tag == "FAM" }.count
     }
 }
 
-// getDatabasesFromPaths trys to create a database for each path in a list. The databases are returned in an optioinal
-// array. This function is not used yet, anticipating future applications that deal with mulitple databases.
+/// Attempts to create a DeadEnds `Database` for each path in a list. The databases are returned in an
+/// array. This function is not used yet, anticipating future applications that deal with mulitple databases.
 public func getDatabasesFromPaths(paths: [String], errlog: inout ErrorLog) -> [Database]? {
 	var databases = [Database]()
 	for path in paths {
@@ -69,25 +87,40 @@ public func getDatabasesFromPaths(paths: [String], errlog: inout ErrorLog) -> [D
 	return databases.count > 0 ? databases : nil
 }
 
-// getDatabaseFromPath trys to create a database for a Gedcom path. If there are errors no database is created and
-// errlog will hold the errors. Path names a Gedcom file; future extensions may allow other sources of Gedcom data.
-// Calls getValidRecordsFromPath to get the record index and person and family root lists. If all is okay the name
-// and refn indexes are created, and the database is returned.
+/// Creates a DeadEnds `Database` from a Gedcom path. If there are errors no database is created and
+/// `errlog` holds the errors.
+///
+/// Parameters
+/// - `path`: path to Gedcom file.
+/// - `errlog`: reference to an `ErrorLog` (`[Error]`).
 public func getDatabaseFromPath(_ path: String, errlog: inout ErrorLog) -> Database? {
-	var keymap = KeyMap() // Maps record keys to the lines where defined.
-	var tagmap = TagMap() // So there is only one copy of each tag.
-	guard let (index, persons, families) = getValidRecordsFromPath(path: path, tagmap: &tagmap, keymap: &keymap,
-																   errlog: &errlog)
-	else { return nil } // errlog holds the errors.
-	let nameIndex = getNameIndex(persons: persons)
-	//var refnIndex = getRefnIndex(persons: persons) // GET THIS WRITTEN!!
-	return Database(recordIndex: index, persons: persons, families: families,
-					nameIndex: nameIndex, refnIndex: RefnIndex(), tagmap: tagmap)
+    let source = FileGedcomSource(path: path)
+    return getDatabaseFromSource(source, errlog: &errlog)
 }
+
+public func getDatabaseFromSource(_ source: GedcomSource, errlog: inout ErrorLog) -> Database? {
+    var keymap = KeyMap() // Maps record keys to the lines where defined.
+    var tagmap = TagMap() // So there is only one copy of each tag.
+
+    guard let (index, persons, families) = getValidRecordsFromSource(source: source, tagmap: &tagmap, keymap: &keymap,
+                                                                     errlog: &errlog)
+    else { return nil } // errlog holds the errors.
+
+    let nameIndex = getNameIndex(persons: persons)
+    // let refnIndex = getRefnIndex(persons: persons) // Implement when ready.
+
+    return Database(recordIndex: index,
+                    nameIndex: nameIndex,
+                    refnIndex: RefnIndex(),
+                    tagmap: tagmap)
+}
+
+
+
 
 extension Database {
 
-    // personKeys(name:) returns the list of keys of all persons with a name that matches.
+    /// Returns the list of keys of all persons with a name that matches.
     public func personKeys(forName name: String) -> [String] {
         var matchingKeys: [String] = []
         let nameKey = nameKey(from: name) // Name key of name.
@@ -110,7 +143,7 @@ extension Database {
         return matchingKeys
     }
 
-    // persons(withName:) returns the array of persons who have names that match name.
+    /// Returns the array of persons who have names that match name.
     public func persons(withName name: String) -> [Person] {
         personKeys(forName: name).compactMap { recordIndex[$0] }
     }

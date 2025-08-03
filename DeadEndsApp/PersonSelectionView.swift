@@ -3,23 +3,16 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed 29 June 2025.
+//  Last changed 18 July 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-// Simple model for displaying a matched person.
+// PersonMatch is a struct using a Gedcom key for an id, and a Gedcom node.
 struct PersonMatch: Identifiable {
-    let id: String // GEDCOM key
-    let node: GedcomNode
-
-    var olddisplayLine: String {
-        let name = node.displayName()
-        let birth = node.eventSummary(tag: "BIRT") ?? "?"
-        let death = node.eventSummary(tag: "DEAT") ?? "?"
-        return "\(name) (b. \(birth) — d. \(death))"
-    }
+    let id: String // Key of an INDI node.
+    let node: GedcomNode // INDI node.
 
     var displayLine: String {
         let name = node.displayName()
@@ -34,7 +27,9 @@ struct PersonMatch: Identifiable {
     }
 }
 
-// View for searching persons by name and selecting one.
+// PersonSelectionView is a View that searches for a list of persons by name and allows user to
+// select one.
+
 struct PersonSelectionView: View {
 
     @EnvironmentObject var model: AppModel
@@ -44,14 +39,14 @@ struct PersonSelectionView: View {
     var body: some View {
         VStack(alignment: .leading) {
             Text("Enter a name to search for:")
-                .font(.headline)
+                .font(.body)
             HStack {
                 TextField("e.g. Thomas/Wetmore", text: $query)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .onSubmit {
                         performSearch()
                     }
-                Button("Search") {
+                Button("Search for persons with name") {
                     performSearch()
                 }
             }
@@ -75,10 +70,13 @@ struct PersonSelectionView: View {
         .padding()
     }
 
-    // performSearch sets the results array; as a method it has access to model, results, and query.
+    // performSearch sets the results array; it has access to model, results, and query.
+    // Synopsis: if there is a database, look up the persons matching the query (a partial name);
+    // convert each match (an INDI node) into a PersonMatch object; sort those objects alphabetically
+    // by name; assign the result to results.
     private func performSearch() {
-        guard let db = model.database else { return } // Get the database.
-        results =  db.persons(withName: query).map { PersonMatch(id: $0.key!, node: $0) }
+        guard let db = model.database else { return }
+        results = db.persons(withName: query).map { PersonMatch(id: $0.key!, node: $0) }
             .sorted {
                 ($0.node.gedcomName ?? GedcomName("")) < ($1.node.gedcomName ?? GedcomName(""))
             }
