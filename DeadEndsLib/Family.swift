@@ -8,13 +8,10 @@
 
 import Foundation
 
-extension GedcomNode {
-
-    // Returns the list of persons (root nodes) who are the children in a family.
-    // The order of the children matches the order of CHIL nodes in the family.
-    func children(index: RecordIndex) -> [GedcomNode] {
-        return self.values(forTag: "CHIL").compactMap { index[$0] }
-    }
+/// Returns the list of children (root nodes) in a family. Order is maintained.
+func childrenOf(family: GedcomNode, index: RecordIndex) -> [GedcomNode] {
+    return family.values(forTag: "CHIL").compactMap { index[$0] }
 }
+
 
 

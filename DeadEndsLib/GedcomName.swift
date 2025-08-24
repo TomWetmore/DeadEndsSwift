@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 1 January 2025.
-//  Last changed on 28 June 2025.
+//  Last changed on 21 August 2025.
 //
 
 import Foundation
@@ -133,23 +133,38 @@ extension GedcomNode {
 
 // displayName returns the name of a Person ready for display.
 extension GedcomNode {
+    /// Formats GEDCOM NAME as "Given Surname Suffix".
+    /// Ensures a space before surname (if given exists) and after surname (if suffix exists).
     public func displayName(uppercaseSurname: Bool = false) -> String {
-        guard let raw = self.child(withTag: "NAME")?.value else { return "(no name)" }
+        guard var raw = self.child(withTag: "NAME")?.value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty else { return "(no name)" }
 
-        // Split the name into components, with surname delimited by slashes
-        let parts = raw.components(separatedBy: "/")
-        switch parts.count {
-        case 3: // Given /Surname/ suffix
-            let given = parts[0].trimmingCharacters(in: .whitespaces)
-            let surname = uppercaseSurname ? parts[1].uppercased() : parts[1]
-            let suffix = parts[2].trimmingCharacters(in: .whitespaces)
-            return "\(given) \(surname)\(suffix.isEmpty ? "" : " \(suffix)")"
-        case 2: // Given /Surname/
-            let given = parts[0].trimmingCharacters(in: .whitespaces)
-            let surname = uppercaseSurname ? parts[1].uppercased() : parts[1]
-            return "\(given) \(surname)"
-        default:
-            return raw // Fallback if format isn't slash-delimited
+        // Squeeze internal whitespace to single spaces.
+        func squeeze(_ s: String) -> String {
+            s.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+        }
+
+        // Find first/last slash; surname is between them.
+        guard let first = raw.firstIndex(of: "/"),
+              let last  = raw.lastIndex(of: "/"),
+              first < last else {
+            // No valid slashes: drop slashes, squeeze spaces.
+            return squeeze(raw.replacingOccurrences(of: "/", with: " "))
+        }
+
+        let given   = squeeze(String(raw[..<first]))
+        let surname = squeeze(String(raw[raw.index(after: first)..<last]))
+        let suffix  = squeeze(String(raw[raw.index(after: last)...]))
+
+        let finalSurname = uppercaseSurname ? surname.uppercased() : surname
+
+        switch (given.isEmpty, finalSurname.isEmpty, suffix.isEmpty) {
+        case (true,  false, true ): return finalSurname
+        case (true,  false, false): return "\(finalSurname) \(suffix)"
+        case (false, false, true ): return "\(given) \(finalSurname)"
+        case (false, false, false): return "\(given) \(finalSurname) \(suffix)"
+        case (_,     true,  _     ): // no surname—just show what we have
+            return [given, suffix].filter { !$0.isEmpty }.joined(separator: " ")
         }
     }
 }

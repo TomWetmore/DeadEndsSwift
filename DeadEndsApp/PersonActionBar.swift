@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 14 July 2025.
+//  Last changed on 23 August 2025.
 //
 
 import SwiftUI
@@ -19,6 +19,8 @@ struct PersonActionBar: View {
     let person: GedcomNode
     @State private var familyList: GedcomNodeList? = nil
     @State private var showEditSheet = false
+    @State private var showingDescList = false
+
 
     var body: some View {
         HStack {
@@ -37,6 +39,9 @@ struct PersonActionBar: View {
             Button("Pedigree") {
                 model.path.append(Route.pedigree(person))
             }
+            Button("Descendants") {
+                model.path.append(Route.descendants(person))
+            }
             Button("Family") {
                 guard let ri = model.database?.recordIndex else { return }
                 let families = person.children(withTag: "FAMS").compactMap {
@@ -50,6 +55,26 @@ struct PersonActionBar: View {
                     model.status = "\(person.displayName) is not a spouse in any family."
                 }
             }
+            Button("Family Tree") {
+                model.path.append(Route.familyTree(person))
+            }
+            Button("Tidy Test") {
+                guard let index = model.database?.recordIndex else { return }
+                tidyTest(person: person, index: index);
+            }
+            Button("Descendancy List") {
+                showingDescList = true
+            }
+            .sheet(isPresented: $showingDescList) {
+                        if let idx = model.database?.recordIndex {
+                            DescendancyListView(root: person, index: idx)
+                                .environmentObject(model)
+                                .frame(minWidth: 480, minHeight: 560)
+                        } else {
+                            Text("No record index or person available.")
+                                .padding()
+                        }
+                    }
             Button("Edit") {
                 showEditSheet = true
             }
@@ -110,4 +135,11 @@ struct PersonActionBar: View {
         model.path.append(Route.person(siblings[newIndex]))
         model.status = nil
     }
+}
+
+private func tidyTest(person: GedcomNode, index: RecordIndex) {
+    guard let uniontree = buildDescendantsTree(from: person, index: index, depth: 3)
+            else { return }
+    showDescendantsTree(uniontree, index: index)
+
 }

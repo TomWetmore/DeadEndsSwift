@@ -44,9 +44,11 @@
 		2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FamilyTreeView.swift,
 				File.swift,
 				IntraInter.swift,
 				MoreTraversalCode.swift,
+				TidyTreeEtc.swift,
 				TraverseCode.swift,
 			);
 			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
@@ -87,21 +89,11 @@
 			);
 			target = 2682068A2D1337930051544B /* DeadEndsLib */;
 		};
-		26D80DE72E25A36F00C7316E /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				FamilySelectionView.swift,
-			);
-			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		263408B12E21680900F4E6DE /* DeadEndsApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				26D80DE72E25A36F00C7316E /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */,
-			);
 			path = DeadEndsApp;
 			sourceTree = "<group>";
 		};
@@ -173,9 +165,9 @@
 		268206592D13370F0051544B = {
 			isa = PBXGroup;
 			children = (
+				263408B12E21680900F4E6DE /* DeadEndsApp */,
 				260186FD2E3D6423006A7ECC /* README.md */,
 				26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */,
-				263408B12E21680900F4E6DE /* DeadEndsApp */,
 				263408DB2E216A7200F4E6DE /* RunScript */,
 				2673AD2D2E22A7000078C61B /* Warehouse */,
 				26106FAE2D7BC96400994B2C /* Frameworks */,

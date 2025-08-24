@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 22 June 2025.
+//  Last changed on 7 August 2025.
 //
 
 import Foundation
@@ -97,7 +97,7 @@ extension GedcomNode {
             return nil
         }
         // Get the children of the family.
-        let children = family.children(index: index)
+        let children = childrenOf(family: family, index: index)
         // Get the previous sibling unless self is the first.
         guard let indexOfSelf = children.firstIndex(of: self), indexOfSelf > 0 else {
             return nil
@@ -112,7 +112,7 @@ extension GedcomNode {
             return nil
         }
         // Get the children of the family.
-        let children = family.children(index: index)
+        let children = childrenOf(family: family, index: index)
         // Get the next sibling unless self is the last.
         guard let indexOfSelf = children.firstIndex(of: self), indexOfSelf < children.count - 1 else {
             return nil
@@ -121,5 +121,61 @@ extension GedcomNode {
     }
 }
 
+/// Returns all child persons of `person` by walking FAMS → CHIL pointers.
+/// Order follows the GEDCOM order; duplicates (across multiple families) are removed.
+
+    func childrenOf(person: GedcomNode, index: RecordIndex) -> [GedcomNode] {
+        // Get families this person is a spouse in.
+        let families: [GedcomNode] = person.children(withTag: "FAMS")
+            .compactMap { $0.value }.compactMap { index[$0] }
+
+        // Get the children from those families, keeping order.
+        let rawChildren: [GedcomNode] = families.flatMap { $0.children(withTag: "CHIL") }
+            .compactMap { $0.value }.compactMap { index[$0] }
+
+        // De-dupe by key while preserving order
+        var seen = Set<String>()
+        var result: [GedcomNode] = []
+        for child in rawChildren {
+            if let key = child.key, seen.insert(key).inserted {
+                result.append(child)
+            }
+        }
+        return result
+    }
 
 
+extension GedcomNode {
+    /// Returns the siblings of this person across every FAMC, in Gedcom file order.
+    /// Duplicates (same person via multiple families) are removed by key.
+    func siblings(index: RecordIndex) -> [GedcomNode] {
+        // All families where this person is a child
+        let families = self.children(withTag: "FAMC")
+            .compactMap { $0.value }
+            .compactMap { index[$0] }  // FAM nodes
+
+        // Flatten all CHIL pointers from those families, in order
+        let rawKids = families
+            .flatMap { $0.children(withTag: "CHIL") }
+            .compactMap { $0.value }
+            .compactMap { index[$0] }  // INDI nodes
+
+        // Exclude self, de-dupe by key, preserve first occurrence order
+        let myKey = self.key
+        var seen = Set<String>()
+        var result: [GedcomNode] = []
+        for kid in rawKids {
+            guard kid.key != myKey else { continue }
+            if let k = kid.key, seen.insert(k).inserted {
+                result.append(kid)
+            }
+        }
+        return result
+    }
+
+    /// Convenience overload when you have a Database handy.
+    func siblings(database: Database?) -> [GedcomNode] {
+        guard let index = database?.recordIndex else { return [] }
+        return siblings(index: index)
+    }
+}

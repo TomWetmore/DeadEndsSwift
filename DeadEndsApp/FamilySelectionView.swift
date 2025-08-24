@@ -21,7 +21,7 @@ struct FamilySelectionView: View {
             Button {
                 model.path.append(Route.family(family))
             } label: {
-                Text(displayFamilySummary(family)) // Show spouses/children or marriage date
+                Text("SOME DUMMY STUFF") // Show spouses/children or marriage date
             }
         }
         .navigationTitle("Select Family")

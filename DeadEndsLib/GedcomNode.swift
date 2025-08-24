@@ -195,3 +195,13 @@ public extension GedcomNode {
     }
 }
 
+extension GedcomNode: Identifiable {
+    public var id: String { key ?? UUID().uuidString } // root nodes always have a key
+//    public static func == (lhs: GedcomNode, rhs: GedcomNode) -> Bool {
+//        lhs.id == rhs.id
+//    }
+//    public func hash(into hasher: inout Hasher) {
+//        hasher.combine(id)
+//    }
+}
+

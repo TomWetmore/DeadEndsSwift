@@ -44,8 +44,7 @@ struct PersonRow: View {
                         Text("d. \(death)").foregroundColor(.secondary)
                     }
                 }
-                //.font(.footnote)
-                .font(.body)
+                .font(.headline)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

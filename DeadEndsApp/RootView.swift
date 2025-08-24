@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 17 July 2025.
+//  Last changed on 21 August 2025.
 //
 
 import SwiftUI
@@ -22,14 +22,19 @@ struct RootView: View {
                     PersonSelectionView()
                 }
             }
+            .environmentObject(model)
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .person(let person):
                     PersonView(person: person)
                 case .pedigree(let person):
-                    PedigreeView(person: person, generations: 4, buttonWidth: 200)
+                    PedigreeView(person: person, generations: 4, buttonWidth: 400)
                 case .family(let family):
                     FamilyView(family: family)
+                case .descendants(let p):
+                    DescendantsView(root: p)
+                case .familyTree(let person):
+                    FamilyTreeView(person: person)
                 }
             }
         }
@@ -41,4 +46,6 @@ enum Route: Hashable {
     case person(GedcomNode)
     case pedigree(GedcomNode)
     case family(GedcomNode)
+    case descendants(GedcomNode)
+    case familyTree(GedcomNode)
 }

@@ -3,13 +3,13 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 5 July 2025.
-//  Last changed on 13 July 2025.
+//  Last changed on 7 August 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-// PedigreeNode stores layout info about a person.
+/// Stores layout info about a person.
 struct PedigreeNode: Identifiable {
     let id: String
     let person: GedcomNode
@@ -17,7 +17,7 @@ struct PedigreeNode: Identifiable {
     let y: CGFloat
 }
 
-// PedigreeView shows a person with pedigree. It is one of the full-window DeadEnds views.
+/// Shows a person with pedigree. It is one of the full-window DeadEnds views.
 struct PedigreeView: View {
 
     @EnvironmentObject var model: AppModel
@@ -41,11 +41,12 @@ struct PedigreeView: View {
                 // Constants used in layout calculations.
                 let colwidth = geometry.size.width / CGFloat(generations)
                 let offset = colwidth / 2.0
-                // Layout each Person in the vew.
+                // Layout the Persons in the view, converting from unit sqare to actual coordinates.
                 ForEach(layout) { node in
                     let x = node.x * geometry.size.width + offset
                     let y = node.y * geometry.size.height
-                    PersonButton(person: node.person)
+                    PersonRow(person: node.person)
+                    //PersonButton(person: node.person)
                         .frame(width: min(colwidth, buttonWidth), alignment: .leading)
                         .position(x: x, y: y)
                 }
@@ -65,19 +66,17 @@ struct PedigreeView: View {
     }
 }
 
-// buildPedigreeLayout lays out persons in a pedigree in a unit square and returns information about
-// them in an array of PedigreeNode structures.
-func buildPedigreeLayout(from person: GedcomNode, // Root person of pedigree.
-                         generations: Int, // Number of generations in pedigree.
-                         recordIndex: [String: GedcomNode]) // Record index from database.
-                            -> [PedigreeNode] { // Returns the array of PedigreeNodes
+/// Positions the persons for a `PedigreeView` in a unit square and returns information about
+/// them in an array of `PedigreeNode`s.
+func buildPedigreeLayout(from person: GedcomNode,  generations: Int,
+                         recordIndex: [String: GedcomNode]) -> [PedigreeNode] {
     var pedigreeNodes = [PedigreeNode]()
 
-    // addPerson is a local function that recursively builds an array of PedigreeNodes.
+    /// Recursively builds the array of `PedigreeNode`s.
     func addPerson(_ person: GedcomNode, gen: Int, index: Int) {
-        let x = CGFloat(gen) / CGFloat(generations) // Compute x coordinate in unit square.
-        let y = CGFloat(2 * index + 1) / CGFloat(1 << (gen + 1)) // Compute y coordinate in unit square.
-        let id = person.key ?? UUID().uuidString // Give each PedigreeNode an identifier.
+        let x = CGFloat(gen) / CGFloat(generations) // X coordinate.
+        let y = CGFloat(2 * index + 1) / CGFloat(1 << (gen + 1)) // Y coordinate.
+        let id = person.key ?? UUID().uuidString // Unique identifier.
         pedigreeNodes.append(PedigreeNode(id: id, person: person, x: x, y: y))
         // Recurse to next generation.
         if gen < generations - 1 {
@@ -90,13 +89,12 @@ func buildPedigreeLayout(from person: GedcomNode, // Root person of pedigree.
         }
     }
 
-    // Start layout recursion by adding the first person to pedigreeNodes.
+    // Start recursion by adding the first person.
     addPerson(person, gen: 0, index: 0)
-    // showPedigreeNodes(nodes: pedigreeNodes) // TODO: Remove this DEBUG statement.
     return pedigreeNodes
 }
 
-// showPedigreeNodes is a debug function that shows an array of PedigreeNodes.
+/// Debug function that shows an array of `PedigreeNode`s.
 private func showPedigreeNodes(nodes: [PedigreeNode]) {
     for node in nodes {
         print("\(node.person.displayName) at \(node.x), \(node.y)")
