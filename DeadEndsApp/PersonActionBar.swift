@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 23 August 2025.
+//  Last changed on 28 August 2025.
 //
 
 import SwiftUI
@@ -63,18 +63,8 @@ struct PersonActionBar: View {
                 tidyTest(person: person, index: index);
             }
             Button("Descendancy List") {
-                showingDescList = true
+                model.path.append(Route.descendancy(person))
             }
-            .sheet(isPresented: $showingDescList) {
-                        if let idx = model.database?.recordIndex {
-                            DescendancyListView(root: person, index: idx)
-                                .environmentObject(model)
-                                .frame(minWidth: 480, minHeight: 560)
-                        } else {
-                            Text("No record index or person available.")
-                                .padding()
-                        }
-                    }
             Button("Edit") {
                 showEditSheet = true
             }

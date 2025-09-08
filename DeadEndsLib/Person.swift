@@ -3,34 +3,43 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 7 August 2025.
+//  Last changed on 26 August 2025.
 //
 
 import Foundation
 
+
+/// Enumerated type for sex values.
+public enum SexType {
+    case male
+    case female
+    case unknown
+}
+
 // GedcomNode extension where the GedcomNode is the root of a Person record.
 extension GedcomNode {
 
-    // isFemale returns true if a person is female.
-    func isFemale() -> Bool {
-        guard self.tag == "INDI" else {
-            fatalError("Called isFemale on a non-person node.")
+    /// Return the SexType of a Person.
+    public func sexOf() -> SexType? {
+        guard let value = child(withTag: "SEX")?.value?.uppercased() else { return nil }
+        switch value {
+        case "M": return .male
+        case "F": return .female
+        case "U", "X": return .unknown
+        default: return nil
         }
-        guard let sexNode = self.childrenByTag["SEX"]?.first else {
-            return false
-        }
-        return sexNode.value?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "F"
     }
 
-    // isMale returns true if a person is male.
+    public var gedcomName: GedcomName? { GedcomName(from: self) }
+
+    /// Returns true if a Person is female.
+    func isFemale() -> Bool {
+        return sexOf() == .female
+    }
+
+    // Returns true if a Person is male.
     func isMale() -> Bool {
-        guard self.tag == "INDI" else {
-            fatalError("Called isMale on a non-person node.")
-        }
-        guard let sexNode = self.childrenByTag["SEX"]?.first else {
-            return true
-        }
-        return sexNode.value?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "M"
+        return sexOf() == .male
     }
 
     // father returns the first father (first HUSB in first FAMC) of this person.

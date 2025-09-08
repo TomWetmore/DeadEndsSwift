@@ -1,0 +1,787 @@
+Question to ChatGPT
+----------------------------------------
+Another ambitious goal that is possible with SwiftUI that I couldn't have contemplated with LifeLines:
+
+A tree view of relationships. At any time one person is probably the "point of focus" with the tree built up around him/her, with ancestors above for a generation or two and descendents below for a generation or two. Spouses included also. When some person in the chart is then selected the tree refocuses around that person.
+
+Algorithms for laying out trees like this are considerable more complex that for pedigrees and descendency lists. I've seen lots of apps that do it (Ancestry.com, FamilySearch). I think it would be very fun to get involved with those algorithms.
+
+Don't know when I can get to it, but I will be asking for your help on this project soon.
+
+-----------------------------------
+Answer from ChatGPT
+-----------------------------------
+
+Ohhh yes — the “focus person” relationship tree. That’s the fun, gnarly one. Totally doable in SwiftUI, and a great excuse to play with real layout algorithms.
+
+Here’s how I’d tackle it without boiling the ocean:
+
+1) Pick a tidy tree layout
+You want a tidy layout that keeps generations straight and distributes nodes evenly:
+   • Reingold–Tilford “tidy tree” (classic, layered, compact)
+   • Buchheim’s linear-time variant (same results, simpler to implement iteratively)
+Both give you x/y in a unit grid given a root and a left-to-right child order. You can adapt them for radial or top/bottom + left/right hybrids later.
+
+2) Model the data for layout (decouple from UI)
+Create a lightweight graph view-model so layout is pure math:
+
+struct RelNode: Identifiable, Hashable {
+   let id: String       // use person key
+   let person: GedcomNode
+   var children: [RelNode] = []  // descendants
+   var parents: [RelNode] = []   // ancestors (usually 0–2)
+   var spouses: [RelNode] = []
+}
+
+For a “focus person” view, build a bounded neighborhood:
+   • ancestors up N generations
+   • descendants down M generations
+   • spouses at same generation
+   • (optional) siblings collapsed or nearby
+
+3) Layout strategy (two passes)
+A simple first pass that already looks decent:
+   • Do a top-down layered layout (y = generation)
+   • For x:
+       • ancestors: run tidy layout upward
+       • descendants: tidy downward
+       • merge them at the focus row and reserve lanes for spouses
+   • Resolve overlaps with a contour merge: after laying out parents & children, shift subtrees to keep minimum spacing.
+
+Later, swap to Buchheim’s tidy algorithm with:
+   • preliminary pass (first walk) to compute prelim/offsets
+   • apportion/shift to avoid overlaps
+   • second walk to assign absolute x
+
+4) SwiftUI scaffolding
+   • Layout engine: a pure function that returns [NodeID: CGPoint] in unit space (0…1).
+   • Canvas for edges + ZStack for nodes:
+       • Use Canvas to draw edges (fast, scalable).
+       • Place node views with .position(x:, y:) using geometry size * unit coords.
+   • Interaction:
+       • Tap a node ⇒ set focus person ⇒ recompute local graph ⇒ animate to new layout.
+       • Pinch to zoom, drag to pan (wrap in a MagnificationGesture + DragGesture storing a @State transform).
+       • Hover/click highlights (nice-to-have).
+
+Minimal-ish sketch of the view:
+
+struct RelationshipTreeView: View {
+   @EnvironmentObject var model: AppModel
+   let focus: GedcomNode
+   let upDepth: Int = 2
+   let downDepth: Int = 2
+
+   @State private var positions: [String: CGPoint] = [:] // unit coords
+   @State private var edges: [(from: String, to: String)] = []
+   @State private var scale: CGFloat = 1
+   @State private var offset: CGSize = .zero
+
+   var body: some View {
+       GeometryReader { geo in
+           ZStack {
+               // edges
+               Canvas { ctx, size in
+                   for e in edges {
+                       if let a = positions[e.from], let b = positions[e.to] {
+                           let p1 = CGPoint(x: a.x * size.width, y: a.y * size.height)
+                           let p2 = CGPoint(x: b.x * size.width, y: b.y * size.height)
+                           var path = Path()
+                           path.move(to: p1)
+                           path.addLine(to: p2)
+                           ctx.stroke(path, with: .color(.secondary), lineWidth: 1)
+                       }
+                   }
+               }
+
+               // nodes
+               ForEach(positions.keys.sorted(), id: \.self) { key in
+                   if let node = model.database?.recordIndex[key],
+                      let pt = positions[key] {
+                       PersonRow(person: node, isInteractive: true)
+                           .frame(width: 220, alignment: .leading)
+                           .position(x: pt.x * geo.size.width, y: pt.y * geo.size.height)
+                           .onTapGesture {
+                               model.path.append(.person(node)) // or refocus tree
+                           }
+                   }
+               }
+           }
+           .scaleEffect(scale)
+           .offset(offset)
+           .gesture(
+               DragGesture().onChanged { offset = $0.translation }
+           )
+           .gesture(
+               MagnificationGesture().onChanged { scale = $0 }
+           )
+           .onAppear { computeLayout() }
+           .onChange(of: focus.key) { _ in computeLayout() }
+       }
+   }
+
+   private func computeLayout() {
+       // 1) Build neighborhood graph around `focus` (ancestors/spouses/descendants)
+       // 2) Run tidy layout to get unit positions, e.g. y by generation, x balanced
+       // 3) Build list of edges (parent-child, spouse-spouse if desired)
+       // 4) withAnimation { positions = computed; edges = computedEdges }
+   }
+}
+
+5) Refocus animation
+Make refocus feel slick:
+   • Keep node IDs stable (use record keys) so SwiftUI animates positions.
+   • Wrap layout updates in withAnimation(.spring(response: 0.35, dampingFraction: 0.8)).
+
+6) Performance notes
+   • Cache the layout for a given (focus, up, down) tuple to avoid recompute when panning/zooming.
+   • Avoid building the entire graph—just the visible neighborhood.
+   • Use Canvas for edges; placing thousands of Path views individually will stutter.
+
+7) Roadmap
+   • MVP: layered layout, simple edges, refocus on tap.
+   • Tidy v1: Reingold–Tilford (downward only), add spouses inline.
+   • Tidy v2: ancestors+descendants merge, spacing optimizer.
+   • Interaction polish: zoom/pan bounds, fit-to-view, focus breadcrumb.
+   • Extras: highlight paths to focus, hover cards, filters (e.g., hide in-law branches).
+
+When you’re ready, I can help you wire the neighborhood builder and a compact tidy implementation specific to your FAM/CHIL structure. It’s a great “one piece at a time” project—very satisfying as it comes to life.
+
+-----------------------------------------
+My Next
+--------------------------------------------
+
+In the family tree, spouse relationships are important. Spouses usually show up closely side by side with maybe two lines between them. Do these tidy trees take into account special properties of some of the nodes?
+
+-----------------------------
+And Response
+------------------------------
+
+Short answer: classic tidy trees don’t know what a “spouse” is—but you can make them care with a small modeling trick. 🙂
+
+The usual trick: add a “union/marriage” node
+
+Instead of hanging children directly off each parent, introduce a synthetic node per partnership (call it a Union). Then:
+	•	Parents → Union: both spouse nodes connect to the same Union node (same layer as the parents).
+	•	Union → Children: all kids hang from the Union node (next layer down).
+	•	Render: place the two spouses side-by-side with a short connector, and center that pair on the Union’s x-position. Route child edges from the Union “dot” to each child.
+
+This lets any tidy / layered algorithm (Reingold–Tilford, Buchheim, or a Sugiyama-style layered layout) produce balanced positions because it only needs to place Unions and child subtrees. You then map the Union’s x back to the spouse pair visually.
+
+Why this works
+	•	Couples act like a single “centroid” for their children, so siblings stay centered under both parents (no zig-zag).
+	•	Spouses stay on the same y (generation) and adjacent x (you choose the left/right offset).
+	•	Multiple marriages? Create one Union per partnership. They sit on the same layer as the person, spaced horizontally by the layout.
+
+Implementation outline (works great in SwiftUI)
+	1.	Graph types
+	•	Person(id, …)
+	•	Union(id, spouses: [PersonID], children: [PersonID])
+	2.	Build unions
+	•	For each FAM, make Union(famKey, spouses: [HUSB?, WIFE?], children: [...]).
+	•	Handle 1-parent families: spouses can be 1.
+	3.	Layout (unit coords)
+	•	Run tidy layout on a tree whose internal nodes are Unions and leaves are Persons without children.
+	•	Assign each Union an x; set its y = parent layer + 1 (or whatever your generation spacing is).
+	•	For each Union, set spouse x’s = (unionX ± spouseGap/2) and same y.
+	•	Children use the Union’s subtree layout.
+	4.	Draw
+	•	Use Canvas for edges:
+	•	spouse–spouse short line
+	•	spouse→union small link (optional cosmetic)
+	•	union→child lines
+	•	Place PersonRow at spouse coords.
+	5.	Edge cases
+	•	Unknown spouse: render single person, still use a Union if there are children (keeps centering right).
+	•	Multiple unions: left-to-right ordering can be by marriage date, input order, or number of children.
+	•	Same-sex couples: no assumptions needed; it’s just two spouses.
+	•	Polygamy / concurrent unions: multiple Unions attached to one person at the same layer; spacing handles it.
+
+A tiny pseudo-flow for x positions
+
+layout(union):
+  for childUnion in union.childUnions:
+    layout(childUnion)
+  union.x = average(childUnion.x)  // tidy “centroid” rule, or Buchheim shifts
+  // If no child unions, give union.x a leaf slot
+
+placeSpouses(union):
+  let ux = union.x
+  spouseA.x = ux - s/2
+  spouseB.x = ux + s/2
+  spouseA.y = spouseB.y = union.y
+  for c in union.children:
+    childUnionOrPerson.y = union.y + layerGap
+
+SwiftUI mapping
+	•	Keep the tidy math in a pure function returning [NodeID: CGPoint] for Unions + Persons (unit space).
+	•	Render with a ZStack + Canvas; position PersonRow at spouse points.
+	•	For lines: draw union→child straight lines, and a short spouse–spouse segment.
+	•	For interaction: tap a person to refocus (rebuild unions centered on them) and animate positions.
+
+If you want, I can sketch a minimal model (UnionNode, building from your FAM records) and a simple horizontal tidy pass you can drop in now.
+
+----------------------------------------------------------------------
+I was just looking at the family trees that are displayed by Ancestry.com and FamilySearch.org. As examples of how established players to the job. Here are four overall impressions:
+
+The tree can rapidly get bigger than the view, so both systems allow the user to expand or shrink the tree and move it around inside the border of the view.
+
+Some operations (eg click a spot near the top of node that means to add the parents of this node to the table) will add to the tree without removing any nodes, so some of these operations can allow for the tree to be arbitrarily (I believe) large.
+
+Other operations add larger parts to the tree which also closes out other parts of the tree that dissappear.
+
+I will be experimenting with both to try to understand the rules, and then I'll have to decide how I want to handle it in DeadEnds.
+
+Do you see any problem with the expand and shrink feature and the pan around the view feature?
+---------------------------------------------------------------------------''
+
+No problem at all — in fact, the zoom/pan feature is practically required once you allow the tree to grow beyond a couple of generations in any direction.
+
+In SwiftUI, this is usually done by:
+	•	Wrapping the whole tree in a GeometryReader → Canvas or ZStack so you can draw at absolute coordinates.
+	•	Applying a .scaleEffect() for zoom and .offset() or .translationEffect() for panning.
+	•	Tracking pan/zoom state in @GestureState or @State with MagnificationGesture and DragGesture.
+	•	Optionally adding bounds limits, so you can’t zoom too far in/out or lose the tree off-screen.
+
+This fits beautifully with a tidy-tree layout: the layout code gives you (x, y) for every node in tree coordinates, then the gestures just map tree coordinates to view coordinates.
+
+You’d end up with something like:
+
+TreeView(tree: layout)
+    .scaleEffect(zoom)
+    .offset(x: pan.x, y: pan.y)
+    .gesture(
+        SimultaneousGesture(
+            MagnificationGesture().onChanged { zoom *= $0 },
+            DragGesture().onChanged { pan = pan + $0.translation }
+        )
+    )
+
+Why it works well in your case
+	•	The family tree is essentially a static drawing until the user changes the data or “refocuses” it.
+	•	Zoom/pan doesn’t require recalculating the tidy layout — it’s just a transform on the drawing.
+	•	You can make any of your node-specific operations (add parents, add children, focus on person) rebuild the layout and keep the current zoom/pan.
+
+If you like, I can sketch you a pan/zoom wrapper view so when you get to this stage in DeadEnds, you can drop your tidy-tree rendering inside it and get the Ancestry-style navigation right away.
+
+-------------------------------------------
+xI'd like to get started implementing a Reingold-Tilford algorithm in Swift. Can you give me an outline, with inputs an outputs and overall design?
+-------------------------------------------
+
+
+Heck yes—this is a fun one. Here’s a clean, Swift-friendly outline for a Reingold–Tilford “tidy tree” layout you can drop into your app and wire up later to Gedcom data.
+
+Goal
+
+Given a rooted tree whose nodes may have variable sizes (e.g., each person box has its own width/height), compute 2D positions for every node so the drawing is compact, non-overlapping, and symmetric.
+
+Inputs
+	•	Root node of some tree type T
+	•	Functions to:
+	•	children(of: T) -> [T]
+	•	size(of: T) -> CGSize (node box size; width matters most)
+	•	Layout config (tweak as you like):
+	•	levelSeparation: CGFloat (vertical space per depth)
+	•	siblingSeparation: CGFloat (min horizontal gap between siblings)
+	•	subtreeSeparation: CGFloat (min horizontal gap between adjacent subtrees)
+	•	orientation: .topDown | .leftRight (choose y-down or x-right layout)
+
+Outputs
+	•	Positions per node (e.g. center or top-left), plus the total bounds of the layout:
+	•	[ID: CGPoint] or [PositionedNode<T>]
+	•	CGRect overall bounds (to help you center/scale in the view)
+
+Data structures
+
+Use an internal, mutable layout node to run the two-pass algorithm. Keep your original data T immutable.
+xI'd like to get started implementing a Reingold-Tilford algorithm in Swift. Can you give me an outline, with inputs an outputs and overall design?
+
+struct TidyConfig {
+    var levelSeparation: CGFloat = 80
+    var siblingSeparation: CGFloat = 16
+    var subtreeSeparation: CGFloat = 24
+    var orientation: Orientation = .topDown
+    enum Orientation { case topDown, leftRight }
+}
+
+final class LTNode<ID: Hashable> {
+    // Original data
+    let id: ID
+    let size: CGSize
+    weak var parent: LTNode?
+    var children: [LTNode] = []
+
+    // Reingold–Tilford fields
+    var prelim: CGFloat = 0       // preliminary x
+    var mod: CGFloat = 0          // modifier carried down the tree
+    var change: CGFloat = 0       // “change” accumulator (apportioning)
+    var shift: CGFloat = 0        // “shift” accumulator (apportioning)
+    var thread: LTNode? = nil     // temporary pointer
+    var ancestor: LTNode?         // used by apportion
+    let number: Int               // index among siblings (1-based)
+
+    init(id: ID, size: CGSize, parent: LTNode?, number: Int) {
+        self.id = id
+        self.size = size
+        self.parent = parent
+        self.number = number
+        self.ancestor = self
+    }
+
+    var leftSibling: LTNode? {
+        guard let p = parent, number > 1 else { return nil }
+        return p.children[number - 2] // 1-based number -> 0-based index
+    }
+}
+
+Public API (what you call)
+
+struct PositionedNode<ID: Hashable> {
+    let id: ID
+    let position: CGPoint  // center or top-left—pick one and be consistent
+    let size: CGSize
+}
+
+func tidyLayout<T, ID: Hashable>(
+    root: T,
+    id: (T) -> ID,
+    children: (T) -> [T],
+    size: (T) -> CGSize,
+    config: TidyConfig = .init()
+) -> (nodes: [PositionedNode<ID>], bounds: CGRect)
+
+Pipeline
+	1.	Build layout tree
+	•	Walk your data and build the LTNode graph.
+	2.	First walk (post-order)
+	•	Compute prelim for each node.
+	•	If a node is a leaf: set prelim relative to its left sibling (if any).
+	•	If it’s an internal node: place children, then center the parent above its children.
+	•	Apportion to resolve overlaps between adjacent subtrees (this is the heart).
+	3.	Second walk (pre-order)
+	•	Traverse top-down, accumulating mod to get final x’s, assign y by depth.
+	•	Track min/max to compute bounds.
+	4.	Orient / normalize
+	•	If you want left→right trees instead of top→down, swap axes.
+	•	Shift everything so minX/minY ≥ 0.
+
+Skeleton implementation (condensed)
+
+private func buildLT<T, ID: Hashable>(
+    _ t: T,
+    id: (T)->ID,
+    children: (T)->[T],
+    size: (T)->CGSize,
+    parent: LTNode<ID>? = nil
+) -> LTNode<ID> {
+    let kids = children(t)
+    let node = LTNode<ID>(id: id(t), size: size(t), parent: parent, number: (parent?.children.count ?? 0) + 1)
+    node.children = kids.enumerated().map { i, child in
+        buildLT(child, id: id, children: children, size: size, parent: node)
+    }
+    return node
+}
+
+private func firstWalk<ID>(_ v: LTNode<ID>, cfg: TidyConfig) {
+    if v.children.isEmpty {
+        // Leaf
+        if let ls = v.leftSibling {
+            v.prelim = ls.prelim + 0.5 * (ls.size.width + v.size.width) + cfg.siblingSeparation
+        } else {
+            v.prelim = 0
+        }
+    } else {
+        // Internal: layout children
+        v.children.forEach { firstWalk($0, cfg: cfg) }
+        apportion(v, cfg: cfg)
+        // Center parent above its children
+        let left = v.children.first!.prelim
+        let right = v.children.last!.prelim
+        let mid = (left + right) / 2
+        if let ls = v.leftSibling {
+            v.prelim = ls.prelim + 0.5 * (ls.size.width + v.size.width) + cfg.subtreeSeparation
+            v.mod = v.prelim - mid
+        } else {
+            v.prelim = mid
+        }
+    }
+}
+
+private func apportion<ID>(_ v: LTNode<ID>, cfg: TidyConfig) {
+    // Classic RT apportion using contours.
+    // Compare v’s left subtree with left siblings’ right subtrees and push if overlapping.
+    var leftSibling = v.leftSibling
+    if leftSibling == nil { return }
+
+    var vir: LTNode<ID> = v
+    var vil: LTNode<ID> = v
+    var vor: LTNode<ID> = leftSibling!
+    var vol: LTNode<ID> = v.parent!.children.first!
+
+    var sir: CGFloat = v.mod
+    var sil: CGFloat = v.mod
+    var sor: CGFloat = vor.mod
+    var sol: CGFloat = vol.mod
+
+    while let rNext = rightMost(vil), let lNext = leftMost(vor) {
+        vil = rNext
+        vor = lNext
+        let shiftNeeded =
+            (vor.prelim + sor) - (vil.prelim + sil) +
+            0.5 * (vor.size.width + vil.size.width) + cfg.subtreeSeparation
+
+        if shiftNeeded > 0 {
+            moveSubtree(ancestor: ancestor(v), wl: vol, wr: v, shift: shiftNeeded)
+            sil += shiftNeeded
+            sir += shiftNeeded
+        }
+
+        sol += vol.mod
+        sor += vor.mod
+        sil += vil.mod
+        sir += vir.mod
+
+        if rightMost(vor) == nil { vol = leftMost(vol)! }
+        if leftMost(vil) == nil { vir = rightMost(vir)! }
+    }
+
+    executeShifts(v)
+}
+
+private func moveSubtree<ID>(ancestor: LTNode<ID>, wl: LTNode<ID>, wr: LTNode<ID>, shift: CGFloat) {
+    let subtrees = CGFloat(wr.number - wl.number)
+    wr.change -= shift / subtrees
+    wr.shift += shift
+    wl.change += shift / subtrees
+    wr.prelim += shift
+    wr.mod += shift
+}
+
+private func executeShifts<ID>(_ v: LTNode<ID>) {
+    var shift: CGFloat = 0
+    var change: CGFloat = 0
+    for child in v.children.reversed() {
+        child.prelim += shift
+        child.mod += shift
+        change += child.change
+        shift += child.shift + change
+    }
+}
+
+private func leftMost<ID>(_ v: LTNode<ID>) -> LTNode<ID>? {
+    v.children.first ?? v.thread
+}
+private func rightMost<ID>(_ v: LTNode<ID>) -> LTNode<ID>? {
+    v.children.last ?? v.thread
+}
+private func ancestor<ID>(_ v: LTNode<ID>) -> LTNode<ID> { v.ancestor ?? v }
+
+private func secondWalk<ID>(
+    _ v: LTNode<ID>,
+    m: CGFloat,
+    depth: Int,
+    cfg: TidyConfig,
+    out: inout [ID: (pos: CGPoint, size: CGSize)],
+    minMax: inout CGRect
+) {
+    let x = v.prelim + m
+    let y = CGFloat(depth) * cfg.levelSeparation
+    let pos = CGPoint(x: x, y: y)
+    out[v.id] = (pos, v.size)
+
+    let nodeRect = CGRect(origin: CGPoint(x: x - v.size.width/2, y: y),
+                          size: v.size)
+    minMax = minMax.union(nodeRect)
+
+    v.children.forEach { child in
+        secondWalk(child, m: m + v.mod, depth: depth + 1, cfg: cfg, out: &out, minMax: &minMax)
+    }
+}
+
+Finally, the public function ties it together:
+
+func tidyLayout<T, ID: Hashable>(
+    root: T,
+    id: (T) -> ID,
+    children: (T) -> [T],
+    size: (T) -> CGSize,
+    config: TidyConfig = .init()
+) -> (nodes: [PositionedNode<ID>], bounds: CGRect) {
+
+    let ltRoot = buildLT(root, id: id, children: children, size: size)
+    firstWalk(ltRoot, cfg: config)
+
+    var map: [ID: (pos: CGPoint, size: CGSize)] = [:]
+    var bounds = CGRect.null
+    secondWalk(ltRoot, m: 0, depth: 0, cfg: config, out: &map, minMax: &bounds)
+
+    // Normalize to positive coordinates and orient
+    let dx = -bounds.minX
+    let dy = -bounds.minY
+    var nodes: [PositionedNode<ID>] = []
+
+    for (id, (pos, sz)) in map {
+        let p: CGPoint
+        switch config.orientation {
+        case .topDown:
+            p = CGPoint(x: pos.x + dx, y: pos.y + dy)
+        case .leftRight:
+            // swap axes (x<-y, y<-x) if you want left→right
+            p = CGPoint(x: pos.y + dy, y: pos.x + dx)
+        }
+        nodes.append(PositionedNode(id: id, position: p, size: sz))
+    }
+
+    let finalBounds: CGRect = {
+        switch config.orientation {
+        case .topDown:
+            return bounds.offsetBy(dx: dx, dy: dy)
+        case .leftRight:
+            // swap width/height if you swapped axes
+            return CGRect(x: 0, y: 0, width: bounds.height, height: bounds.width)
+        }
+    }()
+
+    return (nodes.sorted { $0.position.y < $1.position.y }, finalBounds)
+}
+
+Notes & options
+	•	This outlines classic RT with variable node widths via centering and apportioning. If you want the Buchheim (2002) linear-time variant, the field set is similar; the apportion/threads details change a bit, but the public API stays the same.
+	•	If all node widths are equal, you can simplify a ton (no width terms in spacing).
+	•	For spouse pairs in a family tree, treat the pair as a composite node (combined width, single vertical coordinate) so children hang from the pair’s midpoint.
+	•	Output positions are node centers here; if you prefer top-left, adjust consistently.
+
+How you’ll use it with Gedcom
+	1.	Build a person tree of the focus individual → parents up or children down (or both, if you build a hybrid).
+	2.	Provide:
+	•	id(person) -> key
+	•	children(person) -> [person] (for descendants) or parents for pedigree
+	•	size(person) -> CGSize (measure your PersonRow with a fixed width, or compute min width from text)
+	3.	Run tidyLayout, then render in a ZStack or Canvas, applying pan/zoom transforms.
+
+If you want, next step I can help wire one direction (e.g., descendants only) to real GedcomNodes and get a basic SwiftUI preview plotting the boxes where the algorithm says they should go.
+
+---------------------------------------
+Want to take this back to more basics to get oriented before I move forward again.
+
+Okay, A FamilyTreeView will display a FamilyTree. A FamilyTree is a Tree. The main components of the Tree are Card like Views that display the Persons, and "Families" as bound pairs of Persons.
+
+Before the FamilyTree is first displayed a "tree" of "objects" (maybe just an array of Person root nodes) must have be specified somehow. For now, let's say that the FamilyView will have a "family tree" button that will shift to the FamilyTreeView when clicked, and it will show the parents in the family, the parents of the parents, and the children, maybe the spouses of the children (and maybe more or less persons).
+
+So when the family tree button is hit, that array of persons must be generated and then used as the first set of persons to see in the FamilyTreeView is created.
+
+Now I'm thinking about the "life history of nodes". We start with an array of persons, say. We then have to create the Nodes that the tidy algorithm arranges. When this is over we may need another array of another kind of nodes to show as "Card Views" in the family tree. How does this flow seem to you?
+----------------------------------------------------
+
+Love this framing. Here’s a clean, minimal “life cycle” for the nodes and how data flows from your domain to layout to rendering, without getting fancy yet.
+
+The flow (keep it simple)
+	1.	Seeds (array of persons)
+From FamilyView, when the “Family Tree” button is tapped, you decide the scope (e.g., the two parents, their parents, and the children). That gives you seed person keys.
+	2.	Build a logical tree (Person ↔ Family alternating)
+From the seeds, build a tree-shaped model that alternates:
+	•	PersonNode → children are the person’s spouse FamilyNodes (FAMS) or parent FamilyNode (FAMC), depending on direction.
+	•	FamilyNode → children are PersonNodes (spouses and/or children, depending on direction).
+This “logical tree” is just for layout. It’s acyclic and rooted.
+	3.	Measure
+Provide two measuring closures:
+	•	measurePerson(personKey) -> CGSize
+	•	measureFamily(spouseKeys) -> CGSize (container style: width = spouse A + gap + spouse B, height = max)
+For now, use fixed sizes (e.g., 160×80 for people, family width as 2*personWidth + gap). We can add real measurement later.
+	4.	Layout (tidy)
+Feed the logical tree into tidyLayout(id: children: size:).
+Output: [PositionedNode<ID>] and bounds.
+	5.	Render
+In FamilyTreeView, iterate the PositionedNodes:
+	•	For .person(id), draw a person card.
+	•	For .family(id), draw a family card (container with the two spouse cards inside, or a labeled box).
+	•	Draw edges (simple parent→child lines).
+
+That’s it. No extra conversions unless you want a “render model” struct later. Tidy already gives you everything needed to place your cards.
+
+⸻
+
+Minimal types to glue this together
+
+enum FTNodeID: Hashable {
+    case person(String)   // GEDCOM person key
+    case family(String)   // GEDCOM family key
+}
+
+enum FTNodeKind {
+    case person(personKey: String)
+    case family(familyKey: String, spouseKeys: [String])
+}
+
+struct FTNode {
+    let id: FTNodeID
+    let kind: FTNodeKind
+    var children: [FTNode] = []
+}
+
+Build the logical tree (one direction, e.g. “up + down”)
+
+func buildFamilyTreeRoot(
+    startingPersons: [String],
+    index: RecordIndex,
+    maxUpGenerations: Int = 2,
+    includeChildren: Bool = true
+) -> FTNode {
+    // Make a synthetic root that has *persons* as children.
+    var root = FTNode(id: .family("ROOT"), kind: .family(familyKey: "ROOT", spouseKeys: []), children: [])
+    root.children = startingPersons.compactMap { personKey in
+        buildPersonSubtree(personKey: personKey,
+                           index: index,
+                           upGen: maxUpGenerations,
+                           includeChildren: includeChildren)
+    }
+    return root
+}
+
+private func buildPersonSubtree(
+    personKey: String,
+    index: RecordIndex,
+    upGen: Int,
+    includeChildren: Bool
+) -> FTNode {
+    var node = FTNode(id: .person(personKey), kind: .person(personKey: personKey), children: [])
+
+    // Downward (spouse families → children)
+    let famsKeys = index.spouseFamilyKeys(forPerson: personKey) // from your lib
+    let downFamilies: [FTNode] = famsKeys.map { famKey in
+        buildFamilyToChildren(familyKey: famKey, index: index)
+    }
+
+    // Upward (parent family → parents) limited by upGen
+    let upFamilies: [FTNode]
+    if upGen > 0, let famcKey = index.parentFamilyKey(forPerson: personKey) {
+        upFamilies = [buildFamilyToParents(familyKey: famcKey, index: index, upGen: upGen - 1, includeChildren: includeChildren)]
+    } else {
+        upFamilies = []
+    }
+
+    node.children = upFamilies + (includeChildren ? downFamilies : [])
+    return node
+}
+
+private func buildFamilyToChildren(familyKey: String, index: RecordIndex) -> FTNode {
+    let spouses = index.spousePersonKeys(forFamily: familyKey)
+    let kids    = index.childPersonKeys(forFamily: familyKey)
+    var fam = FTNode(id: .family(familyKey),
+                     kind: .family(familyKey: familyKey, spouseKeys: spouses),
+                     children: [])
+    fam.children = kids.map { buildPersonSubtree(personKey: $0, index: index, upGen: 0, includeChildren: true) }
+    return fam
+}
+
+private func buildFamilyToParents(
+    familyKey: String,
+    index: RecordIndex,
+    upGen: Int,
+    includeChildren: Bool
+) -> FTNode {
+    let spouses = index.spousePersonKeys(forFamily: familyKey)
+    var fam = FTNode(id: .family(familyKey),
+                     kind: .family(familyKey: familyKey, spouseKeys: spouses),
+                     children: [])
+    fam.children = spouses.map { buildPersonSubtree(personKey: $0, index: index, upGen: upGen, includeChildren: includeChildren) }
+    return fam
+}
+
+(The RecordIndex helpers are placeholders; hook them up to your actual API.)
+
+Measuring (fixed sizes for now)
+
+let personSize = CGSize(width: 160, height: 80)
+let spouseGap: CGFloat = 16
+
+func measureNode(_ n: FTNode) -> CGSize {
+    switch n.kind {
+    case .person:
+        return personSize
+    case .family(_, let spouseKeys):
+        // container approach: width = N spouses laid horizontally
+        let totalWidth = CGFloat(spouseKeys.count) * personSize.width
+                        + CGFloat(max(0, spouseKeys.count - 1)) * spouseGap
+        return CGSize(width: max(totalWidth, 120), height: personSize.height + 24) // small label band
+    }
+}
+
+Children + id closures for tidy
+
+func ftID(_ n: FTNode) -> FTNodeID { n.id }
+func ftChildren(_ n: FTNode) -> [FTNode] { n.children }
+func ftSize(_ n: FTNode) -> CGSize { measureNode(n) }
+
+From the button tap in FamilyView
+
+// inside FamilyView
+Button("Family Tree") {
+    let seedPersons = computeSeedsFromCurrentFamily() // two parents + kids, etc.
+    let ftRoot = buildFamilyTreeRoot(startingPersons: seedPersons, index: model.recordIndex)
+    let (pos, bounds) = tidyLayout(
+        root: ftRoot,
+        id: ftID,
+        children: ftChildren,
+        size: ftSize,
+        config: TidyConfig(levelSeparation: 100, siblingSeparation: 24, subtreeSeparation: 36, orientation: .topDown)
+    )
+    model.familyTreePositioned = pos
+    model.familyTreeBounds = bounds
+    model.showFamilyTree = true
+}
+
+Render in FamilyTreeView
+
+struct FamilyTreeView: View {
+    let nodes: [PositionedNode<FTNodeID>]
+    let bounds: CGRect
+    let index: RecordIndex  // to fetch names, etc.
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            // Edges (simple: parent center bottom → child center top)
+            ForEach(nodes) { n in
+                if let parent = parentOf(n.id) {
+                    if let p = nodes.first(where: { $0.id == parent }) {
+                        Path { path in
+                            path.move(to: CGPoint(x: p.position.x, y: p.position.y + p.size.height))
+                            path.addLine(to: CGPoint(x: n.position.x, y: n.position.y))
+                        }
+                        .stroke(style: StrokeStyle(lineWidth: 1))
+                    }
+                }
+            }
+
+            // Nodes
+            ForEach(nodes) { n in
+                nodeView(for: n.id)
+                    .frame(width: n.size.width, height: n.size.height)
+                    .position(x: n.position.x, y: n.position.y + n.size.height/2)
+            }
+        }
+        .frame(width: bounds.width, height: bounds.height, alignment: .topLeading)
+    }
+
+    // Minimal rendering
+    @ViewBuilder
+    private func nodeView(for id: FTNodeID) -> some View {
+        switch id {
+        case .person(let pid):
+            PersonCard(name: index.displayName(forPerson: pid))
+        case .family(let fid):
+            FamilyCard(label: index.marriageLabel(forFamily: fid)) // could also embed spouse mini-cards
+        }
+    }
+
+    // For demo: store a map of parent relationships when you build the FTNode tree;
+    // or compute it on the fly.
+    private func parentOf(_ id: FTNodeID) -> FTNodeID? { /* supply from your model */ nil }
+}
+
+Why this flow works
+	•	Single logical tree: You build it once from your seed persons. That’s the only “new array of nodes” you need before layout.
+	•	No second conversion required: The layout returns positioned nodes keyed by your IDs; you can render directly from that. If later you want richer rendering state (selection, hover, collapse), add a separate “render model,” but you don’t need it to start.
+	•	Heterogeneous sizes: Already handled by ftSize.
+	•	Incremental growth later: You can add lazy expansion (tap to reveal more generations) by rebuilding the logical tree with more depth and re-running tidyLayout. It’s fast for a few hundred nodes.
+
+If you want, I can hook this up to your actual RecordIndex API names and give you a working stub FamilyView → FamilyTreeView pathway using the fixed sizes above.

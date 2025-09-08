@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 15 July 2025
+//  Last changed on 31 August 2025
 //
 
 import Foundation
@@ -20,7 +20,7 @@ struct PersonView: View {
 
         VStack(alignment: .leading, spacing: 10) {
 
-            Text(person.displayName(uppercaseSurname: true))
+            Text(person.displayName(upSurname: true))
                 .font(.title3)
                 .fontWeight(.semibold)
                 .padding(8)

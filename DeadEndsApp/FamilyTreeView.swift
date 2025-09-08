@@ -16,7 +16,7 @@ struct FamilyTreeView: View {
 
     var body: some View {
         FamilyTreePersonView(
-            name: person.displayName,
+            name: person.displayName(),
             subtitle: lifespanLine(person),
             spouses: spouseNames(person)
         )
@@ -50,6 +50,6 @@ struct FamilyTreeView: View {
             return spousePersons.first { $0 != p }
         }
 
-        return families.compactMap { spouseInFamily($0)?.displayName }
+        return families.compactMap { spouseInFamily($0)?.displayName() }
     }
 }

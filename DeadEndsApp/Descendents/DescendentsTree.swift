@@ -5,6 +5,7 @@
 //  Created by Thomas Wetmore on 20 August 2025.
 //  Last changed on 21 August 2025.
 //
+//  Still in experimental form. Intended to show family trees as graphs.
 
 import Foundation
 import DeadEndsLib
@@ -74,7 +75,7 @@ private func showDescendantsTree(_ tree: EntityNode, indent: String, index: Reco
     switch tree.kind {
     case .person(let pid):
         if let person = index[pid] {
-            print("\(indent)\(person.displayName(uppercaseSurname: false))")
+            print("\(indent)\(person.displayName())")
         } else {
             print("\(indent)\(pid) (not found)")
         }
@@ -86,7 +87,7 @@ private func showDescendantsTree(_ tree: EntityNode, indent: String, index: Reco
                              fam.child(withTag: "WIFE")?.value].compactMap { $0 }
 
             let spouseNames = spouseIDs.compactMap { sid in
-                index[sid]?.displayName
+                index[sid]?.displayName()
             }
 
             if spouseNames.isEmpty {
@@ -122,7 +123,7 @@ private func showDescendantsTree(_ tree: EntityNode, indent: String, index: Reco
 //    let size: CGSize = {
 //        switch n.kind {
 //        case .person(let id): return measurePerson(id)
-//        case .union(let fid): return measureUnion(fid)
+//        case .spouse(let fid): return measureUnion(fid)
 //        }
 //    }()
 //    var ln = LayoutNode(key: nodeKey(n), size: size)
@@ -157,11 +158,11 @@ private func showDescendantsTree(_ tree: EntityNode, indent: String, index: Reco
 //
 //// 1) Minimal IDs (adapt to your EntityID)
 //enum EID: Hashable, CustomStringConvertible {
-//    case person(String), union(String)
+//    case person(String), spouse(String)
 //    var description: String {
 //        switch self {
 //        case .person(let s): return "P:\(s)"
-//        case .union(let s):  return "U:\(s)"
+//        case .spouse(let s):  return "U:\(s)"
 //        }
 //    }
 //}

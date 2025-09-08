@@ -430,10 +430,3 @@ extension GedcomNode {
 	}
 }
 
-// Additional Types
-
-enum SexType {
-	case male
-	case female
-	case unknown
-}

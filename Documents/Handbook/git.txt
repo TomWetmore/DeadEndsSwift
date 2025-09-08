@@ -1,0 +1,27 @@
+This is the DeadEndsSwift Repository:
+	TomWetmore/SwiftDeadEnds
+
+Useful Git commands:
+
+Get the git version.
+git version
+
+Show status of current repository.
+git status
+
+Show global settings.
+git config --global --list
+
+Make a global setting -- user.name and user.email are important.
+git config --global user.name "Thomas Wetmore"
+
+Create a repository
+git init [-b <branch]
+branch option to set main branch name -- main/master controversy
+
+Push the current commits in the current repository to the GitHub.
+git push origin main
+Run this command directly instead of using Xcode because Xcode is buggy.
+
+Remove a file from git control. Often needed when change to .gitignore is too late.
+git rm --cached .DS_Store

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2025.
-//  Last changed on 21 April 2025.
+//  Last changed on 3 September 2025.
 //
 
 import Foundation
@@ -30,7 +30,7 @@ extension Program {
             throw RuntimeError.typeError("surname() expects a person parameter")
         }
         guard let name = person.value(forTag: "NAME") else { return .null }
-        let gedcomName = GedcomName(name)
+        guard let gedcomName = GedcomName(string: name) else { return .null }
         guard let surname = gedcomName.surname else { return .null }
         return .string(surname)
     }
@@ -41,13 +41,15 @@ extension Program {
             throw RuntimeError.typeError("givens() expects a person parameter")
         }
         guard let name = person.value(forTag: "NAME") else { return .null }
-        let gedcomName = GedcomName(name)
-        return .string(gedcomName.givenNames.joined(separator: " "))
+        guard let gedcomName = GedcomName(string: name) else { return .null }
+        return .string(gedcomName.nameParts.joined(separator: " "))
     }
 
     func builtinTrimName(_ args: [ProgramNode]) throws -> ProgramValue {
         // Get the person whose name is to be trimmed.
         let person = try personFromProgramNode(args[0], errorMessage: "trimName() expects a person argument");
+        // Get the trim length.
+        person.displayName(limit: 40) // figure out what it should be.
         print("builtinTrimName not implemented")
         return .null
     }

@@ -3,104 +3,135 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 23 August 2025.
-//  Last changed on 23 August 2025.
+//  Last changed on 28 August 2025.
 //
+//  Experimental. Shows a descendancy list.
 
 import SwiftUI
 import DeadEndsLib
 
-/// One row in an indented descendancy list.
+/// A person or spouse/family line in a descendancy.
 struct DescendancyLine: Identifiable, Hashable {
 
-    enum Kind: Hashable { // Kind of DescendancyLine.
-        case person(GedcomNode) // Person
-        case union(GedcomNode)  // Family
+    enum Kind { // Kind of line.
+        case person(GedcomNode, Events) // Person, events.
+        case spouse(GedcomNode, GedcomNode?, Events)  // Family, spouse?, events.
     }
-    
-    let id: String  // Person of Family key.
-    let depth: Int  // Indentation level.
     let kind: Kind  // Kind of line.
+    let id: String  // Person or Family key.
+    let depth: Int  // Indentation depth.
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
+}
+
+private struct Event {
+    let date: String?
+    let place: String?
+}
+
+/// Events shown on descendency lines.
+struct Events {
+    let birth: String?
+    let death: String?
+    let marriage: String?
 }
 
 /// Model for a descendancy list.
 final class DescendancyListModel: ObservableObject {
-    @Published var root: GedcomNode
+
+    @Published var root: GedcomNode // Root Person of the descendancy.
     @Published var expandedPersons: Set<String> = [] // Expanded person keys.
     @Published var expandedUnions: Set<String> = []  // Expanded family keys.
 
     var maxGenerations: Int = 14
 
-    /// Initializes a model.
+    /// Initializes a model with a root Person and empty expanded sets.
     init(root: GedcomNode) {
         self.root = root
     }
 
-    /// Re-roots this model to a new Person.
+    /// Re-roots this model to a new Person and empty expanded sets.
     func reRoot(_ person: GedcomNode) {
         root = person
         expandedPersons.removeAll()
         expandedUnions.removeAll()
     }
 
-    /// Builds a flat, indented list of visible lines from the root.
+    /// Builds the Array of all DescendancyLines. These are the lines that can appear in
+    /// descendancy Views.
     func visibleLines(index: RecordIndex) -> [DescendancyLine] {
 
-        var out: [DescendancyLine] = []  // Array of DescendancyLines found by this method.
-        var visitedPersons = Set<String>()  // Persons who have been seen.
-        var visitedFamilies = Set<String>()  // Unions (families) that have been seen.
+        var lines: [DescendancyLine] = []  // DescendancyLines returned by this method.
+        // Sets of visited persons and families that prevent cycles.
+        var visitedPersons = Set<String>()
+        var visitedFamilies = Set<String>()
 
-        // Local functions.
-        func personKey(_ p: GedcomNode) -> String? { p.key }  // Return the key of a Person GedcomNode.
-        func familyKey(_ f: GedcomNode) -> String? { f.key }  // Return the key of a Family GedcomNode.
-
-        // Pushes a Person onto the output array of DescendancyLines.
-        func pushPerson(_ p: GedcomNode, depth: Int, gen: Int) {
-            guard let pkey = personKey(p) else { return }
-            out.append(DescendancyLine(id: pkey, depth: depth, kind: .person(p)))
-            // Stop if collapsed, visited, or past generations
-            guard expandedPersons.contains(pkey),
-                  !visitedPersons.contains(pkey),
-                  gen < maxGenerations else { return }
+        /// Adds a Person to the DescendancyLines.
+        func addPerson(_ person: GedcomNode, depth: Int, gen: Int) {
+            guard let pkey = person.key else { return } // Can't fail.
+            let events = Events(birth: person.child(withTag: "BIRT")?.child(withTag: "DATE")?.value,
+                                death: person.child(withTag: "DEAT")?.child(withTag: "DATE")?.value,
+                                marriage: nil)
+            lines.append(DescendancyLine(kind: .person(person, events), id: pkey, depth: depth))
+            // Stop if unexpanded, visited, or past max generation.
+            guard expandedPersons.contains(pkey), !visitedPersons.contains(pkey), gen < maxGenerations
+            else { return }
             visitedPersons.insert(pkey)
 
-            // Person → unions (FAMS)
-            let fkeys = p.children(withTag: "FAMS").compactMap { $0.value }
-            for (i, fkey) in fkeys.enumerated() {
-                guard let fam = index[fkey] else { continue }
-                pushUnion(fam, depth: depth + 1, gen: gen, order: i + 1)
+            // Add Spouse/Family lines for each FAMS the Person is a spouse in.
+            let fkeys = person.children(withTag: "FAMS").compactMap { $0.value }
+            for fkey in fkeys {
+                guard let family = index[fkey] else { continue }
+                addUnion(family, of: person, depth: depth + 1, gen: gen)
             }
         }
 
-        // Pushes a Union/Family onto the output array of DescendancyLines.
-        func pushUnion(_ f: GedcomNode, depth: Int, gen: Int, order: Int) {
-            guard let fKey = familyKey(f) else { return }
-            out.append(DescendancyLine(id: fKey, depth: depth, kind: .union(f)))
-            guard expandedUnions.contains(fKey),
-                  !visitedFamilies.contains(fKey) else { return }
+        /// Adds a Spouse (aka Union/Family) line to the lines array.
+        func addUnion(_ family: GedcomNode, of person: GedcomNode, depth: Int, gen: Int) {
+
+            guard let fKey = family.key, let pkey = person.key  else { return } // Can't fail.
+            let hkey = family.value(forTag: "HUSB")
+            let wkey = family.value(forTag: "WIFE")
+            let skey: String? = {
+                if hkey == pkey { return wkey }
+                if wkey == pkey { return hkey }
+                // Handle weird cases (there are weirder ones).
+                if let h = hkey, h != pkey { return h }
+                if let w = wkey, w != pkey { return w }
+                return nil
+            }()
+
+            let spouse = skey.flatMap { index[$0] }
+            let events = Events(birth: nil, death: nil,
+                                marriage: family.child(withTag: "MARR")?.child(withTag: "DATE")?.value)
+            lines.append(DescendancyLine(kind: .spouse(family, spouse, events), id: fKey, depth: depth))
+
+            guard expandedUnions.contains(fKey), !visitedFamilies.contains(fKey) else { return }
             visitedFamilies.insert(fKey)
 
-            // Union → children (CHIL)
-            let childKeys = f.children(withTag: "CHIL").compactMap { $0.value }
-            for cKey in childKeys {
+            // Add DescendencyLines for the children.
+            let ckeys = family.children(withTag: "CHIL").compactMap { $0.value }
+            for cKey in ckeys {
                 guard let child = index[cKey] else { continue }
-                pushPerson(child, depth: depth + 1, gen: gen + 1)
+                addPerson(child, depth: depth + 1, gen: gen + 1)
             }
         }
 
-        // Start from root person (never auto-expanded unless in set)
-        pushPerson(root, depth: 0, gen: 0)
-        return out
+        // Start from root person.
+        addPerson(root, depth: 0, gen: 0)
+        return lines
     }
 
-    // Toggles a DescendancyLine between expanded and unexpanded.
+    /// Toggles a DescendancyLine between expanded and unexpanded states.
     func toggle(_ line: DescendancyLine) {
         switch line.kind {
-        case .person(let p):  // Toggles a Person line.
+        case .person(let p, _):  // Toggle a Person line.
             if let k = p.key {
                 if expandedPersons.contains(k) { expandedPersons.remove(k) }
                 else { expandedPersons.insert(k) }
             }
-        case .union(let f):  // Toggles a Union line.
+        case .spouse(let f, _, _):  // Toggle a Union line.
             if let k = f.key {
                 if expandedUnions.contains(k) { expandedUnions.remove(k) }
                 else { expandedUnions.insert(k) }
@@ -108,11 +139,11 @@ final class DescendancyListModel: ObservableObject {
         }
     }
 
-    // Determines whether a DesendancyLine is expanded.
+    /// Determines whether a DesendancyLine is expanded.
     func isExpanded(_ line: DescendancyLine) -> Bool {
         switch line.kind {
-        case .person(let p): return p.key.map { expandedPersons.contains($0) } ?? false
-        case .union(let f):  return f.key.map { expandedUnions.contains($0) } ?? false
+        case .person(let p, _): return p.key.map { expandedPersons.contains($0) } ?? false
+        case .spouse(let f, _, _):  return f.key.map { expandedUnions.contains($0) } ?? false
         }
     }
 }
@@ -121,58 +152,51 @@ final class DescendancyListModel: ObservableObject {
 
 extension GedcomNode {
 
-    /// Compact label for a Person.
+    /// Label for a Person.
     func personLabel(uppercaseSurname: Bool = false) -> String {
-        if let name = self.child(withTag: "NAME")?.value {
-            let parts = name.components(separatedBy: "/")
-            if parts.count >= 2 {
-                let given = parts[0].trimmingCharacters(in: .whitespaces)
-                let surname = uppercaseSurname ? parts[1].uppercased() : parts[1]
-                return given.isEmpty ? surname : "\(given) \(surname)"
-            }
-            return name
-        }
-        return "(no name)"
-    }
-
-    /// Compact label for a Union.
-    func unionLabel(index: RecordIndex, uppercaseSurname: Bool = false) -> String {
-        let husb = self.value(forTag: "HUSB").flatMap { index[$0]?.personLabel(uppercaseSurname: uppercaseSurname) }
-        let wife = self.value(forTag: "WIFE").flatMap { index[$0]?.personLabel(uppercaseSurname: uppercaseSurname) }
-        var base: String
-        switch (husb, wife) {
-        case let (h?, w?): base = "\(h) + \(w)"
-        case let (h?, nil): base = "\(h) + ?"
-        case let (nil, w?): base = "? + \(w)"
-        default: base = "Union"
-        }
-        let marr = self.child(withTag: "MARR")?.child(withTag: "DATE")?.value
-        if let marr, !marr.isEmpty { return "Union: \(base) (\(marr))" }
-        return "Union: \(base)"
+        return self.displayName()
     }
 }
 
+private struct DescPalette {
+    let male: Color
+    let female: Color
+    let spouse: Color
+    let unknown: Color
+}
 
+/// Palette for DecendancyView text.
+private let palette = DescPalette(
+    male: Color(red: 0, green: 0, blue: 0.6),
+    female: Color(red: 0.6, green: 0, blue: 0),
+    spouse: Color(red: 0.4, green: 0.4, blue: 0),
+    unknown: .secondary,
+)
+
+/// SwiftUI View for a DescendancyList.
 struct DescendancyListView: View {
-    @EnvironmentObject var model: AppModel     // your app model if useful elsewhere
+
+    @EnvironmentObject var app: AppModel        // ← for navigation and global stuff
     let index: RecordIndex
-
-    @StateObject private var vm: DescendancyListModel
-
+    @StateObject private var model: DescendancyListModel
     private let indent: CGFloat = 18
 
+    /// Creates a DescendancyListView; caller provides the root Person and the RecordIndex.
     init(root: GedcomNode, index: RecordIndex) {
         self.index = index
-        _vm = StateObject(wrappedValue: DescendancyListModel(root: root))
+        // TODO: Understand the following statement:
+        _model = StateObject(wrappedValue: DescendancyListModel(root: root))
+        
     }
 
+    /// The DescendencyListView body.
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
             List {
-                ForEach(vm.visibleLines(index: index)) { line in
-                    row(for: line)
+                ForEach(model.visibleLines(index: index)) { line in
+                    rowView(for: line)
                         .contentShape(Rectangle())
                 }
             }
@@ -182,17 +206,17 @@ struct DescendancyListView: View {
 
     private var header: some View {
         HStack {
-            Text("Descendancy (root: \(vm.root.personLabel()))")
+            Text("Descendancy of \(model.root.personLabel())")
                 .font(.headline)
             Spacer()
             Menu("Options") {
                 Button("Collapse All", role: .none) {
-                    vm.expandedPersons.removeAll()
-                    vm.expandedUnions.removeAll()
+                    model.expandedPersons.removeAll()
+                    model.expandedUnions.removeAll()
                 }
                 Button("Expand Root Only") {
-                    vm.expandedPersons = [vm.root.key].compactMap { $0 }.reduce(into: Set<String>()) { $0.insert($1) }
-                    vm.expandedUnions.removeAll()
+                    model.expandedPersons = [model.root.key].compactMap { $0 }.reduce(into: Set<String>()) { $0.insert($1) }
+                    model.expandedUnions.removeAll()
                 }
             }
         }
@@ -200,85 +224,129 @@ struct DescendancyListView: View {
         .padding(.vertical, 8)
     }
 
+    /// Creates Views for DescendancyLines.
     @ViewBuilder
-    private func row(for line: DescendancyLine) -> some View {
-        HStack(spacing: 8) {
-            // Indentation
-            Color.clear.frame(width: CGFloat(line.depth) * indent, height: 0)
+    private func rowView(for line: DescendancyLine) -> some View {
 
-            // Chevron
-            Button {
-                vm.toggle(line)
-            } label: {
-                Image(systemName: vm.isExpanded(line) ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 16, height: 16)
-                    .opacity(disclosable(line) ? 1 : 0) // hide if no children
+        HStack(spacing: 8) {
+            // Make the indent and the gutter the expand hit target.
+            HStack(spacing: 0) {
+                // Indentation width only; zero height so it doesn't affect row height.
+                // I changed the height to 12 to see what happens.
+                Color.clear.frame(width: CGFloat(line.depth) * indent, height: 12)
+
+                // Chevron icon
+                Image(systemName: model.isExpanded(line) ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .opacity(expandable(line) ? 1 : 0) // hide if not expandable
             }
-            .buttonStyle(.plain)
-            .disabled(!disclosable(line))
+            .contentShape(Rectangle())                                // use the whole gutter for hit-testing
+            .onTapGesture { if expandable(line) { model.toggle(line) } } // big, forgiving target
+            .accessibilityLabel(model.isExpanded(line) ? "Collapse" : "Expand")
+            .accessibilityAddTraits(.isButton)
+            .allowsHitTesting(expandable(line))                       // ignore taps when not expandable
 
             // Label + actions
             switch line.kind {
-            case .person(let p):
-                personRow(p)
+            case .person(let person, let events):
+                personRow(person, events: events)
+                    .contentShape(Rectangle()) // Make the row tappable.
+                    .onTapGesture {
+                        app.path.append(Route.descendancy(person))
+                    }
                     .contextMenu {
-                        Button("Make Root") { vm.reRoot(p) }
-                        Button("Open in PersonView") {
-                            // Hook into your navigation to PersonView here
-                            //model.openPerson(p) // if you have a helper
+                        Button("Make Root Here") {
+                            model.reRoot(person) // Reroot to current Person
+                        }
+                        Button("Open in Person View") {
+                            app.path.append(Route.person(person)) // Open current Person in PersonView.
                         }
                         Button("Show Families") {
-                            if let k = p.key { vm.expandedPersons.insert(k) }
+                            if let k = person.key { model.expandedPersons.insert(k) }
                         }
-                    }
-                    .onTapGesture(count: 1) {
-                        // Common single-tap behavior: make root (adjust if you prefer)
-                        vm.reRoot(p)
                     }
 
-            case .union(let f):
-                Text(f.unionLabel(index: index))
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(.secondary)
+            case .spouse(let family, let spouse, let events):
+                spouseRow(spouse, events: events)
+                    .contentShape(Rectangle())  // Make the row tappable.
+                    .onTapGesture {
+                        if let s = spouse {
+                            app.path.append(Route.person(s)) // Open current spouse in PersonView.
+                        }
+                    }
+                    .allowsHitTesting(spouse != nil)  // Disable taps when there is no spouse.
+                    .opacity(spouse == nil ? 0.6 : 1)  // Visually indicate it's inactive REMOVE IF DOESN'T LOOK GOOD
                     .contextMenu {
                         Button("Expand Children") {
-                            if let k = f.key { vm.expandedUnions.insert(k) }
+                            if let k = family.key { model.expandedUnions.insert(k) }
                         }
                         Button("Collapse") {
-                            if let k = f.key { vm.expandedUnions.remove(k) }
+                            if let k = family.key { model.expandedUnions.remove(k) }
+                        }
+                        if let s = spouse {
+                            Button("Open Spouse in Person View") {
+                                app.path.append(Route.person(s))
+                            }
                         }
                     }
             }
-
             Spacer(minLength: 0)
         }
         .padding(.vertical, 4)
     }
 
-    private func personRow(_ p: GedcomNode) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "person.crop.square")
-            Text(p.personLabel())
-                .font(.system(.body, design: .rounded))
-                .fontWeight(.medium)
-            if let b = p.child(withTag: "BIRT")?.child(withTag: "DATE")?.value {
-                Text("• \(b)").foregroundStyle(.secondary)
-            }
-            if let d = p.child(withTag: "DEAT")?.child(withTag: "DATE")?.value {
-                Text("– \(d)").foregroundStyle(.secondary)
-            }
+    private func sexSymbol(_ person: GedcomNode?) -> String {
+        guard let person else { return "" }
+        switch (person.sexOf() ?? .unknown) {
+        case .male: return "♂️"
+        case .female: return "♀️"
+        default: return "?"
         }
     }
 
-    /// Whether this line can expand (i.e., has potential children)
-    private func disclosable(_ line: DescendancyLine) -> Bool {
+    private func personRow(_ person: GedcomNode, events: Events) -> some View {
+        let color: Color = {
+            switch (person.sexOf() ?? .unknown) {
+            case .male:   return palette.male
+            case .female: return palette.female
+            case .unknown: return palette.unknown
+            }
+        }()
+
+        return HStack(spacing: 6) {
+            Text(sexSymbol(person))
+                .baselineOffset(8)
+                .padding(.trailing, -4)
+            Text(person.personLabel())
+                .padding(.leading, -4)
+            if let b = events.birth { Text("• \(b)").foregroundStyle(.secondary) }
+            if let d = events.death { Text("– \(d)").foregroundStyle(.secondary) }
+        }
+        .font(.system(.body, design: .rounded))
+        .fontWeight(.medium)
+        .foregroundStyle(color)
+    }
+
+    private func spouseRow(_ spouse: GedcomNode?, events: Events) -> some View {
+        HStack(spacing: 6) {
+            Text(sexSymbol(spouse))
+                .baselineOffset(8)
+                .padding(.trailing, -4)
+            //Image(systemName: "person.crop.square")
+            Text(spouse?.personLabel() ?? "(unknown spouse)")
+            if let m = events.marriage { Text("married \(m)") }
+        }
+        .font(.system(.body, design: .rounded))
+        .fontWeight(.medium)
+        .foregroundStyle(palette.spouse)
+    }
+
+    /// Checks whether this descendancy line is expandable (has potential children).
+    private func expandable(_ line: DescendancyLine) -> Bool {
         switch line.kind {
-        case .person(let p):
-            // Disclosable if the person has any FAMS families
+        case .person(let p, _):  // Expandable if the Person has and FAMS links.
             return !p.children(withTag: "FAMS").isEmpty
-        case .union(let f):
-            // Disclosable if the family has any CHIL
+        case .spouse(let f, _, _):  // Expandable if the Family has any CHIL links.
             return !f.children(withTag: "CHIL").isEmpty
         }
     }

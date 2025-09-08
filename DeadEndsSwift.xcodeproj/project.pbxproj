@@ -9,10 +9,20 @@
 /* Begin PBXBuildFile section */
 		263408D52E21698F00F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		263408E12E216A8100F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
+		26DF075D2E69F15E000D08EE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		263408D82E216A7200F4E6DE /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		26DF07542E69E7E6000D08EE /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -31,6 +41,7 @@
 		2682068B2D1337930051544B /* libDeadEndsLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDeadEndsLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2686ABAA2D94F1E300FE56DC /* SExprPNode.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SExprPNode.md; sourceTree = "<group>"; };
 		268F3D732D9D91FC00304D51 /* ImportStack.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ImportStack.md; sourceTree = "<group>"; };
+		26DF07562E69E7E6000D08EE /* DeadEndsTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DeadEndsTest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -40,6 +51,13 @@
 				IntraInter.swift,
 			);
 			target = 2673AD282E22A6B10078C61B /* Warehouse */;
+		};
+		2644BEC42E63C62A00A073F1 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				UnifiedPersonView.swift,
+			);
+			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
 		};
 		2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -94,6 +112,9 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		263408B12E21680900F4E6DE /* DeadEndsApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2644BEC42E63C62A00A073F1 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */,
+			);
 			path = DeadEndsApp;
 			sourceTree = "<group>";
 		};
@@ -117,6 +138,11 @@
 				26CA3E052DBFD1A9001DA273 /* Exceptions for "DeadEndsLib" folder in "DeadEndsLib" target */,
 			);
 			path = DeadEndsLib;
+			sourceTree = "<group>";
+		};
+		26DF07572E69E7E6000D08EE /* DeadEndsTest */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DeadEndsTest;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -152,6 +178,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		26DF07532E69E7E6000D08EE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26DF075D2E69F15E000D08EE /* libDeadEndsLib.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -170,6 +204,7 @@
 				26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */,
 				263408DB2E216A7200F4E6DE /* RunScript */,
 				2673AD2D2E22A7000078C61B /* Warehouse */,
+				26DF07572E69E7E6000D08EE /* DeadEndsTest */,
 				26106FAE2D7BC96400994B2C /* Frameworks */,
 				268206632D13370F0051544B /* Products */,
 				2686ABA92D94F1BC00FE56DC /* Documents */,
@@ -183,6 +218,7 @@
 				263408B02E21680900F4E6DE /* DeadEndsApp.app */,
 				263408DA2E216A7200F4E6DE /* RunScript */,
 				2673AD292E22A6B10078C61B /* libWarehouse.a */,
+				26DF07562E69E7E6000D08EE /* DeadEndsTest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -299,6 +335,28 @@
 			productReference = 2682068B2D1337930051544B /* libDeadEndsLib.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		26DF07552E69E7E6000D08EE /* DeadEndsTest */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26DF075C2E69E7E6000D08EE /* Build configuration list for PBXNativeTarget "DeadEndsTest" */;
+			buildPhases = (
+				26DF07522E69E7E6000D08EE /* Sources */,
+				26DF07532E69E7E6000D08EE /* Frameworks */,
+				26DF07542E69E7E6000D08EE /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				26DF07572E69E7E6000D08EE /* DeadEndsTest */,
+			);
+			name = DeadEndsTest;
+			packageProductDependencies = (
+			);
+			productName = DeadEndsTest;
+			productReference = 26DF07562E69E7E6000D08EE /* DeadEndsTest */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -323,6 +381,9 @@
 						CreatedOnToolsVersion = 16.2;
 						LastSwiftMigration = 1620;
 					};
+					26DF07552E69E7E6000D08EE = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = 2682065D2D13370F0051544B /* Build configuration list for PBXProject "DeadEndsSwift" */;
@@ -343,6 +404,7 @@
 				263408AF2E21680900F4E6DE /* DeadEndsApp */,
 				263408D92E216A7200F4E6DE /* RunScript */,
 				2673AD282E22A6B10078C61B /* Warehouse */,
+				26DF07552E69E7E6000D08EE /* DeadEndsTest */,
 			);
 		};
 /* End PBXProject section */
@@ -380,6 +442,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		268206882D1337930051544B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		26DF07522E69E7E6000D08EE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -643,6 +712,30 @@
 			};
 			name = Release;
 		};
+		26DF075A2E69E7E6000D08EE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 22WT5TK79S;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		26DF075B2E69E7E6000D08EE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 22WT5TK79S;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -687,6 +780,15 @@
 			buildConfigurations = (
 				2682068D2D1337930051544B /* Debug */,
 				2682068E2D1337930051544B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		26DF075C2E69E7E6000D08EE /* Build configuration list for PBXNativeTarget "DeadEndsTest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				26DF075A2E69E7E6000D08EE /* Debug */,
+				26DF075B2E69E7E6000D08EE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

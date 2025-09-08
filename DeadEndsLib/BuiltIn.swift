@@ -50,8 +50,8 @@ extension Program {
             // Person operations.
             "indi": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndi($0) },
             "name": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinName($0) },
-            "givens": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinGivens($0) },
-            "surname": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSurname($0) },
+            //"givens": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinGivens($0) },
+            //"surname": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSurname($0) },
             "birth" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinBirth($0) },
             "death": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDeath($0) },
 

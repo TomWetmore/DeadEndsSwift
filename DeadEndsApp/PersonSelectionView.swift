@@ -3,13 +3,13 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed 18 July 2025.
+//  Last changed 8 September 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-// PersonMatch is a struct using a Gedcom key for an id, and a Gedcom node.
+/// PersonMatch is a struct using a Gedcom key for an id, and a Gedcom node.
 struct PersonMatch: Identifiable {
     let id: String // Key of an INDI node.
     let node: GedcomNode // INDI node.
@@ -27,8 +27,8 @@ struct PersonMatch: Identifiable {
     }
 }
 
-// PersonSelectionView is a View that searches for a list of persons by name and allows user to
-// select one.
+/// `PersonSelectionView` is a View that shows the list of Persons in a Database with names that match
+///  a pattern and allows the user to select one.
 
 struct PersonSelectionView: View {
 
@@ -41,7 +41,7 @@ struct PersonSelectionView: View {
             Text("Enter a name to search for:")
                 .font(.body)
             HStack {
-                TextField("e.g. Thomas/Wetmore", text: $query)
+                TextField("e.g. William/James", text: $query)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .onSubmit {
                         performSearch()
@@ -76,9 +76,15 @@ struct PersonSelectionView: View {
     // by name; assign the result to results.
     private func performSearch() {
         guard let db = model.database else { return }
-        results = db.persons(withName: query).map { PersonMatch(id: $0.key!, node: $0) }
-            .sorted {
-                ($0.node.gedcomName ?? GedcomName("")) < ($1.node.gedcomName ?? GedcomName(""))
+        results = db.persons(withName: query)
+            .map { PersonMatch(id: $0.key!, node: $0) }
+            .sorted { lhs, rhs in
+                switch (lhs.node.gedcomName, rhs.node.gedcomName) {
+                case let (l?, r?): return l < r                 // both present → use Comparable
+                case (nil, nil):   return lhs.id < rhs.id       // stable tiebreaker
+                case (nil, _):     return false                 // nils after non-nils
+                case (_, nil):     return true
+                }
             }
     }
 }

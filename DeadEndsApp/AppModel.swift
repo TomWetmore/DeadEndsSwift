@@ -3,17 +3,16 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 22 June 2025.
-//  Last changed on 2 July 2025.
+//  Last changed on 29 August 2025.
 //
 
-import Foundation
-import DeadEndsLib
 import SwiftUI
+import DeadEndsLib
 
 @MainActor
 class AppModel: ObservableObject {
-    @Published var database: Database? // DeadEnds Database read from Gedcom file.
+    @Published var database: Database? // DeadEnds Database.
     @Published var path = NavigationPath() // Navigation stack.
-    @Published var status: String? // Status text show on major views.
+    @Published var status: String? // Status text shown on major views.
 }
 

@@ -34,7 +34,7 @@ func buildFamilyGraph(
 
     var node = GraphNode(
         id: pid,
-        name: person.displayName,
+        name: person.displayName(),
         subtitle: lifespanLine(person),
         spouseNames: includeSpouses ? spouseNames(person, ri: index) : []
     )
@@ -92,5 +92,5 @@ func spouseNames(_ p: GedcomNode, ri: RecordIndex) -> [String] {
         let partners = partnerKeys.compactMap { ri[$0] }
         return partners.first { $0 != p }
     }
-    return fams.compactMap { spouseIn($0)?.displayName }
+    return fams.compactMap { spouseIn($0)?.displayName() }
 }

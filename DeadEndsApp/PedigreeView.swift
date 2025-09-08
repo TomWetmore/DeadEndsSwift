@@ -36,15 +36,15 @@ struct PedigreeView: View {
                     Path { path in
                         path.move(to: CGPoint(x: x, y: 0))
                         path.addLine(to: CGPoint(x: x, y: geometry.size.height))
-                    }.stroke(Color.blue.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [5]))
+                    }.stroke(Color.blue.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [5]))
                 }
                 // Constants used in layout calculations.
                 let colwidth = geometry.size.width / CGFloat(generations)
                 let offset = colwidth / 2.0
-                // Layout the Persons in the view, converting from unit sqare to actual coordinates.
+                // Layout each Person in the Pedigree, converting from unit square to actual coordinates.
                 ForEach(layout) { node in
-                    let x = node.x * geometry.size.width + offset
-                    let y = node.y * geometry.size.height
+                    let x = node.x * geometry.size.width + offset  // Actual x coordinate.
+                    let y = node.y * geometry.size.height   // Actual y coordinate.
                     PersonRow(person: node.person)
                     //PersonButton(person: node.person)
                         .frame(width: min(colwidth, buttonWidth), alignment: .leading)
