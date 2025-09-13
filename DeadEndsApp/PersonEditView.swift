@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 31 July 2025
+//  Last changed on 11 September 2025.
 //
 
 import SwiftUI
@@ -124,7 +124,7 @@ extension PersonEditView {
         let source = StringGedcomSource(name: "edit view", content: text)
         var errlog = ErrorLog()
         var tagmap = model.database!.tagmap
-        let records: [GedcomNode]? = getRecordsFromSource(source: source, tagmap: &tagmap, errlog: &errlog)
+        let records: [GedcomNode]? = loadRecords(from: source, tagMap: &tagmap, errlog: &errlog)
         guard let list = records, list.count == 1, errlog.count == 0 else {
             return (edited: nil, errors: ["Error parsing record"])
         }
@@ -179,8 +179,8 @@ extension PersonEditView {
         // Update NameIndex
         let addedNames = new.names.subtracting(old.names)
         let removedNames = old.names.subtracting(new.names)
-        for name in removedNames { db.nameIndex.remove(name: name, recordKey: old.key) }
-        for name in addedNames { db.nameIndex.add(name: name, recordKey: old.key) }
+        for name in removedNames { db.nameIndex.remove(value: name, recordKey: old.key) }
+        for name in addedNames { db.nameIndex.add(value: name, recordKey: old.key) }
 
         // Update RefnIndex (when implemented)
         let addedRefns = new.refns.subtracting(old.refns)

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 31 July 2025.
+//  Last changed on 11 September 2025.
 //
 
 import Foundation
@@ -25,18 +25,14 @@ public class TagMap {
 /// The line's level number is inferred when needed.
 public class GedcomNode: CustomStringConvertible {
 
-    /// Optional Gedcom key (*cross reference identifier*) found on root nodes.
-    public var key: String?
-    /// Gedcom tag found on all Gedcom lines.
-    public var tag: String
-    /// Optional Gedcom value found on many Gedcom lines.
-    public var value: String? // Value; optional.
-                              /// Optional reference to the next sibling of `self`.
-    public var sibling: GedcomNode?
-    /// Optional reference to the first child of `self`.
-    public var child: GedcomNode?  // First child; optional.
-    public weak var parent: GedcomNode? // Parent; not on root nodes.
+    public var key: String?  // Optional Gedcom key (cross reference id) found on root lines.
+    public var tag: String  // Gedcom tag found on all lines.
+    public var value: String? // Optional value found on many lines.
+    public var sibling: GedcomNode?  // Optional reference to next sibling.
+    public var child: GedcomNode?  // Optional reference to first child line
+    public weak var parent: GedcomNode? // Parent reference; only root lines.
 
+    /// Description of GedcomNode.
     public var description: String {
         var description =  ""
         if let key { description += "\(key) " }
@@ -45,14 +41,14 @@ public class GedcomNode: CustomStringConvertible {
         return description
     }
 
-    /// Creates a new GedcomNode with key, tag and value.
+    /// Creates a GedcomNode with key, tag and value.
     init(key: String? = nil, tag: String, value: String? = nil) {
         self.key = key
         self.tag = tag
         self.value = value
     }
 
-    /// Prints a `GedcomNode` tree to `stdout` -- for debugging.
+    /// Prints a GedcomNode tree to stdout.
     func printTree(level: Int = 0, indent: String = "") {
         let space = String(repeating: indent, count: level)
         print("\(space)\(level) \(self)")
@@ -60,7 +56,7 @@ public class GedcomNode: CustomStringConvertible {
         sibling?.printTree(level: level, indent: indent)
     }
 
-    // Gets the dictionary of array of all child GedcomNodes indexed by tag.
+    /// Gets the dictionary of array of all child GedcomNodes indexed by tag.
     lazy var childrenByTag: [String: [GedcomNode]] = {
         var result: [String: [GedcomNode]] = [:]
         var current = child
@@ -75,9 +71,7 @@ public class GedcomNode: CustomStringConvertible {
 
 extension GedcomNode: Equatable {
 
-    /// Compare two `GedcomNodes`.
-    ///
-    /// `GedcomNodes` are equivalent only if they are the *same* node.
+    /// Compares two GedcomNodes.
     public static func == (lhs: GedcomNode, rhs: GedcomNode) -> Bool {
         return lhs === rhs // identity comparison
     }
@@ -154,7 +148,6 @@ public extension GedcomNode {
     /// Parameters:
     /// - `level` is the Gedcom level of the node
     /// - `indent` indicates whether the text should be indented.
-
     func gedcomText(level: Int = 0, indent: Bool = false) -> String {
 
         var text: [String] = [] // Text to return.
@@ -168,13 +161,11 @@ public extension GedcomNode {
             line += " \(value)" // Add value.
         }
         text.append(line) // Set text to this node's line.
-
         var child = self.child
         while let node = child {
             text.append(node.gedcomText(level: level + 1, indent: indent))
             child = node.sibling
         }
-
         return text.joined(separator: "\n")
     }
 }

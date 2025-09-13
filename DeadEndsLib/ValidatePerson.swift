@@ -11,7 +11,7 @@ import Foundation
 typealias StringSet = Set<String>
 
 // validatePersons validates the persons in a RootList.
-func validatePersons(persons: RootList, context: ValidationContext, errlog: inout ErrorLog) {
+func validatePersons(persons: RecordList, context: ValidationContext, errlog: inout ErrorLog) {
 	var numPersonsValidated = 0 // Debugging.
 	for person in persons {
 		person.validatePerson(context: context, errlog: &errlog)

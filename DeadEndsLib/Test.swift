@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 30 December 2025.
-//  Last changed on 13 July 2025.
+//  Last changed on 11 September 2025.
 //
 
 import Foundation
@@ -31,7 +31,7 @@ struct DeadEndsMain {
 		let path = "/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged"
 		var errlog = ErrorLog()
 		print("Creating Database from \(path)")
-		guard let database = getDatabaseFromPath(path, errlog: &errlog) else {
+        guard let database = loadDatabase(from: path, errlog: &errlog) else {
 			print(errlog)
 			return
 		}
@@ -72,18 +72,18 @@ struct DeadEndsMain {
 }
 
 
-extension GedcomNode {
-
-	// nameValues returns the non-empty values of all 1 NAME nodes in a person.
-	func nameValues() -> [String] {
-		var names: [String] = []
-		self.traverseChildren { node in
-			if node.tag == "NAME" {
-				if let value = node.value {
-					names.append(value)
-				}
-			}
-		}
-		return names
-	}
-}
+//extension GedcomNode {
+//
+//	// nameValues returns the non-empty values of all 1 NAME nodes in a person.
+//	func nameValues() -> [String] {
+//		var names: [String] = []
+//		self.traverseChildren { node in
+//			if node.tag == "NAME" {
+//				if let value = node.value {
+//					names.append(value)
+//				}
+//			}
+//		}
+//		return names
+//	}
+//}

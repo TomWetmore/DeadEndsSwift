@@ -9,7 +9,7 @@
 import Foundation
 
 // validateFamilies validates the families in a RootList.
-func validateFamilies(families: RootList, index: RecordIndex, source: String, keymap: KeyMap,
+func validateFamilies(families: RecordList, index: RecordIndex, source: String, keymap: KeyMap,
 					  errorlog: inout ErrorLog) {
 	var numFamiliesValidated = 0
 	for family in families {

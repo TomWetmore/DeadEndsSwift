@@ -3,27 +3,27 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 21 July 2025.
+//  Last changed on 12 September 2025.
 //
 
 import Foundation
 
-/// Protocol to generalize sources of Gedcom lines. Currently used for file- and String-based sources.
+/// Generalizes sources of Gedcom lines.
 public protocol GedcomSource {
-    var name: String { get }
+    var name: String { get }  // A source needs a name for error messages.
     func makeLineIterator() -> AnyIterator<String>
 }
 
 /// GedcomSource for UNIX files.
 public struct FileGedcomSource: GedcomSource {
-    public let path: String
+    public let path: String  // Path to Gedcom file.
     public var name: String { path }
 
     public func makeLineIterator() -> AnyIterator<String> {
-        guard let contents = try? String(contentsOfFile: path, encoding: .utf8) else {
-            return AnyIterator { nil }
-        }
-        var lines = contents.split(separator: "\n", omittingEmptySubsequences: false).map(String.init).makeIterator()
+        guard let contents = try? String(contentsOfFile: path, encoding: .utf8)
+        else { return AnyIterator { nil } }
+        var lines = contents.split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init).makeIterator()
         return AnyIterator { lines.next() }
     }
 }
@@ -39,170 +39,125 @@ public struct StringGedcomSource: GedcomSource {
     }
 
     public func makeLineIterator() -> AnyIterator<String> {
-        var lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init).makeIterator()
+        var lines = content.split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init).makeIterator()
         return AnyIterator { lines.next() }
     }
 }
 
-/// Structure that reduces the parameters needed by validation functions.
+/// Reduces the parameters used by the validation functions.
 struct ValidationContext {
     let index: RecordIndex
     let keymap: KeyMap
     let source: String
-
-    init(index: RecordIndex, keymap: KeyMap, source: String) {
-        self.index = index
-        self.keymap = keymap
-        self.source = source
-    }
 }
 
-/// Reads a GedcomSource into the main database containers.
-///
-/// Reads records via `getRecordsFromSource`, and validates then with `checkKeysAndReferences`
+/// Loads and validates records from a GedcomSource into containers.
 ///
 /// Parameters
-/// - `path`: path to the Gedcom file.
-/// - `tagmap`: `TagMap` (`[String: String]`) holding unique string for all keys in database.
-/// - `keymap`: `KeyMap` (`[String: Int]`]) that maps record keys to their starting line numbers.
-/// - `errorlog`: `ErrorLog` (`[Error]`) that holds `Error`'s found.
+/// - path: path to the Gedcom file.
+/// - tagmap: TagMap ([String: String]) holding unique string for all keys in database.
+/// - keymap: KeyMap ([String: Int]]) that maps record keys to their starting line numbers.
+/// - errorlog: ErrorLog ([Error]) that holds Error's found.
+func loadValidRecords(from source: GedcomSource, tagMap: inout TagMap, keyMap: inout KeyMap, errlog: inout ErrorLog)
+-> (index: RecordIndex, persons: RecordList, families: RecordList, header: GedcomNode?)? {
 
-
-/// Reads a GedcomSource, validates the records, and returns the structures used to build a Database.
-/// Returns nil on error, and appends errors to errlog. The keymap is filled in for error reporting.
-func getValidRecordsFromSource(source: GedcomSource, tagmap: inout TagMap, keymap: inout KeyMap, errlog: inout ErrorLog
-) -> (index: RecordIndex, persons: RootList, families: RootList)? {
-
-    // Parse the source into a list of root nodes (Gedcom records)
-    guard let rootlist = getRecordsFromSource(source: source, tagmap: &tagmap, keymap: &keymap, errlog: &errlog
+    // Parse the source into a list of records (Gedcom trees).
+    guard let recordList = loadRecords(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog
     ) else { return nil }
 
-    // Check key closure.
-    checkKeysAndReferences(records: rootlist, path: source.name, keymap: keymap, errlog: &errlog)
+    // Check key closure: all records referred to must exist.
+    checkKeysAndReferences(records: recordList, path: source.name, keymap: keyMap, errlog: &errlog)
 
-    // Create internal structures; these may change.
+    // Create internal structures.
     var index = RecordIndex()
-    var persons = RootList()
-    var families = RootList()
-    for root in rootlist {
+    var persons = RecordList()
+    var families = RecordList()
+    var header: GedcomNode?
+    for root in recordList {
         if let key = root.key { index[key] = root }
         if root.tag == "INDI" { persons.append(root) }
-        if root.tag == "FAM" { families.append(root) }
+        else if root.tag == "FAM" { families.append(root) }
+        else if root.tag == "HEAD" { header = root }
     }
 
     // Validate person and family records.
-    let context = ValidationContext(index: index, keymap: keymap, source: "")
+    let context = ValidationContext(index: index, keymap: keyMap, source: source.name)
     validatePersons(persons: persons, context: context, errlog: &errlog)
     //validateFamilies(records: rootList, keymap: keymap, errlog: &errlog) {
 
-    return (index, persons, families)
+    return (index, persons, families, header)
 }
 
-/// Returns the Gedcom records from a GedcomSource.
+/// Loads the Gedcom records from a GedcomSource.
 /// It converts lines to data nodes, then data nodes to root records.
-public func getRecordsFromSource(source: GedcomSource, tagmap: inout TagMap, keymap: inout KeyMap, errlog: inout ErrorLog) -> RootList? {
-    guard let datanodes = getDataNodesFromSource(source: source, tagmap: &tagmap, keymap: &keymap, errlog: &errlog) else {
-        return nil
-    }
-    return getRecordsFromDataNodes(datanodes: datanodes, keymap: keymap, errlog: &errlog)
+public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, keyMap: inout KeyMap,
+                                 errlog: inout ErrorLog) -> RecordList? {
+    guard let dataNodes = loadDataNodes(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog)
+    else { return nil }
+    return buildRecords(from: dataNodes, keymap: keyMap, errlog: &errlog)
 }
 
-public func getRecordsFromSource(source: GedcomSource, tagmap: inout TagMap, errlog: inout ErrorLog) -> RootList? {
+/// Loads the Gedcom records from a GedcomSource. Differs from previous by creating a KeyMap.
+public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, errlog: inout ErrorLog) -> RecordList? {
     var keyMap = KeyMap()
-    return getRecordsFromSource(source: source, tagmap: &tagmap, keymap: &keyMap, errlog: &errlog)
+    return loadRecords(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog)
 }
 
-
-func getDataNodesFromLines(lines: [String], source: String, tagmap: inout TagMap, keymap: inout KeyMap,
-                           errlog: inout ErrorLog) -> DataNodes<Int>? {
-    var nodes = DataNodes<Int>()
-    var lineno = 0
-
-    for line in lines {
-        lineno += 1
-        if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
-
-        switch extractFields(from: line) {
-        case .success(let level, let key, let tag, let value):
-            let node = GedcomNode(key: key, tag: tagmap.intern(tag: tag), value: value)
-            nodes.add(node: node, data: level)
-            if level == 0, let key = key { keymap[key] = lineno }
-        case .failure(let errmsg):
-            errlog.append(Error(type: .syntax, severity: .severe, source: source, line: lineno, message: errmsg))
-        }
-    }
-    return nodes
-}
-
-func getDataNodesFromSource(
-    source: GedcomSource,
-    tagmap: inout TagMap,
-    keymap: inout KeyMap,
-    errlog: inout ErrorLog
-) -> DataNodes<Int>? {
+/// Gets the Array of GedcomNodes from a GedcomSource's lines. The levels are not checked yet.
+func loadDataNodes(from source: GedcomSource, tagMap: inout TagMap, keyMap: inout KeyMap,
+                            errlog: inout ErrorLog) -> DataNodes<Int>? {
     var nodes = DataNodes<Int>()
     var lineno = 0
     let lines = source.makeLineIterator()
-
     while let line = lines.next() {
         lineno += 1
-        if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            continue
-        }
-        switch extractFields(from: line) {
+        if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
+        switch parseLine(from: line) {
         case .success(level: let level, key: let key, tag: let tag, value: let value):
-            let node = GedcomNode(key: key, tag: tagmap.intern(tag: tag), value: value)
+            let node = GedcomNode(key: key, tag: tagMap.intern(tag: tag), value: value)
             nodes.add(node: node, data: level)
-            if level == 0, let key = key {
-                keymap[key] = lineno
-            }
+            if level == 0, let key = key { keyMap[key] = lineno }
         case .failure(errmsg: let errmsg):
-            let error = Error(
-                type: .syntax,
-                severity: .severe,
-                source: source.name,
-                line: lineno,
-                message: errmsg
-            )
+            let error = Error(type: .syntax, severity: .severe, source: source.name, line: lineno, message: errmsg)
             errlog.append(error)
         }
     }
-
     return nodes
 }
 
-/// Processes an Array of (Node, level) pairs from a Gedcom source into an Array of Node
-/// trees (aka Records). It requires the levels to guide the tree building.
-func getRecordsFromDataNodes(datanodes: DataNodes<Int>, keymap: KeyMap, errlog: inout ErrorLog) -> RootList {
-    enum State { case initial, main, error } // Tree building done by state machine.
+/// Processes an Array of (Node, level) pairs to build an Array of Gedcom records. It uses the
+/// levels to guide the record building state machine.
+func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout ErrorLog) -> RecordList {
+    enum State { case initial, main, error } // Record building states.
     var state: State = .initial
-    var rootList = RootList() // Array of roots of the constructed Node trees.
-    var pnode: GedcomNode? = nil // Previous Node.
-    var plevel = 0 // Previous level.
+    var recordList = RecordList()    // Array of records.
+    var pnode: GedcomNode? = nil // Previous node.
+    var plevel = 0               // Previous level.
     var rnode: GedcomNode? = nil // Current root.
 
-    for (node, level) in datanodes {
+    for (node, level) in dataNodes {  // This loop is the record building state machine.
         switch state {
         case .initial: // Handle first pair; level must be 0).
             if (level == 0) {
-                rnode = node; // Set current root and enter .main state.
+                rnode = node; // Set current root and goto .main.
                 state = .main;
-            } else { // Issue error and enter .error state.
+            } else { // Issue error and goto .error.
                 let error = Error(type: .syntax, severity: .fatal, message: "First line must have level 0")
                 errlog.append(error)
                 state = .error
             }
-        case .main: // Builds Node trees from the (Node, level)'s.
+        case .main: // Builds records from the (Node, level)'s.
             if (level == 0) { // Found next root.
-                rootList.append(rnode!) // Save current Node tree.
-                rnode = node; // Set current root of the next tree.
-            } else if (level == plevel) { // Found the sibling of previous Node.
+                recordList.append(rnode!) // Save current root.
+                rnode = node; // Set current root for next record.
+            } else if (level == plevel) { // Found sibling of previous.
                 node.parent = pnode!.parent;
                 pnode!.sibling = node
-            } else if (level == plevel + 1) { // Found the child of previous Node.
+            } else if (level == plevel + 1) { // Found child of previous.
                 node.parent = pnode
                 pnode!.child = node
-            } else if (level < plevel) { // Found an uncle of previous Node.
+            } else if (level < plevel) { // Found uncle of previous.
                 var count = 0;
                 while (level < plevel) {
                     count += 1
@@ -223,7 +178,7 @@ func getRecordsFromDataNodes(datanodes: DataNodes<Int>, keymap: KeyMap, errlog: 
                 errlog.append(error)
                 state = .error
             }
-        case .error: // Skip Nodes until the next 0 level.
+        case .error: // Skip nodes until the next 0 level.
             if level == 0 {
                 state = .main
             }
@@ -231,20 +186,20 @@ func getRecordsFromDataNodes(datanodes: DataNodes<Int>, keymap: KeyMap, errlog: 
         plevel = level
         pnode = node
     }
-    if (state == .main) { // If in .main state at end save the last Node tree.
-        rootList.append(rnode!)
+    if (state == .main) { // If in .main state at end save the last record.
+        recordList.append(rnode!)
     }
-    return rootList;
+    return recordList;
 }
 
-/// Type returned by extractFields. On success holds the Gedcom fields. On failure holds an error message
+/// Type returned by parseLine. On success holds the Gedcom fields. On failure holds an error message.
 enum ReadResult {
     case success(level: Int, key: String?, tag: String, value: String?)
     case failure(errmsg: String)
 }
 
-/// Extracts the level, key, tag and value from a string holding a single Gedcom line.
-func extractFields(from line: String) -> ReadResult {
+/// The lexer for Gedcom lines; extracts the level, key, tag and value of a line, returning them in a ReadResult.
+func parseLine(from line: String) -> ReadResult {
     let trim = line.trimmingCharacters(in: .whitespacesAndNewlines)
 
     guard !trim.isEmpty else { return .failure(errmsg: "Empty string") }

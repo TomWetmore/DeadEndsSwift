@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 23 August 2025.
-//  Last changed on 28 August 2025.
+//  Last changed on 13 September 2025.
 //
 //  Experimental. Shows a descendancy list.
 
@@ -25,6 +25,7 @@ struct DescendancyLine: Identifiable, Hashable {
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
 }
 
+/// Holds date and place.
 private struct Event {
     let date: String?
     let place: String?
@@ -51,19 +52,19 @@ final class DescendancyListModel: ObservableObject {
         self.root = root
     }
 
-    /// Re-roots this model to a new Person and empty expanded sets.
+    /// Reroots this model to a new Person with empty expanded sets.
     func reRoot(_ person: GedcomNode) {
         root = person
         expandedPersons.removeAll()
         expandedUnions.removeAll()
     }
 
-    /// Builds the Array of all DescendancyLines. These are the lines that can appear in
+    /// Builds the Array of DescendancyLines. These are the lines that can appear in
     /// descendancy Views.
     func visibleLines(index: RecordIndex) -> [DescendancyLine] {
 
-        var lines: [DescendancyLine] = []  // DescendancyLines returned by this method.
-        // Sets of visited persons and families that prevent cycles.
+        var lines: [DescendancyLine] = []  // Returned DescendancyLines.
+        // Vusited persons and families to prevent cycles.
         var visitedPersons = Set<String>()
         var visitedFamilies = Set<String>()
 
@@ -87,9 +88,8 @@ final class DescendancyListModel: ObservableObject {
             }
         }
 
-        /// Adds a Spouse (aka Union/Family) line to the lines array.
+        /// Adds a Spouse (aka Union/Family) line to the DescendancyLines.
         func addUnion(_ family: GedcomNode, of person: GedcomNode, depth: Int, gen: Int) {
-
             guard let fKey = family.key, let pkey = person.key  else { return } // Can't fail.
             let hkey = family.value(forTag: "HUSB")
             let wkey = family.value(forTag: "WIFE")
@@ -111,30 +111,30 @@ final class DescendancyListModel: ObservableObject {
             visitedFamilies.insert(fKey)
 
             // Add DescendencyLines for the children.
-            let ckeys = family.children(withTag: "CHIL").compactMap { $0.value }
-            for cKey in ckeys {
-                guard let child = index[cKey] else { continue }
+            let childKeys = family.children(withTag: "CHIL").compactMap { $0.value }
+            for childKey in childKeys {
+                guard let child = index[childKey] else { continue }
                 addPerson(child, depth: depth + 1, gen: gen + 1)
             }
         }
 
-        // Start from root person.
+        // Build Array of DescendancyLines recursively starting at the root Persont.
         addPerson(root, depth: 0, gen: 0)
         return lines
     }
 
-    /// Toggles a DescendancyLine between expanded and unexpanded states.
+    /// Toggles a DescendancyLine between expanded and unexpanded.
     func toggle(_ line: DescendancyLine) {
         switch line.kind {
-        case .person(let p, _):  // Toggle a Person line.
-            if let k = p.key {
-                if expandedPersons.contains(k) { expandedPersons.remove(k) }
-                else { expandedPersons.insert(k) }
+        case .person(let person, _):  // Toggle a Person line.
+            if let key = person.key {
+                if expandedPersons.contains(key) { expandedPersons.remove(key) }
+                else { expandedPersons.insert(key) }
             }
-        case .spouse(let f, _, _):  // Toggle a Union line.
-            if let k = f.key {
-                if expandedUnions.contains(k) { expandedUnions.remove(k) }
-                else { expandedUnions.insert(k) }
+        case .spouse(let family, _, _):  // Toggle a Union line.
+            if let key = family.key {
+                if expandedUnions.contains(key) { expandedUnions.remove(key) }
+                else { expandedUnions.insert(key) }
             }
         }
     }
@@ -147,8 +147,6 @@ final class DescendancyListModel: ObservableObject {
         }
     }
 }
-
-//----------------------------------------------------------------------------------------
 
 extension GedcomNode {
 
@@ -229,10 +227,8 @@ struct DescendancyListView: View {
     private func rowView(for line: DescendancyLine) -> some View {
 
         HStack(spacing: 8) {
-            // Make the indent and the gutter the expand hit target.
+            // Make the indent and the gutter an expanded hit target.
             HStack(spacing: 0) {
-                // Indentation width only; zero height so it doesn't affect row height.
-                // I changed the height to 12 to see what happens.
                 Color.clear.frame(width: CGFloat(line.depth) * indent, height: 12)
 
                 // Chevron icon
@@ -240,52 +236,52 @@ struct DescendancyListView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .opacity(expandable(line) ? 1 : 0) // hide if not expandable
             }
-            .contentShape(Rectangle())                                // use the whole gutter for hit-testing
-            .onTapGesture { if expandable(line) { model.toggle(line) } } // big, forgiving target
+            .contentShape(Rectangle()) // Use whole gutter for hit-testing.
+            .onTapGesture { if expandable(line) { model.toggle(line) } }
             .accessibilityLabel(model.isExpanded(line) ? "Collapse" : "Expand")
             .accessibilityAddTraits(.isButton)
-            .allowsHitTesting(expandable(line))                       // ignore taps when not expandable
+            .allowsHitTesting(expandable(line))  // Ignore taps when not expandable.
 
-            // Label + actions
+            // Lines and actions.
             switch line.kind {
-            case .person(let person, let events):
+            case .person(let person, let events):  // Handle Person line.
                 personRow(person, events: events)
-                    .contentShape(Rectangle()) // Make the row tappable.
+                    .contentShape(Rectangle())  // Make the row tappable.
                     .onTapGesture {
                         app.path.append(Route.descendancy(person))
                     }
                     .contextMenu {
                         Button("Make Root Here") {
-                            model.reRoot(person) // Reroot to current Person
+                            model.reRoot(person)  // Reroot to current Person.
                         }
                         Button("Open in Person View") {
-                            app.path.append(Route.person(person)) // Open current Person in PersonView.
+                            app.path.append(Route.person(person))  // Open current Person in PersonView.
                         }
                         Button("Show Families") {
-                            if let k = person.key { model.expandedPersons.insert(k) }
+                            if let key = person.key { model.expandedPersons.insert(key) }
                         }
                     }
 
-            case .spouse(let family, let spouse, let events):
+            case .spouse(let family, let spouse, let events):  // Handle Spouse (Union/Family) line.
                 spouseRow(spouse, events: events)
                     .contentShape(Rectangle())  // Make the row tappable.
                     .onTapGesture {
-                        if let s = spouse {
-                            app.path.append(Route.person(s)) // Open current spouse in PersonView.
+                        if let spouse = spouse {
+                            app.path.append(Route.person(spouse))  // Open current spouse in PersonView.
                         }
                     }
                     .allowsHitTesting(spouse != nil)  // Disable taps when there is no spouse.
                     .opacity(spouse == nil ? 0.6 : 1)  // Visually indicate it's inactive REMOVE IF DOESN'T LOOK GOOD
                     .contextMenu {
                         Button("Expand Children") {
-                            if let k = family.key { model.expandedUnions.insert(k) }
+                            if let key = family.key { model.expandedUnions.insert(key) }
                         }
                         Button("Collapse") {
-                            if let k = family.key { model.expandedUnions.remove(k) }
+                            if let key = family.key { model.expandedUnions.remove(key) }
                         }
-                        if let s = spouse {
+                        if let spouse = spouse {
                             Button("Open Spouse in Person View") {
-                                app.path.append(Route.person(s))
+                                app.path.append(Route.person(spouse))
                             }
                         }
                     }
@@ -293,15 +289,6 @@ struct DescendancyListView: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 4)
-    }
-
-    private func sexSymbol(_ person: GedcomNode?) -> String {
-        guard let person else { return "" }
-        switch (person.sexOf() ?? .unknown) {
-        case .male: return "♂️"
-        case .female: return "♀️"
-        default: return "?"
-        }
     }
 
     private func personRow(_ person: GedcomNode, events: Events) -> some View {
@@ -314,13 +301,13 @@ struct DescendancyListView: View {
         }()
 
         return HStack(spacing: 6) {
-            Text(sexSymbol(person))
+            Text(person.sexSymbol)
                 .baselineOffset(8)
                 .padding(.trailing, -4)
             Text(person.personLabel())
                 .padding(.leading, -4)
-            if let b = events.birth { Text("• \(b)").foregroundStyle(.secondary) }
-            if let d = events.death { Text("– \(d)").foregroundStyle(.secondary) }
+            if let birth = events.birth { Text("• \(birth)").foregroundStyle(.secondary) }
+            if let death = events.death { Text("– \(death)").foregroundStyle(.secondary) }
         }
         .font(.system(.body, design: .rounded))
         .fontWeight(.medium)
@@ -329,12 +316,11 @@ struct DescendancyListView: View {
 
     private func spouseRow(_ spouse: GedcomNode?, events: Events) -> some View {
         HStack(spacing: 6) {
-            Text(sexSymbol(spouse))
+            Text(spouse?.sexSymbol ?? "?")
                 .baselineOffset(8)
                 .padding(.trailing, -4)
-            //Image(systemName: "person.crop.square")
             Text(spouse?.personLabel() ?? "(unknown spouse)")
-            if let m = events.marriage { Text("married \(m)") }
+            if let marriage = events.marriage { Text("married \(marriage)") }
         }
         .font(.system(.body, design: .rounded))
         .fontWeight(.medium)

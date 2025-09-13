@@ -11,7 +11,7 @@ import Foundation
 // checkKeysAndReferences checks that all record keys are unique and that all values that are keys refer to an
 // existing record. records: the records to be checked; path: name of Gedom file; keyMap: key to line number map;
 // errlog: error log.
-func checkKeysAndReferences(records: RootList, path: String, keymap: KeyMap, errlog: inout ErrorLog) {
+func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, errlog: inout ErrorLog) {
     var keyset = Set<String>() // All record keys in the records.
 
     // First pass checks record keys for existance and uniqueness.

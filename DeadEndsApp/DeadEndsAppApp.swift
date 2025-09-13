@@ -3,7 +3,7 @@
 //  DeadEndsApp.swift
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 17 July 2025.
+//  Last changed on 11 September 2025.
 //
 
 import SwiftUI
@@ -17,9 +17,7 @@ struct DeadEndsApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(model)
-                .onDisappear {
-                    NSApplication.shared.terminate(nil)
-                }
+                .onDisappear { NSApplication.shared.terminate(nil) }
         }
     }
 }

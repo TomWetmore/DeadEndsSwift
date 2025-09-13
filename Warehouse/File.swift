@@ -28,7 +28,7 @@ func getValidRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout K
 }
 
 /// Returns the Gedcom records from a source. It uses getDataNodesFromPath and
-/// getRecordsFromDataNodes to create a RootList of records.
+/// buildRecords to create a RootList of records.
 func oldgetRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
                         errorlog: inout ErrorLog) -> RootList? {
     guard let dataNodes = getDataNodesFromPath(path: path, tagmap: &tagmap, keymap: &keymap, errlog: &errorlog)

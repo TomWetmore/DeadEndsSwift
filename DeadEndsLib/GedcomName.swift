@@ -3,7 +3,7 @@
 //  DeadEnds Library
 //
 //  Created by Thomas Wetmore on 1 January 2025.
-//  Last changed on 7 Septemberb 2025.
+//  Last changed on 10 September 2025.
 //
 
 import Foundation
@@ -14,35 +14,33 @@ public struct GedcomName: Comparable, CustomStringConvertible {
     var nameParts: [String]  // Name parts, before surname, surname, and after surname.
     var surnameIndex: Int?  // Index of surname if it exists.
 
-    /// Property-wise initializer for GedcomName.
-    private init(parts: [String], surnameIndex: Int?) {
-        self.nameParts = parts
-        if let s = surnameIndex, s >= 0, s < parts.count { self.surnameIndex = s }
+    /// Initializer using precomupted structure properties.
+    private init(nameParts: [String], surnameIndex: Int?) {
+        self.nameParts = nameParts
+        if let s = surnameIndex, s >= 0, s < nameParts.count { self.surnameIndex = s }
         else { self.surnameIndex = nil }
     }
 
     /// Initializer for GedcomName using a Gedcom formatted name string as used in 1 NAME values.
     public init?(string: String) {
         guard let (parts, sindex) = parseGedcomName(value: string) else { return nil }
-        self.init(parts: parts, surnameIndex: sindex)
+        self.init(nameParts: parts, surnameIndex: sindex)
     }
 
     /// Initializer for GedcomName from a 0INDI or 0INDI:1NAME node.
     public init?(from node: GedcomNode) {
         let nameNode: GedcomNode? = (node.tag == "NAME") ? node : node.child(withTag: "NAME")
-        guard let raw = nameNode?.value else { return nil }
-        self.init(string: raw)
+        guard let value = nameNode?.value else { return nil }
+        self.init(string: value)
     }
 
     /// Returns a String description of a GedcomName showing its internal struture.
-    /// Not needed after development?
     public var description: String {
         let parts = nameParts.enumerated()
             .map { idx, part in
                 if idx == surnameIndex { return "[\(part)]" }  // Highlight the surname.
                 else { return part }
-            }
-            .joined(separator: " | ")
+            }.joined(separator: " | ")
         return "GedcomName(parts: \(parts), surnameIndex: \(surnameIndex?.description ?? "nil"))"
     }
 
@@ -52,7 +50,7 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         return nameParts.count - 1 + nameParts.reduce(0) { $0 + $1.count }
     }
 
-    /// Returns text to use to display a name in a text View; single source of truth.
+    /// Returns text to use to display a name in a text View.
     public func displayName(upSurname: Bool = false, surnameFirst: Bool = false, limit: Int = 0) -> String {
         var work = self
         if upSurname { work.uppercaseSurname() }
@@ -72,6 +70,13 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         } else {
             return nameParts.joined(separator: " ")  // Else join all parts in order.
         }
+    }
+
+    /// Returns the DeadEnds name key of this GedcomName.
+    var nameKey: String {
+        let firstInitial = firstInitial ?? "$"
+        let surname = surname ?? ""
+        return "\(firstInitial)\(soundex(for: surname))"
     }
 
     /// First initial (uppercased) of the first given name, or nil.
@@ -240,6 +245,7 @@ extension Person {
     }
 }
 
+// Methods for shortening GedcomNames.
 extension GedcomName {
 
     /// Shortens a GedcomName using a limit goal.
@@ -256,7 +262,7 @@ extension GedcomName {
     /// Converts the next middle given (right-to-left) to an initial and return true. Returns false
     /// when there are no more middle givens.
     @discardableResult
-    mutating func initialiseNextMiddleGiven() -> Bool {
+    private mutating func initialiseNextMiddleGiven() -> Bool {
         guard !nameParts.isEmpty else { return false }  // Need at least one name part.
 
         // Find rightmost given to start from.
@@ -283,7 +289,7 @@ extension GedcomName {
 
     /// Remove the rightmost middle **initial** (not the first given), adjusting `surnameIndex`.
     @discardableResult
-    mutating func removeRightmostMiddleInitial() -> Bool {
+    private mutating func removeRightmostMiddleInitial() -> Bool {
         for i in middleGivenIndices.reversed() where isInitial(nameParts[i]) {
             removePart(at: i)       // your existing helper that shifts surnameIndex
             return true
@@ -299,7 +305,7 @@ extension GedcomName {
 
     /// Index of the rightmost given name (immediately left of the surname if present),
     /// or the last part if there is no surname. Returns nil if there is no such part.
-    var lastGivenIndex: Int? {
+    private var lastGivenIndex: Int? {
         if let s = surnameIndex {
             return s > 0 ? s - 1 : nil
         } else {
@@ -308,7 +314,7 @@ extension GedcomName {
     }
 
     /// Index of the rightmost suffix token (the last part after the surname), or nil if none.
-    var lastSuffixIndex: Int? {
+    private var lastSuffixIndex: Int? {
         guard let s = surnameIndex, s + 1 < nameParts.count else { return nil }
         return nameParts.indices.last
     }
@@ -327,7 +333,7 @@ extension GedcomName {
 
     /// Removes a non-keeper suffix and returns true if possible; else returns false.
     @discardableResult
-    mutating func removeRightmostOptionalSuffix() -> Bool {
+    private mutating func removeRightmostOptionalSuffix() -> Bool {
         guard let r = suffixRange, !r.isEmpty else { return false }
         for i in r.reversed() {
             if !suffixKeeper(nameParts[i]) {
@@ -350,12 +356,13 @@ extension GedcomName {
     }
 
     /// Range of suffix tokens (those after the surname), or nil if none.
-    var suffixRange: Range<Int>? {
+    private var suffixRange: Range<Int>? {
         guard let s = surnameIndex, s + 1 < nameParts.count else { return nil }
         return (s + 1)..<nameParts.count
     }
 }
 
+/// Returns true for suffixes to keep during the first round of shortening.
 private func suffixKeeper(_ suffix: String) -> Bool {
     switch suffix {
     case "Jr", "Sr", "Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX": return true
@@ -363,19 +370,11 @@ private func suffixKeeper(_ suffix: String) -> Bool {
     }
 }
 
-///// Functional version of displayName that takes a String as an argument.
-public func displayName(name: String, upSurname: Bool = false, surnameFirst: Bool = false, limit: Int = 0) -> String {
-    guard let gname = GedcomName(string: name) else { return "" }
-    return gname.displayName(upSurname: upSurname, surnameFirst: surnameFirst, limit: limit)
-}
-
+// Helper function for getting the displayName of a Person.
 extension Person {
 
     public func displayName(upSurname: Bool = false, surnameFirst: Bool = false, limit: Int = 0) -> String {
-        guard let name = GedcomName(from: self) else { return "" }
+        guard let name = GedcomName(from: self) else { return "(no name)" }
         return name.displayName(upSurname: upSurname, surnameFirst: surnameFirst, limit: limit)
-
     }
-
-
 }

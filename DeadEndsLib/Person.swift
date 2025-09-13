@@ -30,6 +30,14 @@ extension GedcomNode {
         }
     }
 
+    public var sexSymbol: String {
+        switch (sexOf() ?? .unknown) {
+        case .male: return "♂️"
+        case .female: return "♀️"
+        default: return "?"
+        }
+    }
+
     public var gedcomName: GedcomName? { GedcomName(from: self) }
 
     /// Returns true if a Person is female.

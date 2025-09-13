@@ -35,7 +35,7 @@ struct LoaderView: View {
             Button("Open Gedcom File") {
                 if let path = openGedcomPanel() {
                     var log = ErrorLog()
-                    if let db = getDatabaseFromPath(path, errlog: &log) {
+                    if let db = loadDatabase(from: path, errlog: &log) {
                         model.database = db
                     } else {
                         print("Failed to load GEDCOM:\n\(log)")
