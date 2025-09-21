@@ -3,21 +3,26 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 28 August 2025.
+//  Last changed on 16 September 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-struct GedcomNodeList: Identifiable {
+struct GedcomNodeList: Identifiable {  // TODO: DEPRECATED
     let id = UUID()
     let nodes: [GedcomNode]
 }
 
+struct FamilyList: Identifiable {
+    let id = UUID()
+    let nodes: [Family]
+}
+
 struct PersonActionBar: View {
     @EnvironmentObject var model: AppModel
-    let person: GedcomNode
-    @State private var familyList: GedcomNodeList? = nil
+    let person: Person
+    @State private var familyList: FamilyList? = nil
     @State private var showEditSheet = false
     @State private var showingDescList = false
 
@@ -44,13 +49,13 @@ struct PersonActionBar: View {
             }
             Button("Family") {
                 guard let ri = model.database?.recordIndex else { return }
-                let families = person.children(withTag: "FAMS").compactMap {
-                    $0.value.flatMap { ri[$0] }
+                let families = person.kids(withTag: "FAMS").compactMap {
+                    $0.val.flatMap { ri.family(for: $0) }
                 }
                 if families.count == 1 {
                     model.path.append(Route.family(families[0]))
                 } else if families.count > 1 {
-                    familyList = GedcomNodeList(nodes: families)
+                    familyList = FamilyList(nodes: families)
                 } else {
                     model.status = "\(person.displayName) is not a spouse in any family."
                 }
@@ -101,17 +106,18 @@ struct PersonActionBar: View {
         }
     }
 
+    /// Navigates to a sibling.
     private func navigateToSibling(offset: Int) {
-        guard let ri = model.database?.recordIndex else {
+        guard let rindex = model.database?.recordIndex else {
             model.status = "No database loaded"
             return
         }
-        guard let famcKey = person.child(withTag: "FAMC")?.value,
-              let family = ri[famcKey] else {
+        guard let famcKey = person.kid(withTag: "FAMC")?.val,
+              let family = rindex.family(for: famcKey) else {
             model.status = "No family found"
             return
         }
-        let siblings = family.children(withTag: "CHIL").compactMap { $0.value.flatMap { ri[$0] } }
+        let siblings = family.kids(withTag: "CHIL").compactMap { $0.val.flatMap { rindex.person(for: $0) } }
         guard let index = siblings.firstIndex(of: person) else {
             model.status = "Could not locate person in siblings"
             return
@@ -127,7 +133,7 @@ struct PersonActionBar: View {
     }
 }
 
-private func tidyTest(person: GedcomNode, index: RecordIndex) {
+private func tidyTest(person: Person, index: RecordIndex) {
     guard let uniontree = buildDescendantsTree(from: person, index: index, depth: 3)
             else { return }
     showDescendantsTree(uniontree, index: index)

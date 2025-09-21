@@ -3,21 +3,21 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed 8 September 2025.
+//  Last changed 19 September 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// PersonMatch is a struct using a Gedcom key for an id, and a Gedcom node.
+/// PersonMatch is a struct with a Gedcom key for id, and a Person record.
 struct PersonMatch: Identifiable {
-    let id: String // Key of an INDI node.
-    let node: GedcomNode // INDI node.
+    let id: String // Person key.
+    let person: Person
 
     var displayLine: String {
-        let name = node.displayName()
-        let birth = node.eventSummary(tag: "BIRT")
-        let death = node.eventSummary(tag: "DEAT")
+        let name = person.displayName() // Default formatting.
+        let birth = person.eventSummary(tag: "BIRT")
+        let death = person.eventSummary(tag: "DEAT")
         switch (birth, death) {
         case let (b?, d?): return "\(name) (born \(b) — died \(d))"
         case let (b?, nil): return "\(name) (born \(b))"
@@ -27,14 +27,13 @@ struct PersonMatch: Identifiable {
     }
 }
 
-/// `PersonSelectionView` is a View that shows the list of Persons in a Database with names that match
-///  a pattern and allows the user to select one.
-
+/// A View that shows a list of Persons from a Database who have names that match
+/// a pattern and allows the user to select one.
 struct PersonSelectionView: View {
 
     @EnvironmentObject var model: AppModel
-    @State private var query: String = ""
-    @State private var results: [PersonMatch] = []
+    @State private var query: String = ""  // Name pattern user supplies.
+    @State private var results: [PersonMatch] = [] // PersonMatches that match the query pattern.
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -44,10 +43,10 @@ struct PersonSelectionView: View {
                 TextField("e.g. William/James", text: $query)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .onSubmit {
-                        performSearch()
+                        doNameSearch()
                     }
                 Button("Search for persons with name") {
-                    performSearch()
+                    doNameSearch()
                 }
             }
             .padding(.bottom)
@@ -57,7 +56,7 @@ struct PersonSelectionView: View {
             } else {
                 List(results) { match in
                     Button {
-                        model.path.append(Route.person(match.node))
+                        model.path.append(Route.person(match.person))
                     } label: {
                         Text(match.displayLine)
                             .padding(4)
@@ -70,16 +69,13 @@ struct PersonSelectionView: View {
         .padding()
     }
 
-    // performSearch sets the results array; it has access to model, results, and query.
-    // Synopsis: if there is a database, look up the persons matching the query (a partial name);
-    // convert each match (an INDI node) into a PersonMatch object; sort those objects alphabetically
-    // by name; assign the result to results.
-    private func performSearch() {
-        guard let db = model.database else { return }
-        results = db.persons(withName: query)
-            .map { PersonMatch(id: $0.key!, node: $0) }
+    /// Builds the array of PersonMatch objects that have names that match the query; sorts them by name.
+    private func doNameSearch() {
+        guard let database = model.database else { return }
+        results = database.persons(withName: query)
+            .map { PersonMatch(id: $0.key, person: $0) }
             .sorted { lhs, rhs in
-                switch (lhs.node.gedcomName, rhs.node.gedcomName) {
+                switch (lhs.person.gedcomName, rhs.person.gedcomName) {
                 case let (l?, r?): return l < r                 // both present → use Comparable
                 case (nil, nil):   return lhs.id < rhs.id       // stable tiebreaker
                 case (nil, _):     return false                 // nils after non-nils

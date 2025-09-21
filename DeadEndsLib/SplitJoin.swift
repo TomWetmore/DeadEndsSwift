@@ -27,31 +27,31 @@ public func splitPerson(indi: GedcomNode) -> (name: GedcomNode?, refn: GedcomNod
 	var lfms: GedcomNode? = nil
 	var last: GedcomNode? = nil
 
-	var node = indi.child
-	indi.child = nil
+	var node = indi.kid
+	indi.kid = nil
 
 	while let current = node {
 		let tag = current.tag
-		node = current.sibling
-		current.sibling = nil
+		node = current.sib
+		current.sib = nil
 
 		switch tag {
 		case "NAME":
-			if name == nil { name = current } else { lnam?.sibling = current }
+			if name == nil { name = current } else { lnam?.sib = current }
 			lnam = current
 		case "REFN":
-			if refn == nil { refn = current } else { lref?.sibling = current }
+			if refn == nil { refn = current } else { lref?.sib = current }
 			lref = current
 		case "SEX":
 			sex = current
 		case "FAMC":
-			if famc == nil { famc = current } else { lfmc?.sibling = current }
+			if famc == nil { famc = current } else { lfmc?.sib = current }
 			lfmc = current
 		case "FAMS":
-			if fams == nil { fams = current } else { lfms?.sibling = current }
+			if fams == nil { fams = current } else { lfms?.sib = current }
 			lfms = current
 		default:
-			if body == nil { body = current } else { last?.sibling = current }
+			if body == nil { body = current } else { last?.sib = current }
 			last = current
 		}
 	}
@@ -66,18 +66,18 @@ public func joinPerson(indi: GedcomNode, name: GedcomNode?, refn: GedcomNode?, s
 	}
 
 	var last: GedcomNode? = nil
-	indi.child = nil
+	indi.kid = nil
 
 	func append(_ part: GedcomNode?) {
 		guard let part = part else { return }
-		if indi.child == nil {
-			indi.child = part
+		if indi.kid == nil {
+			indi.kid = part
 		} else {
-			last?.sibling = part
+			last?.sib = part
 		}
 		last = part
-		while last?.sibling != nil {
-			last = last?.sibling
+		while last?.sib != nil {
+			last = last?.sib
 		}
 	}
 
@@ -107,29 +107,29 @@ public func splitFamily(fam: GedcomNode) -> (refn: GedcomNode?, husb: GedcomNode
 	var lchl: GedcomNode? = nil
 	var last: GedcomNode? = nil
 
-	var node = fam.child
-	fam.child = nil
+	var node = fam.kid
+	fam.kid = nil
 
 	while let current = node {
 		let tag = current.tag
-		node = current.sibling
-		current.sibling = nil
+		node = current.sib
+		current.sib = nil
 
 		switch tag {
 		case "REFN":
-			if refn == nil { refn = current } else { lref?.sibling = current }
+			if refn == nil { refn = current } else { lref?.sib = current }
 			lref = current
 		case "HUSB":
-			if husb == nil { husb = current } else { lhsb?.sibling = current }
+			if husb == nil { husb = current } else { lhsb?.sib = current }
 			lhsb = current
 		case "WIFE":
-			if wife == nil { wife = current } else { lwfe?.sibling = current }
+			if wife == nil { wife = current } else { lwfe?.sib = current }
 			lwfe = current
 		case "CHIL":
-			if chil == nil { chil = current } else { lchl?.sibling = current }
+			if chil == nil { chil = current } else { lchl?.sib = current }
 			lchl = current
 		default:
-			if rest == nil { rest = current } else { last?.sibling = current }
+			if rest == nil { rest = current } else { last?.sib = current }
 			last = current
 		}
 	}
@@ -144,18 +144,18 @@ public func joinFamily(fam: GedcomNode, refn: GedcomNode?, husb: GedcomNode?, wi
 	}
 
 	var last: GedcomNode? = nil
-	fam.child = nil
+	fam.kid = nil
 
 	func append(_ part: GedcomNode?) {
 		guard let part = part else { return }
-		if fam.child == nil {
-			fam.child = part
+		if fam.kid == nil {
+			fam.kid = part
 		} else {
-			last?.sibling = part
+			last?.sib = part
 		}
 		last = part
-		while last?.sibling != nil {
-			last = last?.sibling
+		while last?.sib != nil {
+			last = last?.sib
 		}
 	}
 

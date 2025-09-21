@@ -38,7 +38,7 @@ extension GedcomNode {
 		person.traverseChildren { node in
 			switch node.tag {
 			case "NAME":
-				if let value = node.value, !value.isEmpty {
+				if let value = node.val, !value.isEmpty {
 					hasName = true
 				} else {
 					errlog.append(Error(type: .validate, severity: .severe, line: line + node.offset(),
@@ -46,7 +46,7 @@ extension GedcomNode {
 				}
 			case "SEX":
 				sexLines += 1
-				if let value = node.value, ["M", "F", "U"].contains(value) {
+				if let value = node.val, ["M", "F", "U"].contains(value) {
 					hasSex = true
 				} else {
 					errlog.append(Error(type: .validate, severity: .severe, line: line + node.offset(),
@@ -97,7 +97,7 @@ extension GedcomNode { // Extension for internal Nodes.
 	private func validateFamilyLink(person: GedcomNode, role: FamilyRole, seenkeys: inout StringSet,
 									context: ValidationContext, line: Int, errlog: inout ErrorLog) {
 		let pkey = person.key! // Must succeed
-		guard let fkey = self.value else { // The node must have a value.
+		guard let fkey = self.val else { // The node must have a value.
 			appendError(errlog: &errlog, type: .linkage, source: context.source, line: line + self.offset(),
 						message: "Person \(pkey) has an illegal \(role.rawValue) value")
 			return
@@ -195,7 +195,7 @@ extension GedcomNode {
 	func hasChildLink(to personKey: String) -> Bool {
 		var found = false
 		traverseChildren { node in
-			if node.tag == "CHIL" && node.value == personKey {
+			if node.tag == "CHIL" && node.val == personKey {
 				found = true
 			}
 		}
@@ -204,7 +204,7 @@ extension GedcomNode {
 	func hasSpouseLink(to personKey: String) -> Bool {
 		var found = false
 		traverseChildren { node in
-			if node.tag == "HUSB" || node.tag == "WIFE", node.value == personKey {
+			if node.tag == "HUSB" || node.tag == "WIFE", node.val == personKey {
 				found = true
 			}
 		}
@@ -349,10 +349,10 @@ extension GedcomNode {
 	// hasChildLink checks whether the family (self) has a CHIL link to the person.
 	func orighasChildLink(to person: GedcomNode) -> Bool {
 		let family = self // self is a family root.
-		var curnode = family.child
+		var curnode = family.kid
 		while let node = curnode {
-			if node.tag == "CHIL" && node.value == person.key { return true }
-			curnode = node.sibling
+			if node.tag == "CHIL" && node.val == person.key { return true }
+			curnode = node.sib
 		}
 		return false
 	}
@@ -365,10 +365,10 @@ extension GedcomNode {
 			return false
 		}
 		let tag = sex == .male ? "HUSB" : "WIFE"
-		var curnode = family.child
+		var curnode = family.kid
 		while let node = curnode {
-			if node.tag == tag && node.value == person.key { return true }
-			curnode = node.sibling
+			if node.tag == tag && node.val == person.key { return true }
+			curnode = node.sib
 		}
 		return false
 	}
@@ -390,7 +390,7 @@ extension GedcomNode {
 
     public func husband(recordIndex: RecordIndex) -> GedcomNode? {
         // Find the child node tagged "HUSB"
-        guard let key = self.child(withTag: "HUSB")?.value else {
+        guard let key = self.kid(withTag: "HUSB")?.val else {
             return nil
         }
         return recordIndex[key]
@@ -398,7 +398,7 @@ extension GedcomNode {
 
     public func wife(recordIndex: RecordIndex) -> GedcomNode? {
         // Find the child node tagged "HUSB"
-        guard let key = self.child(withTag: "WIFE")?.value else {
+        guard let key = self.kid(withTag: "WIFE")?.val else {
             return nil
         }
         return recordIndex[key]
@@ -406,7 +406,7 @@ extension GedcomNode {
 
 	// getSex return the sex of a person (self)
 	func getSex() -> SexType {
-		let node = self.child
+		let node = self.kid
 		while let curnode = node {
 			if curnode.tag == "SEX" {
 				let value = curnode.tag

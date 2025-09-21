@@ -61,9 +61,9 @@ struct DeadEndsMain {
 		}
         let persons = database.persons(withName: "t t/wtmr/iv")
 		for person in persons {
-			person.printTree()
+            person.root.printTree()
 		}
-		persons[0].traverse { node in
+        persons[0].root.traverse { node in
 			let line = node.offset() + 1
 			let level = node.level()
 			print("\(line)\t\(level) \(node)")

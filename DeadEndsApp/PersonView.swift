@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 31 August 2025
+//  Last changed on 16 September 2025.
 //
 
 import Foundation
@@ -11,10 +11,11 @@ import SwiftUI
 import DeadEndsLib
 
 struct PersonView: View {
+
     @State private var showFamilySelector = false
     @State private var candidateFamilies: [GedcomNode] = []
     @EnvironmentObject var model: AppModel
-    let person: GedcomNode
+    let person: Person
 
     var body: some View {
 
@@ -58,18 +59,18 @@ struct PersonView: View {
                 Divider()
 
                 if let ri = model.database?.recordIndex {
-                    let families = person.children(withTag: "FAMS").compactMap { node in
-                        node.value.flatMap { ri[$0] }
+                    let families = person.kids(withTag: "FAMS").compactMap { node in
+                        node.val.flatMap { ri.family(for: $0) }
                     }
 
                     ForEach(families, id: \.self) { family in
-                        if let spouse = family.resolveSpouse(for: person, recordIndex: ri) {
+                        if let spouse = family.resolveSpouse(for: person, index: ri) {
                             //PersonButton(person: spouse, relation: "spouse")
                             PersonRow(person: spouse, label: "Spouse", tint: backgroundColor(for: spouse))
                         }
 
-                        let children = family.children(withTag: "CHIL").compactMap { node in
-                            node.value.flatMap { ri[$0] }
+                        let children = family.kids(withTag: "CHIL").compactMap { node in
+                            node.val.flatMap { ri.person(for: $0) }
                         }
 
                         ForEach(children, id: \.self) { child in // Works here but not in family selection??
@@ -100,47 +101,38 @@ struct PersonView: View {
     }
 }
 
-public extension GedcomNode {
+public extension Person {
 
     // resolveParent returns the first parent of the specified sex to the self person.
     // It only looks in the first FAMC family.
-    func resolveParent(sex: String, recordIndex: [String: GedcomNode]) -> GedcomNode? {
-        guard let famc = self.child(withTag: "FAMC"),
-              let familyKey = famc.value,
+    func resolveParent(sex: String, recordIndex: [String: GedcomNode]) -> Person? {
+        guard let famc = self.kid(withTag: "FAMC"),
+              let familyKey = famc.val,
               let family = recordIndex[familyKey],
-              let parentKey = family.child(withTag: sex == "M" ? "HUSB" : "WIFE")?.value,
-              let parent = recordIndex[parentKey] else {
+              let parentKey = family.kid(withTag: sex == "M" ? "HUSB" : "WIFE")?.val,
+              let parent = recordIndex.person(for: parentKey) else {
             return nil
         }
         return parent
     }
 }
 
-public extension GedcomNode {
+public extension Family {
 
-    func getSpouse(for person: GedcomNode, recordIndex: [String: GedcomNode]) -> GedcomNode? {
+    func resolveSpouse(for person: Person, index: RecordIndex) -> Person? {
         // Called on a FAM record
-        let husbKey = self.child(withTag: "HUSB")?.value
-        let wifeKey = self.child(withTag: "WIFE")?.value
+        let husbKey = self.kid(withTag: "HUSB")?.val
+        let wifeKey = self.kid(withTag: "WIFE")?.val
         let selfKey = person.key
-
-        if husbKey == selfKey, let wifeKey, let wife = recordIndex[wifeKey] {
-            return wife
-        }
-        if wifeKey == selfKey, let husbKey, let husb = recordIndex[husbKey] {
-            return husb
-        }
+        if husbKey == selfKey, let wifeKey, let wife = index.person(for: wifeKey) { return wife }
+        if wifeKey == selfKey, let husbKey, let husb = index.person(for: husbKey) { return husb }
         return nil
-    }
-
-    func resolveSpouse(for person: GedcomNode, recordIndex: [String: GedcomNode]) -> GedcomNode? {
-        getSpouse(for: person, recordIndex: recordIndex)
     }
 }
 
 struct PersonButton: View {
     @EnvironmentObject var model: AppModel
-    let person: GedcomNode
+    let person: Person
     var relation: String?
 
     var body: some View {
@@ -162,14 +154,12 @@ struct PersonButton: View {
     }
 }
 
-// backgroundColor ...
-func backgroundColor(for person: GedcomNode) -> Color {
-    guard let sex = person.node(withPath: ["SEX"])?.value else {
-        return Color.gray.opacity(0.1)
-    }
-    switch sex {
-    case "M": return Color.blue.opacity(0.08)
-    case "F": return Color.pink.opacity(0.08)
-    default:  return Color.gray.opacity(0.08)
+/// backgroundColor ...
+func backgroundColor(for person: Person) -> Color {
+    let sexType = person.sex
+    switch sexType {
+    case .male: return Color.blue.opacity(0.05)
+    case .female: return Color.pink.opacity(0.05)
+    default:  return Color.gray.opacity(0.05)
     }
 }

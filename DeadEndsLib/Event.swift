@@ -22,44 +22,66 @@ import Foundation
 // GedcomNode extension dealing with events. self should be the root of a Gedcom record.
  public extension GedcomNode {
 
-     // event(withTag:) returns the first child event node with the given tag (e.g., "BIRT")
-     func event(withTag tag: String) -> GedcomNode? {
-         return self.child(withTag: tag)
-     }
+//     // event(withTag:) returns the first child event node with the given tag (e.g., "BIRT")
+//     func event(withTag tag: String) -> GedcomNode? {
+//         return self.childNode(withTag: tag)
+//     }
 
      // For an event node (like BIRT or MARR), return the first DATE subnode
      func dateNode() -> GedcomNode? {
-         return self.child(withTag: "DATE")
+         return self.kid(withTag: "DATE")
      }
 
      // For an event node (like BIRT or MARR), return the first PLAC subnode
      func placeNode() -> GedcomNode? {
-         return self.child(withTag: "PLAC")
+         return self.kid(withTag: "PLAC")
      }
 
      // For an event node, return the value of the first DATE subnode, if any
      func dateValue() -> String? {
-         return self.dateNode()?.value
+         return self.dateNode()?.val
      }
 
      // For an event node, return the value of the first PLAC subnode, if any
      func placeValue() -> String? {
-         return self.placeNode()?.value
+         return self.placeNode()?.val
      }
 
      // For a person or family node, returns a summary of the specified event (e.g., "1870, Boston")
-     func eventSummary(tag: String) -> String? {
-         guard let event = self.event(withTag: tag) else { return nil }
-         let date = year(from: event.dateValue())
-         let place = abbreviatedPlace(event.placeValue())
-
-         switch (date, place) {
-         case let (d?, p?): return "\(d), \(p)"
-         case let (d?, nil): return d
-         case let (nil, p?): return p
-         default: return nil
-         }
-     }
+//     func eventSummary(tag: String) -> String? {
+//         guard let event = self.event(withTag: tag) else { return nil }
+//         let date = year(from: event.dateValue())
+//         let place = abbreviatedPlace(event.placeValue())
+//
+//         switch (date, place) {
+//         case let (d?, p?): return "\(d), \(p)"
+//         case let (d?, nil): return d
+//         case let (nil, p?): return p
+//         default: return nil
+//         }
+//     }
  }
+
+extension GedcomNode {
+
+    public func eventSummary(tag: String) -> String? {
+        guard let event = self.event(withTag: tag) else { return nil }
+        let date = year(from: event.dateValue())
+        let place = abbreviatedPlace(event.placeValue())
+
+        switch (date, place) {
+        case let (d?, p?): return "\(d), \(p)"
+        case let (d?, nil): return d
+        case let (nil, p?): return p
+        default: return nil
+        }
+    }
+
+    /// Returns the first child event node with the given tag (e.g., "BIRT")
+    func event(withTag tag: String) -> GedcomNode? {
+        kid(withTag: tag)
+    }
+}
+
 
 

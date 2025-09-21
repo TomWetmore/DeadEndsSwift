@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2025.
-//  Last changed on 3 September 2025.
+//  Last changed on 17 September 2025.
 //
 
 import Foundation
@@ -15,7 +15,7 @@ extension Program {
         guard let person = try evaluatePerson(arg[0]) else {
             throw RuntimeError.typeError("name() expects a person parameter")
         }
-        guard let name = person.value(forTag: "NAME") else { return .null }
+        guard let name = person.kidVal(forTag: "NAME") else { return .null }
         return .string(name)
     }
 
@@ -29,7 +29,7 @@ extension Program {
         guard let person = try evaluatePerson(arg[0]) else {
             throw RuntimeError.typeError("surname() expects a person parameter")
         }
-        guard let name = person.value(forTag: "NAME") else { return .null }
+        guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
         guard let surname = gedcomName.surname else { return .null }
         return .string(surname)
@@ -40,7 +40,7 @@ extension Program {
         guard let person = try evaluatePerson(arg[0]) else {
             throw RuntimeError.typeError("givens() expects a person parameter")
         }
-        guard let name = person.value(forTag: "NAME") else { return .null }
+        guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
         return .string(gedcomName.nameParts.joined(separator: " "))
     }
@@ -59,7 +59,7 @@ extension Program {
         guard let person = try evaluatePerson(arg[0]) else {
             throw RuntimeError.typeError("birth() expects a person parameter")
         }
-        guard let birth = person.child(withTag: "BIRT") else { return .null }
+        guard let birth = person.kid(withTag: "BIRT") else { return .null }
         return .gnode(birth)
     }
 
@@ -80,8 +80,8 @@ extension Program {
         // Get the person whose father is to found.
         let person = try personFromProgramNode(args[0], errorMessage: "father() expects a person argument")
         // Get the person's father.
-        if let father = person.father(index: self.recordIndex) {
-            return .gnode(father)
+        if let father = person.father(in: self.recordIndex) {
+            return .person(father)
         } else {
             return .null
         }
@@ -92,8 +92,8 @@ extension Program {
         // Get the person whose mother is to be found.
         let person = try personFromProgramNode(args[0], errorMessage: "mother() expects a person argument")
         // Get the person's mother.
-        if let mother = person.mother(index: self.recordIndex) {
-            return .gnode(mother)
+        if let mother = person.mother(in: self.recordIndex) {
+            return .person(mother)
         } else {
             return .null
         }
@@ -105,7 +105,7 @@ extension Program {
         let person = try personFromProgramNode(args[0], errorMessage: "nextsib() expects a person argument")
         // Get the next sibling of the person.
         if let nextSibling = person.nextSibling(index: self.recordIndex) {
-            return .gnode(nextSibling)
+            return .person(nextSibling)
         } else {
             return .null
         }
@@ -116,7 +116,7 @@ extension Program {
         let person = try personFromProgramNode(args[0], errorMessage: "prevsib() expects a person argument")
         // Get the previous sibling of the person.
         if let previousSibling = person.previousSibling(index: self.recordIndex) {
-            return .gnode(previousSibling)
+            return .person(previousSibling)
         } else {
             return .null
         }
@@ -130,13 +130,13 @@ extension Program {
     func builtinMale(_ args: [ProgramNode]) throws -> ProgramValue {
         // Get the person to be checked for being male.
         let person = try personFromProgramNode(args[0], errorMessage: "male() expects a person argument")
-        return person.isMale() ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
+        return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
     func builtinFemale(_ args: [ProgramNode]) throws -> ProgramValue {
         // Get the person to be checked for being female.
         let person = try personFromProgramNode(args[0], errorMessage: "female() expects a person argument")
-        return person.isFemale() ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
+        return person.isFemale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
     func builtinPronouns(_ args: [ProgramNode]) throws -> ProgramValue {
@@ -234,26 +234,26 @@ extension Program {
         guard let event = try evaluateGedcomNode(arg[0]) else {
             throw RuntimeError.runtimeError("date() requires an event argument")
         }
-        return ProgramValue.string(event.value(forTag: "DATE") ?? "")
+        return ProgramValue.string(event.kidVal(forTag: "DATE") ?? "")
     }
 
     func builtinPlace(_ arg: [ProgramNode]) throws -> ProgramValue {
         guard let event = try evaluateGedcomNode(arg[0]) else {
             throw RuntimeError.runtimeError("place() requires an event argument")
         }
-        return ProgramValue.string(event.value(forTag: "PLAC") ?? "")
+        return ProgramValue.string(event.kidVal(forTag: "PLAC") ?? "")
     }
 }
 
 extension Program {
 
     // Evaluate a ProgramNode that refers to a Person, and return that Person (its root GNode).
-    func personFromProgramNode(_ pnode: ProgramNode, errorMessage: String) throws -> GedcomNode {
+    func personFromProgramNode(_ pnode: ProgramNode, errorMessage: String) throws -> Person {
         // Evaluate the ProgramNode and find its line number in the original program.
         let pvalue = try evaluate(pnode)
         let line = pnode.line ?? 0
         // PValue must be a .gnode with a person root as associated value.
-        guard case let .gnode(person) = pvalue, person.tag == "INDI" else {
+        guard case let .person(person) = pvalue, person.tag == "INDI" else {
             throw RuntimeError.typeError("\(line): \(errorMessage)")
         }
         return person
@@ -264,6 +264,6 @@ extension Program {
         // Get the person with the requested event.
         let person = try personFromProgramNode(arg, errorMessage: "\(functionName)() expects a person root node")
         // Get the first child node with the even's tag in the person's tree.
-        return person.child(withTag: tag).map { .gnode($0) } ?? .null
+        return person.kid(withTag: tag).map { .gnode($0) } ?? .null
     }
 }

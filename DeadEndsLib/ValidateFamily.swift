@@ -28,11 +28,11 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 	var husbKeys: Set<String> = []
 	var wifeKeys: Set<String> = []
 	var chilKeys: Set<String> = []
-	var curnode = family.child
+	var curnode = family.kid
 	while let node = curnode {
 		switch node.tag {
 		case "HUSB":
-			guard let pkey = node.value else {
+			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal husband link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset(), message: errmsg))
@@ -61,7 +61,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 				break
 			}
 		case "WIFE":
-			guard let pkey = node.value else {
+			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal wife link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset(), message: errmsg))
@@ -91,7 +91,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 			}
 			break
 		case "CHIL":
-			guard let pkey = node.value else {
+			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal child link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset(), message: errmsg))
@@ -123,7 +123,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 		default:
 			break
 		}
-		curnode = node.sibling
+		curnode = node.sib
 	}
 }
 
@@ -140,10 +140,10 @@ extension GedcomNode {
 	// hasFamilyAsChildLink checks whether a person (self) has a FAMC link to the family.
 	func hasFamilyAsChildLink(to family: GedcomNode) -> Bool {
 		let person = self // self is a person root.
-		var curnode = person.child
+		var curnode = person.kid
 		while let node = curnode {
-			if node.tag == "FAMC" && node.value == family.key { return true }
-			curnode = node.sibling
+			if node.tag == "FAMC" && node.val == family.key { return true }
+			curnode = node.sib
 		}
 		return false
 	}
@@ -151,10 +151,10 @@ extension GedcomNode {
 	// hasFamilyAsSpouseLink checks whether a person (self) has a FAMS link to the family.
 	func hasFamilyAsSpouseLink(to family: GedcomNode) -> Bool {
 		let person = self // self is a person root.
-		var curnode = person.child
+		var curnode = person.kid
 		while let node = curnode {
-			if node.tag == "FAMS" && node.value == family.key { return true }
-			curnode = node.sibling
+			if node.tag == "FAMS" && node.val == family.key { return true }
+			curnode = node.sib
 		}
 		return false
 	}

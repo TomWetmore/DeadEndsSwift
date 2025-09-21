@@ -29,8 +29,8 @@ public struct GedcomName: Comparable, CustomStringConvertible {
 
     /// Initializer for GedcomName from a 0INDI or 0INDI:1NAME node.
     public init?(from node: GedcomNode) {
-        let nameNode: GedcomNode? = (node.tag == "NAME") ? node : node.child(withTag: "NAME")
-        guard let value = nameNode?.value else { return nil }
+        let nameNode: GedcomNode? = (node.tag == "NAME") ? node : node.kid(withTag: "NAME")
+        guard let value = nameNode?.val else { return nil }
         self.init(string: value)
     }
 
@@ -234,7 +234,7 @@ extension Person {
 
     func displayName(upSurname: Bool = false, surnameFirst: Bool = false, length: Int? = nil) -> String? {
         // Get the GedcomName of the person.
-        guard var gedcomname = GedcomName(from: self) else { return nil }
+        guard var gedcomname = GedcomName(from: self.root) else { return nil }
 
         if upSurname { gedcomname.uppercaseSurname() }  // Handle the upSurname flag.
 
@@ -374,7 +374,7 @@ private func suffixKeeper(_ suffix: String) -> Bool {
 extension Person {
 
     public func displayName(upSurname: Bool = false, surnameFirst: Bool = false, limit: Int = 0) -> String {
-        guard let name = GedcomName(from: self) else { return "(no name)" }
+        guard let name = GedcomName(from: self.root) else { return "(no name)" }
         return name.displayName(upSurname: upSurname, surnameFirst: surnameFirst, limit: limit)
     }
 }

@@ -23,34 +23,35 @@ public struct GraphNode: Hashable {
 /// - down: generations to include downward (children from the first FAMS)
 /// - includeSpouses: include spouse names as annotations (no spouse traversal)
 func buildFamilyGraph(
-    from person: GedcomNode,
+    //from person: GedcomNode,
+    from person: Person,
     index: RecordIndex,
     up: Int,
     down: Int,
     includeSpouses: Bool
 ) -> GraphNode? {
 
-    guard let pid = person.key else { return nil }
+    let pid = person.key
 
     var node = GraphNode(
         id: pid,
         name: person.displayName(),
         subtitle: lifespanLine(person),
-        spouseNames: includeSpouses ? spouseNames(person, ri: index) : []
+        spouseNames: includeSpouses ? spouseNames(person, index: index) : []
     )
 
     var parents: [GraphNode] = []
     if up > 0,
-       let famcKey = person.child(withTag: "FAMC")?.value,   // first FAMC only
+       let famcKey = person.kid(withTag: "FAMC")?.val,   // first FAMC only
        let famc = index[famcKey] {
 
         // Up to 1 HUSB + 1 WIFE from that first FAMC
         let parentIDs = ["HUSB", "WIFE"]
-            .compactMap { famc.child(withTag: $0)?.value }
+            .compactMap { famc.kid(withTag: $0)?.val }
 
         for parentID in parentIDs {
-            if let p = index[parentID],
-               let pn = buildFamilyGraph(from: p, index: index, up: up - 1, down: 0, includeSpouses: false) {
+            if let person = index.person(for: parentID),
+               let pn = buildFamilyGraph(from: person, index: index, up: up - 1, down: 0, includeSpouses: false) {
                 parents.append(pn)
             }
         }
@@ -58,13 +59,13 @@ func buildFamilyGraph(
 
     var kids: [GraphNode] = []
     if down > 0,
-       let famsKey = person.child(withTag: "FAMS")?.value,   // first FAMS only
+       let famsKey = person.kid(withTag: "FAMS")?.val,   // first FAMS only
        let fams = index[famsKey] {
 
         // All CHIL in that first FAMS
-        let childIDs = fams.children(withTag: "CHIL").compactMap { $0.value }
+        let childIDs = fams.kids(withTag: "CHIL").compactMap { $0.val }
         for cid in childIDs {
-            if let c = index[cid],
+            if let c = index.person(for: cid),
                let cn = buildFamilyGraph(from: c, index: index, up: 0, down: down - 1, includeSpouses: includeSpouses) {
                 kids.append(cn)
             }
@@ -77,20 +78,20 @@ func buildFamilyGraph(
 
 // MARK: - Small helpers (adjust to your lib if needed)
 
-func lifespanLine(_ p: GedcomNode) -> String? {
+func lifespanLine(_ p: Person) -> String? {
     let b = "A BIRTH DATE" // p.birthDate?.simpleString ?? ""
     let d = "A DEATH CATE" // p.deathDate?.simpleString ?? ""
     if b.isEmpty && d.isEmpty { return nil }
     return "b. \(b)\(d.isEmpty ? "" : " – d. \(d)")"
 }
 
-func spouseNames(_ p: GedcomNode, ri: RecordIndex) -> [String] {
-    let fams = p.children(withTag: "FAMS").compactMap { $0.value }.compactMap { ri[$0] }
-    func spouseIn(_ fam: GedcomNode) -> GedcomNode? {
-        let partnerKeys = (fam.children(withTag: "HUSB") + fam.children(withTag: "WIFE"))
-            .compactMap { $0.value }
-        let partners = partnerKeys.compactMap { ri[$0] }
-        return partners.first { $0 != p }
+func spouseNames(_ person: Person, index: RecordIndex) -> [String] {
+    let families = person.kids(withTag: "FAMS").compactMap { $0.val }.compactMap { index.family(for: $0) }
+    func spouseIn(_ fam: Family) -> Person? {
+        let partnerKeys = (fam.kids(withTag: "HUSB") + fam.kids(withTag: "WIFE"))
+            .compactMap { $0.val }
+        let partners = partnerKeys.compactMap { index.person(for: $0) }
+        return partners.first { $0 != person }
     }
-    return fams.compactMap { spouseIn($0)?.displayName() }
+    return families.compactMap { spouseIn($0)?.displayName() }
 }

@@ -12,7 +12,7 @@ import DeadEndsLib
 
 struct FamilyTreeView: View {
     @EnvironmentObject var model: AppModel
-    let person: GedcomNode
+    let person: Person
 
     var body: some View {
         FamilyTreePersonView(
@@ -25,8 +25,7 @@ struct FamilyTreeView: View {
 
     // MARK: - Helpers
 
-    private func lifespanLine(_ p: GedcomNode) -> String? {
-        // Adjust to your actual helpers; this is a safe placeholder.
+    private func lifespanLine(_ person: Person) -> String? {
         //let b = p.birthDate?.simpleString ?? ""
         let b = "On some date"
         //let d = p.deathDate?.simpleString ?? ""
@@ -35,19 +34,18 @@ struct FamilyTreeView: View {
         return "b. \(b)\(d.isEmpty ? "" : " – d. \(d)")"
     }
 
-    private func spouseNames(_ p: GedcomNode) -> [String] {
-        guard let ri = model.database?.recordIndex else { return [] }
+    private func spouseNames(_ person: Person) -> [String] {
+        guard let index = model.database?.recordIndex else { return [] }
         // For each FAMS family, find the spouse (the other partner) and return displayName.
-        let families: [GedcomNode] = p.children(withTag: "FAMS")
-            .compactMap { $0.value.flatMap { ri[$0] } }
+        let families: [Family] = person.kids(withTag: "FAMS")
+            .compactMap { $0.val.flatMap { index.family(for: $0) } }
 
-        func spouseInFamily(_ family: GedcomNode) -> GedcomNode? {
-            // Typical GEDCOM: HUSB / WIFE (or generalized spouse roles).
-            // Return the partner who is NOT `person`.
-            let candidates = family.children(withTag: "HUSB") + family.children(withTag: "WIFE")
-            let spouseKeys: [String] = candidates.compactMap { $0.value }
-            let spousePersons = spouseKeys.compactMap { ri[$0] }
-            return spousePersons.first { $0 != p }
+        func spouseInFamily(_ family: Family) -> Person? {
+            // Return the partner who is not person.
+            let candidates = family.kids(withTag: "HUSB") + family.kids(withTag: "WIFE")
+            let spouseKeys: [String] = candidates.compactMap { $0.val }
+            let spousePersons = spouseKeys.compactMap { index.person(for: $0) }
+            return spousePersons.first { $0 != person }
         }
 
         return families.compactMap { spouseInFamily($0)?.displayName() }

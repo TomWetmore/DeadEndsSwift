@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 20 August 2025.
-//  Last changed on 21 August 2025.
+//  Last changed on 16 September 2025.
 //
 //  Still in experimental form. Intended to show family trees as graphs.
 
@@ -21,7 +21,7 @@ struct EntityNode {
 }
 
 /// Build a descendants tree from a given person to a given depth.
-func buildDescendantsTree(from person: GedcomNode, index: RecordIndex, depth: Int) -> EntityNode? {
+func buildDescendantsTree(from person: Person, index: RecordIndex, depth: Int) -> EntityNode? {
     var vpersons: Set<String> = []
     var vunions: Set<String> = []
     return buildDescendantsTree(from: person, index: index, depth: depth, vpersons: &vpersons, vunions: &vunions)
@@ -33,16 +33,17 @@ func buildDescendantsTree(from person: GedcomNode, index: RecordIndex, depth: In
 ///   - index: GEDCOM record index
 ///   - depth: descendant generations to include (0 = just the person)
 ///   - vpersons/vunions: visited sets to prevent cycles/duplication
-func buildDescendantsTree(from person: GedcomNode, index: RecordIndex, depth: Int,
+func buildDescendantsTree(from person: Person, index: RecordIndex, depth: Int,
                             vpersons: inout Set<String>, vunions: inout Set<String>) -> EntityNode? {
 
     // Do not include the same person more than once.
-    guard let pkey = person.key, vpersons.insert(pkey).inserted else { return nil }
+    let pkey = person.key
+    guard vpersons.insert(pkey).inserted else { return nil }
     var pnode = EntityNode(kind: .person(pkey))
     guard depth > 0 else { return pnode }
 
     // Get the keys of the families the person is a spouse in.
-    let fkeys = person.children(withTag: "FAMS").compactMap { $0.value }
+    let fkeys = person.kids(withTag: "FAMS").compactMap { $0.val }
     var unionChildren: [EntityNode] = []
 
     // Loop over each family as spouse in the database.
@@ -53,9 +54,9 @@ func buildDescendantsTree(from person: GedcomNode, index: RecordIndex, depth: In
         var unode = EntityNode(kind: .union(fkey))
 
         // Get the keys of all children in the family.
-        let ckeys = fam.children(withTag: "CHIL").compactMap { $0.value }
+        let ckeys = fam.kids(withTag: "CHIL").compactMap { $0.val }
         unode.children = ckeys.compactMap { cid in
-            guard let child = index[cid] else { return nil }
+            guard let child = index.person(for: cid) else { return nil }
             return buildDescendantsTree(from: child, index: index, depth: depth - 1,
                                           vpersons: &vpersons, vunions: &vunions)
         }
@@ -74,7 +75,7 @@ func showDescendantsTree(_ tree: EntityNode, index: RecordIndex) {
 private func showDescendantsTree(_ tree: EntityNode, indent: String, index: RecordIndex) {
     switch tree.kind {
     case .person(let pid):
-        if let person = index[pid] {
+        if let person = index.person(for: pid) {
             print("\(indent)\(person.displayName())")
         } else {
             print("\(indent)\(pid) (not found)")
@@ -83,11 +84,11 @@ private func showDescendantsTree(_ tree: EntityNode, indent: String, index: Reco
     case .union(let fid):
         if let fam = index[fid] {
             // Look up spouses
-            let spouseIDs = [fam.child(withTag: "HUSB")?.value,
-                             fam.child(withTag: "WIFE")?.value].compactMap { $0 }
+            let spouseIDs = [fam.kid(withTag: "HUSB")?.val,
+                             fam.kid(withTag: "WIFE")?.val].compactMap { $0 }
 
             let spouseNames = spouseIDs.compactMap { sid in
-                index[sid]?.displayName()
+                index.person(for: sid)?.displayName()
             }
 
             if spouseNames.isEmpty {

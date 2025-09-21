@@ -6,7 +6,7 @@
 //  and are the values stored in symbol tables.
 //
 //  Created by Thomas Wetmore on 17 March 2025.
-//  Last changed on 20 June 2025.
+//  Last changed on 16 September 2025.
 //
 
 import Foundation
@@ -20,8 +20,8 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
 	case boolean(Bool)
 	case string(String)
 	case gnode(GedcomNode)
-	//case person(GedcomNode)
-	//case family(GedcomNode)
+	case person(Person)
+	case family(Family)
 	//case source(GedcomNode)
 	//case event(GedcomNode)
 	//case other(GedcomNode)

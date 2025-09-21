@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 11 September 2025.
+//  Last changed on 15 September 2025.
 //
 
 import SwiftUI
@@ -19,10 +19,10 @@ struct PersonEditView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
 
-    let person: GedcomNode
+    let person: Person
 
     /// Initializes a PersonEditView
-    init(person: GedcomNode) {
+    init(person: Person) {
         self.person = person
         _editedText = State(initialValue: person.gedcomText(indent: true))
     }
@@ -118,17 +118,20 @@ struct PersonEditView: View {
 
 extension PersonEditView {
 
-    /// Parses the edited text to a Person record. Returns nil and and error list if there are errors.
+    /// Parses edited text into a Person record. Returns nil and error list if there are errors.
     func parsePerson(text: String) -> (edited: Person?, errors: [String]) {
-
+        
         let source = StringGedcomSource(name: "edit view", content: text)
         var errlog = ErrorLog()
         var tagmap = model.database!.tagmap
-        let records: [GedcomNode]? = loadRecords(from: source, tagMap: &tagmap, errlog: &errlog)
-        guard let list = records, list.count == 1, errlog.count == 0 else {
-            return (edited: nil, errors: ["Error parsing record"])
+
+        guard let nodes = loadRecords(from: source, tagMap: &tagmap, errlog: &errlog) else {
+            return (nil, ["Error parsing record"])
         }
-        return (edited: list[0], errors: [])
+        if errlog.count > 0 { return (nil, ["Error parsing record"]) }
+        guard nodes.count == 1 else { return (nil, ["Found \(nodes.count) records"]) }
+        guard let person = Person(nodes[0]) else { return (nil, ["The record is not a Person (INDI)"]) }
+        return (person, [])
     }
 
     /// Validates an edited Person record.
@@ -160,8 +163,8 @@ extension PersonEditView {
             problems.append("FAMS lines cannot be changed, only reordered")
         }
         // All cross-references in new record must refer to existing records
-        let allPointers = new.root.descendants()
-            .compactMap { $0.value }
+        let allPointers = new.root.root.descendants()
+            .compactMap { $0.val }
             .filter { $0.hasPrefix("@") && $0.hasSuffix("@") }
         for key in allPointers {
             if index[key] == nil {
@@ -171,7 +174,7 @@ extension PersonEditView {
         return problems
     }
 
-    /// Updates the Person record the edit changes.
+    /// Updates the Database after successfully editing a Person.
     func applyPersonUpdates(old: PersonInfo, new: PersonInfo) {
 
         let db = model.database!
@@ -188,8 +191,8 @@ extension PersonEditView {
         for refn in removedRefns { db.refnIndex.remove(refn: refn) }
         for refn in addedRefns { db.refnIndex.add(refn: refn, key: old.key) }
 
-        // Update the person in the database.
-        old.root.child = new.root.child
+        // Update the database with the edited person keeping the same Person root.
+        old.root.root.replaceChildren(with: new.root.kid)
     }
 }
 
@@ -225,7 +228,7 @@ struct ErrorSheet: View {
 
 /// Structure holding Person information.
 struct PersonInfo {
-    let root: GedcomNode
+    let root: Person
     let key: String
     let sex: String?
     let names: Set<String>
@@ -234,10 +237,10 @@ struct PersonInfo {
     let refns: Set<String>
 }
 
-/// Extracts the `PersonInfo` of a Person record.
+/// Extracts the PersonInfo of a Person record.
 ///
 /// The internal structure (`child`, `sibling` and `parent` links) of the Person is not affected.
-func getPersonInfo(for person: GedcomNode) -> (info: PersonInfo, errors: [String]) {
+func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
     var names: Set<String> = []
     var refns: Set<String> = []
     var sex: String? = nil
@@ -245,10 +248,10 @@ func getPersonInfo(for person: GedcomNode) -> (info: PersonInfo, errors: [String
     var famsKeys: Set<String> = []
     var errors: [String] = []
 
-    var current = person.child
+    var current = person.kid
     while let node = current {
         let tag = node.tag
-        if let value = node.value, !value.isEmpty {
+        if let value = node.val, !value.isEmpty {
             switch tag {
             case "NAME": names.insert(value)
             case "SEX":
@@ -262,13 +265,13 @@ func getPersonInfo(for person: GedcomNode) -> (info: PersonInfo, errors: [String
         } else if ["NAME", "SEX", "REFN", "FAMC", "FAMS"].contains(tag) {
             errors.append("Missing value for \(tag) line.")
         }
-        current = node.sibling
+        current = node.sib
     }
 
     // Construct PersonInfo even if there are errors
     let info = PersonInfo(
         root: person,
-        key: person.key ?? "(unknown)",
+        key: person.key,
         sex: sex,
         names: names,
         famcKeys: famcKeys,

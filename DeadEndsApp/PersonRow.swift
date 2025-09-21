@@ -1,25 +1,18 @@
 //
-//  DeadEndsSwift
+//  PersonRow.swift
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 4 July 2025.
-//  Last changed on 4 July 2025.
+//  Last changed on 19 September 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-// Example usage in PersonView:
-// PersonRow(person: father, label: "Father", tint: .blue)
-// PersonRow(person: mother, label: "Mother", tint: .pink)
-// Example use in PersonSeletionView:
-// PersonRow(person: somePerson, isInteractive: false)
-
-
 // PersonRow is a wideish button.
 struct PersonRow: View {
     @EnvironmentObject var model: AppModel
-    let person: GedcomNode
+    let person: Person
     var label: String? = nil
     var showSummary: Bool = true
     var isInteractive: Bool = true

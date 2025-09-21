@@ -3,17 +3,17 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 14 July 2025.
-//  Last changed on 16 July 2025.
+//  Last changed on 15 September 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
 // FamilySelectionSheet allows the user to select among families represented as an array
-// of FAM GedcomNodes.
+// of Families.
 struct FamilySelectionSheet: View {
-    let families: [GedcomNode] // Array of FAM GedcomNodes
-    let onSelect: (GedcomNode) -> Void // Closure to call on selected FAM node.
+    let families: [Family] // Array of FAM GedcomNodes
+    let onSelect: (Family) -> Void // Closure to call on selected FAM node.
 
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
@@ -28,7 +28,7 @@ struct FamilySelectionSheet: View {
             Divider()
 
             if let recordIndex = model.database?.recordIndex {
-                List(families, id: \.key!) { family in
+                List(families, id: \.key) { family in
                     Button {
                         onSelect(family)
                     } label: {
@@ -58,9 +58,9 @@ struct FamilySelectionSheet: View {
         .padding()
     }
 
-    func familySummary(_ fam: GedcomNode, index: RecordIndex) -> String {
-        let husbName = fam.husband(recordIndex: index)?.displayName() ?? ""
-        let wifeName = fam.wife(recordIndex: index)?.displayName() ?? ""
+    func familySummary(_ fam: Family, index: RecordIndex) -> String {
+        let husbName = fam.husband(in: index)?.displayName() ?? ""
+        let wifeName = fam.wife(in: index)?.displayName() ?? ""
         print("husband's name is \(husbName)")
         return "\(husbName) + \(wifeName)"
     }

@@ -3,34 +3,37 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 11 July 2025.
-//  Last changed on 14 July 2025.
+//  Last changed on 19 September 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-// FamilyView is the 'top-level' View of a Family.
+// Provides the top level View of a Family.
 struct FamilyView: View {
+
     @EnvironmentObject var model: AppModel
-    let family: GedcomNode
+    let family: Family  // Family in View.
 
     var body: some View {
-
         VStack(alignment: .leading, spacing: 12) {
+            // Display Husband.
             if let husband = resolveRole("HUSB") {
                 PersonRow(person: husband, label: "Husband")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            // Display Wife.
             if let wife = resolveRole("WIFE") {
                 PersonRow(person: wife, label: "Wife")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            //Divider()
+            // Display Children.
             ScrollView {
-
-                ForEach(children, id: \.self) { child in
-                    PersonRow(person: child, label: "Child")
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                if let index = model.database?.recordIndex {
+                    ForEach(family.children(in: index), id: \.self) { child in
+                        PersonRow(person: child, label: "Child")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
                 Spacer()
             }
@@ -41,15 +44,8 @@ struct FamilyView: View {
         .navigationTitle("Family")
     }
 
-    private func resolveRole(_ tag: String) -> GedcomNode? {
-        guard let key = family.child(withTag: tag)?.value else { return nil }
-        return model.database?.recordIndex[key]
-    }
-
-    private var children: [GedcomNode] {
-        guard let ri = model.database?.recordIndex else { return [] }
-        return family.children(withTag: "CHIL").compactMap { node in
-            node.value.flatMap { ri[$0] }
-        }
+    private func resolveRole(_ tag: String) -> Person? {
+        guard let key = family.kid(withTag: tag)?.val else { return nil }
+        return model.database?.recordIndex.person(for: key)
     }
 }

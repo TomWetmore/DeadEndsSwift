@@ -14,7 +14,7 @@ import DeadEndsLib
 
 struct FamilySelectionView: View {
     @EnvironmentObject var model: AppModel
-    let families: [GedcomNode]
+    let families: [Family]
 
     var body: some View {
         List(families, id: \.self) { family in

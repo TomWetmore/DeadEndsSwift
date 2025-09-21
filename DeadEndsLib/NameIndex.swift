@@ -79,9 +79,9 @@ func buildNameIndex(from persons: RecordList) -> NameIndex {
     var index = NameIndex()
     for person in persons {
         guard let recordKey = person.key else { continue }  // Will succeed.
-        let nameNodes = person.children(withTag: "NAME")
+        let nameNodes = person.kids(withTag: "NAME")
         for node in nameNodes {
-            guard let name = node.value, !name.isEmpty, let gedcomName = GedcomName(string: name)
+            guard let name = node.val, !name.isEmpty, let gedcomName = GedcomName(string: name)
             else { continue }  // Will succeed.
             index.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
         }
@@ -108,14 +108,14 @@ func soundex(for surname: String) -> String {
 }
 
 /// Alias for a `GedcomNode` that is the root of a person record.
-public typealias Person = GedcomNode
+//public typealias Person = GedcomNode
 
 // Extension of GedcomNode where self is a Person root.
 extension Person {
 
 	/// Returns the array of non-nil values of the 1 NAME lines in a Person.
     var nameValues: [String] {
-        values(forTag: "NAME")
+        self.root.kidVals(forTag: "NAME") // TODO: Change to not need .node.
     }
 }
 
@@ -165,7 +165,7 @@ extension Database {
         let squeezedPattern: [String] = squeeze(pattern) // Prepare pattern for matching.
         // Filter candidates based on exactMatch logic.
         for recordKey in recordKeys {
-            if let person = recordIndex[recordKey] {
+            if let person = recordIndex.person(for: recordKey) {
                 for nameValue in person.nameValues {
                     let squeezedPersonName = squeeze(nameValue)
                     if exactMatch(partial: squeezedPattern, complete: squeezedPersonName) {
@@ -180,6 +180,6 @@ extension Database {
 
     /// Returns the Persons who have names that match a name pattern.
     public func persons(withName pattern: String) -> [Person] {
-        personKeys(forName: pattern).compactMap { recordIndex[$0] }
+        personKeys(forName: pattern).compactMap { recordIndex.person(for: $0) }
     }
 }

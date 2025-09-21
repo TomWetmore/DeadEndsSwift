@@ -37,7 +37,7 @@ func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, e
     for root in records {
         let key = root.key // Can be nil for .header, .trailer or error cases.
         root.traverse { node in
-            guard let value = node.value, isKey(value) else { return }
+            guard let value = node.val, isKey(value) else { return }
             if !keyset.contains(value) {
                 var line = 0
                 if let key = key { line = keymap[key]! + node.offset() }
@@ -55,20 +55,20 @@ extension GedcomNode {
     // traverse traverses the nodes in a tree doing an action. The order is top down, left to right.
     func traverse(_ action: (GedcomNode) -> Void) {
         action(self)
-        var child = self.child
+        var child = self.kid
         while let curr = child {
             curr.traverse(action)
-            child = curr.sibling
+            child = curr.sib
         }
     }
 
     // count returns the number of nodes in the tree rooted at this node.
     func count() -> Int {
         var count = 1
-        var child = self.child
+        var child = self.kid
         while let curchild = child {
             count += curchild.count()
-            child = curchild.sibling
+            child = curchild.sib
         }
         return count
     }
@@ -78,13 +78,13 @@ extension GedcomNode {
         var count = 0
         var curNode: GedcomNode? = self
         var loops = 0
-        while let node = curNode, let parent = node.parent {
+        while let node = curNode, let parent = node.dad {
             loops += 1
             if loops > 100000 { fatalError("Cycle detected in tree.") }
-            var sibling = parent.child // Count siblings that occur before.
+            var sibling = parent.kid // Count siblings that occur before.
             while let cursibling = sibling, cursibling !== node {
                 count += cursibling.count()
-                sibling = cursibling.sibling
+                sibling = cursibling.sib
             }
             curNode = parent // Move up tree.
             count += 1 // Include parent.
@@ -97,7 +97,7 @@ extension GedcomNode {
         var level = -1
         var curr: GedcomNode? = self
         while let node = curr {
-            curr = node.parent
+            curr = node.dad
             level += 1
             if level > 10000 { fatalError("Cycle detected in tree.") }
         }

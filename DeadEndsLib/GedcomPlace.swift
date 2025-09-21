@@ -3,32 +3,20 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 29 June 2025.
-//  Last changed on 29 June 2025.
+//  Last changed on 19 September 2025.
 //
 
 import Foundation
 
-// MARK: - Place Simplification
+/// Returns an abbreviated version of a Gedcom place string,
+func abbreviatedPlace(_ value: String?, keeping keep: Int = 2) -> String? {
 
-/// Returns a simplified version of a GEDCOM place string,
-/// keeping only the last `components` meaningful parts,
-/// while optionally removing known suffixes like "United States" or "Canada".
-func abbreviatedPlace(_ raw: String?, keeping components: Int = 2) -> String? {
-    guard let raw = raw else { return nil }
+    guard let value = value else { return nil }
+    let noiseSuffixes = ["United States", "Canada", "USA", "US", "United Kingdom"]
+    var parts = value.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-    let noiseSuffixes = ["United States", "Canada"]
+    if let last = parts.last, noiseSuffixes.contains(last), parts.count > keep { parts.removeLast() }
 
-    // Split and trim each part
-    var parts = raw
-        .split(separator: ",")
-        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-    // Drop noisy suffix if present and enough components remain
-    if let last = parts.last,
-       noiseSuffixes.contains(last),
-       parts.count > 2 {
-        parts.removeLast()
-    }
-
-    return parts.suffix(components).joined(separator: ", ")
+    if keep == 2 && parts.count >= 3 { return "\(parts.first!), \(parts.last!)" }
+    return parts.suffix(keep).joined(separator: ", ")
 }

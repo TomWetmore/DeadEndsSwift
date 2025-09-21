@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 24 June 2025.
+//  Last changed on 16 September 2025.
 //
 
 import SwiftUI
@@ -20,7 +20,7 @@ struct SelectPersonView: View {
                 .padding()
 
             Button("Load Person") {
-                if let person = model.database?.recordIndex[key] {
+                if let person = model.database?.recordIndex.person(for: key) {
                     model.path.append(Route.person(person))
                 } else {
                     print("Key not found")

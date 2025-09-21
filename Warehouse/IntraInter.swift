@@ -15,9 +15,9 @@ import DeadEndsLib // Remove if file is added to the DeadEndsLib
 
 extension GedcomNode {
     func father(index: RecordIndex) -> GedcomNode? {
-        guard let famKey = child(withTag: "FAMC")?.value,
+        guard let famKey = kid(withTag: "FAMC")?.val,
               let fam = index[famKey],
-              let husbKey = fam.child(withTag: "HUSB")?.value
+              let husbKey = fam.kid(withTag: "HUSB")?.val
         else { return nil }
 
         return index[husbKey]
@@ -31,8 +31,8 @@ extension GedcomNode {
         var node: GedcomNode? = self
         for tag in tags {
             guard let current = node,
-                  let child = current.child(withTag: tag),
-                  let key = child.value,
+                  let child = current.kid(withTag: tag),
+                  let key = child.val,
                   let next = index[key] else {
                 return nil
             }
@@ -73,9 +73,9 @@ extension GedcomNode {
         for step in path {
             switch step {
             case .tag(let t):
-                node = node?.child(withTag: t)
+                node = node?.kid(withTag: t)
             case .follow(let t):
-                guard let value = node?.child(withTag: t)?.value else { return nil }
+                guard let value = node?.kid(withTag: t)?.val else { return nil }
                 node = index[value]
             }
         }
@@ -95,7 +95,7 @@ extension GedcomNode {
     func node(withPath path: [String]) -> GedcomNode? {
         guard !path.isEmpty else { return nil }
         return path.reduce(into: Optional(self)) { node, tag in
-            node = node?.child(withTag: tag)
+            node = node?.kid(withTag: tag)
         }
     }
 }
@@ -108,7 +108,7 @@ extension GedcomNode {
         var nodes: [GedcomNode] = [self]
         for tag in path {
             nodes = nodes.flatMap { node in
-                node.children(withTag: tag)
+                node.kids(withTag: tag)
             }
         }
         return nodes
@@ -128,9 +128,9 @@ extension GedcomNode {
         for step in path {
             switch step {
             case .tag(let tag):
-                node = node?.child(withTag: tag)
+                node = node?.kid(withTag: tag)
             case .follow(let tag):
-                guard let key = node?.child(withTag: tag)?.value else { return nil }
+                guard let key = node?.kid(withTag: tag)?.val else { return nil }
                 node = index[key]
             }
         }
@@ -157,7 +157,7 @@ extension GedcomNode {
     }
 
     func firstSpouseFamily(index: RecordIndex) -> GedcomNode? {
-        child(withTag: "FAMS")?.value.flatMap { key in index[key] }
+        kid(withTag: "FAMS")?.val.flatMap { key in index[key] }
     }
 }
 
@@ -185,16 +185,16 @@ extension GedcomNode {
 
             switch step {
             case .tag(let tag):
-                guard let child = node.child(withTag: tag) else { return nil }
+                guard let child = node.kid(withTag: tag) else { return nil }
                 return search(from: child, remaining: nextSteps)
 
             case .follow(let tag):
-                guard let key = node.child(withTag: tag)?.value,
+                guard let key = node.kid(withTag: tag)?.val,
                       let next = index[key] else { return nil }
                 return search(from: next, remaining: nextSteps)
 
             case .followAll(let tag):
-                let keys = node.children(withTag: tag).compactMap { $0.value }
+                let keys = node.kids(withTag: tag).compactMap { $0.val }
                 for key in keys {
                     if let next = index[key],
                        let match = search(from: next, remaining: nextSteps) {
@@ -216,7 +216,7 @@ extension GedcomNode {
         index: RecordIndex,
         where predicate: (GedcomNode) -> Bool
     ) -> String? {
-        return firstMatch(path: path, index: index, where: predicate)?.value
+        return firstMatch(path: path, index: index, where: predicate)?.val
     }
 }
 
@@ -272,10 +272,10 @@ extension GedcomNavigator {
         for step in path.steps {
             switch step {
             case .tag(let tag):
-                current = current?.child(withTag: tag)
+                current = current?.kid(withTag: tag)
 
             case .follow(let tag):
-                guard let key = current?.child(withTag: tag)?.value else { return nil }
+                guard let key = current?.kid(withTag: tag)?.val else { return nil }
                 current = recordIndex[key]
 
             case .followAll:
@@ -295,18 +295,18 @@ extension GedcomNavigator {
             let tail = remaining.dropFirst()
             switch step {
             case .tag(let tag):
-                if let child = node.child(withTag: tag) {
+                if let child = node.kid(withTag: tag) {
                     return recurse(child, tail)
                 }
 
             case .follow(let tag):
-                if let key = node.child(withTag: tag)?.value,
+                if let key = node.kid(withTag: tag)?.val,
                    let target = recordIndex[key] {
                     return recurse(target, tail)
                 }
 
             case .followAll(let tag):
-                let keys = node.children(withTag: tag).compactMap { $0.value }
+                let keys = node.kids(withTag: tag).compactMap { $0.val }
                 for key in keys {
                     if let target = recordIndex[key],
                        let match = recurse(target, tail) {
@@ -322,7 +322,7 @@ extension GedcomNavigator {
     }
 
     func firstValue(from root: GedcomNode, path: TraversalPath, where predicate: (GedcomNode) -> Bool) -> String? {
-        firstMatch(from: root, path: path, where: predicate)?.value
+        firstMatch(from: root, path: path, where: predicate)?.val
     }
 
     func allMatches(from root: GedcomNode, path: TraversalPath) -> [GedcomNode] {

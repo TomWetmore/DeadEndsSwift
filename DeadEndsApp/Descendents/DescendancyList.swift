@@ -3,9 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 23 August 2025.
-//  Last changed on 13 September 2025.
-//
-//  Experimental. Shows a descendancy list.
+//  Last changed on 18 September 2025.
 
 import SwiftUI
 import DeadEndsLib
@@ -14,8 +12,8 @@ import DeadEndsLib
 struct DescendancyLine: Identifiable, Hashable {
 
     enum Kind { // Kind of line.
-        case person(GedcomNode, Events) // Person, events.
-        case spouse(GedcomNode, GedcomNode?, Events)  // Family, spouse?, events.
+        case person(Person, Events) // Person, events.
+        case spouse(Family, Person?, Events)  // Family, spouse?, events.
     }
     let kind: Kind  // Kind of line.
     let id: String  // Person or Family key.
@@ -41,19 +39,19 @@ struct Events {
 /// Model for a descendancy list.
 final class DescendancyListModel: ObservableObject {
 
-    @Published var root: GedcomNode // Root Person of the descendancy.
+    @Published var root: Person // Root Person of the descendancy.
     @Published var expandedPersons: Set<String> = [] // Expanded person keys.
     @Published var expandedUnions: Set<String> = []  // Expanded family keys.
 
     var maxGenerations: Int = 14
 
     /// Initializes a model with a root Person and empty expanded sets.
-    init(root: GedcomNode) {
+    init(root: Person) {
         self.root = root
     }
 
     /// Reroots this model to a new Person with empty expanded sets.
-    func reRoot(_ person: GedcomNode) {
+    func reRoot(_ person: Person) {
         root = person
         expandedPersons.removeAll()
         expandedUnions.removeAll()
@@ -69,10 +67,10 @@ final class DescendancyListModel: ObservableObject {
         var visitedFamilies = Set<String>()
 
         /// Adds a Person to the DescendancyLines.
-        func addPerson(_ person: GedcomNode, depth: Int, gen: Int) {
-            guard let pkey = person.key else { return } // Can't fail.
-            let events = Events(birth: person.child(withTag: "BIRT")?.child(withTag: "DATE")?.value,
-                                death: person.child(withTag: "DEAT")?.child(withTag: "DATE")?.value,
+        func addPerson(_ person: Person, depth: Int, gen: Int) {
+            let pkey = person.key
+            let events = Events(birth: person.kid(withTag: "BIRT")?.kid(withTag: "DATE")?.val,
+                                death: person.kid(withTag: "DEAT")?.kid(withTag: "DATE")?.val,
                                 marriage: nil)
             lines.append(DescendancyLine(kind: .person(person, events), id: pkey, depth: depth))
             // Stop if unexpanded, visited, or past max generation.
@@ -81,18 +79,20 @@ final class DescendancyListModel: ObservableObject {
             visitedPersons.insert(pkey)
 
             // Add Spouse/Family lines for each FAMS the Person is a spouse in.
-            let fkeys = person.children(withTag: "FAMS").compactMap { $0.value }
+            let fkeys = person.kids(withTag: "FAMS").compactMap { $0.val }
             for fkey in fkeys {
-                guard let family = index[fkey] else { continue }
+                //guard let family = index[fkey] else { continue }
+                guard let family = index.family(for: fkey) else { continue }  // Family
                 addUnion(family, of: person, depth: depth + 1, gen: gen)
             }
         }
 
         /// Adds a Spouse (aka Union/Family) line to the DescendancyLines.
-        func addUnion(_ family: GedcomNode, of person: GedcomNode, depth: Int, gen: Int) {
-            guard let fKey = family.key, let pkey = person.key  else { return } // Can't fail.
-            let hkey = family.value(forTag: "HUSB")
-            let wkey = family.value(forTag: "WIFE")
+        func addUnion(_ family: Family, of person: Person, depth: Int, gen: Int) {
+            let fKey = family.key
+            let pkey = person.key
+            let hkey = family.kidVal(forTag: "HUSB")
+            let wkey = family.kidVal(forTag: "WIFE")
             let skey: String? = {
                 if hkey == pkey { return wkey }
                 if wkey == pkey { return hkey }
@@ -102,18 +102,20 @@ final class DescendancyListModel: ObservableObject {
                 return nil
             }()
 
-            let spouse = skey.flatMap { index[$0] }
+            //let spouse = skey.flatMap { index[$0] }
+            let spouse = skey.flatMap { index.person(for: $0) }
             let events = Events(birth: nil, death: nil,
-                                marriage: family.child(withTag: "MARR")?.child(withTag: "DATE")?.value)
+                                marriage: family.root.kid(withTag: "MARR")?.kid(withTag: "DATE")?.val)
             lines.append(DescendancyLine(kind: .spouse(family, spouse, events), id: fKey, depth: depth))
 
             guard expandedUnions.contains(fKey), !visitedFamilies.contains(fKey) else { return }
             visitedFamilies.insert(fKey)
 
             // Add DescendencyLines for the children.
-            let childKeys = family.children(withTag: "CHIL").compactMap { $0.value }
+            let childKeys = family.root.kids(withTag: "CHIL").compactMap { $0.val }
             for childKey in childKeys {
-                guard let child = index[childKey] else { continue }
+                //guard let child = index[childKey] else { continue }
+                guard let child = index.person(for: childKey) else { continue }
                 addPerson(child, depth: depth + 1, gen: gen + 1)
             }
         }
@@ -127,28 +129,28 @@ final class DescendancyListModel: ObservableObject {
     func toggle(_ line: DescendancyLine) {
         switch line.kind {
         case .person(let person, _):  // Toggle a Person line.
-            if let key = person.key {
-                if expandedPersons.contains(key) { expandedPersons.remove(key) }
-                else { expandedPersons.insert(key) }
-            }
+            let key = person.key
+            if expandedPersons.contains(key) { expandedPersons.remove(key) }
+            else { expandedPersons.insert(key) }
         case .spouse(let family, _, _):  // Toggle a Union line.
-            if let key = family.key {
-                if expandedUnions.contains(key) { expandedUnions.remove(key) }
-                else { expandedUnions.insert(key) }
-            }
+            let key = family.key
+            if expandedUnions.contains(key) { expandedUnions.remove(key) }
+            else { expandedUnions.insert(key) }
         }
     }
 
     /// Determines whether a DesendancyLine is expanded.
     func isExpanded(_ line: DescendancyLine) -> Bool {
         switch line.kind {
-        case .person(let p, _): return p.key.map { expandedPersons.contains($0) } ?? false
-        case .spouse(let f, _, _):  return f.key.map { expandedUnions.contains($0) } ?? false
+        case .person(let person, _):
+            return expandedPersons.contains(person.key)
+        case .spouse(let family, _, _):
+            return expandedUnions.contains(family.key)
         }
     }
 }
 
-extension GedcomNode {
+extension Person {
 
     /// Label for a Person.
     func personLabel(uppercaseSurname: Bool = false) -> String {
@@ -180,7 +182,7 @@ struct DescendancyListView: View {
     private let indent: CGFloat = 18
 
     /// Creates a DescendancyListView; caller provides the root Person and the RecordIndex.
-    init(root: GedcomNode, index: RecordIndex) {
+    init(root: Person, index: RecordIndex) {
         self.index = index
         // TODO: Understand the following statement:
         _model = StateObject(wrappedValue: DescendancyListModel(root: root))
@@ -258,7 +260,7 @@ struct DescendancyListView: View {
                             app.path.append(Route.person(person))  // Open current Person in PersonView.
                         }
                         Button("Show Families") {
-                            if let key = person.key { model.expandedPersons.insert(key) }
+                            model.expandedPersons.insert(person.key)
                         }
                     }
 
@@ -274,10 +276,10 @@ struct DescendancyListView: View {
                     .opacity(spouse == nil ? 0.6 : 1)  // Visually indicate it's inactive REMOVE IF DOESN'T LOOK GOOD
                     .contextMenu {
                         Button("Expand Children") {
-                            if let key = family.key { model.expandedUnions.insert(key) }
+                            model.expandedUnions.insert(family.key)
                         }
                         Button("Collapse") {
-                            if let key = family.key { model.expandedUnions.remove(key) }
+                            model.expandedUnions.remove(family.key)
                         }
                         if let spouse = spouse {
                             Button("Open Spouse in Person View") {
@@ -291,9 +293,9 @@ struct DescendancyListView: View {
         .padding(.vertical, 4)
     }
 
-    private func personRow(_ person: GedcomNode, events: Events) -> some View {
+    private func personRow(_ person: Person, events: Events) -> some View {
         let color: Color = {
-            switch (person.sexOf() ?? .unknown) {
+            switch person.sex {
             case .male:   return palette.male
             case .female: return palette.female
             case .unknown: return palette.unknown
@@ -314,7 +316,7 @@ struct DescendancyListView: View {
         .foregroundStyle(color)
     }
 
-    private func spouseRow(_ spouse: GedcomNode?, events: Events) -> some View {
+    private func spouseRow(_ spouse: Person?, events: Events) -> some View {
         HStack(spacing: 6) {
             Text(spouse?.sexSymbol ?? "?")
                 .baselineOffset(8)
@@ -331,9 +333,9 @@ struct DescendancyListView: View {
     private func expandable(_ line: DescendancyLine) -> Bool {
         switch line.kind {
         case .person(let p, _):  // Expandable if the Person has and FAMS links.
-            return !p.children(withTag: "FAMS").isEmpty
+            return !p.kids(withTag: "FAMS").isEmpty
         case .spouse(let f, _, _):  // Expandable if the Family has any CHIL links.
-            return !f.children(withTag: "CHIL").isEmpty
+            return !f.kids(withTag: "CHIL").isEmpty
         }
     }
 }

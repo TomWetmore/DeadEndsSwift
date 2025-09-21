@@ -152,11 +152,11 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
                 recordList.append(rnode!) // Save current root.
                 rnode = node; // Set current root for next record.
             } else if (level == plevel) { // Found sibling of previous.
-                node.parent = pnode!.parent;
-                pnode!.sibling = node
+                node.dad = pnode!.dad;
+                pnode!.sib = node
             } else if (level == plevel + 1) { // Found child of previous.
-                node.parent = pnode
-                pnode!.child = node
+                node.dad = pnode
+                pnode!.kid = node
             } else if (level < plevel) { // Found uncle of previous.
                 var count = 0;
                 while (level < plevel) {
@@ -168,11 +168,11 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
                         state = .error
                         break
                     }
-                    pnode = pnode!.parent
+                    pnode = pnode!.dad
                     plevel -= 1;
                 }
-                node.parent = pnode!.parent
-                pnode!.sibling = node
+                node.dad = pnode!.dad
+                pnode!.sib = node
             } else { // level > plevel + 1 is illegal
                 let error = Error(type: .syntax, severity: .fatal, message: "Invalid level")
                 errlog.append(error)
