@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 16 September 2025.
+//  Last changed on 1 October 2025.
 //
 
 import SwiftUI
@@ -70,11 +70,18 @@ struct PersonActionBar: View {
             Button("Descendancy List") {
                 model.path.append(Route.descendancy(person))
             }
+            Button("New Person") {
+                let newPerson = Person(GedcomNode(key: generateRandomKey(), tag: "INDI"))
+                model.path.append(Route.personEditor(newPerson!))
+            }
+            Button("New Edit") {
+                model.path.append(Route.personEditor(person))
+            }
             Button("Edit") {
                 showEditSheet = true
             }
             .sheet(isPresented: $showEditSheet) {
-                PersonEditView(person: person)
+                PersonEditSheet(person: person)
                     .environmentObject(model)
             }
         }
@@ -138,4 +145,10 @@ private func tidyTest(person: Person, index: RecordIndex) {
             else { return }
     showDescendantsTree(uniontree, index: index)
 
+}
+
+func generateRandomKey() -> String {
+    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    let randomChars = (0..<6).compactMap { _ in alphabet.randomElement() }
+    return "@I" + String(randomChars) + "@"
 }

@@ -1,0 +1,9 @@
+values for fontWeight:
+{ultraLight, thin, light, regular, medium, semibold, bold, heavy, black}
+
+Font.Design
+{monospaced, rounded, serif}
+
+values for font:
+{largeTitle, title, title2, title3, headline, subheadline, body, callout, footnote, caption, caption2}
+system(size, weight, design)

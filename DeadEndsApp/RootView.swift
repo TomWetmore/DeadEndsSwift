@@ -3,13 +3,13 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 19 September 2025.
+//  Last changed on 30 September 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// The enumeration of values that are pushed onto the DeadEndsApp NavigationStack.
+/// Enumeration of values pushed onto the DeadEndsApp NavigationStack.
 enum Route: Hashable {
     case person(Person)
     case pedigree(Person)
@@ -17,6 +17,7 @@ enum Route: Hashable {
     case descendants(Person)
     case familyTree(Person)
     case descendancy(Person)
+    case personEditor(Person)
 }
 
 /// RootView is ...
@@ -36,6 +37,8 @@ struct RootView: View {
                 }
             }
             .environmentObject(model)
+            // The closure builds Views when the navigation system finds a matching route on the navigation stack.
+            // This code runs when code elsewhere 'model.path.append(Route.personEditor(person))' is called.
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .person(let person):
@@ -48,6 +51,12 @@ struct RootView: View {
                     DescendantsView(root: p)
                 case .familyTree(let person):
                     FamilyTreeView(person: person)
+                case .personEditor(let person):
+                    // Create PersonEditorView with closure that runs when save button is pushed.
+                    PersonEditorView(person: person) { newPerson in
+                        model.database?.updatePerson(newPerson)
+                        model.path.removeLast()  // Pop the editor view.
+                    }
                 case .descendancy(let person):
                     if let idx = model.database?.recordIndex {
                         DescendancyListView(root: person, index: idx)
@@ -62,3 +71,35 @@ struct RootView: View {
     }
 }
 
+//┌───────────────┐
+//│   PersonView  │   ← you're here initially
+//└───────┬───────┘
+//        │
+//        │ model.path.append(.personEditor(person))
+//        ▼
+//┌─────────────────────┐
+//│ .navigationDestination
+//│ case .personEditor:
+//│   → Build PersonEditorView
+//└─────────┬───────────┘
+//          │
+//          ▼
+//┌─────────────────────────┐
+//│   PersonEditorView      │
+//│   - Shows form + tree   │
+//│   - Holds onSave closure│
+//└─────────┬───────────────┘
+//          │ User taps Save
+//          ▼
+//┌─────────────────────────────┐
+//│ onSave(vm.person)           │
+//│ Runs closure from navDest:  │
+//│   1. Update database        │
+//│   2. Pop editor view        │
+//└─────────┬───────────────────┘
+//          │
+//          ▼
+//┌──────────────────────────────┐
+//│   PersonView    ← back here  │
+//│   (with DB updated)          │
+//└──────────────────────────────┘

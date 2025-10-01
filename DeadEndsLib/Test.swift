@@ -48,7 +48,7 @@ struct DeadEndsMain {
 		print("Number of families: \(database.familyCount)")
 		var count = 0
 		for person in database.persons {
-			count += person.count()
+            count += person.count()
 		}
 		print("Number of nodes in persons: \(count)")
 		count = 0

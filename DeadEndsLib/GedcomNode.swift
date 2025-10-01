@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 20 September 2025.
+//  Last changed on 25 September 2025.
 //
 
 import Foundation
@@ -25,12 +25,12 @@ public class TagMap {
 /// The line's level number is inferred when needed.
 public class GedcomNode: CustomStringConvertible {
 
-    public var key: String?  // Optional Gedcom key (cross reference id) found on root lines.
-    public var tag: String  // Gedcom tag found on all lines.
-    public var val: String? // Optional value found on many lines.
+    public var key: String?  // Optional key found on root lines.
+    public var tag: String  // Tag mandatory on all lines.
+    public var val: String? // Optional value.
     public var sib: GedcomNode?  // Next sibling.
-    public var kid: GedcomNode?  // First child line
-    public weak var dad: GedcomNode? // Parent reference; all but root nodes.
+    public var kid: GedcomNode?  // First child
+    public weak var dad: GedcomNode? // Optional parent found on all non-roots.
 
     /// Description of GedcomNode.
     public var description: String {
@@ -42,10 +42,23 @@ public class GedcomNode: CustomStringConvertible {
     }
 
     /// Creates a GedcomNode with key, tag and value.
-    init(key: String? = nil, tag: String, value: String? = nil) {
+    public init(key: String? = nil, tag: String, val: String? = nil) {
         self.key = key
         self.tag = tag
-        self.val = value
+        self.val = val
+    }
+
+    /// 0-based depth of this node in its tree; corresponds to Gedcom level.
+    public var lev: Int {
+        var level = -1
+        var node: GedcomNode? = self
+        var safety = 100   // larger than realistic Gedcom depth.
+        while let current = node, safety > 0 {
+            level += 1
+            node = current.dad
+            safety -= 1
+        }
+        return level
     }
 
     /// Prints a GedcomNode tree to stdout.
@@ -67,11 +80,6 @@ public class GedcomNode: CustomStringConvertible {
         return result
     }()
 }
-
-// GedcomNode implements the Record protocol.
-//extension GedcomNode: Record {
-//    public var root: GedcomNode { self }
-//}
 
 // Methods that return child (kid) nodes or their values.
 public extension GedcomNode {
@@ -105,8 +113,18 @@ public extension GedcomNode {
         return nil
     }
 
+    var kids: [GedcomNode]? {
+        var results: [GedcomNode] = []
+        var node = kid
+        while let current = node {
+            results.append(current)
+            node = current.sib
+        }
+        return results.count == 0 ? nil : results
+    }
+
     /// Returns the array of all of .self's children.
-    func kids() -> [GedcomNode] {
+    func kiddies() -> [GedcomNode] {
         var results: [GedcomNode] = []
         var node = kid
         while let current = node {
@@ -130,49 +148,44 @@ public extension GedcomNode {
     }
 
     // Traverses a sequence of tags to find a descendant node.
-    func node(withPath path: [String]) -> GedcomNode? {
+    func kid(atPath path: [String]) -> GedcomNode? {
         guard !path.isEmpty else { return nil }
         return path.reduce(into: Optional(self)) { node, tag in
             node = node?.kid(withTag: tag)
         }
     }
+
+    /// Traverses a squence of tags to find a descendant's value.
+    func kidVal(atPath path: [String]) -> String? {
+        path.reduce(self) { node, tag in node?.kid(withTag: tag) }?.val
+    }
 }
 
 public extension GedcomNode {
 
-    /// Converts the GedcomNode tree rooted at self to Gedcom text. The method is recursive.
-    /// It is normally called on a root node, with level defaulted to 0 and indent to false.
-    /// if indent is true the text is indented two spaces per level.
-    ///
-    /// Other implementations of this algorithm may use a nonrecursive top method that calls a
-    /// recursive helper.
-    ///
-    /// Parameters:
-    /// - level is the Gedcom level of the node
-    /// - indent indicates whether the text should be indented.
+    /// Converts a GedcomNode tree to Gedcom text. It is recursive and normally called on a Record root
+    /// with level defaulted to 0 and indent to false. Sibs of the root are not included in the output.
     func gedcomText(level: Int = 0, indent: Bool = false) -> String {
 
-        var text: [String] = [] // Text to return.
+        var lines: [String] = []
+
         let space = indent ? String(repeating: "  ", count: level) : ""
-        var line = space + "\(level)" // Start the line with its level.
-        if level == 0 { // If level 0 (root node) add the key.
-            line += " \(self.key)"
-        }
-        line += " \(tag)" // Add the tag.
-        if let value = val, !value.isEmpty {
-            line += " \(value)" // Add value.
-        }
-        text.append(line) // Set text to this node's line.
+        var line = space + "\(level)"
+        if level == 0, let k = self.key { line += " \(k)" }
+        line += " \(self.tag)"
+        if let value = self.val, !value.isEmpty { line += " \(value)" }
+        lines.append(line)
+
         var child = self.kid
         while let node = child {
-            text.append(node.gedcomText(level: level + 1, indent: indent))
+            lines.append(node.gedcomText(level: level + 1, indent: indent))
             child = node.sib
         }
-        return text.joined(separator: "\n")
+        return lines.joined(separator: "\n")
     }
 }
 
- extension GedcomNode {
+extension GedcomNode {
 
     /// Returns all GedcomNodes in a tree.
     public func descendants() -> [GedcomNode] {
@@ -188,9 +201,41 @@ public extension GedcomNode {
     }
 }
 
+public extension GedcomNode {
 
-extension GedcomNode {
-    var objectID: ObjectIdentifier { ObjectIdentifier(self) }
+    /// Create and add a new child to this node.
+    @discardableResult
+    func addKid(tag: String, val: String? = nil) -> GedcomNode {
+        let child = GedcomNode(tag: tag, val: val)
+        return addKid(child)
+    }
+
+    /// Add an existing child node to this node's child list.
+    @discardableResult
+    func addKid(_ kid: GedcomNode) -> GedcomNode {
+        kid.dad = self
+        if self.kid == nil {
+            self.kid = kid
+        } else {
+            self.lastKid()?.sib = kid
+        }
+        return kid
+    }
+
+    /// Find the last child in the list.
+    func lastKid() -> GedcomNode? {
+        var node = self.kid
+        while let next = node?.sib {
+            node = next
+        }
+        return node
+    }
 }
-// Usage:
-//ForEach(nodes, id: \.objectID) { node in ... }
+
+/// Extension that conforms GedcomNode to Identifiable.
+extension GedcomNode: Identifiable {
+    public var id: ObjectIdentifier {
+        ObjectIdentifier(self)
+    }
+}
+

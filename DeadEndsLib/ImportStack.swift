@@ -3,22 +3,24 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 12 September 2025.
+//  Last changed on 26 September 2025.
 //
 
 import Foundation
 
 /// Generalizes sources of Gedcom lines.
 public protocol GedcomSource {
-    var name: String { get }  // A source needs a name for error messages.
+    var name: String { get }  // Name of source for error messages.
     func makeLineIterator() -> AnyIterator<String>
 }
 
 /// GedcomSource for UNIX files.
 public struct FileGedcomSource: GedcomSource {
+
     public let path: String  // Path to Gedcom file.
     public var name: String { path }
 
+    /// Makes an iterator that returns Gedcom lines from a Gedcom file.
     public func makeLineIterator() -> AnyIterator<String> {
         guard let contents = try? String(contentsOfFile: path, encoding: .utf8)
         else { return AnyIterator { nil } }
@@ -38,6 +40,7 @@ public struct StringGedcomSource: GedcomSource {
         self.content = content
     }
 
+    /// Makes an iterator that returns Gedcom lines from a String.
     public func makeLineIterator() -> AnyIterator<String> {
         var lines = content.split(separator: "\n", omittingEmptySubsequences: false)
             .map(String.init).makeIterator()
@@ -52,12 +55,12 @@ struct ValidationContext {
     let source: String
 }
 
-/// Loads and validates records from a GedcomSource into containers.
+/// Loads and validates the Records from a GedcomSource into containers.
 ///
 /// Parameters
-/// - path: path to the Gedcom file.
-/// - tagmap: TagMap ([String: String]) holding unique string for all keys in database.
-/// - keymap: KeyMap ([String: Int]]) that maps record keys to their starting line numbers.
+/// - source: Name of the source.
+/// - tagmap: TagMap ([String: String]) holding unique Strings for all keys in the Database.
+/// - keymap: KeyMap ([String: Int]]) that maps Record keys to their starting line numbers.
 /// - errorlog: ErrorLog ([Error]) that holds Error's found.
 func loadValidRecords(from source: GedcomSource, tagMap: inout TagMap, keyMap: inout KeyMap, errlog: inout ErrorLog)
 -> (index: RecordIndex, persons: RecordList, families: RecordList, header: GedcomNode?)? {
@@ -66,7 +69,7 @@ func loadValidRecords(from source: GedcomSource, tagMap: inout TagMap, keyMap: i
     guard let recordList = loadRecords(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog
     ) else { return nil }
 
-    // Check key closure: all records referred to must exist.
+    // Check key closure: all Records referred to must exist.
     checkKeysAndReferences(records: recordList, path: source.name, keymap: keyMap, errlog: &errlog)
 
     // Create internal structures.
@@ -104,9 +107,9 @@ public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, errlog:
     return loadRecords(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog)
 }
 
-/// Gets the Array of GedcomNodes from a GedcomSource's lines. The levels are not checked yet.
+/// Gets the Array of GedcomNodes from a GedcomSource's lines. The levels are not checked.
 func loadDataNodes(from source: GedcomSource, tagMap: inout TagMap, keyMap: inout KeyMap,
-                            errlog: inout ErrorLog) -> DataNodes<Int>? {
+                   errlog: inout ErrorLog) -> DataNodes<Int>? {
     var nodes = DataNodes<Int>()
     var lineno = 0
     let lines = source.makeLineIterator()
@@ -115,7 +118,7 @@ func loadDataNodes(from source: GedcomSource, tagMap: inout TagMap, keyMap: inou
         if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
         switch parseLine(from: line) {
         case .success(level: let level, key: let key, tag: let tag, value: let value):
-            let node = GedcomNode(key: key, tag: tagMap.intern(tag: tag), value: value)
+            let node = GedcomNode(key: key, tag: tagMap.intern(tag: tag), val: value)
             nodes.add(node: node, data: level)
             if level == 0, let key = key { keyMap[key] = lineno }
         case .failure(errmsg: let errmsg):
@@ -129,65 +132,68 @@ func loadDataNodes(from source: GedcomSource, tagMap: inout TagMap, keyMap: inou
 /// Processes an Array of (Node, level) pairs to build an Array of Gedcom records. It uses the
 /// levels to guide the record building state machine.
 func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout ErrorLog) -> RecordList {
+
     enum State { case initial, main, error } // Record building states.
     var state: State = .initial
-    var recordList = RecordList()    // Array of records.
-    var pnode: GedcomNode? = nil // Previous node.
-    var plevel = 0               // Previous level.
-    var rnode: GedcomNode? = nil // Current root.
 
-    for (node, level) in dataNodes {  // This loop is the record building state machine.
+    var recordList = RecordList()  // Array of records.
+    var prevNode: GedcomNode? = nil  // Previous node.
+    var prevLevel = 0  // Previous level.
+    var curRoot: GedcomNode? = nil  // Current root.
+
+    for (curNode, curLevel) in dataNodes {  // Record building state machine.
         switch state {
-        case .initial: // Handle first pair; level must be 0).
-            if (level == 0) {
-                rnode = node; // Set current root and goto .main.
+        case .initial: // Handle first pair; curLevel should be 0.
+            if (curLevel == 0) {
+                curRoot = curNode; // Set curRoot and goto .main.
                 state = .main;
-            } else { // Issue error and goto .error.
+            } else { // Add error and goto .error.
                 let error = Error(type: .syntax, severity: .fatal, message: "First line must have level 0")
                 errlog.append(error)
                 state = .error
             }
-        case .main: // Builds records from the (Node, level)'s.
-            if (level == 0) { // Found next root.
-                recordList.append(rnode!) // Save current root.
-                rnode = node; // Set current root for next record.
-            } else if (level == plevel) { // Found sibling of previous.
-                node.dad = pnode!.dad;
-                pnode!.sib = node
-            } else if (level == plevel + 1) { // Found child of previous.
-                node.dad = pnode
-                pnode!.kid = node
-            } else if (level < plevel) { // Found uncle of previous.
+        case .main: // Builds records from (curNode, curLevel)'s.
+            if (curLevel == 0) { // Found next root.
+                recordList.append(curRoot!) // Save just built Record.
+                curRoot = curNode; // Set curRoot of the next Record.
+            } else if (curLevel == prevLevel) { // Found sibling of prevNode.
+                curNode.dad = prevNode!.dad;
+                prevNode!.sib = curNode
+            } else if (curLevel == prevLevel + 1) { // Found child of prevNode.
+                curNode.dad = prevNode
+                prevNode!.kid = curNode
+            } else if (curLevel < prevLevel) { // Found 'uncle' of prevNode.
                 var count = 0;
-                while (level < plevel) {
+                while (curLevel < prevLevel) {
                     count += 1
-                    if (count > 100 || pnode == nil) { // Cycle in tree?
+                    if (count > 100 || prevNode == nil) { // Error in tree structure.
                         let error = Error(type: .syntax, severity: .fatal,
                                           message: "Too many ancestors: mis-formed tree?")
                         errlog.append(error)
                         state = .error
                         break
                     }
-                    pnode = pnode!.dad
-                    plevel -= 1;
+                    prevNode = prevNode!.dad
+                    prevLevel -= 1;
                 }
-                node.dad = pnode!.dad
-                pnode!.sib = node
-            } else { // level > plevel + 1 is illegal
+                curNode.dad = prevNode!.dad
+                prevNode!.sib = curNode
+            } else { // curLevel > prevLevel + 1 is illegal.
                 let error = Error(type: .syntax, severity: .fatal, message: "Invalid level")
                 errlog.append(error)
                 state = .error
             }
         case .error: // Skip nodes until the next 0 level.
-            if level == 0 {
+            if curLevel == 0 {
+                curRoot = curNode  // Root of the next Record.
                 state = .main
             }
         }
-        plevel = level
-        pnode = node
+        prevLevel = curLevel
+        prevNode = curNode
     }
-    if (state == .main) { // If in .main state at end save the last record.
-        recordList.append(rnode!)
+    if (state == .main) { // If in .main at end save the last Record.
+        recordList.append(curRoot!)
     }
     return recordList;
 }

@@ -81,7 +81,6 @@ final class DescendancyListModel: ObservableObject {
             // Add Spouse/Family lines for each FAMS the Person is a spouse in.
             let fkeys = person.kids(withTag: "FAMS").compactMap { $0.val }
             for fkey in fkeys {
-                //guard let family = index[fkey] else { continue }
                 guard let family = index.family(for: fkey) else { continue }  // Family
                 addUnion(family, of: person, depth: depth + 1, gen: gen)
             }

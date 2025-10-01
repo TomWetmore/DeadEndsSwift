@@ -1,0 +1,137 @@
+---------------------------------------------------------------
+@State vs @StateObject vs $ObservedObject vs @EnvironmentObject
+---------------------------------------------------------------
+
+@State
+• Use for simple, lightweight value types (Bool, Int, String, small structs).
+• Storage is managed by SwiftUI inside the view itself.
+• The value lives as long as the view instance lives.
+• When the view redraws, SwiftUI preserves that storage behind the scene.
+
+struct CounterView: View {
+    @State private var count = 0 // Just a number, no fancy lifecycle management.
+    var body: some View {
+        Button("Increment") { count += 1 }
+        Text("Count: \(count)")
+    }
+}
+
+@StateObject
+• Use for reference types that conform to ObservableObject (e.g., view models).
+• SwiftUI owns the object’s lifecycle.
+• The object is created once per view lifetime, even though body may be recomputed many times.
+• The object survives re-renders, and SwiftUI observes its @Published properties to trigger updates.
+
+final class CounterVM: ObservableObject {
+    @Published var count = 0
+}
+struct CounterView: View {
+    @StateObject private var vm = CounterVM() // Reference type
+    var body: some View {
+        Button("Increment") { vm.count += 1 }
+        Text("Count: \(vm.count)")
+    }
+}
+
+Key differences:
+• @State → “SwiftUI, hold onto this piece of value data between renders.”
+• @StateObject → “SwiftUI, create and own this reference object for this view; watch it for changes.”
+
+Gotchas
+• Don’t use @State for classes. You get a new instance every time the view rebuilds.
+• Don’t use @StateObject when passed in from outside; use @ObservedObject because ownership lies elsewhere.
+
+Memory trick:
+• State = small stuff (values inside the view).
+• StateObject = big stuff (models/objects that manage their own data).
+========================================================
+@State
+• What it’s for: small, simple value types (Int, Bool, String, small structs).
+• Who owns it: SwiftUI owns the storage.
+• Lifecycle: persists for the lifetime of the view instance.
+• When to use: if the state is local to this view and not shared elsewhere.
+
+struct ToggleView: View {
+    @State private var isOn = false
+    var body: some View {
+        Toggle("On/Off", isOn: $isOn)
+    }
+}
+
+@StateObject
+• What it’s for: ObservableObject reference types (view models).
+• Who owns it: SwiftUI owns the object. It creates it once and keeps it alive while the view is in the hierarchy.
+• Lifecycle: tied to this view’s lifecycle. When the view goes away, so does the object.
+• When to use: when this view is the place of creation of the model.
+
+final class CounterVM: ObservableObject {
+    @Published var count = 0
+}
+struct CounterView: View {
+    @StateObject private var vm = CounterVM()
+    var body: some View {
+        Button("Increment") { vm.count += 1 }
+        Text("Count: \(vm.count)")
+    }
+}
+
+@ObservedObject
+• What it’s for: also ObservableObject reference types.
+• Who owns it: someone else. This view just observes changes.
+• Lifecycle: view does not control the object’s lifetime.
+• When to use: when the object is passed in from a parent.
+
+struct CounterSubView: View {
+    @ObservedObject var vm: CounterVM
+    var body: some View {
+        Text("Count: \(vm.count)")
+    }
+}
+
+Parent:
+CounterSubView(vm: sharedVM)
+
+Memory trick:
+• State = small stuff (local value).
+• StateObject = big stuff (create & own model).
+• ObservedObject = borrowed stuff (observe someone else’s model).
+
+@EnvironmentObject
+• What it’s for: ObservableObject models that are shared widely through the view hierarchy.
+• Who owns it: Ownership is set up at a higher level (usually the app root).
+• Lifecycle: Lives as long as the scope where you inject it (often the app lifetime).
+• When to use: when you want a single source of truth available to many subviews without explicitly passing it down.
+
+App entry point:
+@main
+struct MyApp: App {
+    @StateObject private var model = AppModel()
+    var body: some Scene {
+        WindowGroup {
+            RootView()
+                .environmentObject(model)  // inject once here
+        }
+    }
+}
+A subview down in the hierarchy:
+struct ProfileView: View {
+    @EnvironmentObject var model: AppModel  // magically available!
+    var body: some View {
+        Text("Hello \(model.username)")
+    }
+}
+You don’t have to thread model through every initializer — it’s just “in the environment.”
+
+Full comparison
+
+Wrapper           : For...                  : Owned by : Lifetime       : Typical Use
+@State            : Simple values           : SwiftUI  : View lifetime  : Local UI state (toggles, text fields)
+@StateObject      : ObservableObject class  : SwiftUI  : View lifetime  : Create & own a model inside this view
+@ObservedObject   : ObservableObject class  : Parent   : External owner : Observe a model passed in
+@EnvironmentObject: Shared ObservableObject : Root/parent environment   : Often app lifetime: Shared/global model injected once
+
+Rule of thumb
+• Local value → @State.
+• Local model created here → @StateObject.
+• Model handed in from above → @ObservedObject.
+• Model shared across many views → @EnvironmentObject.

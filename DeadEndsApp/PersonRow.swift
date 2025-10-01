@@ -29,7 +29,7 @@ struct PersonRow: View {
                     .fontWeight(.semibold)
             }
             if showSummary {
-                HStack(spacing: 8) {
+                VStack(alignment: .leading) {
                     if let birth = person.eventSummary(tag: "BIRT") {
                         Text("b. \(birth)").foregroundColor(.secondary)
                     }
@@ -37,9 +37,10 @@ struct PersonRow: View {
                         Text("d. \(death)").foregroundColor(.secondary)
                     }
                 }
-                .font(.headline)
+                .font(.title3)
             }
         }
+        //.font(.title3)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
         .background(backgroundColor(for: person))

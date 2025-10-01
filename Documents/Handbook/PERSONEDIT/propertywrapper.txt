@@ -1,0 +1,253 @@
+
+The names wrappedValue and projectedValue come from a Swift language feature called Property Wrappers. SwiftUI uses them heavily (think: @State, @Published, @Binding, etc.).
+
+What is a Property Wrapper?
+A property wrapper is a Swift struct or class that defines how a property is stored, read, or written.
+You use them like this:
+
+@propertyWrapper
+struct MyWrapper {
+    var wrappedValue: String
+}
+
+struct Example {
+    @MyWrapper var name: String  // This is the magic
+}
+
+So when you write @MyWrapper var name: String, Swift is actually generating:
+
+var _name = MyWrapper(wrappedValue: "")
+var name: String {
+    get { _name.wrappedValue }
+    set { _name.wrappedValue = newValue }
+}
+
+🔍 wrappedValue: Always Present
+
+Every property wrapper must implement:
+
+var wrappedValue: Value
+
+This is the actual value that your property appears to be.
+
+So when you write:
+
+@State var count: Int = 0
+
+Swift actually creates an internal variable:
+
+private var _count: State<Int> = State(initialValue: 0)
+
+And then:
+
+var count: Int {
+    get { _count.wrappedValue }
+    set { _count.wrappedValue = newValue }
+}
+
+➡️ wrappedValue gives you the underlying value.
+
+🪄 projectedValue: Optional, Used for Extra Behavior
+
+This is where $ comes in.
+
+If your property wrapper also defines:
+
+var projectedValue: SomeType
+
+Then Swift lets you write:
+
+$myProperty  // == _myProperty.projectedValue
+
+That’s where the $ syntax comes from. It’s not magic — it’s sugar for .projectedValue.
+
+🔄 Examples from SwiftUI
+
+@State
+
+@State var name: String
+
+	•	name accesses wrappedValue: String
+	•	$name accesses projectedValue: Binding<String>
+
+@Published
+
+@Published var name: String
+
+	•	name is the value
+	•	$name is a Publisher<String> — combine publisher you can subscribe to
+
+@Binding
+
+@Binding var name: String
+
+	•	wrappedValue is the actual name
+	•	$name returns itself — because a Binding is its own projection
+
+⸻
+
+🧪 You Can Build Your Own
+
+Here’s a minimal custom wrapper:
+
+@propertyWrapper
+struct Tracked<T> {
+    var wrappedValue: T
+
+    var projectedValue: String {
+        return "You accessed this!"
+    }
+}
+
+struct Example {
+    @Tracked var foo = 42
+
+    func test() {
+        print(foo)      // → 42
+        print($foo)     // → "You accessed this!"
+    }
+}
+
+✅ Summary
+
+Name
+Meaning
+wrappedValue
+The actual value you’re storing
+projectedValue
+The $something — extra capability
+@State var x
+Defines _x: State<Int> with wrapped/projected
+$x
+Shorthand for _x.projectedValue
+
+
+This system is deeply powerful — it allows for transparent wrappers that behave like variables but have hooks and behaviors (just like C macros or inline functions, but safe and composable).
+
+
+==================================================================
+
+Handbook Entry: property-wrappers.txt
+======================================
+
+Overview
+--------
+A **property wrapper** in Swift is a way to add logic or behavior around
+a stored property, such as validation, observation, or computed access.
+SwiftUI uses them extensively (e.g., @State, @Binding, @Published).
+
+Two key internal names power this feature:
+
+• wrappedValue     — The "real" value being stored and exposed.
+• projectedValue   — An optional "extra" value, available via $prefix syntax.
+
+These names are NOT magic — they are real, inspectable, and customizable.
+
+
+Basic Mechanics
+---------------
+Defining a property wrapper looks like this:
+
+    @propertyWrapper
+    struct MyWrapper {
+        var wrappedValue: String
+    }
+
+    struct Example {
+        @MyWrapper var name: String
+    }
+
+The Swift compiler expands this to something like:
+
+    var _name = MyWrapper(wrappedValue: "")
+    var name: String {
+        get { _name.wrappedValue }
+        set { _name.wrappedValue = newValue }
+    }
+
+
+wrappedValue
+------------
+Every property wrapper must define this. It provides access to the actual value.
+In SwiftUI, when you read or write the property, you're actually accessing `wrappedValue`.
+
+    @State var count: Int = 0
+
+    // Internally becomes something like:
+    var _count = State(initialValue: 0)
+    var count: Int {
+        get { _count.wrappedValue }
+        set { _count.wrappedValue = newValue }
+    }
+
+
+projectedValue
+--------------
+Optional. If defined, this enables use of the $ prefix:
+
+    var projectedValue: SomeType
+
+Then:
+
+    $myProp  ==  _myProp.projectedValue
+
+Examples:
+
+• @State → $name gives a Binding<String>
+• @Published → $name gives a Publisher<String>
+• @Binding → $name gives Binding<T> (identity projection)
+
+
+Example: Custom Property Wrapper
+--------------------------------
+    @propertyWrapper
+    struct Tracked<T> {
+        var wrappedValue: T
+
+        var projectedValue: String {
+            "You accessed this!"
+        }
+    }
+
+    struct Example {
+        @Tracked var foo = 42
+
+        func test() {
+            print(foo)    // 42
+            print($foo)   // "You accessed this!"
+        }
+    }
+
+
+SwiftUI Examples
+----------------
+
+1. @State
+    @State var name: String
+    • wrappedValue = name
+    • projectedValue = Binding<String> (used for $name)
+
+2. @Binding
+    @Binding var name: String
+    • wrappedValue = actual value from parent
+    • projectedValue = itself (Binding<T>)
+
+3. @Published
+    class ViewModel: ObservableObject {
+        @Published var name: String
+    }
+    • wrappedValue = name
+    • projectedValue = Combine Publisher<String>
+
+
+Summary
+-------
+| Concept          | Meaning                                        |
+|------------------|------------------------------------------------|
+| wrappedValue     | The underlying value                           |
+| projectedValue   | Optional. Enables use of $ to access extra API |
+| $x               | Equivalent to _x.projectedValue                |
+| Used by SwiftUI  | @State, @Published, @Binding, etc.             |
+
+This system provides clean abstraction while preserving access to internals.
+Think of it as a Swifty equivalent of C-level getter/setter macros — but safe.

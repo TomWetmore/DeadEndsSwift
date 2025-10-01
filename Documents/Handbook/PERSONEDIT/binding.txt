@@ -1,0 +1,441 @@
+What is a Binding in SwiftUI?
+
+A Binding is a two-way connection between a piece of state (like a variable in your view model) and a view (like a TextField, Picker, or Toggle).
+
+It allows:
+• The view to display the current value
+• The user to change that value
+• And the change automatically updates your model
+
+Example: One-Way vs Two-Way
+
+Let’s say you have this: @State var name = "Thomas"
+If you write: Text(name)
+That’s one-way: you show the name, but can’t change it.
+
+If you write: TextField("Name", text: $name)
+The $name here is a Binding — it links the text field to the name variable. When the user types into the field, the name variable is automatically updated.
+
+The $ Prefix
+• When you write $name, you are saying: “Give me a Binding to name.”
+• It’s shorthand for:
+    Binding(get: { name }, set: { name = $0 })
+
+Where Bindings Come From
+There are two common places you get a binding:
+
+1. From @State:
+    @State var value: Int = 5
+    Slider(value: $value)
+
+2. From @ObservedObject or @StateObject
+    @ObservedObject var vm: ViewModel
+    TextField("Name", text: $vm.name)
+
+If vm.name is a @Published var name: String, this works.
+
+Why Create a Binding Manually?
+Sometimes you have:
+• A non-optional field in a Picker
+• But the model uses an optional, like SexType?
+In that case, you make a Binding manually to adapt between them:
+
+var sexBinding: Binding<SexType> {
+    Binding(
+        get: { vm.sex ?? .unknown },   // use .unknown if nil
+        set: { vm.sex = $0 }           // update the optional with new value
+    )
+}
+
+Now you can use sexBinding in a Picker that expects SexType, not SexType?.
+Concept:What it means
+Binding<T>:A read/write connection between view and data
+$value:Shorthand for a binding to value
+@State:Owns local view state
+@ObservedObject:Links view to a view model (@Published properties)
+Binding(...):Manually create a bridge between two values
+
+
+
+So let’s step through Binding, not as a Swift incantation, but as if we were systems-level engineers reverse-engineering the feature from first principles.
+
+⸻
+
+Think of Binding<T> as a Lightweight Reference
+
+In old-school C: char* name = "Tom";
+
+You can pass that pointer around, read it, modify it, and anyone with the pointer sees the change.
+
+Swift usually avoids pointers, but Binding<T> is the SwiftUI way of saying:
+“This thing refers to a value that is stored somewhere else, and I want to read and write it through this object.”
+
+It’s like:
+
+struct Binding<Value> {
+    let get: () -> Value
+    let set: (Value) -> Void
+}
+
+That’s it.
+If you squint, this is a pair of function pointers: one for getting, one for setting. A very C-like idea.
+
+Where the Data Lives
+
+In SwiftUI:
+•	@State var name = "Tom"
+→ The data lives in the View struct’s internal storage
+→ $name gives you a Binding<String> (reference to that storage)
+•	@ObservedObject var vm: ViewModel with @Published var name
+→ The data lives in an external class, probably on the heap
+→ $vm.name gives you a Binding<String>, pointing to vm.name
+•	When you manually create a Binding, like this:
+
+Binding(get: { self.sex ?? .unknown }, set: { self.sex = $0 })
+
+You’re saying:
+“Let me expose this property as a pointer-like object, but I’ll control what read and write mean.”
+
+
+What SwiftUI Views Expect
+
+Controls like TextField, Toggle, and Picker don’t want ownership of the data — they just want a reference to it.
+
+So SwiftUI defines their initializer to take a Binding<T>, e.g.:
+
+TextField("Name", text: Binding<String>)
+
+This gives the TextField a reference to the variable — not a copy.
+
+So when the user types:
+•	SwiftUI calls set("New Value") on the binding
+•	That goes and updates the underlying storage
+
+What’s with the $ Syntax?
+This is syntactic sugar for:
+
+@State var name = "Tom"
+
+$name  // ⟹ Binding<String>(get: { name }, set: { name = $0 })
+
+
+You can define it yourself like this:
+
+var _name = State(initialValue: "Tom")
+var name: String {
+    get { _name.wrappedValue }
+    set { _name.wrappedValue = newValue }
+}
+var $name: Binding<String> {
+    _name.projectedValue  // literally the Binding
+}
+
+So $name is not magic — it’s just SwiftUI exposing the getter/setter object behind @State.
+
+
+Want to See the Binding Mechanism with Your Own Code?
+
+Try this minimal SwiftUI view:struct BindingDemo: View {
+    @State private var name: String = "Tom"
+
+    var body: some View {
+        VStack {
+            TextField("Enter name", text: $name)
+            Text("You typed: \(name)")
+        }
+        .padding()
+    }
+}
+
+This works because:
+	•	@State creates storage
+	•	$name gives a pointer to that storage
+	•	TextField modifies it
+	•	Text reads from it
+
+If You Were Writing This in C
+Think of:
+
+void drawTextField(char* label, char** stringPointer) {
+    // read *stringPointer to get value
+    // let user modify *stringPointer
+}
+
+Binding<T> is the Swift equivalent of char**, but wrapped in a safe, composable struct.
+
+Why SwiftUI Had to Do This
+
+SwiftUI is declarative — the UI is a function of the state. But when you interact with UI, you don’t just want a copy of state — you want to modify the real data from inside a view builder.
+
+They needed a way to pass references safely, with full control over how reads and writes behave. Hence: Binding<T>.
+
+And if that’s all they’d said up front, many experienced programmers (like yourself) would have nodded and said: “Ah. Not magic. Just a safe reference abstraction.”
+
+
+Summary
+
+Concept
+What It Really Is
+@State
+Storage for a value, internal to the view
+$name
+A Binding<String> — a pointer to that storage
+Binding<T>
+A pair of closures: get and set
+SwiftUI control (TextField, etc)
+Takes a Binding, so it can read and write the value directly
+$ prefix
+Syntactic sugar for .projectedValue — the Binding
+
+-------------------MORE FROM A DIFFERENT QUESTION----------
+
+I need to ask one more question about SwiftUI esoterica to complete my understanding of the model hookups. Note this code:
+
+GedcomTreeView(root: vm.person, expandedNodes: $vm.expanded)
+                    .frame(minWidth: 200, idealWidth: 300, maxWidth: .infinity, alignment: .leading)
+                    .padding()
+
+both vm and $vm are used to reference the model. Can you explain the difference?
+
+Ahh, you’ve hit on a subtle but super-important distinction: property vs. binding. Let’s break it down carefully.
+1. vm
+• When you write vm, you’re using the object reference itself.
+• vm is a PersonEditorViewModel instance (an ObservableObject).
+• This is what you use if you want to read or call methods directly:
+
+vm.rebuildGedcomTree()
+print(vm.name)
+
+2. $vm
+• The $ prefix gives you the projected value of a property wrapper.
+• For @StateObject var vm, the projected value is a binding to the wrapped object.
+• So $vm isn’t the PersonEditorViewModel itself — it’s a Binding<PersonEditorViewModel>.
+
+Bindings are SwiftUI’s way of creating two-way connections: a child view can change the value, and the parent’s state automatically updates.
+
+3. Why $vm.expanded works
+• In your PersonEditorViewModel, you have @Published var expanded: Set<ObjectIdentifier>.
+• When you access $vm.expanded, SwiftUI bridges things:
+• vm is an ObservableObject.
+• $vm exposes a binding to its published properties.
+• That means GedcomTreeView gets a live, two-way connection to the expanded set.
+• If the user clicks a disclosure triangle in the tree, the child view mutates $vm.expanded, and the change flows back into the view model.
+
+4. Visual analogy
+• vm → “Here’s the notebook itself.” 📓
+• $vm → “Here’s a pen clipped into that notebook that lets you write inside it.” ✏️
+
+Both give you access, but the $ version is specifically for when you want SwiftUI’s two-way plumbing to kick in.
+
+So in your snippet:
+GedcomTreeView(root: vm.person, expandedNodes: $vm.expanded)
+• vm.person is read-only data passed down.
+• $vm.expanded is a two-way binding, so the tree can update the expansion state and keep it synced with the model.
+
+To me this sounds quite a bit like an inout parameter
+
+Yes! You’re making the right connection — a Binding in SwiftUI really is a lot like an inout parameter, except instead of existing just for the duration of a function call, it’s a long-lived, persistent connection between two pieces of state.
+
+Compare directly
+inout (classic Swift)
+func increment(_ x: inout Int) {
+    x += 1
+}
+
+var value = 10
+increment(&value)   // &value passes a reference
+print(value)        // 11
+
+• The & creates a temporary reference that allows increment to mutate the caller’s variable.
+• But once the function returns, the reference is gone.
+
+Binding (SwiftUI)
+struct CounterView: View {
+    @State private var count = 0
+    var body: some View {
+        Stepper("Count: \(count)", value: $count)
+    }
+}
+• Here, $count is not a one-shot reference like &count.
+• It’s a persistent reference object (Binding<Int>) that can be passed into subviews.
+• That subview (Stepper) can then mutate it whenever the user clicks + or –.
+• The connection stays alive as long as the view hierarchy does.
+
+Key difference
+• inout → Temporary, function-scoped reference for mutation.
+• Binding → Long-lived, view-hierarchy-scoped reference that keeps parent and child state in sync automatically.
+So your instinct is correct: $ feels like &, but it’s upgraded for SwiftUI’s declarative world. 🚀
+
+You showed me how a StateObject under the covers is a PropertyWrapper. Is Binding<Int> defined similiarly as a struct somewhere?
+
+Binding is also a property wrapper–style type, but it’s a bit more bare-bones than @StateObject or @ObservedObject. It’s literally defined as a struct in SwiftUI. If you peek at the standard library headers you’ll see something very close to this (I’ll paraphrase the real thing to keep it readable):
+
+/// A property wrapper type that can read and write a value
+/// managed by some source of truth.
+@propertyWrapper
+public struct Binding<Value> {
+    // These are the core storage
+    private let getter: () -> Value
+    private let setter: (Value) -> Void
+
+    /// Construct a binding from closures
+    public init(get: @escaping () -> Value,
+                set: @escaping (Value) -> Void) {
+        self.getter = get
+        self.setter = set
+    }
+
+    /// Read the current value
+    public var wrappedValue: Value {
+        get { getter() }
+        nonmutating set { setter(newValue) }
+    }
+
+    /// Access the binding itself (the projected `$` form)
+    public var projectedValue: Binding<Value> { self }
+}
+
+That’s the heart of it:
+• A Binding<Value> is just a pair of closures: one to get the value, one to set it.
+• wrappedValue makes it behave like a variable: you can read or assign to it.
+• projectedValue returns itself, so you can use $binding to pass it deeper.
+
+Where $ comes in
+
+When you write @State var count = 0, SwiftUI creates a State<Int> wrapper. That wrapper has a .projectedValue of type Binding<Int>. That’s why you can write:
+
+TextField("Enter number", text: $count)
+
+The $count is literally the Binding<Int> created by the @State<Int> wrapper.
+
+Just like StateObject has that hidden _vm wrapper, Binding is “just a struct with a getter and setter.” Apple could have called it Ref<Value> and it would feel almost the same. The magic comes from how SwiftUI views consume those bindings. ✨
+
+------------------------ UNDERSTANDING THAT EARLIER CODE IN MORE DETAIL ------------
+The declaration
+
+public struct Binding<Value> {
+• Binding is a generic struct.
+• Value is the type of thing it binds to — Int, String, Person, etc.
+• So Binding<Int> is “a box that knows how to read and write an Int somewhere else.”
+
+The stored closures
+
+    private let getter: () -> Value
+    private let setter: (Value) -> Void
+
+• Instead of storing an actual Value, it stores two functions:
+    • getter takes no arguments and returns the current value.
+    • setter takes a new value and stores it wherever the “real” value lives.
+Think of this like keeping two function pointers: one for “read” and one for “write.”
+
+The initializer
+
+    public init(get: @escaping () -> Value,
+                set: @escaping (Value) -> Void) {
+        self.getter = get
+        self.setter = set
+    }
+
+• You create a Binding by handing it those closures.
+• Example:
+
+var name = "Tom"
+let b = Binding(
+    get: { name },
+    set: { newValue in name = newValue }
+)
+
+• Now b is a binding to name. Reading/writing through b actually touches name.
+
+The wrappedValue
+
+    public var wrappedValue: Value {
+        get { getter() }
+        nonmutating set { setter(newValue) }
+    }
+
+• This is the property-wrapper magic.
+• When you say b.wrappedValue, it calls getter().
+• When you assign, b.wrappedValue = 42, it calls setter(42).
+
+Swift’s property wrapper syntax (@Binding var x) uses this wrappedValue under the hood.
+
+The projectedValue
+
+    public var projectedValue: Binding<Value> { self }
+
+• This is what the $ operator exposes.
+• So if you have @State var count = 0, then $count is the Binding<Int> that SwiftUI created.
+• That Binding<Int> has get/set closures pointing into SwiftUI’s state box.
+• You pass $count to a child view or control so it can read/write the real state.
+
+So in practice…
+
+@State private var name = "Tom"
+
+var body: some View {
+    TextField("Name", text: $name)
+}
+
+• @State wraps name in a State<String> object that manages storage.
+• $name gives you a Binding<String> built with closures that call into that State object.
+• TextField only knows how to work with a Binding<String>. It doesn’t care where the data lives — it just calls the getter when it needs the text, and calls the setter when the user types.
+
+So really, Binding is just:
+• A getter function.
+• A setter function.
+• A tiny bit of syntactic sugar (wrappedValue, projectedValue) to integrate with Swift’s property wrapper system.
+
+---------------------- EXAMPLE IN PURE SWIFT -----------------------
+import Foundation
+
+// === Our own Binding type (simplified) ===
+struct Binding<Value> {
+    private let getter: () -> Value
+    private let setter: (Value) -> Void
+    
+    init(get: @escaping () -> Value,
+         set: @escaping (Value) -> Void) {
+        self.getter = get
+        self.setter = set
+    }
+    
+    var wrappedValue: Value {
+        get { getter() }
+        nonmutating set { setter(newValue) }
+    }
+    
+    var projectedValue: Binding<Value> { self }  // enables `$`
+}
+
+// === Example use without SwiftUI ===
+var age = 42
+
+// Make a binding that points into `age`
+let ageBinding = Binding<Int>(
+    get: { age },
+    set: { newValue in age = newValue }
+)
+
+print("Age via variable: \(age)")                 // prints 42
+print("Age via binding: \(ageBinding.wrappedValue)") // prints 42
+
+// Write through the binding
+ageBinding.wrappedValue = 99
+print("Age after binding write: \(age)")          // prints 99
+
+// You can also use the `$` style (because projectedValue returns self)
+let anotherRef = ageBinding.projectedValue
+anotherRef.wrappedValue = 123
+print("Age after another binding: \(age)")        // prints 123
+
+Walkthrough
+1. var age = 42 is our “real storage.”
+2. ageBinding is created with closures:
+    • get: { age } → when you read, it reads age.
+    •set: { newValue in age = newValue } → when you write, it assigns into age.
+3.ageBinding.wrappedValue reads age (42).
+4. Writing through it (ageBinding.wrappedValue = 99) mutates the real age.
+5. The projectedValue ($) is just the binding itself — so $binding and binding are the same thing here.
+
+This is literally the same mechanism SwiftUI controls use (TextField, Toggle, etc.), except SwiftUI wires up those closures into the @State or @ObservedObject boxes.

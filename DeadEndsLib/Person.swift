@@ -32,16 +32,16 @@ extension Person: Equatable, Hashable {
 }
 
 /// Enumeration for sex values.
-public enum SexType {
-    case male
-    case female
-    case unknown
+public enum SexType: String {
+    case male = "M"
+    case female = "F"
+    case unknown = "U"
 }
 
 public extension Person {
 
     /// Returns sex of Person.
-    var sex: SexType {
+    public var sex: SexType {
         guard let value = kidVal(forTag: "SEX")?.uppercased() else { return .unknown }
         switch value {
         case "M": return .male
@@ -258,5 +258,39 @@ extension GedcomNode {
     func siblings(database: Database?) -> [GedcomNode] {
         guard let index = database?.recordIndex else { return [] }
         return siblings(index: index)
+    }
+}
+
+extension Database {
+    
+    enum PersonUpdateError: Swift.Error {
+
+        case missingName
+        case inconsistentSex
+        case invalidLinks
+        // ... add others as you refine rules
+    }
+
+    public func updatePerson(_ person: Person) {
+//        // 1. Validate
+//        guard !person.kidVals(forTag: "NAME").isEmpty else {
+//            throw PersonUpdateError.missingName
+//        }
+//        if let sex = person.sex {
+//            try validateSexConsistency(person, sex: sex)
+//        }
+//
+//        // 2. Canonicalize (placeholder for now)
+//        let canonical = canonicalize(person)
+//
+//        // 3. Maintain indexes
+//        updateIndexesForPerson(canonical)
+//
+//        // 4. History / undo
+//        recordDelta(.personUpdated(canonical))
+//
+//        // 5. Commit
+        //recordIndex[canonical.key] = canonical.root
+        recordIndex[person.key] = person.root
     }
 }

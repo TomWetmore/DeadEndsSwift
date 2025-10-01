@@ -1,0 +1,254 @@
+
+Decision to NOT USE OutlineGroup.
+
+Why padding(.leading) Has No Effect Here
+In this code:
+
+OutlineGroup(node, children: \.kids) { n in
+    Text("\(n.depth) \(n.tag) \(n.val ?? "")")
+        .padding(.leading, CGFloat(n.depth) * 16)
+}
+
+SwiftUI renders an internal tree structure using built-in indentation, and tries to layout and align everything as if it were a table — often using spacing and alignment guides that don’t respond well to your manual padding.
+
+So:
+• The indentation you see isn’t your doing.
+• .padding(.leading) is being overridden or neutralized by OutlineGroup.
+
+Two Options for Fixing Layout
+
+Option 1: Use Label View Consistently Inside OutlineGroup
+This ensures that SwiftUI doesn’t break alignment due to uneven content.  Try:
+
+OutlineGroup(node, children: \.kids) { n in
+    HStack {
+        Text("\(n.tag)")
+        if let val = n.val {
+            Text(val).foregroundColor(.secondary)
+        }
+    }
+    .font(.system(.body, design: .monospaced))
+}
+This preserves SwiftUI’s internal indentation system but gives you better visual consistency.
+
+Option 2 (Better): Build Your Own Outline (No OutlineGroup)
+If you want full layout control, drop OutlineGroup and write a recursive view.
+This is a bit more work, but gives you precise layout and stable expansion state (eventually). Here’s a starting point:
+
+struct GedcomTreeView: View {
+    var node: GedcomNode
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 4) {
+                treeRow(for: node)
+            }
+            .padding()
+        }
+    }
+    @ViewBuilder
+    func treeRow(for node: GedcomNode) -> some View {
+        Text("\(node.depth) \(node.tag) \(node.val ?? "")")
+            .font(.system(.body, design: .monospaced))
+            .padding(.leading, CGFloat(node.depth) * 16)
+
+        // Recurse manually over kids
+        var child = node.kid
+        while let c = child {
+            treeRow(for: c)
+            child = c.sib
+        }
+    }
+}
+
+This version respects .padding fully, uses your real kid/sib model, and is the foundation for a custom expandable tree later.
+
+Summary
+
+Approach: Control: Looks Aligned: Expandable: Uses OutlineGroup
+OutlineGroup: ❌ Low: ❌ Unpredictable: ✅ Built-in: ✅ Yes
+Custom recursive view: ✅ Full: ✅ Your way: ✅ (manual): ❌ No
+
+So for visual precision, switch to a recursive view. You’ve already done the hard part (depth tracking and tree structure), so the rewrite is minimal.
+
+Would you like help converting your tree viewer fully into a recursive SwiftUI view that can support expansion toggles later on?
+
+ME
+When you say custom expandable tree later does this mean I will be able to collapse different parts of the tree. And when we reach the point where I start editing the tree directly will this approach support that?
+
+Yes — and you’re already 80% of the way there with your current model.
+Let’s break this down into the two questions you just asked:
+
+1. Will a custom recursive tree view let me collapse/expand arbitrary parts of the tree?
+Yes — absolutely.
+In fact, this is the only way to get per-node expand/collapse behavior that:
+• Persists across view redraws
+• Can be customized (e.g. auto-expand certain tags, remember user toggles)
+• Isn’t limited by OutlineGroup’s opaque state
+You’ll need:
+• A Set<ObjectIdentifier> or [ObjectIdentifier: Bool] in your view model (or local state)
+• A small disclosure toggle (▶︎ / ▼) per node
+• A recursive view that only renders children if their parent is expanded
+You already have the tree structure and the depth value, so the rest is just rendering logic.
+
+2. Will this approach support editing the tree directly later?
+Yes — and better than OutlineGroup ever could.
+Once you have your own recursive view:
+• You can add buttons or context menus for:
+• Insert node below
+• Add child
+• Change tag or value
+• Delete node
+• You can use @Binding or two-way delegation to let the user click and edit a line
+• You can even embed an inline editable TextField instead of static text
+
+This means:
+
+Feature: Supported by OutlineGroup: Supported by custom view
+Click to edit value/tag: ❌ (difficult): ✅ (easy)
+Show inline controls (add/delete): ❌: ✅
+Fine-grained expand/collapse: ❌ (all or nothing): ✅
+Highlight syntax: ❌: ✅
+Switch formats dynamically:: ❌: ✅
+
+What’s the underlying power?
+Your recursive GedcomNode tree is already expressive enough to support:
+• Live editing
+• UI events per node
+• Traversal by tag or content
+• Read-only or read-write views
+• Per-node metadata (highlighted, invalid, expanded, etc.)
+
+Your treeRow(for:) function becomes the single place to orchestrate rendering + controls per node.
+
+What You’ll Gain:
+•Control of layout (indentation, spacing, alignment)
+•Visual consistency
+•Expand/collapse on a per-node basis
+•Live editing: click to change tag/value
+•Contextual actions: insert child, delete, reorder
+•Syntax or error highlighting (e.g. missing DATE or PLAC)
+•Switch between formats (GEDCOM / JSON / YAML / tree)
+
+Conclusion:
+Yes, a custom tree view:
+•✔️ Enables full expand/collapse per node
+•✔️ Sets you up perfectly for direct editing
+•✔️ Is more consistent with the rest of your DeadEnds philosophy: you own the logic and the structure
+
+Would you like me to sketch a prototype of this custom tree view with expansion toggles and a simple way to start editing nodes? It can be done in under 50 lines as a base layer.
+
+Yes, please sketch the prototype.
+
+Absolutely — here is a clean, compact SwiftUI prototype for a custom expandable GEDCOM tree view, ready to drop into your GedcomTreeView.swift.
+
+It supports:
+	•	Displaying the GedcomNode tree
+	•	Expand/collapse per node
+	•	Indented layout
+	•	Toggles using ▶︎ / ▼ for disclosure
+	•	Designed to evolve into a full editor later
+
+⸻
+
+✅ Prototype: ExpandableGedcomTreeView
+
+import SwiftUI
+import DeadEndsLib
+
+struct GedcomTreeView: View {
+    let root: GedcomNode
+
+    /// Tracks which nodes are expanded.
+    @State private var expandedNodes: Set<ObjectIdentifier> = []
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 2) {
+                treeRow(for: root)
+            }
+            .padding()
+        }
+    }
+
+    @ViewBuilder
+    private func treeRow(for node: GedcomNode) -> some View {
+        let isExpandable = node.kid != nil
+        let isExpanded = expandedNodes.contains(ObjectIdentifier(node))
+
+        HStack(spacing: 4) {
+            // Disclosure indicator
+            if isExpandable {
+                Button(action: {
+                    toggle(node)
+                }) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
+                .buttonStyle(.plain)
+                .frame(width: 16)
+            } else {
+                Spacer().frame(width: 16) // align with buttons
+            }
+
+            // Node label
+            Text("\(node.tag) \(node.val ?? "")")
+                .font(.system(.body, design: .monospaced))
+        }
+        .padding(.leading, CGFloat(node.depth) * 16)
+
+        // Recursively render children if expanded
+        if isExpanded {
+            var child = node.kid
+            while let current = child {
+                treeRow(for: current)
+                child = current.sib
+            }
+        }
+    }
+
+    /// Toggle expanded/collapsed state for a node
+    private func toggle(_ node: GedcomNode) {
+        let id = ObjectIdentifier(node)
+        if expandedNodes.contains(id) {
+            expandedNodes.remove(id)
+        } else {
+            expandedNodes.insert(id)
+        }
+    }
+}
+
+🧪 To Use It
+
+In your PersonEditorView, just replace your call to GedcomTreeView with:
+
+GedcomTreeView(root: vm.rootNode)
+
+🧠 What You Can Add Next
+
+From here, you can easily grow it:
+	•	🔧 Replace the Text with editable TextField for tag or value
+	•	➕ Add buttons for insert child / sibling / delete
+	•	🧱 Add a view model for managing tree editing operations
+	•	🖍️ Apply colors or highlights based on GEDCOM tag types
+	•	🔁 Hook into undo/redo tracking
+
+⸻
+
+📏 Summary of Key Elements
+
+Feature
+How it works
+Expand/collapse
+Stored in Set<ObjectIdentifier>
+Recursion
+Manual with kid/sib traversal
+Indentation
+Based on node.depth × 16 points
+Disclosure triangle
+SF Symbols: "chevron.right", "down"
+Future editing
+Easy to add: just replace Text(...)
+
+
+Let me know if you’d like to evolve this into a full editable tree, or to support tree diffing for change tracking. You now have the foundation.

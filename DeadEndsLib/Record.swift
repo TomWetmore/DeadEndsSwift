@@ -17,6 +17,7 @@ public protocol Record {
 
 /// Extension with the basic properties and methods of GedcomNodes.
 public extension Record {
+
     // Base properties.
     var key: String { root.key! }  // Meets protocol requirment.
     var tag: String { root.tag }
@@ -25,10 +26,18 @@ public extension Record {
     var sib: GedcomNode? { root.sib }
 
     // Retrieval methods.
-    func kidVal(forTag tag: String) -> String? { root.kidVal(forTag: tag) }
-    func kidVals(forTag tag: String) -> [String] { root.kidVals(forTag: tag) }
     func kid(withTag tag: String) -> GedcomNode? { root.kid(withTag: tag) }
+    func kid(atPath path: [String]) -> GedcomNode? { root.kid(atPath: path) }
+
+    func kidVal(forTag tag: String) -> String? { root.kidVal(forTag: tag) }
+    func kidVal(atPath path: [String]) -> String? { root.kidVal(atPath: path) }
+
     func kids(withTag tag: String) -> [GedcomNode] { root.kids(withTag: tag) }
+    func kidVals(forTag tag: String) -> [String] { root.kidVals(forTag: tag) }
+
+
+
+
 }
 
 /// Extensions to Dictionary that allows Record retrieval from RecordIndexes.
@@ -42,6 +51,8 @@ extension Dictionary where Key == String, Value == GedcomNode {
 public extension Record {
     func gedcomText(level: Int = 0, indent: Bool = false) -> String { root.gedcomText(level: level, indent: indent) }
     func eventSummary(tag: String) -> String? { root.eventSummary(tag: tag) }
+    func descendants() -> [GedcomNode] { root.descendants() }
+    func count() -> Int { root.count() }
 }
 
 //func parseSingle<T>(text: String, wrap: (GedcomNode) -> T?) -> Result<T, [String]> {

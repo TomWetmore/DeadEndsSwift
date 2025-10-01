@@ -41,6 +41,7 @@
 		2682068B2D1337930051544B /* libDeadEndsLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDeadEndsLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2686ABAA2D94F1E300FE56DC /* SExprPNode.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SExprPNode.md; sourceTree = "<group>"; };
 		268F3D732D9D91FC00304D51 /* ImportStack.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ImportStack.md; sourceTree = "<group>"; };
+		26B50D792E79C4C5006A978A /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Chat.swift; path = Warehouse/Chat.swift; sourceTree = "<group>"; };
 		26DF07562E69E7E6000D08EE /* DeadEndsTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DeadEndsTest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -95,11 +96,13 @@
 				Program.swift,
 				ProgramNode.swift,
 				ProgramValue.swift,
+				Record.swift,
 				RecordSequence.swift,
 				RefnIndex.swift,
 				SExpression.swift,
 				SplitJoin.swift,
 				Test.swift,
+				ToBeMoved.swift,
 				Traverse.swift,
 				ValidateFamily.swift,
 				ValidateKeys.swift,
@@ -199,6 +202,7 @@
 		268206592D13370F0051544B = {
 			isa = PBXGroup;
 			children = (
+				26B50D792E79C4C5006A978A /* Chat.swift */,
 				263408B12E21680900F4E6DE /* DeadEndsApp */,
 				260186FD2E3D6423006A7ECC /* README.md */,
 				26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */,

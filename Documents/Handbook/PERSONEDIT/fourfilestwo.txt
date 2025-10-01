@@ -1,0 +1,110 @@
+----------------------------------------------------------------
+PersonEditorViewModel
+----------------------------------------------------------------
+
+@MainActor
+final class PersonEditorViewModel: ObservableObject {
+    @Published var name: String = ""
+    @Published var sex: SexType? = nil
+    @Published var birthDate: String = ""
+    @Published var birthPlace: String = ""
+    @Published var showDeath: Bool = false
+    @Published var deathDate: String = ""
+    @Published var deathPlace: String = ""
+    @Published var expanded: Set<ObjectIdentifier> = []
+    @Published private(set) var root: GedcomNode
+    private(set) var person: Person
+
+    init(person: Person) {
+    func rebuildGedcomTree() {
+    func clear() {
+private func pathTo(_ node: GedcomNode) -> [GedcomNode] {
+private func ObjectIdentifierSet(pathTo node: GedcomNode) -> [ObjectIdentifier] {
+
+----------------------------------------------------------------
+PersonEditorView
+----------------------------------------------------------------
+
+struct PersonEditorView: View {
+    @StateObject var vm: PersonEditorViewModel
+    let onSave: (Person) -> Void
+    init(person: Person, onSave: @escaping (Person) -> Void) {
+        _vm = StateObject(wrappedValue: PersonEditorViewModel(person: person))
+        self.onSave = onSave
+    var body: some View {
+        VStack {
+            HSplitView {
+                PersonFormView(vm: vm)
+                GedcomTreeView(root: vm.person, expandedNodes: $vm.expanded)
+            HStack {
+                Button("Save") {
+                    vm.rebuildGedcomTree()
+                    onSave(vm.person)
+                .keyboardShortcut(.defaultAction)
+
+----------------------------------------------------------------
+PersonFormView
+----------------------------------------------------------------
+
+struct PersonFormView: View {
+    @ObservedObject var vm: PersonEditorViewModel
+    var body: some View
+        ScrollView
+            VStack(alignment: .leading, spacing: 16)
+                GroupBox(label: Text("Name and Sex")
+                    TextField("Full Name", text: $vm.name)
+                        .onSubmit { vm.rebuildGedcomTree() }
+                    Picker("Sex", selection: $vm.sex) {
+                        Text("Male").tag(SexType?.some(.male))
+                    }.onChange(of: vm.sex) { _, _ in
+                        vm.rebuildGedcomTree()
+                    }
+                GroupBox(label: Text("Birth").font(.headline)) {
+                    TextField("Date", text: $vm.birthDate)
+                        .onSubmit { vm.rebuildGedcomTree() }
+                    TextField("Place", text: $vm.birthPlace)
+                        .onSubmit { vm.rebuildGedcomTree() }
+                Toggle("Include Death", isOn: $vm.showDeath)
+                    .onChange(of: vm.showDeath) { _, _ in vm.rebuildGedcomTree()
+                if vm.showDeath {
+                    GroupBox(label: Text("Death")
+                        TextField("Date", text: $vm.deathDate)
+                            .onSubmit { vm.rebuildGedcomTree() }
+                        TextField("Place", text: $vm.deathPlace)
+                            .onSubmit { vm.rebuildGedcomTree() }
+                Button("Add Event") { vm.addNewEvent() }
+                Button("Reset Form") { vm.clear() }
+
+----------------------------------------------------------------
+GedcomTreeView
+----------------------------------------------------------------
+
+struct GedcomTreeView: View {
+    let root: Person
+    @Binding var expandedNodes: Set<ObjectIdentifier>
+    var body: some View {
+
+    @ViewBuilder
+    private func treeRow(for node: GedcomNode) -> some View {
+        let isExpandable = node.kid != nil
+        let isExpanded = expandedNodes.contains(ObjectIdentifier(node))
+
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                if isExpandable {
+                    Button { toggle(node) } label: {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                Text("\(node.lev) \(node.tag) \(node.val ?? "")")
+            }
+            .padding(.leading, CGFloat(node.lev) * 16)
+            if isExpanded {
+                ForEach(children(of: node), id: \.id) { child in
+                    AnyView(treeRow(for: child))   // type-erasure
+
+    private func toggle(_ node: GedcomNode) {
+        let id = ObjectIdentifier(node)
+        if expandedNodes.contains(id) { expandedNodes.remove(id)
+        } else { expandedNodes.insert(id) }
+    }
+
+private func children(of node: GedcomNode) -> [GedcomNode] {

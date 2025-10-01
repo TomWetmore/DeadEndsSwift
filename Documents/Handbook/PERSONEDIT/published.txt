@@ -1,0 +1,68 @@
+----------------------------
+NOTES ON @PUBLISHED
+----------------------------
+@Published is a property wrapper.
+
+The compiler rewrites '@Published var firstName: String = ""' into something like:
+
+private var _firstName: Published<String> = Published(initialValue: "")
+var firstName: String {
+    get { _firstName.wrappedValue }
+    set { _firstName.wrappedValue = newValue }
+}
+
+There is a hidden stored property of type Published<Value> behind the scenes.
+
+Published is itself a struct that simplified looks like this:
+
+@propertyWrapper
+public struct Published<Value> {
+    public var wrappedValue: Value {
+        didSet {
+            publisher.send(wrappedValue)
+        }
+    }
+    public var projectedValue: Published<Value>.Publisher {
+        self.publisher
+    }
+    private let publisher: Publisher
+}
+
+Here wrapped value is the actual data, and projectedValue($firstName) is a Publisher that sends updates when wrappedValue changes.
+Publisher is part of the Combine framework
+
+
+That publisher is part of the Combine framework.
+
+How it is used in SwiftUI
+1. A view model conforms to ObservableObject.
+2. When one of its @Published properties changes, its publisher emits a new value.
+3. ObservableObject has a synthesized property called objectWillChange hooked into SwiftUI's view update system.
+4. Result: the view invalidates and redraws.
+
+Result: @Published builds a publisher pipeline for that property. Every assignment triggers a .send().
+
+For each @Published var foo, there is
+1. A hidden stored property _foo: Published<T>
+2. A synthesized foo getter/setter that forwards into _foo.wrappedValue
+3. A Publisher exposed as $foo, of type Published<T>.Publisher
+4. Because class is an ObservableObject, it also synthesize code to connect the publishers into objectWillChange.
+5. It sets up a little Combine publisher for each property.
+
+Tiny demo
+
+import Combine
+
+class PersonEditorViewModel: ObservableObject {
+    @Published var firstName: String = ""
+}
+
+let vm = PersonEditorViewModel()
+
+// Observe changes manually
+let cancellable = vm.$firstName.sink { newValue in
+    print("firstName changed to:", newValue)
+}
+
+vm.firstName = "Tom"   // prints -> firstName changed to: Tom
+vm.firstName = "Alice" // prints -> firstName changed to: Alice

@@ -1,0 +1,42 @@
+Problem 1: Tree Collapses When Anything Changes
+
+Solution: Preserve the Tree Between Changes
+
+Option A: Store rootNode as a @Published property and mutate it.
+But in your model, you want the tree to reflect the form, not to be edited directly.
+
+Option B Track expanded nodes separately.
+You can use a Set<ObjectIdentifier> to track which nodes are expanded:
+
+@Published var expandedNodes: Set<ObjectIdentifier> = []
+
+Then write a small wrapper around each node in the tree to store whether it’s expanded or not. You’d need to create a custom tree view that respects this — not use OutlineGroup directly.
+
+If you don’t want to go that far yet, the simplest short-term solution is:
+Very Short-Term Fix
+Instead of recreating a new tree every time, store the rootNode once when the editor starts:
+In your view model:
+
+@Published var rootNode: GedcomNode
+init() {
+    self.rootNode = buildGedcomTree()
+}
+
+Then, instead of using:
+
+var rootNode: GedcomNode {
+    buildGedcomTree()
+}
+
+Update the node manually whenever the form changes. For example, in the form fields:
+
+.onChange(of: name) { _ in updateTree() }
+.onChange(of: sex) { _ in updateTree() }
+// etc.
+
+func updateTree() {
+    self.rootNode = buildGedcomTree()
+}\
+
+This reduces the churn and makes SwiftUI’s view diffing more stable, possibly preserving the expanded state longer.
+But to fully preserve expanded/collapsed state, you’ll eventually want a separate expansion tracker.

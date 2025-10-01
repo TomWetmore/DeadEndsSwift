@@ -1,0 +1,217 @@
+---------------------------------------------------------------------
+SWIFTUI CONCEPTS TO FOCUS ON WHILE READING THE FOUR PERSON EDIT FILES:
+---------------------------------------------------------------------
+
+@State
+• Belongs to a View.
+• Stored locally inside that View’s memory.
+• When you change it, SwiftUI re-runs the body of that View.
+• Perfect for small, view-local flags like “expanded nodes,” “toggle on/off,” “current tab.”
+
+In your GedcomTreeView:
+@State private var expandedNodes: Set<ObjectIdentifier> = []
+means each tree view instance remembers which nodes are open, and any change forces SwiftUI to redraw the tree body.
+
+@Published and @ObservedObject / @StateObject
+• These belong to a class that conforms to ObservableObject.
+• @Published marks a property that, when it changes, broadcasts “objectWillChange” to all Views observing it.
+• An observing View (@ObservedObject or @StateObject) will re-run its body when the object signals a change.
+
+In your PersonEditorViewModel:
+@Published var name: String = ""
+Every time vm.name changes, SwiftUI knows “redraw any View using vm.name.”
+
+In PersonFormView:
+@ObservedObject var vm: PersonEditorViewModel
+This is why typing into the text field re-renders the form and keeps the tree in sync.
+
+How View refresh actually works:
+SwiftUI doesn’t mutate Views in place — it throws away the old struct and builds a new one when state changes.
+• If you keep stable identity (@StateObject, id: in a ForEach, etc.), SwiftUI reuses the associated storage.
+• If identity changes (e.g. rebuilding your Gedcom tree from scratch), SwiftUI thinks it’s a brand new subtree and resets things like expansion state.
+
+That’s why you’ve been seeing “collapse” after rebuildGedcomTree(). From SwiftUI’s perspective, they’re different nodes entirely.
+
+Checklist for understanding your four files
+• PersonFormView.swift → Demonstrates @ObservedObject binding form fields to @Published vars. Each edit re-runs body of both Form and Tree.
+• PersonEditorViewModel.swift → Holds the truth of the person being edited. It’s your ObservableObject that drives updates.
+• GedcomTreeView.swift → Demonstrates @State for expansion state (view-local, not in the VM).
+• PersonEditorView.swift → Wraps the two halves together, showing how @StateObject is initialized and passed down.
+
+So the one “aha” to hold onto:
+• @State = local to a View instance.
+• @Published + ObservableObject = shared, external state you can bind multiple Views to.
+• Views are recomputed from state. If you lose identity (different object or different ID), SwiftUI resets.
+
+---------------------------------------------------------------------------------------
+HANDBOOK ENTRY
+---------------------------------------------------------------------------------------
+SwiftUI State & Observation Handbook Entry
+---------------------------------------------------------------------------------------
+
+@State
+• Scope: Private to a single View instance.
+• Storage: SwiftUI allocates a hidden box for the value; survives view redraws as long as the view’s identity is stable.
+• Effect: When the value changes, SwiftUI re-runs the body of that view.
+• Use: Small, view-local pieces of state (toggles, expanded/collapsed flags, text input buffer).
+
+@State private var isExpanded = false
+
+@Published
+• Scope: Properties of a class conforming to ObservableObject.
+• Effect: Changing a @Published property sends an objectWillChange signal to observers.
+• Use: Marks the properties you want to broadcast changes for.
+
+class PersonEditorViewModel: ObservableObject {
+    @Published var name: String = ""
+}
+
+@ObservedObject
+• Scope: Declared inside a View.
+• Effect: The View subscribes to an ObservableObject. When the object changes, the View redraws.
+• Use: Attach to a view model passed in from elsewhere. Lifecycle managed externally.
+
+struct PersonFormView: View {
+    @ObservedObject var vm: PersonEditorViewModel
+}
+
+@StateObject
+• Scope: Declared inside a View to own the lifetime of an ObservableObject.
+• Effect: SwiftUI creates the object once and preserves it across redraws.
+• Use: For root-level ownership of a view model inside a view.
+
+struct PersonEditorView: View {
+    @StateObject var vm = PersonEditorViewModel()
+}
+
+@EnvironmentObject
+• Scope: Injected from higher up in the view hierarchy.
+• Effect: Any view in the hierarchy can access it, auto-updates on change.
+• Use: For shared models like an app-wide AppModel or Database.
+
+@EnvironmentObject var model: AppModel
+
+Update Rules:
+• SwiftUI never mutates views. It throws them away and rebuilds from state.
+• @State and @StateObject preserve data across rebuilds by anchoring it in hidden storage.
+• @Published + ObservableObject makes data changes visible to multiple views at once.
+• If identity changes (new object instance, different .id), SwiftUI treats it as a brand-new subtree and resets transient state.
+
+Summary:
+• Use @State for simple, local flags.
+• Use @StateObject when a view creates and owns a model.
+• Use @ObservedObject when a model is passed in.
+• Use @EnvironmentObject for app-wide shared models.
+• Use @Published to mark which properties of a model trigger redraws.
+
+-------------------------------------------------
+DETAILS ON STATEOBJECT
+-------------------------------------------------
+
+@StateObject.
+Is a Property Wrapper found in Views..
+When you write:
+    @StateObject var vm = PersonEditorViewModel(person: person)
+
+Swift synthesizes two properties behind the scenes:
+    private var _vm: StateObject<PersonEditorViewModel>
+    var vm: PersonEditorViewModel { _vm.wrappedValue }
+
+• _vm is the wrapper object. It’s a StateObject<PersonEditorViewModel> instance that:
+  • holds the reference to your view model,
+  • listens for @Published changes, and
+  • tells SwiftUI “hey, re-render this view.”
+• vm is a computed property. It returns _vm.wrappedValue, which is the PersonEditorViewModel.
+
+When you initialize with:
+    _vm = StateObject(wrappedValue: PersonEditorViewModel(person: person))
+you create the wrapper and give it the initial object. The wrapper owns that object for the view's lifetime.
+
+Key takeaway:
+vm is the view model.
+_vm is the invisible helper that supports SwiftUI’s automatic updates.
+
+-------------------------------------------------
+STATEOBJECT VERSUS OBSERVEDOBJECT
+-------------------------------------------------
+@StateObject vs @ObservedObject
+
+Both are property wrappers for types that conform to ObservableObject. They hook into SwiftUI’s update system so that @Published changes inside the object cause the view to refresh.
+But their ownership rules are different.
+
+@StateObject var vm = PersonEditorViewModel(person: person)
+Desugars to:
+    private var _vm: StateObject<PersonEditorViewModel>
+    var vm: PersonEditorViewModel { _vm.wrappedValue }
+
+• The wrapper (_vm) is a StateObject that creates and owns the object.
+• SwiftUI ensures it only initializes once, even if the view is rebuilt many times.
+• Use this when the view is the source of truth for that object’s lifecycle.
+• Example: a view that instantiates its own editor view model.
+
+@ObservedObject var vm: PersonEditorViewModel
+Desugars to:
+    private var _vm: ObservedObject<PersonEditorViewModel>
+    var vm: PersonEditorViewModel { _vm.wrappedValue }
+
+• The wrapper (_vm) is an ObservedObject that just observes — it does not create or own the object.
+• SwiftUI doesn’t control the lifetime; some parent view or external code must provide it.
+• Use this when the object is created elsewhere and just passed down.
+• Example: a form subview that edits fields of a view model created in the parent.
+
+Rule of thumb
+• @StateObject: “I’m responsible for creating and keeping this alive.”
+• @ObservedObject: “I’m just watching something passed into me.”
+
+So in your PersonEditorView:
+• @StateObject var vm makes sense, because the editor view creates and owns its own view model.
+• In PersonFormView, you used @ObservedObject var vm, which is correct, because it just borrows the model from the editor.
+
+-----------------------
+ENVIRONMENTOBJECT
+-----------------------
+
+@EnvironmentObject var model: AppModel
+• This is like @ObservedObject, but instead of passing the object directly into each view’s initializer, SwiftUI injects it into the view environment.
+• It lets any descendant view in the hierarchy access the same shared model without extra boilerplate.
+
+Think of it like a dependency that’s been “registered” at the top level.
+
+How it works:
+At the app or root view, you supply the object:
+
+@main
+struct DeadEndsApp: App {
+    @StateObject private var model = AppModel()
+
+    var body: some Scene {
+        WindowGroup {
+            RootView()
+                .environmentObject(model) // inject into the environment
+        }
+    }
+}
+
+Now, any child view can declare:
+    @EnvironmentObject var model: AppModel
+and SwiftUI will resolve it automatically from the nearest .environmentObject(...) in the hierarchy.
+
+Differences from @ObservedObject
+• You don’t have to explicitly pass the object down through each initializer — nice for global/shared models like app state or databases.
+• But it’s less explicit, so if a child view forgets to have an environment object injected, you get a runtime crash.
+
+The Family at a Glance
+• @StateObject → “I own this object’s lifetime.”
+• @ObservedObject → “I watch this object that someone else owns.”
+• @EnvironmentObject → “I expect this object to be provided higher up in the environment.”
+
+----------------- SOME NOTES TO SELF ----------------
+
+The PersonEditorViewModel is a final class that meets the ObservableObject protocol.
+It is declared with a @MainActor label.
+It must be a class because @ObservedObject and @StateObject are designed to work with reference types.
+It doesn't need to be final, but it's recommended and has performance benefits.
+Marking with @MainActor means that all methods and properties should run on the main thread.
+UI updates must happen on the main thread.
+The view model drives the UI; marking it @MainActor guarantees that anything it does (publishing changes, modifying @Published properties, etc.) is safe and happens on the main thread.
+The model has many properties labelled @Published.

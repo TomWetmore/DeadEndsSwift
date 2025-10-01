@@ -10,7 +10,7 @@ import SwiftUI
 import DeadEndsLib
 
 // PersonEditView is used as a sheet to edit Person Gedcom records.
-struct PersonEditView: View {
+struct PersonEditSheet: View {
 
     @State private var editedText: String
     @State private var showEditAlert: Bool = false
@@ -116,7 +116,7 @@ struct PersonEditView: View {
     }
 }
 
-extension PersonEditView {
+extension PersonEditSheet {
 
     /// Parses edited text into a Person record. Returns nil and error list if there are errors.
     func parsePerson(text: String) -> (edited: Person?, errors: [String]) {

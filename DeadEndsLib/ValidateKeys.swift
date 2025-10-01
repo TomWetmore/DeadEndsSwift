@@ -112,7 +112,7 @@ public func isKey(_ value: String) -> Bool {
 
 
 enum RecordType {
-    case header, trailer, person, family, other
+    case header, trailer, person, family, source, other
 }
 
 // TODO: Add source, etc.
@@ -127,6 +127,8 @@ extension GedcomNode {
             return .header
         case "TRLR":
             return .trailer
+        case "SOUR":
+            return .source
         default:
             return .other
         }

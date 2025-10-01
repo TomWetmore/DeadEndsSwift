@@ -59,6 +59,7 @@ struct PersonSelectionView: View {
                         model.path.append(Route.person(match.person))
                     } label: {
                         Text(match.displayLine)
+                            .font(.title3) // EXPERIMENT
                             .padding(4)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

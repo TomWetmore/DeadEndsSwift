@@ -1,0 +1,624 @@
+How different would the GedcomTreeView be if the ability to edit the tree were added.
+
+The GedcomTreeView now behaves like a read-only inspector, with expand/collapse and some editing coming indirectly from the form. If you wanted to make it a true editor of the tree itself, here’s what changes:
+
+1. Interactivity
+• Now: Nodes are drawn, maybe expandable, but not directly mutable.
+• Editor mode: Each node needs affordances:
+• Add child (+ button next to a node).
+• Add sibling (often a “…” menu or secondary +).
+• Remove node (trash icon).
+• Edit tag or value inline (text fields instead of labels).
+This turns the tree view into a hybrid of outline view + form.
+
+2. Data binding
+• Now: GedcomTreeView just renders a GedcomNode tree.
+• Editor mode:
+• You need Binding<GedcomNode> or @ObservedObject so the tree view can mutate nodes directly.
+• Or (recommended) the view doesn’t mutate nodes itself, but calls back into the ViewModel (PersonEditorViewModel) with “add/remove/edit” requests. That way you centralize mutation logic (so undo/redo and validation can hook in).
+
+3. Identity & stability
+• With editing, stable UUIDs per node become non-negotiable. Otherwise SwiftUI won’t know what changed versus what was rebuilt. You’d see whole subtrees collapsing/re-expanding constantly.
+• This is where your earlier UUID decision pays off. Each node needs an id: UUID.
+
+4. Expansion logic
+• Expansion state gets trickier:
+• Removing a node should also clean up its expansion entry.
+• Adding a node should add a fresh UUID but not disturb neighbors.
+• Undo/redo will restore UUIDs so expansion can be preserved.
+
+5. Undo/redo
+• If you let the tree view directly edit the model, you need to hook every mutation into the undo manager.
+• Safer pattern: tree view says “user tapped addChild(tag: “OCCU”) on node X” → view model executes the operation (logging an undo delta). That way the undo/redo system doesn’t live in the view.
+
+How different would it look?
+• UI additions: buttons/menus for add/remove/edit inline.
+• Data changes: introduce bindings or callbacks for edits.
+• Identity: UUIDs in every node so SwiftUI can reconcile changes.
+• Undo/redo support: centralize mutations in the VM.
+
+Structurally, the GedcomTreeView isn’t that different: it’s still a recursive ForEach over children. But you’d swap out Text(tag) for TextField(tag) and attach add/remove buttons.
+
+So conceptually: the skeleton stays the same, but every row gets action affordances and stable IDs.
+
+My guess: if you add tree editing, you’ll start to feel less need for the separate form editor, because the tree itself is the form. But forms are still nice for the “common path” (quick edits to NAME/SEX/BIRT/DEAT). You might even end up with both: a form for vitals + a tree editor for power users.
+
+Want me to sketch a minimal editable tree row for SwiftUI — like TextField + + child + - delete — so you can see how little scaffolding you’d really need to make the tree “live”?
+
+I've have fiddled with PList editors in the past and have not found them intuitive. I guess worrying about that has kept me from going down this road (though I fully intended to do so "some day"). 
+
+So yes, please sketch out the struture for doing os.
+
+Got it. Plist editors are the right mental picture: nested outline views, often clunky, easy to get lost in. If you do go this way for GEDCOM editing, you’ll want something simpler and more guided. Let me sketch a minimal, editable tree view structure in SwiftUI.
+
+Core ideas
+1. Every node is a row: tag + value + controls.
+2. Children are shown recursively: ForEach over node.kid….
+3. Stable identity: use node.id (UUID) in ForEach.
+4. Actions go through the view model: addChild, removeNode, updateValue.
+
+Example SwiftUI skeleton
+
+struct GedcomTreeView: View {
+    @ObservedObject var viewModel: PersonEditorViewModel
+    var node: GedcomNode
+
+    var body: some View {
+        DisclosureGroup(isExpanded: Binding(
+            get: { viewModel.expanded.contains(node.id) },
+            set: { isExpanded in
+                if isExpanded {
+                    viewModel.expanded.insert(node.id)
+                } else {
+                    viewModel.expanded.remove(node.id)
+                }
+            }
+        )) {
+            // Recursive children
+            ForEach(node.children, id: \.id) { child in
+                GedcomTreeView(viewModel: viewModel, node: child)
+            }
+        } label: {
+            HStack {
+                // Editable tag
+                TextField("TAG", text: Binding(
+                    get: { node.tag },
+                    set: { newVal in
+                        viewModel.updateTag(for: node, newTag: newVal)
+                    }
+                ))
+                .frame(width: 80)
+
+                // Editable value
+                TextField("Value", text: Binding(
+                    get: { node.val ?? "" },
+                    set: { newVal in
+                        viewModel.updateValue(for: node, newValue: newVal)
+                    }
+                ))
+
+                Spacer()
+
+                // Add/remove buttons
+                Button(action: { viewModel.addChild(to: node) }) {
+                    Image(systemName: "plus.circle")
+                }
+                Button(action: { viewModel.remove(node) }) {
+                    Image(systemName: "trash")
+                }
+            }
+        }
+    }
+}
+
+ViewModel hooks
+
+The view itself never mutates the tree directly; it calls the VM:
+
+extension PersonEditorViewModel {
+    func updateTag(for node: GedcomNode, newTag: String) {
+        node.tag = newTag
+        objectWillChange.send()
+    }
+    func updateValue(for node: GedcomNode, newValue: String) {
+        node.val = newValue
+        objectWillChange.send()
+    }
+    func addChild(to node: GedcomNode) {
+        let newChild = GedcomNode(tag: "NEW", val: nil)
+        node.addKid(newChild)
+        objectWillChange.send()
+    }
+    func remove(_ node: GedcomNode) {
+        node.removeFromParent()
+        objectWillChange.send()
+    }
+}
+
+What this gives you
+• Recursive disclosure tree (expand/collapse).
+• Inline editing of tags and values.
+• Buttons to add/remove nodes.
+• Expansion state tracked via expanded: Set<UUID> in your VM.
+• All mutations go through VM, so you can hook in undo/redo later.
+
+Caveats
+• Usability: raw tree editing is always geeky; casual users hate it. But you (and other power users) will appreciate having this “plist-like” tool.
+• Validation: you’ll want rules in the VM so users can’t enter illegal tags, or at least errors can be flagged.
+• Duality: you can keep the form editor for “vitals” and let the tree editor handle everything else.
+
+This is the minimal version: DisclosureGroup for structure, TextField for edits, +/- for structure changes. The skeleton doesn’t need to be much more complex than this — the richness comes from how you constrain what can be added.
+
+Do you want me to take this one step further and show a combined view: top half = simple form for NAME/SEX/BIRT/DEAT, bottom half = expandable tree editor for “everything else”? That would give you both “easy mode” and “power mode” in one screen.
+
+Yes, I would like to see that.
+
+Excellent — here’s how you could structure a combined editor that gives you both worlds:
+• Top half = Form editor for the common vitals (NAME, SEX, BIRT, DEAT).
+• Bottom half = Tree editor for the full GEDCOM tree.
+
+That way:
+• New users (or quick editors) use the form.
+• Power users can dive into the tree and make any edit.
+
+Combined View Layout:
+
+struct PersonEditorView: View {
+    @ObservedObject var viewModel: PersonEditorViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // --- FORM SECTION ---
+            Form {
+                Section(header: Text("Person Vitals")) {
+                    TextField("Name", text: $viewModel.name)
+                    
+                    Picker("Sex", selection: $viewModel.sex) {
+                        Text("Male").tag(SexType.male as SexType?)
+                        Text("Female").tag(SexType.female as SexType?)
+                        Text("Unknown").tag(SexType.unknown as SexType?)
+                    }
+                    HStack {
+                        Text("Birth Date")
+                        TextField("Date", text: $viewModel.birthDate)
+                    }
+                    HStack {
+                        Text("Birth Place")
+                        TextField("Place", text: $viewModel.birthPlace)
+                    }
+                    
+                    Toggle("Show Death", isOn: $viewModel.showDeath)
+                    if viewModel.showDeath {
+                        HStack {
+                            Text("Death Date")
+                            TextField("Date", text: $viewModel.deathDate)
+                        }
+                        HStack {
+                            Text("Death Place")
+                            TextField("Place", text: $viewModel.deathPlace)
+                        }
+                    }
+                }
+            }
+            .frame(height: 300) // Keeps form compact on top
+            Divider()
+            
+            // --- TREE SECTION ---
+            Text("Full GEDCOM Tree")
+                .font(.headline)
+                .padding(.leading)
+            
+            ScrollView {
+                GedcomTreeView(viewModel: viewModel, node: viewModel.root)
+                    .padding(.horizontal)
+            }
+        }
+        .navigationTitle("Edit Person")
+    }
+}
+
+Recursive Tree View
+(Same skeleton as before, but cleaned up for embedding in the editor.)
+
+struct GedcomTreeView: View {
+    @ObservedObject var viewModel: PersonEditorViewModel
+    var node: GedcomNode
+
+    var body: some View {
+        DisclosureGroup(
+            isExpanded: Binding(
+                get: { viewModel.expanded.contains(node.id) },
+                set: { isExpanded in
+                    if isExpanded {
+                        viewModel.expanded.insert(node.id)
+                    } else {
+                        viewModel.expanded.remove(node.id)
+                    }
+                }
+            )
+        ) {
+            ForEach(node.children, id: \.id) { child in
+                GedcomTreeView(viewModel: viewModel, node: child)
+                    .padding(.leading)
+            }
+        } label: {
+            HStack {
+                TextField("Tag", text: Binding(
+                    get: { node.tag },
+                    set: { viewModel.updateTag(for: node, newTag: $0) }
+                ))
+                .frame(width: 80)
+
+                TextField("Value", text: Binding(
+                    get: { node.val ?? "" },
+                    set: { viewModel.updateValue(for: node, newValue: $0) }
+                ))
+
+                Spacer()
+                
+                Button(action: { viewModel.addChild(to: node) }) {
+                    Image(systemName: "plus.circle")
+                }
+                Button(action: { viewModel.remove(node) }) {
+                    Image(systemName: "trash")
+                }
+            }
+        }
+    }
+}
+
+
+Why this works well
+• Common path = fast: A genealogist just wants to tweak NAME or BIRT → top form handles it.
+• Edge cases = covered: Weird tags, multiple OCCU, custom events → tree editor lets you represent anything GEDCOM allows.
+• Undo/redo is clean: Both form and tree edits go through the same ViewModel mutation methods, so you don’t duplicate undo logic.
+• User choice: People who hate plist-style trees can ignore the bottom half entirely.
+
+Big picture: this gives you the best of both worlds. You don’t have to decide now between “form editor” vs “tree editor” — you can prototype both, side by side, and see what feels natural.
+
+Is DisclosureGroup a real thing?
+
+DisclosureGroup is a real SwiftUI type, introduced back in iOS 14 / macOS 11. Think of it as SwiftUI’s built-in “expand/collapse section,” similar to a row in Finder that has a triangle you can click to show children.
+
+Declaration
+
+struct DisclosureGroup<Label, Content> where Label : View, Content : View
+
+It’s a container with:
+• a label (the always-visible header row),
+• and content (shown or hidden when expanded).
+
+Simple Example
+
+DisclosureGroup("More Details") {
+    Text("Line 1")
+    Text("Line 2")
+}
+
+This gives you a label “More Details” with a disclosure triangle, and expanding reveals two text lines.
+
+Controlling expansion
+
+You can bind expansion to your own state:
+
+@State private var expanded = false
+
+DisclosureGroup("Options", isExpanded: $expanded) {
+    Text("Option A")
+    Text("Option B")
+}
+
+That way you can programmatically expand/collapse, or track which groups are open.
+
+Why it’s handy for you
+• It’s recursive by design → perfect for displaying hierarchical trees like GEDCOM nodes.
+• You can bind expansion state to your expanded: Set<UUID> model instead of a single Bool, letting you persist which nodes are open.
+• It looks native on macOS/iOS (triangle expanders).
+
+An affordance is a visible clue in an interface that indicates what actions are possible.
+
+Examples:
+• A “+” button next to a node → affords adding a child.
+• A trash can icon → affords deleting that node.
+• A TextField instead of a Text → affords editing the tag or value.
+• A chevron/triangle on the left → affords expanding/collapsing children.
+Without the clues, the user might not realize they can add, delete, or edit.
+
+Want me to give you a compact little mock of what a GEDCOM row with affordances (tag, value, +, trash) would look like laid out in SwiftUI?
+
+Yes please show me a mockup:
+
+Perfect let’s imagine one row of your editable GEDCOM tree. It needs:
+• The disclosure triangle for expanding/collapsing children.
+• An editable tag field.
+• An editable value field.
+• Affordances (buttons) to add/remove nodes.
+Here’s a minimal SwiftUI mock-up of what a single row could look like:
+
+SwiftUI Sketch
+
+struct GedcomRow: View {
+    @ObservedObject var viewModel: PersonEditorViewModel
+    var node: GedcomNode
+
+    var body: some View {
+        HStack {
+            // Triangle expander is handled by DisclosureGroup, not here
+            // Editable Tag
+            TextField("TAG", text: Binding(
+                get: { node.tag },
+                set: { viewModel.updateTag(for: node, newTag: $0) }
+            ))
+            .frame(width: 80)
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            // Editable Value
+            TextField("Value", text: Binding(
+                get: { node.val ?? "" },
+                set: { viewModel.updateValue(for: node, newValue: $0) }
+            ))
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            Spacer()
+
+            // Affordances (actions)
+            HStack(spacing: 8) {
+                Button {
+                    viewModel.addChild(to: node)
+                } label: {
+                    Image(systemName: "plus.circle")
+                        .foregroundColor(.green)
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    viewModel.remove(node)
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+What this looks like (conceptually)
+
+▶ NAME  | "Thomas Wetmore"                  | (+) (🗑)
+▶ BIRT  |                                   | (+) (🗑)
+      ▶ DATE | "12 MAR 1950"                | (+) (🗑)
+      ▶ PLAC | "New York, USA"              | (+) (🗑)
+
+• ▶ = disclosure arrow (from DisclosureGroup).
+• NAME and Thomas Wetmore are text fields (inline editing).
+• (+) adds a child node under this one.
+• (🗑) deletes this node.
+
+Why it’s good
+• Clear affordances: the user knows what can be edited, added, or removed.
+• Keeps your recursive tree structure intact (each row renders itself, children rendered in a nested DisclosureGroup).
+• All changes funnel back into your PersonEditorViewModel so undo/redo can be centralized.
+
+Here is the full recursive tree editor (DisclosureGroup with this row inside it), so you can see how the rows and expand/collapse tie together?
+
+Let’s wire up the full recursive tree editor using DisclosureGroup and the GedcomRow from before. This way, each node in the tree is rendered as:
+• a disclosure expander if it has children,
+• a row with tag/value fields,
+• add/remove affordances,
+• and a recursive call for its children.
+
+Full Recursive Tree Editor
+
+struct GedcomTreeView: View {
+    @ObservedObject var viewModel: PersonEditorViewModel
+    var node: GedcomNode
+
+    var body: some View {
+        // If node has children, use DisclosureGroup
+        if node.children.isEmpty {
+            GedcomRow(viewModel: viewModel, node: node)
+        } else {
+            DisclosureGroup(
+                isExpanded: Binding(
+                    get: { viewModel.expanded.contains(node.id) },
+                    set: { isExpanded in
+                        if isExpanded {
+                            viewModel.expanded.insert(node.id)
+                        } else {
+                            viewModel.expanded.remove(node.id)
+                        }
+                    }
+                ),
+                content: {
+                    // Recursive child nodes
+                    ForEach(node.children, id: \.id) { child in
+                        GedcomTreeView(viewModel: viewModel, node: child)
+                            .padding(.leading, 20)
+                    }
+                },
+                label: {
+                    GedcomRow(viewModel: viewModel, node: node)
+                }
+            )
+        }
+    }
+}
+
+GedcomRow (from before, slightly simplified)
+
+struct GedcomRow: View {
+    @ObservedObject var viewModel: PersonEditorViewModel
+    var node: GedcomNode
+
+    var body: some View {
+        HStack {
+            TextField("TAG", text: Binding(
+                get: { node.tag },
+                set: { viewModel.updateTag(for: node, newTag: $0) }
+            ))
+            .frame(width: 80)
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            TextField("Value", text: Binding(
+                get: { node.val ?? "" },
+                set: { viewModel.updateValue(for: node, newValue: $0) }
+            ))
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            Spacer()
+
+            Button {
+                viewModel.addChild(to: node)
+            } label: {
+                Image(systemName: "plus.circle")
+                    .foregroundColor(.green)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                viewModel.remove(node)
+            } label: {
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+ViewModel hooks
+
+extension PersonEditorViewModel {
+    func updateTag(for node: GedcomNode, newTag: String) {
+        node.tag = newTag
+        objectWillChange.send()
+    }
+
+    func updateValue(for node: GedcomNode, newValue: String) {
+        node.val = newValue
+        objectWillChange.send()
+    }
+
+    func addChild(to node: GedcomNode) {
+        let newChild = GedcomNode(tag: "NEW", val: nil)
+        node.addKid(newChild)
+        expanded.insert(node.id)  // auto-expand parent
+        objectWillChange.send()
+    }
+
+    func remove(_ node: GedcomNode) {
+        node.removeFromParent()
+        objectWillChange.send()
+    }
+}
+
+What it looks like conceptually
+
+▶ INDI | 
+    ▶ NAME | "Thomas Wetmore"             | (+) (🗑)
+    ▶ BIRT |                              | (+) (🗑)
+        ▶ DATE | "12 MAR 1950"            | (+) (🗑)
+        ▶ PLAC | "New York, USA"          | (+) (🗑)
+    ▶ OCCU | "Programmer"                 | (+) (🗑)
+
+• ▶ = disclosure arrow (expander).
+• Editable fields for tags and values.
+• (+) to add a child node, 🗑 to delete.
+• Recursive rendering, so arbitrary depth is handled.
+
+This structure is scalable (works on trees with hundreds of nodes) and extensible (you can add context menus, validation, or specialized editors later).
+
+Let’s enhance the editable tree so that event nodes (like BIRT, DEAT, MARR, etc.) don’t just show raw DATE and PLAC subnodes as text fields, but instead get a small inline “mini-form.” That makes common GEDCOM patterns much friendlier without giving up the generality of the tree editor.
+
+Step 1. Detect event nodes
+You can decide what counts as an “event” by tag:
+
+let eventTags: Set<String> = ["BIRT", "DEAT", "MARR", "CHR", "BAPM"]
+
+Step 2. Specialized row for events
+Instead of rendering DATE and PLAC as raw children, inline them:
+
+struct EventRow: View {
+    @ObservedObject var viewModel: PersonEditorViewModel
+    var node: GedcomNode
+
+    var body: some View {
+        HStack {
+            Text(node.tag)
+                .bold()
+                .frame(width: 60, alignment: .leading)
+
+            TextField("Date", text: Binding(
+                get: { node.kidVal(forTag: "DATE") ?? "" },
+                set: { viewModel.updateChildValue(for: node, tag: "DATE", newValue: $0) }
+            ))
+            .frame(width: 120)
+
+            TextField("Place", text: Binding(
+                get: { node.kidVal(forTag: "PLAC") ?? "" },
+                set: { viewModel.updateChildValue(for: node, tag: "PLAC", newValue: $0) }
+            ))
+            .frame(maxWidth: .infinity)
+
+            Spacer()
+
+            Button { viewModel.remove(node) } label {
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+Step 3. Hook into the recursive tree
+In your GedcomTreeView, branch based on tag:
+
+if eventTags.contains(node.tag) {
+    EventRow(viewModel: viewModel, node: node)
+} else if node.children.isEmpty {
+    GedcomRow(viewModel: viewModel, node: node)
+} else {
+    DisclosureGroup(
+        isExpanded: Binding(
+            get: { viewModel.expanded.contains(node.id) },
+            set: { $0 ? viewModel.expanded.insert(node.id) : viewModel.expanded.remove(node.id) }
+        )
+    ) {
+        ForEach(node.children, id: \.id) { child in
+            GedcomTreeView(viewModel: viewModel, node: child)
+                .padding(.leading, 20)
+        }
+    } label: {
+        GedcomRow(viewModel: viewModel, node: node)
+    }
+}
+
+Step 4. ViewModel helper for updating event children
+
+extension PersonEditorViewModel {
+    func updateChildValue(for parent: GedcomNode, tag: String, newValue: String) {
+        if let child = parent.child(withTag: tag) {
+            child.val = newValue
+        } else if !newValue.isEmpty {
+            parent.addKid(tag: tag, val: newValue)
+        }
+        objectWillChange.send()
+    }
+}
+
+Resulting experience
+Instead of:
+
+▶ BIRT | (+) (🗑)
+    ▶ DATE | "12 MAR 1950"
+    ▶ PLAC | "New York, USA"
+You’d see:
+
+BIRT | [12 MAR 1950] [New York, USA]    (🗑)
+
+So events look like inline mini-forms, but all other tags still fall back to the generic plist-style tree.
+
+This hybrid is powerful: common events are simple, unusual structures remain editable. It gives genealogists a gentle “on ramp” while keeping the raw power you need for less common GEDCOM constructs.
