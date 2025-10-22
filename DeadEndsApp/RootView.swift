@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 30 September 2025.
+//  Last changed on 12 October 2025.
 //
 
 import SwiftUI
@@ -18,6 +18,8 @@ enum Route: Hashable {
     case familyTree(Person)
     case descendancy(Person)
     case personEditor(Person)
+    case personEditorNew(Person)
+    case gedcomTreeEditor(Person)
 }
 
 /// RootView is ...
@@ -57,6 +59,22 @@ struct RootView: View {
                         model.database?.updatePerson(newPerson)
                         model.path.removeLast()  // Pop the editor view.
                     }
+                case .personEditorNew(let person):
+                    PersonEditorViewNew(person: person) { newPerson in
+                        model.database?.updatePerson(newPerson)
+                        model.path.removeLast()
+                    }
+                case .gedcomTreeEditor(let person):
+                    if let db = model.database {
+                        let manager = GedcomTreeManager(database: db)
+                        GedcomTreeEditor(
+                            viewModel: manager.treeModel,
+                            manager: manager,
+                            root: person.root
+                        )
+                    } else {
+                        Text("No database loaded")
+                    }
                 case .descendancy(let person):
                     if let idx = model.database?.recordIndex {
                         DescendancyListView(root: person, index: idx)
@@ -70,36 +88,3 @@ struct RootView: View {
         }
     }
 }
-
-//┌───────────────┐
-//│   PersonView  │   ← you're here initially
-//└───────┬───────┘
-//        │
-//        │ model.path.append(.personEditor(person))
-//        ▼
-//┌─────────────────────┐
-//│ .navigationDestination
-//│ case .personEditor:
-//│   → Build PersonEditorView
-//└─────────┬───────────┘
-//          │
-//          ▼
-//┌─────────────────────────┐
-//│   PersonEditorView      │
-//│   - Shows form + tree   │
-//│   - Holds onSave closure│
-//└─────────┬───────────────┘
-//          │ User taps Save
-//          ▼
-//┌─────────────────────────────┐
-//│ onSave(vm.person)           │
-//│ Runs closure from navDest:  │
-//│   1. Update database        │
-//│   2. Pop editor view        │
-//└─────────┬───────────────────┘
-//          │
-//          ▼
-//┌──────────────────────────────┐
-//│   PersonView    ← back here  │
-//│   (with DB updated)          │
-//└──────────────────────────────┘

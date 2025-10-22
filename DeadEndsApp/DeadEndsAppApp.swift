@@ -3,7 +3,7 @@
 //  DeadEndsApp.swift
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 11 September 2025.
+//  Last changed on 7 October 2025.
 //
 
 import SwiftUI
@@ -11,6 +11,7 @@ import DeadEndsLib
 
 @main
 struct DeadEndsApp: App {
+    
     @StateObject private var model = AppModel()
 
     var body: some Scene {

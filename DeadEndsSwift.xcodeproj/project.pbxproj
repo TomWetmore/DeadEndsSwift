@@ -105,6 +105,7 @@
 				ToBeMoved.swift,
 				Traverse.swift,
 				ValidateFamily.swift,
+				ValidateGedcomTree.swift,
 				ValidateKeys.swift,
 				ValidatePerson.swift,
 			);

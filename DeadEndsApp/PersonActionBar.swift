@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 1 October 2025.
+//  Last changed on 2 October 2025.
 //
 
 import SwiftUI
@@ -74,8 +74,15 @@ struct PersonActionBar: View {
                 let newPerson = Person(GedcomNode(key: generateRandomKey(), tag: "INDI"))
                 model.path.append(Route.personEditor(newPerson!))
             }
+            Button("Tree Editor") {
+                // assuming you're inside a PersonView and have `person`
+                model.path.append(Route.gedcomTreeEditor(person))
+            }
             Button("New Edit") {
                 model.path.append(Route.personEditor(person))
+            }
+            Button("Newer Edit") {
+                model.path.append(Route.personEditorNew(person))
             }
             Button("Edit") {
                 showEditSheet = true
