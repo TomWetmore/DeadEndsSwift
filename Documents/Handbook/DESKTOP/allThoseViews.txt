@@ -1,0 +1,141 @@
+1. CardKind -- enumeration of the Card types
+enum CardKind: Identifiable, Hashable {
+    case person(Person) case family(Family) case indexCard(Person)
+    var id: UUID
+}
+
+2. Card -- "Model of a Card" (regular struct; not an ObservableObject)
+struct Card -- id, kind, position, size
+
+3. DesktopModel -- Model ojbect for a Desktop
+@MainActor class DesktopModel: ObservableObject {
+    @Published var cards: [Card] = []
+    @Published var activeId: UUID? = nil  // Id of card being dragged
+    @Published var activeOffset: CGSize = .zero  // Offset of card being dragged
+    
+    func addCard(kind: CardKind, position: CGPoint, size: CGSize)
+    func removeCard(kind: CardKind)
+    func updatePosition(for card: Card, to newPosition: CGPoint)
+    nonisolated func contains(person: Person) -> Bool
+}
+
+4. DesktopView -- The Desktop where things happen
+struct DesktopView: View {
+    @StateObject private var model: DesktopModel
+    @State private var showingSearchSheet = false
+    init(person: Person) -- create DesktopModel and add first card
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                Rectangle() ForEach(model.cards) { card in DraggableCardView(model: model, card: card) }
+            } .frame(minWidth: 800, minHeight: 500)
+        }
+        .contextMenu { Button("Add Person to Desktop...") { } }
+        .sheet(isPresented: $showingSearchSheet) { PersonSearchSheet(model: model) }
+    }
+}
+
+5. PersonSearchSheet
+struct PersonSearchSheet: View {
+    @Environment(\.dismiss) var dismiss
+    var model: DesktopModel
+    @EnvironmentObject var appModel: AppModel  // Needed to access the Database.
+    @State private var query: String = ""
+    @State private var results: [PersonMatch] = []
+    var body: some View {
+        VStack Text("Search for a person:")
+            HStack { TextField("Enter name...", text: $query) .onSubmit { doSearch() }
+                Button("Search") { doSearch() } }
+            if results.isEmpty {
+                Text("No results.").italic()
+            } else {
+                List(results) { match in Button(match.displayLine) {
+                        model.addCard(kind: .person(match.person), position: CGPoint(x: 100, y: 100),
+                                      size: CGSize(width: 161.8034, height: 100.0))
+                        dismiss() } } }
+            HStack { Button("Cancel") { }
+    }
+    private func doSearch() {}
+
+5. DraggableCardView -- Dragging mechanism
+struct DraggableCardView: View {
+    @ObservedObject var model: DesktopModel
+    @State private var dragStartPosition: CGPoint? = nil
+    var card: Card
+
+    var body: some View {
+        CardView(model: model, card: card) .position .gesture( DragGesture .onChanged .onEnded
+
+6. CardView
+struct CardView: View {
+    @ObservedObject var model: DesktopModel
+    @Environment(\.recordIndex) private var index: RecordIndex  // Provide access to the Database.
+    var card: Card
+
+    var body: some View {
+            switch card.kind {
+            case .person(let person): PersonCardView(model: model, person: person)
+            case .family(let family): FamilyCardView(model: model, family: family)
+            case .indexCard(let person): PersonCardView(model: model, person: person)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.black))
+        .contextMenu {
+            switch card.kind {
+            case .person...  PersonContextMenu(person:index:model:)
+            case .family...  familyContextMenu(family)
+            } } } }
+
+7. PersonCardView -- Card View for a Person
+struct PersonCardView: View {
+    @ObservedObject var model: DesktopModel
+    @Environment(\.recordIndex) private var index: RecordIndex
+    var person: Person
+    var body: some View {
+        VStack { Text(name) Text(birth) Text(death) }
+}
+
+8. PersonContextMenu -- Context Menu for the PersonCardView
+struct PersonContextMenu: View {
+    let person: Person
+    let index: RecordIndex
+    @ObservedObject var model: DesktopModel
+    var body: some View {
+	    Buttons for spouses that do model.addCard(kind: .person(spouse), position: size: CGSize)
+            Button for removing this person
+}
+
+9. FamilyCardView
+struct FamilyCardView: View {
+    @ObservedObject var model: DesktopModel
+    var family: Family
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) { Text("Family") Text("Husband") Text("Wife")} Text("Childrene") }
+}
+
+10. CardView (ChatGPT Latest) 
+struct CardView: View {
+    @Binding var card: Card
+    private let phi, goldenStep = sqrt((1 + sqrt(5.0)) / 2.0)
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 12)...
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Button(action: deleteCard) { Circle().fill(Color.red).frame(width: 12, height: 12)
+                    Button(action: shrinkCard) { Circle().fill(Color.yellow).frame(width: 12, height: 12)
+                    Button(action: enlargeCard) { Circle().fill(Color.green).frame(width: 12, height: 12)
+                }
+                Spacer()
+                Text(cardTitle)
+            }
+        }
+        .frame(width: card.size.width, height: card.size.height)
+    }
+
+    private var cardTitle: String { switch card.kind { case .person case .family case .indexCard } }
+    private func deleteCard() { print("Delete card \(card.id)") }
+    private func shrinkCard() { newWidth, newHeight, card.size = ...}
+    private func enlargeCard() { newWidth, newHeight, card.size = ...  }
+}
+

@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 4 October 2025.
-//  Last changed on 20 October 2025.
+//  Last changed on 26 November 2025.
 //
 
 import SwiftUI
@@ -19,7 +19,7 @@ enum EditDelta {
 
 /// Undo, Redo, and Edit manager for a Gedcom tree.
 @MainActor
-final class GedcomTreeManager: ObservableObject {
+final class GedcomTreeManager {
 
     let treeModel: GedcomTreeEditorModel
     let recordIndex: RecordIndex
@@ -31,6 +31,12 @@ final class GedcomTreeManager: ObservableObject {
     init(database: Database) {
         self.recordIndex = database.recordIndex // Needed?
         self.treeModel = GedcomTreeEditorModel()
+    }
+
+    // Convenience init for isolated use (like MergeEditorView).
+    init(treeModel: GedcomTreeEditorModel, recordIndex: RecordIndex) {
+        self.treeModel = treeModel
+        self.recordIndex = recordIndex
     }
 
     var canUndo: Bool { !undoStack.isEmpty }
@@ -133,9 +139,8 @@ extension GedcomTreeManager {
         precondition(kid.sib == nil, "addKidCase: kid must be disconnected")
 
         dad.addKid(kid)
-        treeModel.expandedSet.insert(dad.id)
+        treeModel.expandedSet.insert(dad.uid)
         treeModel.selectedNode = kid
-        treeModel.objectWillChange.send()
     }
 
     func addSibCase(sib: GedcomNode, prev: GedcomNode, dad: GedcomNode) {
@@ -147,16 +152,14 @@ extension GedcomTreeManager {
         precondition(sib.dad === dad, "addSibCase: sib does not have right dad")
         precondition(prev.sib === sib, "addSibCase: prev has wrong sib")
         treeModel.selectedNode = sib;
-        treeModel.objectWillChange.send()
     }
 
     func removeKidCase(kid: GedcomNode, dad: GedcomNode, sib: GedcomNode?) {
         precondition(kid.dad === dad, "removeKidCase: kid's dad must be dad")
         precondition(kid.sib === sib, "removeKidCase: kid's sib must be sib")
-        treeModel.expandedSet.remove(kid.id)
+        treeModel.expandedSet.remove(kid.uid)
         if let dad = kid.dad { treeModel.selectedNode = dad }
         kid.removeKid()
-        treeModel.objectWillChange.send()
     }
 
     func removeSibCase(sib: GedcomNode, prev: GedcomNode, dad: GedcomNode) {
@@ -166,7 +169,6 @@ extension GedcomTreeManager {
         prev.sib = sib.sib
         sib.dad = nil
         sib.sib = nil
-        treeModel.objectWillChange.send()
     }
 
     func removeCase(node: GedcomNode, dad: GedcomNode, prev: GedcomNode?, sib: GedcomNode?) {
@@ -186,7 +188,6 @@ extension GedcomTreeManager {
         }
         node.dad = nil
         node.sib = nil
-        treeModel.objectWillChange.send()
     }
 
     private func reinsertCase(node: GedcomNode, dad: GedcomNode, prev: GedcomNode?, sib: GedcomNode?) {
@@ -197,17 +198,14 @@ extension GedcomTreeManager {
         } else {
             dad.kid = node
         }
-        treeModel.objectWillChange.send()
     }
 
     private func moveUpCase(node: GedcomNode) {
         node.moveUp()
-        treeModel.objectWillChange.send()
     }
 
     private func moveDownCase(node: GedcomNode) {
         node.moveDown()
-        treeModel.objectWillChange.send()
     }
 }
 

@@ -1,0 +1,32 @@
+RootView: View
+    GedcomTreeEditor(viewModel: GedcomTreeModel(), root: person.root)
+
+GedcomTreeModel: ObservableObject
+    @StateObject private var undoManager = GedcomTreeUndoManager()
+    @Published var expanded: Set<UUID> = []
+    @Published var selectedNode: GedcomNode? = nil
+
+    toggleExpansion
+    addChild, addSibling, remove,
+    moveDown, moveUp,
+    selectParent, selectFirstChild, selectNextSibling, selectPrevSibling,
+
+GedcomTreeEditor: View
+    @ObservedObject var viewModel: GedcomTreeModel
+    var root: GedcomNode
+    NodeRow(node: root, viewModel: viewModel)
+    GedcomTreeEditorButtons(viewModel: viewModel)
+
+GedcomTreeEditorButtons: View
+    @ObservedObject var viewModel: GedcomTreeModel
+    var undoManager: UndoManager?
+
+NodeRow: View
+    @ObservedObject var node: GedcomNode
+    @ObservedObject var viewModel: GedcomTreeModel
+
+final class GedcomTreeUndoManager: ObservableObject
+    undoStack, redoStack
+    canUndo, canRedo, register
+    undo, redo
+    apply, applyInverse

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 1 October 2025.
+//  Last changed on 26 November 2025.
 //
 
 import Foundation
@@ -23,17 +23,22 @@ public class TagMap {
 /// Class of Gedcom nodes. A GedcomNode represents a line in a Gedcom file. key, tag and
 /// value are the key (cross reference identifier), tag, and value fields of the Gedcom line.
 /// The line's level number is inferred when needed.
-public class GedcomNode: Identifiable, ObservableObject, CustomStringConvertible {
+final public class GedcomNode: CustomStringConvertible {
 
-    public var id: UUID = UUID()
-    public var key: String?  // Optional key found on root lines.
-    @Published public var tag: String  // Tag mandatory on all lines.
-    @Published public var val: String? // Optional value.
+    // For id requirements.
+    public let uid = UUID()
+
+    // Gedcom fields (lev defined below).
+    public var key: RecordKey?  // Key found on root lines only
+    public var tag: String  // Tag found on all lines.
+    public var val: String? // Optional value.
+
+    // Tree structure fields.
     public var sib: GedcomNode?  // Next sibling.
     public var kid: GedcomNode?  // First child
     public weak var dad: GedcomNode? // Optional parent found on all non-roots.
 
-    /// Returns the Array of GedcomNode children of a parent node.
+    /// Returns the kids of a dad node.
     public var kids: [GedcomNode] {
         var results: [GedcomNode] = []
         var node = kid
@@ -44,9 +49,9 @@ public class GedcomNode: Identifiable, ObservableObject, CustomStringConvertible
         return results
     }
 
-    /// Description of GedcomNode.
+    /// Returns String description a node; does not recurse.
     public var description: String {
-        var description =  ""
+        var description = "\(lev) "
         if let key { description += "\(key) " }
         description += "\(tag)"
         if let val { description += " \(val) " }
@@ -54,13 +59,13 @@ public class GedcomNode: Identifiable, ObservableObject, CustomStringConvertible
     }
 
     /// Creates a GedcomNode with key, tag and value.
-    public init(key: String? = nil, tag: String, val: String? = nil) {
+    public init(key: RecordKey? = nil, tag: String, val: String? = nil) {
         self.key = key
         self.tag = tag
         self.val = val
     }
 
-    /// 0-based depth of this node in its tree; corresponds to Gedcom level.
+    /// Returns the Gedcom level of this node; infinite cycles are detected.
     public var lev: Int {
         var level = -1
         var node: GedcomNode? = self
@@ -73,47 +78,31 @@ public class GedcomNode: Identifiable, ObservableObject, CustomStringConvertible
         return level
     }
 
-    /// Prints a GedcomNode tree to stdout.
-    func printTree(level: Int = 0, indent: String = "") {
+    /// Prints a GedcomNode tree to stdout. Recurses to kids and sibs.
+    public func printTree(level: Int = 0, indent: String = "") {
         let space = String(repeating: indent, count: level)
         print("\(space)\(level) \(self)")
         kid?.printTree(level: level + 1, indent: indent)
         sib?.printTree(level: level, indent: indent)
     }
 
-    /// Gets the Dictionary that maps tags to a node's kids that have the tag.
-    lazy var kidsByTag: [String: [GedcomNode]] = {
-        var result: [String: [GedcomNode]] = [:]
-        var current = kid
-        while let node = current {
-            result[node.tag, default: []].append(node)
-            current = node.sib
-        }
-        return result
-    }()
+    /// Returns a dictionary that maps tags to a node's kids that have the tag.
+    /// A litte dangerous becuase later changes to not cause the dictionary to be recomputed.
+//    lazy var kidsByTag: [String: [GedcomNode]] = {
+//        var result: [String: [GedcomNode]] = [:]
+//        var current = kid
+//        while let node = current {
+//            result[node.tag, default: []].append(node)
+//            current = node.sib
+//        }
+//        return result
+//    }()
 }
 
 // Methods that return child (kid) nodes or their values.
 public extension GedcomNode {
 
-    /// Returns the value of .self's first child with given tag.
-    func kidVal(forTag tag: String) -> String? {
-        var node = kid
-        while let current = node {
-            if current.tag == tag {
-                return current.val
-            }
-            node = current.sib
-        }
-        return nil
-    }
-
-    /// Returns the list of all non-nil values from .self's children with the given tag.
-    func kidVals(forTag tag: String) -> [String] {
-        kids(withTag: tag).compactMap { $0.val }
-    }
-
-    /// Returns .self's first child node with given tag, if any.
+    /// Returns .self's first child with given tag, if any.
     func kid(withTag tag: String) -> GedcomNode? {
         var node = kid
         while let current = node {
@@ -125,19 +114,67 @@ public extension GedcomNode {
         return nil
     }
 
-
-
-    /// Returns the Array of all .self's children with a given tag.
-    func kids(withTag tag: String) -> [GedcomNode] {
-        var results: [GedcomNode] = []
+    /// Returns .self's first child with tag from list of tags, if any.
+    func kid(withTags tags: [String]) -> GedcomNode? {
+        let tagSet = Set(tags)
         var node = kid
         while let current = node {
-            if current.tag == tag {
-                results.append(current)
+            if tagSet.contains(current.tag) {
+                return current
             }
             node = current.sib
         }
+        return nil
+    }
+
+    /// Returns .self's kids with a given tag, if any.
+    func kids(withTag tag: String) -> [GedcomNode] {
+        var results: [GedcomNode] = []
+        var node = kid
+        while let curr = node {
+            if curr.tag == tag {
+                results.append(curr)
+            }
+            node = curr.sib
+        }
         return results
+    }
+
+    /// Returns .self's kids with tags from a list of tags.
+    func kids(withTags tags: [String]) -> [GedcomNode] {
+        let tagSet = Set(tags)
+        var results: [GedcomNode] = []
+        var node = kid
+        while let curr = node {
+            if tagSet.contains(curr.tag) {
+                results.append(curr)
+            }
+            node = curr.sib
+        }
+        return results
+    }
+
+    /// Returns the value of .self's first child with given tag.
+    /// This method suffers by the issue of disabiuating what a nil return means: it could mean there were no
+    /// nodes with the tag, the the first node with the tag has no value.
+    func kidVal(forTag tag: String) -> String? {
+        return kid(withTag: tag)?.val
+    }
+
+    /// Returns the value of .self's first child with tag from list of set.
+    /// The method suffers from the same ambiguity of the last method.
+    func kidVal(forTags tags: [String]) -> String? {
+        return kid(withTags: tags)?.val
+    }
+
+    /// Returns the list of all non-nil values from .self's children with the given tag.
+    func kidVals(forTag tag: String) -> [String] {
+        kids(withTag: tag).compactMap { $0.val }
+    }
+
+    /// Returns the list of all non-nil values from .self's kids with tags in the given list of tags.
+    func kidVals(forTags tags: [String]) -> [String] {
+        kids(withTags: tags).compactMap { $0.val }
     }
 
     /// Traverses the first sequence of specific tags to find a descendant node.
@@ -200,18 +237,16 @@ public extension GedcomNode {
         return self.kid != nil
     }
 
-    /// Create and add a new child to this node.
+    /// Creates and adds a new first kid to this node.
     @discardableResult
     func addKid(tag: String, val: String? = nil) -> GedcomNode {
         let child = GedcomNode(tag: tag, val: val)
         return addKid(child)
     }
 
-    /// Add an existing kid node to be this node's first kid.
+    /// Adds an existing node as this node's new first kid.
     @discardableResult
     func addKid(_ kid: GedcomNode) -> GedcomNode {
-        print("GedcomNode.addKid called; new kid: \(kid)\n dad tree:")
-        self.printTree(level: 0)
         let dad = self
         kid.dad = dad // Set the kid's three links.
         kid.kid = nil
@@ -225,9 +260,37 @@ public extension GedcomNode {
         return kid
     }
 
-    /// Adds kid as a child of this node (self), after the given sib.
-    /// If sib is nil, kid becomes the first child.
-    /// Asserts if sib is not a child of self when non-nil.
+    /// Adds a newly created, unlinked child (defensive).
+    @discardableResult
+    func addBareKid(_ kid: GedcomNode) -> GedcomNode {
+        kid.dad = self
+        kid.kid = nil
+        kid.sib = nil
+        if self.kid == nil {
+            self.kid = kid
+        } else {
+            kid.sib = self.kid
+            self.kid = kid
+        }
+        return kid
+    }
+
+    /// Adds an existing subtree, preserving its internal structure.
+    @discardableResult
+    func addSubtree(_ kid: GedcomNode) -> GedcomNode {
+        kid.dad = self
+        if self.kid == nil {
+            self.kid = kid
+        } else {
+            kid.sib = self.kid
+            self.kid = kid
+        }
+        return kid
+    }
+
+    /// Adds kid as a new kid of .self, after the given sib.
+    /// If sib is nil, kid becomes the first kid.
+    /// Asserts if sib is not a kid of .self when non-nil.
     func addKidAfter(_ kid: GedcomNode, sib: GedcomNode?) {
         // Kid should not be attached.
         assert(kid.dad == nil && kid.sib == nil, "addKidAfter: cannot add a kid with links")
@@ -268,6 +331,7 @@ public extension GedcomNode {
     }
 
     /// Remove a kid from its parent.
+    /// TODO: Should return the removed kid.
     func removeKid() {
         guard let dad = dad else { return }
 
@@ -440,10 +504,16 @@ public extension GedcomNode {
 }
 
 extension GedcomNode {
-    public func deepCopy() -> GedcomNode {
+
+    /// Builds a deep copy of a GedcomNode forest or tree.
+    public func deepCopy(sibs: Bool = true) -> GedcomNode {
         let node = GedcomNode(key: self.key, tag: self.tag, val: self.val)
-        node.kid = self.kid?.deepCopy() ?? nil
-        node.sib = self.sib?.deepCopy() ?? nil
+        node.kid = self.kid?.deepCopy(sibs: true)
+        if sibs { node.sib = self.sib?.deepCopy(sibs: true) }
         return node
     }
+
+    func deepTreeCopy()  -> GedcomNode { deepCopy(sibs: false) }
+    func deepForestCopy() -> GedcomNode { deepCopy(sibs: true) }
+
 }

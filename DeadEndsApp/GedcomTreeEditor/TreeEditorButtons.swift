@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 8 October 2025.
-//  Last changed on 20 October 2025.
+//  Last changed on 26 November 2025.
 //
 
 import SwiftUI
@@ -13,7 +13,7 @@ import DeadEndsLib
 struct TreeEditorButtons: View {
 
     // Need both the tree model and tree manager to do the actions.
-    @ObservedObject var viewModel: GedcomTreeEditorModel
+    @Bindable var viewModel: GedcomTreeEditorModel
     let treeManager: GedcomTreeManager
 
     var body: some View {

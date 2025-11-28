@@ -1,0 +1,123 @@
+When I add a person to the desktop I now just put it into a fixed loccation. All cards appear at the same spot. This might not stand the test of time.
+
+I can imagine all sorts of weird algorithms to pick an "appearance" point. Things could be added into some kind a a grid. Once positions are in the model I could do some weird stuff and look for nice big areas to bring things in. Do you know if there any conventions for this kind of thing?
+
+
+That is a fun and classic UI layout problem — how to pick a “good” initial position for new draggable elements in a spatial UI like your Desktop. There’s no single convention, but there are a few time-tested strategies that you might find inspiring or useful, depending on how dynamic or tidy you want things to feel.
+
+⸻
+
+🧭 Guiding Principles
+
+Before diving into algorithms, think about:
+	•	User expectations: Should new cards appear near the one that spawned them?
+	•	Avoiding overlap: Should cards auto-avoid colliding with existing ones?
+	•	Spatial metaphor: Are cards “pinned” to a canvas (like index cards on a corkboard) or part of a dynamic layout?
+	•	Consistency: Should they appear in the same area every time?
+
+⸻
+
+🛠 Common Strategies
+
+1. Offset from Source (Simple Heuristic)
+
+If a new card is added from another (e.g. via context menu on Person A), place it offset from the source:
+
+let newPosition = CGPoint(x: source.position.x + 40, y: source.position.y + 40)
+
+✅ Intuitive
+❌ May cause overlap if done repeatedly.
+
+⸻
+
+2. Spiral or Grid Sweep (Collision Avoidance)
+
+Start from a desired anchor point and spiral or sweep out in a grid pattern until you find an empty space.
+
+You could do something like this:
+
+func findAvailablePosition(near origin: CGPoint, in occupied: [CGPoint]) -> CGPoint {
+    let spacing: CGFloat = 150
+    let maxAttempts = 100
+    for i in 0..<maxAttempts {
+        let dx = CGFloat((i % 5) - 2) * spacing
+        let dy = CGFloat((i / 5) - 2) * spacing
+        let point = CGPoint(x: origin.x + dx, y: origin.y + dy)
+        if !occupied.contains(where: { distance($0, point) < spacing }) {
+            return point
+        }
+    }
+    return origin // fallback
+}
+
+✅ Prevents overlap
+✅ Feels natural if tuned
+❌ Adds some logic overhead
+
+⸻
+
+3. Snap to Grid
+
+Divide the canvas into a regular grid and assign the next open slot.
+
+let gridSize: CGFloat = 200
+let col = Int(lastCard.position.x / gridSize)
+let row = Int(lastCard.position.y / gridSize) + 1
+let newPos = CGPoint(x: CGFloat(col) * gridSize, y: CGFloat(row) * gridSize)
+
+✅ Visually tidy
+❌ Can feel rigid unless you allow dragging afterward
+
+⸻
+
+4. Radial Expansion
+
+From a central point (say the first card), arrange others in a growing circle or radial tree — useful for genealogical layouts.
+
+✅ Visually appealing for small sets
+❌ Can get messy for many cards
+
+⸻
+
+5. Force-Directed Relaxation (Advanced)
+
+Model cards as repelling particles and let them “settle” into open positions.
+
+✅ Elegant layouts
+❌ Complex to implement
+❌ Can feel jittery or confusing to users
+
+⸻
+
+🧪 Suggested Starter: Grid-Like Heuristic with Offset
+
+Here’s a basic hybrid you might try first:
+
+func nextCardPosition(around anchor: CGPoint, existing: [CGPoint]) -> CGPoint {
+    let spacing: CGFloat = 160
+    let directions: [CGPoint] = [
+        .init(x: 0, y: -1), .init(x: 1, y: 0),
+        .init(x: 0, y: 1), .init(x: -1, y: 0),
+        .init(x: 1, y: -1), .init(x: -1, y: -1),
+        .init(x: 1, y: 1), .init(x: -1, y: 1)
+    ]
+    for dir in directions {
+        let candidate = CGPoint(x: anchor.x + dir.x * spacing, y: anchor.y + dir.y * spacing)
+        if !existing.contains(where: { distance($0, candidate) < spacing * 0.9 }) {
+            return candidate
+        }
+    }
+    return CGPoint(x: anchor.x + spacing, y: anchor.y + spacing) // fallback
+}
+
+This gives a “bloom” effect, expanding outward from the anchor in a 3x3 grid.
+
+⸻
+
+📦 Bonus: Track “lastDropPosition”
+
+If the DesktopModel tracks the last place a card was added, you can evolve simple heuristics like:
+
+model.lastDropPosition = nextCardPosition(around: model.lastDropPosition, existing: model.cardPositions())
+
+Let me know how whimsical, tidy, or “natural” you want the layout to feel, and I can help refine the strategy or generate code accordingly!

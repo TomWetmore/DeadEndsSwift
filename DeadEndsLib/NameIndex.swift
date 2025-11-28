@@ -3,13 +3,13 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 9 September 2025.
+//  Last changed on 22 November 2025.
 //
 
 import Foundation
 
-/// A `NameIndex` maps name keys to the sets of keys of persons with names that matche the name key.
-public struct NameIndex {
+/// A NameIndex maps name keys to the sets of keys of persons with names that match the name key.
+final public class NameIndex {
 
 	static let map: [Character: String] = [ // Soundex based map used to generate name keys (not for phonetics).
 		"B": "1", "F": "1", "P": "1", "V": "1",
@@ -21,27 +21,27 @@ public struct NameIndex {
 	]
 
 	/// Underlying name index dictionary.
-	var index = [String: Set<String>]()
+	var index = [NameKey: Set<RecordKey>]()
 
 	/// Adds an entry to the NameIndex; value is a 1 NAME value and is converted to a name key.
-	public mutating func add(value: String, recordKey: String) {
+	public func add(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value) else { return }
 		self.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
 	}
 
 	/// Adds an entry to the NameIndex.
-	mutating func add(nameKey: String, recordKey: String) {
+	func add(nameKey: String, recordKey: String) {
 		index[nameKey, default: Set()].insert(recordKey)
 	}
 
     /// Removes an entry from the NameIndex; value is 1 NAME value and is converted to a name key.
-    public mutating func remove(value: String, recordKey: String) {
+    public func remove(value: String, recordKey: String) {
         guard let gedcomName = GedcomName(string: value) else { return }
         remove(nameKey: gedcomName.nameKey, recordKey: recordKey)
     }
 
     /// Removes an entry from the NameIndex.
-    mutating func remove(nameKey: String, recordKey: String) {
+    func remove(nameKey: String, recordKey: String) {
         if var records = index[nameKey] {
             records.remove(recordKey)
             // Remove record key set if now empty.
@@ -50,16 +50,14 @@ public struct NameIndex {
         }
     }
 
-	/// Gets the record keys that match a 1 NAME value's name key.
-    ///
-    /// The name's value is converted to its name key which is looked up in the name index.
-	func getKeys(forName value: String) -> Set<String>? {
-		let nameKey = nameKey(value: value)
-		return index[nameKey]
+	/// Gets the record keys that match a Gedcom name or pattern. The value is converted to a NameKey
+    /// and then looked up in the NameIndex.
+	func keys(forName value: String) -> Set<RecordKey>? {
+		return index[nameKey(value: value)]
 	}
 
 	/// Debug method that shows the contents of the NameIndex.
-	func printIndex() {
+	func showContents() {
 		for (nameKey, recordKeys) in index {
 			print("Name Key: \(nameKey) => Records: \(Array(recordKeys))")
 		}
@@ -76,7 +74,7 @@ func nameKey(value: String) -> String {
 
 /// This simple looking function builds the NameIndex for a Database.
 func buildNameIndex(from persons: RecordList) -> NameIndex {
-    var index = NameIndex()
+    let index = NameIndex()
     for person in persons {
         guard let recordKey = person.key else { continue }  // Will succeed.
         let nameNodes = person.kids(withTag: "NAME")
@@ -157,8 +155,8 @@ func pieceMatch(_ partial: String, _ complete: String) -> Bool {
 
 extension Database {
 
-    /// Returns the keys of all persons with names that match a pattern.
-    public func personKeys(forName pattern: String) -> [String] {
+    /// Returns the Array of RecordKeys of all Persons with names that match a pattern.
+    public func personKeys(forName pattern: String) -> [RecordKey] {
         var matchingKeys: [String] = []
         let nameKey = nameKey(value: pattern) // Name key of name pattern.
         guard let recordKeys = nameIndex.index[nameKey] else { return [] }  // Persons keys that match nameKey.
@@ -170,7 +168,7 @@ extension Database {
                     let squeezedPersonName = squeeze(nameValue)
                     if exactMatch(partial: squeezedPattern, complete: squeezedPersonName) {
                         matchingKeys.append(recordKey)
-                        break // No need to check other names of this person.
+                        break // No need to check other names of this Person.
                     }
                 }
             }
@@ -178,7 +176,7 @@ extension Database {
         return matchingKeys
     }
 
-    /// Returns the Persons who have names that match a name pattern.
+    /// Returns the Array of all Persons with names that match a name pattern.
     public func persons(withName pattern: String) -> [Person] {
         personKeys(forName: pattern).compactMap { recordIndex.person(for: $0) }
     }

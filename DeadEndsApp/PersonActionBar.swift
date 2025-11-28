@@ -57,16 +57,16 @@ struct PersonActionBar: View {
                 } else if families.count > 1 {
                     familyList = FamilyList(nodes: families)
                 } else {
-                    model.status = "\(person.displayName) is not a spouse in any family."
+                    model.status = "\(String(describing: person.displayName)) is not a spouse in any family."
                 }
             }
             Button("Family Tree") {
                 model.path.append(Route.familyTree(person))
             }
-            Button("Tidy Test") {
-                guard let index = model.database?.recordIndex else { return }
-                tidyTest(person: person, index: index);
-            }
+//            Button("Tidy Test") {
+//                guard let index = model.database?.recordIndex else { return }
+//                tidyTest(person: person, index: index);
+//            }
             Button("Descendancy List") {
                 model.path.append(Route.descendancy(person))
             }
@@ -78,11 +78,19 @@ struct PersonActionBar: View {
                 // assuming you're inside a PersonView and have `person`
                 model.path.append(Route.gedcomTreeEditor(person))
             }
-            Button("New Edit") {
-                model.path.append(Route.personEditor(person))
-            }
-            Button("Newer Edit") {
-                model.path.append(Route.personEditorNew(person))
+//            Button("New Edit") {
+//                model.path.append(Route.personEditor(person))
+//            }
+//            Button("Newer Edit") {
+//                model.path.append(Route.personEditorNew(person))
+//            }
+//            Button("Open Desktop") {
+//                model.path.append(Route.desktop(person))  // add a new Route case
+//            }
+            Button("Open Desktop") {
+                print("Button tapped")
+                model.path.append(Route.desktop(person))
+                print("Appended .desktop route")
             }
             Button("Edit") {
                 showEditSheet = true

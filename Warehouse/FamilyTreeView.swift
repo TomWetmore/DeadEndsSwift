@@ -9,7 +9,7 @@
 
 import SwiftUI
 
-// MARK: - PersonCardView (experiment component)
+// MARK: - PersonCard (experiment component)
 
 struct PersonCardView: View {
     // Display

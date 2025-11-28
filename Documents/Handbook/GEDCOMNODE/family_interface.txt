@@ -1,0 +1,27 @@
+INTERFACE TO FAMILY ON 27 OCTOBER 2025
+
+public struct Family: Record
+    public let root: GedcomNode
+    public init?(_ root: GedcomNode) -- Create a Family from a root GedcomNode.
+
+extension Family
+
+    public func husband(in index: RecordIndex) -> Person? -- First husband of Family
+    public func wife(in index: RecordIndex) -> Person? -- First wife of Family
+    public func children(in index: RecordIndex) -> [Person] -- Children of Family
+
+    public func husbands(in index: RecordIndex) -> [Person] -- All husbands of Family
+    public func wives(in index: RecordIndex) -> [Person] -- All wives of Family
+
+public extension Family
+    func spouse(of person: Person, in index: RecordIndex) -> Person? -- First spouse of Person (in Family); sex not used
+    func spouses(of person: Person, in index: RecordIndex) -> [Person] -- All spouses of Person (in Family); sex not used
+
+extension Family: Equatable, Hashable {
+    public static func == (lhs: Family, rhs: Family) -> Bool {
+    public func hash(into hasher: inout Hasher) {
+
+extension Family: Identifiable {
+    public var id: String { key }
+}
+

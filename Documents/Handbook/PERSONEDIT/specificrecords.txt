@@ -1,0 +1,108 @@
+--------- --------- --------- --------- --------- ---------
+MAKING THE GEDCOMTREEDITOR SPECIFIC TO RECORD TYPES
+--------- --------- --------- --------- --------- ---------
+ME: The GedcomTreeEditor is "generic". It doesn't know what kind of a record it is editing. A step required soon is to add information to the model about the restrictions that apply to specific record types. The view model has to be extended to hold these restrictions.
+--------- --------- --------- --------- --------- ---------
+You’re absolutely right — introducing record-type-specific editing restrictions is an essential next step, especially now that your GedcomTreeEditor is becoming more functional and generalized.
+
+Here’s a clear breakdown of how you might approach this next phase:
+
+1. Extend the GedcomTreeModel with Record-Type Awareness
+Add a field to the model that tracks the record type being edited (e.g., "INDI", "FAM", "NOTE", etc.):
+
+enum GedcomRecordKind {
+    case indi, fam, note, sour, obje, other(String)
+}
+
+final class GedcomTreeModel: ObservableObject {
+    // Existing fields...
+    let recordKind: GedcomRecordKind
+
+    init(root: GedcomNode) {
+        self.recordKind = GedcomRecordKind.from(tag: root.tag)
+        self.selectedNode = root
+        // other setup...
+    }
+}
+
+A static helper:
+
+extension GedcomRecordKind {
+    static func from(tag: String) -> GedcomRecordKind {
+        switch tag {
+        case "INDI": return .indi
+        case "FAM":  return .fam
+        case "NOTE": return .note
+        case "SOUR": return .sour
+        case "OBJE": return .obje
+        default:     return .other(tag)
+        }
+    }
+}
+
+2. Define Restriction Rules by Record Type
+
+This could be hardcoded in Swift initially. For example:
+
+struct GedcomTreeRestrictions {
+    var allowedChildTags: Set<String>
+    var requiredTags: Set<String>
+    var singleValueTags: Set<String>
+}
+
+Then add something like:
+
+extension GedcomTreeRestrictions {
+    static func forKind(_ kind: GedcomRecordKind) -> GedcomTreeRestrictions {
+        switch kind {
+        case .indi:
+            return GedcomTreeRestrictions(
+                allowedChildTags: ["NAME", "SEX", "BIRT", "DEAT", "FAMC", "FAMS"],
+                requiredTags: ["NAME"],
+                singleValueTags: ["SEX"]
+            )
+        case .fam:
+            return GedcomTreeRestrictions(
+                allowedChildTags: ["HUSB", "WIFE", "CHIL", "MARR", "DIV"],
+                requiredTags: [],
+                singleValueTags: ["HUSB", "WIFE"]
+            )
+        default:
+            return GedcomTreeRestrictions(
+                allowedChildTags: [],
+                requiredTags: [],
+                singleValueTags: []
+            )
+        }
+    }
+}
+
+Then the model gets:
+let restrictions: GedcomTreeRestrictions
+
+3. Use These Rules in the Button Bar and Tree Editor. You can:
+• Disable the “Add Child” button if the tag is not in allowedChildTags
+• Disallow adding a second “SEX” tag to a person
+• Flag validation errors (e.g., missing required NAME tag)
+• Highlight illegal structures with color or warning icons
+
+For example:
+
+Button("Add Child") {
+    viewModel.addChild(to: selected)
+}
+.disabled(!viewModel.restrictions.allowedChildTags.contains(selected.tag))
+
+Summary of Benefits
+• Keeps the view model in control of domain-specific rules.
+• Keeps the tree editor fully generic.
+• Supports rule enforcement, smart UI behavior, and later validation/export checks.
+• Easy to expand incrementally as more GEDCOM tags/types are supported.
+
+
+----------------------------------------------
+MY LIST OF RESTRICTIONS.
+1. 0 Level nodes cannot be edited in any way.
+2. Lineage linking nodes (1FAMS, 1FAMC, 1HUSB, 1WIFE, 1CHIL) nodes cannot be edited. They can be moved.
+3. Event lines (1BIRT, 1DEAT, 1MARR, ..., should not have values.
+4. 1SEX lines must have M, F, U as possible value.

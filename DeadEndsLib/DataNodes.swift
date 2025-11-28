@@ -3,12 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 26 April 2025.
+//  Last changed on 27 November 2025.
 //
 
 import Foundation
 
-// DataNodes is a struct that contains an Array of pairs of GedcomNodes with an associated type.
+/// DataNodes is a struct that contains an Array of pairs of GedcomNodes with an associated type.
 struct DataNodes<Type> {
 	var nodes: [(GedcomNode, Type)] // Array of tuples making up the List.
 

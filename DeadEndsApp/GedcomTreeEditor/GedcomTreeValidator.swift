@@ -2,7 +2,8 @@
 //  GedcomTreeValidator.swift
 //  DeadEndsApp
 //
-//  Created by Thomas Wetmore on 10/21/25.
+//  Created by Thomas Wetmore on 21 October 2025.
+//  Last changed on 26 November 2025.
 //
 
 import Foundation
@@ -35,11 +36,11 @@ struct GedcomTreeValidator {
 
     private mutating func dfs(node: GedcomNode, expectedParent: GedcomNode?) {
 
-        if seen.contains(node.id) {
+        if seen.contains(node.uid) {
             errors.append(.init(node: node, message: "Cycle detected"))
             return
         }
-        seen.insert(node.id)
+        seen.insert(node.uid)
 
         // Check parent pointer
         if node.dad !== expectedParent {

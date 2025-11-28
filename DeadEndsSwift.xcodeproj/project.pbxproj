@@ -12,6 +12,16 @@
 		26DF075D2E69F15E000D08EE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		264C9E9B2ED7CD7A00BA7D56 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2682065A2D13370F0051544B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2682068A2D1337930051544B;
+			remoteInfo = DeadEndsLib;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
 		263408D82E216A7200F4E6DE /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -81,6 +91,7 @@
 				BuiltinsMath.swift,
 				Database.swift,
 				DataNodes.swift,
+				DateIndex.swift,
 				Errors.swift,
 				Evaluate.swift,
 				Event.swift,
@@ -93,15 +104,16 @@
 				Interpret.swift,
 				NameIndex.swift,
 				Person.swift,
+				PlaceIndex.swift,
 				Program.swift,
 				ProgramNode.swift,
 				ProgramValue.swift,
 				Record.swift,
 				RecordSequence.swift,
 				RefnIndex.swift,
+				Search.swift,
 				SExpression.swift,
 				SplitJoin.swift,
-				Test.swift,
 				ToBeMoved.swift,
 				Traverse.swift,
 				ValidateFamily.swift,
@@ -268,6 +280,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				264C9E9C2ED7CD7A00BA7D56 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				263408B12E21680900F4E6DE /* DeadEndsApp */,
@@ -461,6 +474,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		264C9E9C2ED7CD7A00BA7D56 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2682068A2D1337930051544B /* DeadEndsLib */;
+			targetProxy = 264C9E9B2ED7CD7A00BA7D56 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		263408BA2E21680B00F4E6DE /* Debug */ = {

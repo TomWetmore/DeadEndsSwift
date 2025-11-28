@@ -1,0 +1,68 @@
+INTERFACE TO PERSONS ON 27 October 2025
+
+public struct Person: Record {
+
+    public let root: GedcomNode
+    public init?(_ root: GedcomNode) -- Create a Person from a root GedcomNode
+
+extension Person {
+
+    public var name: String? -- Person's "preferred" name
+    public var birth: GedcomNode? -- First birth event
+    public var death: GedcomNode? -- First death event
+
+    public static func == (lhs: Person, rhs: Person) -> Bool -- Persons are equatable
+    public func hash(into hasher: inout Hasher) -- Persons are hashable
+
+public extension Person {
+
+    public var sex: SexType -- Sex of Person
+    public var sexSymbol: String -- Sex symbol of person (♂️  or ♀️ or ?)
+    var gedcomName: GedcomName? -- GedcomName of person (of first 1 NAME value)
+    var isFemale: Bool -- Checks if Person is female
+    var isMale: Bool -- Checks if Person is male
+
+    func father(in index: RecordIndex) -> Person? -- Returns first father of Person
+    func fathers(in index: RecordIndex) -> [Person] -- Returns all fathers of Person
+    func mother(in index: RecordIndex) -> Person? -- Returns first mother of Person
+    func mothers(in index: RecordIndex) -> [Person] -- Returns all mothers of Person
+
+public extension Person -- Extension for finding related Families
+
+    func spouseFamilies(in index: RecordIndex) -> [Family] -- Returns Families Person is a spouse in
+    func childFamilies(in index: RecordIndex) -> [Family] -- Returns Families Person is a child in
+
+public extension Person -- Extension for finding spouses
+
+    func spouse(in index: RecordIndex, roles: [String]) -> Person? -- Returns first spouse by roles ("HUSB", "WIFE")
+    func husband(in index: RecordIndex) -> Person? -- Returns first husband
+    func wife(in index: RecordIndex)    -> Person? -- Returns first wife
+
+    func spouses(in index: RecordIndex, roles: [String] = ["HUSB","WIFE"]) -> [Person] -- Returns all spouses by roles
+    func husbands(in index: RecordIndex) -> [Person] -- Returns all husbands
+    func wives(in index: RecordIndex)    -> [Person] -- Returns all wives
+}
+
+extension Person -- Extension for getting siblings
+
+    func previousSibling(index: RecordIndex) -> Person? -- Return previous sibling in first FAMC family
+    func nextSibling(index: RecordIndex) -> Person? -- Return next sibling in first FAMC family
+
+public extension Person -- Extension for getting children
+
+    func children(index: RecordIndex) -> [Person] -- Returns all children from all FAMS families
+
+extension GedcomNode {
+
+    func siblings(index: RecordIndex) -> [GedcomNode] -- Returns all siblings of Person from all FAMC families
+    func siblings(database: Database?) -> [GedcomNode] -- Same but have full Database
+
+extension Database {
+    
+    enum PersonUpdateError: Swift.Error {
+        case missingName
+        case inconsistentSex
+        case invalidLinks
+    }
+
+    public func updatePerson(_ person: Person) -- Not implemented

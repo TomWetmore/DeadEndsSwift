@@ -1,0 +1,158 @@
+ME
+1. GedcomTreeEditor.
+The GedcomTreeEditor is simple. It is stack of GedcomTreeEditorRows. It has to observe the ViewModel because it needs to know the expanded set and the selected node.
+
+2. GedcomTreeModel.
+The GedcomTreeModel is an ObservableObject that publishes the expanded set and the selected node. However, it also has the link to the Tree Manager, which is a "smell" in current changing architecture.
+
+3. GedcomTreeManager.
+The GedcomGTreeManager is the "edit manager" for the Gedcom tree. It has three main external interfaces:
+   	a. edit (poor name) -- called from user edit actions with an EditDelta. The delta is run and then put on the undo stack; redo stack cleared.
+   	b. undo -- undoes the last delta and puts it on the redo stack.
+   	c. redos -- redoes the last undone delta and puts it on the undo stack.
+The Manager represents a rather large architectural shift that is not yet cleaned up. That shift is the fact that all changes to the Gedcom tree now pass first to the manager in the form of EditDeltas; they used to go to the ViewModel. The Manager is now supposed to use the ViewModel to make the changes, while the ViewModel will be making direct calls on GedcomNodes to effect those changes.
+
+4. GedcomTreeEditorRow.
+The GedcomTreeEditorRow is the view for a single line in the editor. It consists of an HStack of fields. Two of those fields are editable, so the GedcomTreeEditorRow requires access to the TreeManager to make those changes.
+
+5. TreeEditorButtons.
+The TreeEditorButtons is a view holding a number of buttons the user can hit. Some buttons change the selected node. Two of them activate the undo and redo mechanism. And the others change the three.
+
+    a. The undo and redo buttons can go directly to the TreeManager.
+    b. Change of selection can go direct to the ViewModel
+    b. The buttons that change the tree now have to go to the TreeManager which will go to the ViewModel which will go to the GedcomNodes.
+
+Right now the ViewModel has a reference to the TreeManager. This seems a bit smelly to me.
+
+Do you have any advice on how to plumb these objects, particularly the Model and Manager?
+
+CHATGPT
+
+You’re articulating a classic MVU-style (Model–View–Update) architecture in SwiftUI, but you’re running into a common architectural friction point: how to cleanly separate responsibilities between:
+• The ViewModel (GedcomTreeModel)
+• The Command Processor / Editor (GedcomTreeManager)
+• The Mutable Model Layer (GedcomNode trees)
+
+You’ve also recognized the “smell” of the ViewModel having a reference to the TreeManager, especially now that changes are supposed to flow the other way.
+
+Let’s walk through it carefully and then propose a cleaner architecture.
+
+Recommendation
+• The GedcomTreeModel should NOT hold a reference to the GedcomTreeManager.
+• Instead, the GedcomTreeManager should own the model (GedcomTreeModel), and make changes to it via well-defined APIs.
+• The Views observe the GedcomTreeModel.
+• The Views send user actions to the GedcomTreeManager, not the GedcomTreeModel.
+
+This results in a unidirectional flow:
+
+User Action
+   ⬇
+GedcomTreeManager
+   ⬇
+GedcomTreeModel (state + selection)
+   ⬇
+SwiftUI Views
+
+Conceptual Roles
+
+Component             : Role
+GedcomTreeEditorRow   : View for one GEDCOM line. Binds to state in GedcomTreeModel. Calls GedcomTreeManager for edits.
+GedcomTreeEditor      : View of all rows. Observes GedcomTreeModel for expanded state, selection.
+GedcomTreeModel       : Holds published UI state: expanded, selectedNode. No business logic.
+GedcomTreeManager     : State machine for editing. Accepts deltas, manages undo/redo, updates GedcomTreeModel.
+
+Problem with Current Setup
+You’re seeing this kind of diagram (current state):
+
+GedcomTreeModel
+  ├─ Published: expanded, selectedNode
+  └─ Holds reference to → GedcomTreeManager
+                         └─ Applies changes back to → GedcomTreeModel
+
+This creates two-way dependency, which is indeed a smell.
+
+Preferred Setup (Reversed Ownership)
+GedcomTreeManager
+  ├─ Holds reference to GedcomTreeModel
+  ├─ Applies deltas to GedcomTreeModel and GedcomNode tree
+  ├─ Manages undo/redo
+  └─ Is the central update authority
+
+GedcomTreeModel
+  ├─ @Published: expanded, selectedNode
+  └─ Is a dumb observable model — no business logic
+
+In SwiftUI terms:
+• Views bind to @ObservedObject var viewModel: GedcomTreeModel
+• Views pass user edits to GedcomTreeManager (e.g. via closures, or directly)
+
+Plumbing Advice
+✔ GedcomTreeManager should be created early and injected
+• It should own the GedcomTreeModel (or receive it on init)
+• Then you inject both the manager and the model into your view hierarchy
+
+let model = GedcomTreeModel()
+let manager = GedcomTreeManager(model: model)
+let editor = GedcomTreeEditor(viewModel: model, manager: manager)
+
+This avoids cyclic references.
+
+✔ Let Views talk to both:
+Your view hierarchy can look like this:
+
+struct GedcomTreeEditor: View {
+    @ObservedObject var viewModel: GedcomTreeModel
+    let manager: GedcomTreeManager
+    var body: some View {
+        VStack {
+            ForEach(model.rootNodes) { node in
+                GedcomTreeEditorRow(node: node, model: viewModel, manager: manager)
+            }
+            TreeEditorButtons(model: viewModel, manager: manager)
+        }
+    }
+}
+
+This makes data flow clear:
+• Views read from the viewModel
+• Views send edits to the manager
+
+What happens when the manager needs to mutate selection or expanded set?
+Let the manager mutate the model directly (it’s the sole authority), using well-named methods:
+
+class GedcomTreeModel: ObservableObject {
+    @Published var selectedNode: GedcomNode?
+    @Published var expanded: Set<UUID> = []
+
+    func toggleExpansion(for node: GedcomNode) {
+        if expanded.contains(node.id) {
+            expanded.remove(node.id)
+        } else {
+            expanded.insert(node.id)
+        }
+    }
+
+    func setSelected(_ node: GedcomNode?) {
+        selectedNode = node
+    }
+}
+
+Then from GedcomTreeManager:
+
+model.setSelected(kid)
+model.toggleExpansion(for: dad)
+
+Extra Cleanups
+• The GedcomTreeModel can be reset/reloaded/replaced by the manager if needed (model = GedcomTreeModel(fromTree: ...)).
+• The undo stack should store deltas only, not full trees or view models.
+• Consider eventually splitting the GedcomTreeModel into:
+• A view-state model (expanded, selectedNode)
+• A record-index model (for the actual data)
+But this is a future refinement.
+
+Final Summary
+Principle: Guideline
+🔄 Avoid cyclic dependencies: Let GedcomTreeManager own the model, not vice versa
+👁 Views observe model: Use @ObservedObject var model: GedcomTreeModel
+🎯 Views delegate actions: Use manager.edit(...), manager.undo() etc.
+🧠 Manager is central authority: It mutates the model, not the other way around

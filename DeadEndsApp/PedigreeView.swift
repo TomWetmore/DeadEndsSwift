@@ -3,25 +3,25 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 5 July 2025.
-//  Last changed on 19 September 2025.
+//  Last changed on 24 October 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Structure with layout information about a Person.
+/// Struct with layout information about a Person in a Pedigree.
 struct PedigreeNode: Identifiable {
-    let id: String  // Person's key; needed for Identifiable protocol.
+    let id: String  // Person's key; used for Identifiable.
     let person: Person  // Person.
     let x: CGFloat  // X-coordinate of Person in unit square.
     let y: CGFloat  // Y-coordinate of Person in unit square.
 }
 
-/// Shows a Person and their Pedigree. This is one of the full-window DeadEnds views.
+/// Shows a Person and their Pedigree. This is a full-window DeadEnds View.
 struct PedigreeView: View {
 
     @State private var layout: [PedigreeNode] = []
-    @EnvironmentObject var model: AppModel // Need the Database for the RecordIndex.
+    @EnvironmentObject var model: AppModel // Need the RecordIndex.
     let person: Person
     let generations: Int
     let buttonWidth: CGFloat
@@ -31,7 +31,7 @@ struct PedigreeView: View {
 
         GeometryReader { geometry in
             ZStack {
-                // Lines that divide the View into generation columns.
+                // Divide the View into generation columns.
                 ForEach(0...generations, id: \.self) { gen in
                     let x = CGFloat(gen) / CGFloat(generations) * geometry.size.width
                     Path { path in
@@ -47,8 +47,7 @@ struct PedigreeView: View {
                 ForEach(layout) { node in
                     let x = node.x * geometry.size.width + offset
                     let y = node.y * geometry.size.height
-                    PersonRow(person: node.person) // TODO: Get a better View for the Person information.
-                    //PersonButton(person: node.person)
+                    PersonRow(person: node.person)
                         .frame(width: min(colwidth, buttonWidth), alignment: .leading)
                         .position(x: x, y: y)
                 }
@@ -90,7 +89,7 @@ func buildPedigreeLayout(from person: Person,  generations: Int,
 
     // Start building the PedigreeNodes by adding the first person.
     addPerson(person, gen: 0, index: 0)
-    //showPedigreeNodes(pedigreeNodes)  // DEBUG
+    //showPedigreeNodes(pedigreeNodes)
     return pedigreeNodes
 }
 

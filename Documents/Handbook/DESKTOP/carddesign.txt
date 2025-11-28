@@ -1,0 +1,132 @@
+Designing small “Person Cards” that users drag around a desktop‑like workspace is a rich UI challenge: you have to think about the card’s visual layout (content, size, style), the interaction (drag, drop, stacking, overlapping), and the broader desktop metaphors (scaffolding, z‑order, grouping). Here are guidelines and suggestions (a mix of generic UI principles and drag‑&‑drop specifics) tailored to your app (DeadEnds) plus a few recommendations for how you might implement them in your SwiftUI context.
+
+Key Design Principles for the Card Itself.  These apply before you even get into dragging.
+
+1. Use a “card” metaphor
+Cards are a well‑accepted UI pattern: a container with related info, visually distinct from surrounding content. For example, the Material Design guideline says: “Use a card to display content and actions on a single topic. Cards should be easy to scan for relevant and actionable information.”  ￼
+For your Person Card: it might contain the person’s name, photo/avatar, birth/death years, perhaps a small icon indicating family relations, and maybe some “actions” (edit, link, move to family, etc).
+
+2. Visual hierarchy & readability
+Ensure the card is clean, compact, and scannable. Use brief textual fields rather than long paragraphs. Follow spacing, padding and typography rules. From generic UI principles: clarity, consistency, visual affordance are key.  ￼
+For example:
+• Name at top, bold, maybe larger font
+• Sub‑heading for dates or role
+• Perhaps a small thumbnail or avatar to the left/right
+• Minimal iconography for edit/link, but not so many that the card becomes cluttered
+• A background / border to separate the card from the “desktop” background.
+
+3. Depth, shadows, layering
+
+Since these cards are meant to be dragged around and layered, giving some depth (shadow, elevation) helps the user perceive it as a “surface” they can move. Material Design uses shadows for elevation.  ￼
+In your SwiftUI version, you might use .shadow(...) and .background(...) with maybe a subtle rounded rectangle to make each card look like a “panel”.
+
+4. Size, proportions and responsiveness
+
+Since you indicated the cards are small and draggable, you want to find a size big enough for readable info but small enough to allow many cards on screen. Decide whether size is fixed or variable (maybe users can resize?). If many cards might overlap, slightly smaller size helps.
+Also: leave enough padding/margin so cards don’t feel cramped when dragged near each other.
+
+5. Visual affordance for dragging
+
+The user should feel they can pick up the card. So the card should have cues: maybe a drag‑handle, a hover effect (on desktop), a subtle icon. From drag‑and‑drop design guidelines:
+• Use a drag handle icon if dragging is not obvious.  ￼
+• Use cursor change (cursor: grab on hover) on desktop.  ￼
+• On hover/press: maybe slightly lift the card (shadow heavier), change background slightly.
+
+You could design the Person Card to have a small handle area (e.g., small “grip” icon in a top bar) or allow the whole card to be draggable — whichever fits your UX.
+
+6. Consistency with your app’s visual language
+
+Since you have a bigger project, ensure the card styling (colors, fonts, shadows) ties in with your app’s theme. Consistency = better UX. Also, consider dark mode if relevant.
+
+7. Accessibility
+
+Don’t forget: small cards are visually dense. Make sure text is legible, contrast sufficient, drag actions accessible via keyboard (if applicable). Some drag‑and‑drop patterns fail on accessibility.  ￼
+E.g., you might allow selecting a card and hitting arrow keys + Enter to “move” it, or use focus and keyboard shortcuts to bring a card to front/back.
+
+Interaction / Desktop Behaviour Guidelines
+
+Since your cards are draggable desktops, here are additional guidelines specifically for dragging, stacking, and desktop metaphors.
+
+1. Clear drag affordance and feedback
+
+When user starts dragging:
+• Visual cue that the card is “picked up” (e.g., increase elevation/shadow, slightly scale or change transparency). From drag‑and‑drop best practices: “Dragged items should move towards users in the z‑dimension.”  ￼
+• While dragging, maybe show a ghost or semi‑transparent version of the card following the pointer.
+• On hover (or pointer down) before drag starts: show handle or hover state. Interfaces that hide drag affordance confuse users.  ￼
+
+2. Drop target & valid area indication
+
+Although in your desktop metaphor the “drop area” might just be the free desktop space, you still want to communicate valid/invalid locations (if any). For example: if cards cannot overlap a certain region, or snap to a grid, or stack in families, you should visually indicate it.
+From drag‑and‑drop guidelines: “Show users where things can go – drop zones should light up or animate.”  ￼
+In your app you could:
+• Provide visual grid or optional “snap-to” positions
+• While dragging, highlight the region where the card will land or show a placeholder underneath.
+• If a drop is invalid, show the cursor or card style change accordingly (e.g., no‑entry icon or red border).
+
+3. Movement constraints and granularity
+
+Decide whether cards can move freely (anywhere) or are constrained (snap to grid, only horizontal/vertical, cannot overlap others, etc). For desktop metaphors, free movement is fine, but you might want optional snapping for alignment.
+Drag‑&‑drop guidelines suggest you consider: “Are any restrictions necessary? Restrict movement into any directions.”  ￼
+You might implement: hold Shift key to restrict movement to grid, or “snap-to” family grouping positions when near.
+
+4. Z‑order / overlapping & layering
+
+Since cards are moved around, one card can come over/under others. You’ll need logic for bringing to front on click/drag, maybe semi‑transparent overlaps, maybe “minimizing” cards or icons for collapsed boards.
+Visually: when dragging, the card should hover above others (higher z‑index). On drop, it stays there until moved again.
+Tip: use subtle shadows so overlapping cards are easy to distinguish.
+
+5. Animation / micro‑interaction polish
+
+Movement should feel smooth. Use easing, short transitions for pickup, drop, snapping. Micro‑interactions enhance perception of quality. From the principles: micro‑animation and feedback matter.  ￼
+For example: when the user releases the card, you might animate a small bounce or fade‑in to final location to signal the drop is complete. On drag start: scale to 1.02, shadow depth up, then move with finger/cursor.
+
+6. State management & visual cues
+
+Think about different card states: idle, hover, focused/selected, dragging, dropped. Each state should have a consistent visual cue (shadow, border, background change).
+E.g., on hover: slight background highlight; on focus: maybe border; on drag: stronger shadow; on invalid drop: border turns red.
+From design system articles: define state styles for each stage.  ￼
+
+7. Persistence & layout saving
+
+Since the cards are dragged to arbitrary positions, you’ll likely want to store their positions, maybe z‑order, and restore them on next launch. Also consider: what happens when window resizes? Do cards reposition / scale? Provide logic for layout persistence or “reset to default” option.
+
+8. Multi‑select / batch movement
+
+If users might select multiple cards and drag them as a group (e.g., dragging entire family branch), design for that: selection rectangle, shift‑click multiple cards, group dragging. Provide cues like “n selected” counter, ghost cards for group drag.
+
+9. Accessibility & alternative interactions
+
+Because dragging with mouse/finger isn’t always available (keyboard users, screen readers), provide alternative ways: e.g., a “Move” command on card’s context menu, arrow‑keys to nudge, a “Bring to front/Send to back” function, maybe a grid view. Ensure cards are focusable and provide proper aria labels if applicable.  ￼
+
+Application to Your SwiftUI App (DeadEnds)
+
+Here are some implementation‑specific pointers given your Swift + SwiftUI context.
+• Use a CardView struct representing the Person Card: with identifiable, draggable.
+• Use SwiftUI’s .gesture(DragGesture()) for dragging. Keep track of offset (x, y) in model.
+• On drag start, add a .shadow(radius: …) and optionally .scaleEffect(1.02) to raise visually.
+• While dragging, update position; on drop, animate to final position (withAnimation { … }).
+• For z‑order: you can use zIndex(value) modifier. On drag start, increase zIndex so this card appears above others.
+• For snapping to grid: when drag ends, you might compute nearest grid coordinate and animate the card to that coordinate.
+• For grouping/family: if cards represent family clusters, you might implement a “snap‑to” when near related cards (e.g., children snap below parents) or highlight relational links.
+• For the visual style: define a style in your theme: perhaps a soft background color, rounded corners (cornerRadius), padding, drop shadow.
+• For dark mode: ensure colors adjust appropriately, shadows still visible, text readable.
+• For drag handle: you might place a small “grip” icon at the top left of the card (three horizontal lines) that invites user to drag; but also allow dragging from anywhere on card if you choose.
+• For layering: maintain an ordering in your model (maybe a simple Int ordering) and when one card is tapped/dragged bring to front by updating that ordering.
+ 
+Recap Checklist
+
+Here’s a quick checklist you could use when you implement:
+• Card size: width/height appropriate, padding consistent
+• Visual hierarchy: name, subheading, avatar/icon, actions
+• Rounded corners + background + subtle shadow
+• Drag affordance: handle icon, hover effect, cursor grab
+• Drag interaction: on drag start change appearance, follow pointer, zIndex elevate
+• Drop: animate to landing position, indicate valid/invalid drop zones
+• Snap/grid alignment (optional)
+• Layering: bring to front, manage zIndex or ordering
+• Persistence: card position & z‑order saved/restored
+• Accessibility: keyboard alternative, focus states, screen‑reader labels
+• Responsive: if window size changes, cards remain visible/accessible
+• Consistent theme: colors/fonts/shadows match rest of app
+• Performance: dragging many cards should remain smooth (use efficient state updates)
+• Testing: try dragging many cards, overlapping, out‑of‑bounds, multi‑select, mobile/touch if applicable

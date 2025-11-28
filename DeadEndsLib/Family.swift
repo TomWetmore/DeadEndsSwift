@@ -53,6 +53,72 @@ extension Family {
     }
 }
 
+public extension Family {
+
+    /// Returns the first spouse (husband or wife) who is **not** the given person.
+    /// Returns `nil` if the given person is not part of this family, or if no other spouse exists.
+    func spouse(of person: Person, in index: RecordIndex) -> Person? {
+        // Sanity check: ensure `person` is a spouse in this family
+        let husband = husband(in: index)
+        let wife = wife(in: index)
+
+        guard person.root.key == husband?.root.key || person.root.key == wife?.root.key else {
+            // The person isn’t a spouse in this family
+            return nil
+        }
+
+        // Return the opposite spouse, if any
+        if person.root.key == husband?.root.key {
+            return wife
+        } else if person.root.key == wife?.root.key {
+            return husband
+        } else {
+            return nil
+        }
+    }
+
+    /// Returns all spouses (husband and wife) who are **not** the given person.
+    /// If the given person isn’t part of the family, returns an empty array.
+    func oldspouses(of person: Person, in index: RecordIndex) -> [Person] {
+        let husband = husband(in: index)
+        let wife = wife(in: index)
+
+        // Sanity check
+        guard person.root.key == husband?.root.key || person.root.key == wife?.root.key else {
+            return []
+        }
+
+        // Collect all nonmatching spouses
+        var result: [Person] = []
+        if let h = husband, h.root.key != person.root.key {
+            result.append(h)
+        }
+        if let w = wife, w.root.key != person.root.key {
+            result.append(w)
+        }
+        return result
+    }
+
+    // TODO: After change below this method has not been tested.
+    func spouses(of person: GedcomNode, in index: RecordIndex) -> [Person] {
+        //var foundSelf = false
+        var results: [Person] = []
+
+        let spouseKeys = self.kidVals(forTags: ["HUSB", "WIFE"])
+        for key in spouseKeys {
+            if key != person.key, let root = index[key], let spouse = Person(root) {
+                results.append(spouse)
+            }
+//            if key == person.key {
+//                foundSelf = true
+//            } else if let root = index[key], let spouse = Person(root) {
+//                results.append(spouse)
+//            }
+        }
+        return results
+    }
+}
+
 extension Family: Equatable, Hashable {
     public static func == (lhs: Family, rhs: Family) -> Bool {
         lhs.root.key == rhs.root.key

@@ -3,10 +3,12 @@
 //  DeadEnds Library
 //
 //  Created by Thomas Wetmore on 1 January 2025.
-//  Last changed on 10 September 2025.
+//  Last changed on 19 November 2025.
 //
 
 import Foundation
+
+public typealias NameKey = String
 
 /// Internal representation of a Gedcom 1NAME value.
 public struct GedcomName: Comparable, CustomStringConvertible {
@@ -230,20 +232,20 @@ private func parseGedcomName(value: String) -> (parts: [String], surnameIndex: I
     }
 }
 
-extension Person {
-
-    func displayName(upSurname: Bool = false, surnameFirst: Bool = false, length: Int? = nil) -> String? {
-        // Get the GedcomName of the person.
-        guard var gedcomname = GedcomName(from: self.root) else { return nil }
-
-        if upSurname { gedcomname.uppercaseSurname() }  // Handle the upSurname flag.
-
-        // Handle shortening
-        if let length = length { gedcomname.shortened(to: length) }  // Handle shortening.
-
-        return gedcomname.format(surnameFirst: surnameFirst)
-    }
-}
+//extension Person {
+//
+//    func displayName(upSurname: Bool = false, surnameFirst: Bool = false, length: Int? = nil) -> String? {
+//        // Get the GedcomName of the person.
+//        guard var gedcomname = GedcomName(from: self.root) else { return nil }
+//
+//        if upSurname { gedcomname.uppercaseSurname() }  // Handle the upSurname flag.
+//
+//        // Handle shortening
+//        if let length = length { gedcomname.shortened(to: length) }  // Handle shortening.
+//
+//        return gedcomname.format(surnameFirst: surnameFirst)
+//    }
+//}
 
 // Methods for shortening GedcomNames.
 extension GedcomName {

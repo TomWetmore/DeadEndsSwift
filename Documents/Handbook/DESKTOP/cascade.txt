@@ -1,0 +1,442 @@
+CASCADING THE CARD VIEWS.
+
+There are many card views and models. My cheat sheet for the current state of affairs:
+============================================
+1. CardKind -- enumeration of the Card types
+enum CardKind: Identifiable, Hashable {
+    case person(Person) case family(Family) case indexCard(Person)
+    var id: UUID
+}
+2. Card -- "Model of a Card" (regular struct--not ObservableObject)
+struct Card -- id, kind, position, size
+3. DesktopModel -- Desktop model
+@MainActor class DesktopModel: ObservableObject {
+    @Published var cards: [Card] = []
+    @Published var activeId: UUID? = nil  // Id of card being dragged
+    @Published var activeOffset: CGSize = .zero  // Offset of card being dragged
+    func addCard(kind: CardKind, position: CGPoint, size: CGSize)
+    func removeCard(kind: CardKind)
+    func updatePosition(for card: Card, to newPosition: CGPoint)
+    nonisolated func contains(person: Person) -> Bool
+4. DesktopView -- The Desktop where things happen
+struct DesktopView: View {
+    @StateObject private var model: DesktopModel
+    @State private var showingSearchSheet
+    init(person: Person) -- create DesktopModel and add first card
+    var body: some View {
+        GeometryReader { 
+            ZStack {
+                Rectangle() ForEach(model.cards) { card in DraggableCardView(model: model, card: card) }
+            } .frame(minWidth: 800, minHeight: 500)
+        }
+        .contextMenu { Button("Add Person to Desktop...") { } }
+        .sheet(isPresented: $showingSearchSheet) { PersonSearchSheet(model: model) }
+    } }
+5. PersonSearchSheet
+============================================
+Let’s walk through it to fix the hierarchy so that: each type has a clear responsibility; you know what talks to what; and we introduce the index-card visuals and controls without upsetting the architecture.
+
+Step 1 — Three conceptual layers
+Think of everything as belonging to one of three tiers:
+Layer              : Purpose                                                                             : Examples in your project
+Model layer (data) : Represents what exists on the desktop, not how it looks. Pure structs, stable state.: Card, CardKind, DesktopModel
+Behavioral wrappers: Add interaction behaviors that apply to all card types.                             : DraggableCardView (dragging), future ResizableCardView:
+Content views      : Define how a specific kind of card looks.                                           : PersonCardView, FamilyCardView, future IndexCardView.
+
+A DesktopView stitches them together.
+
+Step 2 — Clarify each component
+CardKind.  A discriminated union.  Purpose: to say what kind of content a card shows.  Keeps: the domain object (Person, Family, etc.).  Used by: Card (for identity and rendering choice).
+No view logic here.
+
+Card.  A value-type model of a card on the desktop.  Purpose: remembers persistent, layout-related state.  Holds geometry and identity only.
+
+DesktopModel.  The ObservableObject managing all cards.  Owns [Card] and performs mutations (add/remove/move). Nothing visual here. This is the controller/document model.
+
+DesktopView.
+The canvas. Iterates over cards, wraps them with behavior (dragging, resizing), and inserts the proper content view.
+ForEach($model.cards) { $card in
+    DraggableCardView(model: model) {
+        CardView(card: $card)        // passes binding
+    }
+}
+DraggableCardView is a behavior wrapper.
+
+DraggableCardView. Encapsulates drag gestures and updates the DesktopModel. Ddoes not care what’s inside the card visually — it just moves it.  We can add ResizableCardView if desired.
+
+CardView. The generic visual shell that all cards share: rounded rectangle, index-card background, the red/yellow/green controls.  Inside it, you embed the content appropriate to the CardKind.  So:
+struct CardView: View {
+    @Binding var card: Card
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            IndexCardBackground()
+            VStack(spacing: 0) {
+                ControlButtons(card: $card)
+                content
+            }
+        }
+        .frame(width: card.size.width, height: card.size.height)
+    }
+    @ViewBuilder
+    private var content: some View {
+        switch card.kind {
+        case .person(let person): PersonCardContent(person)
+        case .family(let family): FamilyCardContent(family)
+        case .indexCard(let person): IndexCardContent(person)
+        }
+    }
+}
+CardView uses binding so size changes propagate to the array; PersonCardContent and friends are pure views, no drag or resize logic.
+
+PersonCardView, FamilyCardView, etc. These become the content components that render their domain data inside the card boundaries. No geometry, no gestures — just display.
+
+Step 3 — Responsibilities summary
+Type                                : Layer           : Responsibility:
+CardKind                            : model           : identify content type:
+Card                                : model           : store position & size:
+DesktopModel                        : model/controller: manage array of cards:
+DesktopView                         : view            : lay out cards on canvas:
+DraggableCardView                   : behavior        : handle drag gesture:
+CardView                            : shared view     : draw index-card look, 3-buttons, golden-ratio size:
+PersonCardView, FamilyCardView, etc.: content view    : show specific data
+
+Step 4 — How the golden-rectangle version fits
+The “golden-rectangle” visual belongs in CardView, since it applies to all cards equally. The red/yellow/green controls are per-card shared UI behavior, not per-content. You’ll add the index-card background and buttons once in CardView, and every card type will inherit automatically.
+
+Step 5 — Mental shortcut
+When you feel the hierarchy fog creeping in, remember:
+Model: what exists
+Behavior: how it moves
+View: how it looks
+and each concrete SwiftUI struct/class should belong to only one of those categories.
+
+----------------------------------------------
+Could a DraggableCardView hold a ResizeableCardView, that holds a CardView that handles the backgroound index card appeareance and some of the controls, that holds a PersonCardView or FamilyCardView. Does it make sense to cascde them this way to isolate the types of behaviours?
+----------------------------------------------
+
+Yes. The “cascade of behavior wrappers” is one of the cleanest models for organizing SwiftUI’s kind of compositional architecture.
+
+1. Why this cascading structure is good. SwiftUI encourages composition over inheritance. Instead of subclassing CardView to make it draggable or resizable, you wrap it in smaller, focused views, each responsible for one behavior.  That means:
+DraggableCardView     → handles dragging gestures & DesktopModel updates
+  ⤷ ResizableCardView  → handles resize gestures or buttons
+      ⤷ CardView       → handles shared visuals, background, red/yellow/green controls
+          ⤷ PersonCardView / FamilyCardView → renders actual content
+
+Layering keeps responsibilities separate: ResizableCardView can be reused elsewhere; the logic in DraggableCardView doesn’t care what’s inside the card; and CardView focuses purely on look and feel. Each wrapper deals with one concern, a classic “decorator” pattern in SwiftUI’s declarative style.
+
+2. How SwiftUI makes this pattern work naturally.
+In SwiftUI, each wrapper is another View. Because views are value types, you don’t pay an object hierarchy cost — each layer just composes a body.  For example:
+DraggableCardView(model: model, card: $card) {
+    ResizableCardView(card: $card) {
+        CardView(card: $card) {
+            PersonCardView(person: person)
+        }
+    }
+}
+Each view’s body is a function of its children — no retained subviews, no manual layout code.
+
+3. Conceptual Responsibilities of Each Layer
+Layer             : Responsibility                                                             : Talks to
+DraggableCardView : Manages drag gestures; updates card position in DesktopModel.              : DesktopModel, @Binding<Card>
+ResizableCardView : Handles resizing (gesture, handles, or buttons). Updates card.size.        : @Binding<Card
+CardView          : Define appearance: rounded rectangle, index lines, red/yellow/green buttons: @Binding<Card> and content
+PersonCardView    : Displays the actual genealogical data                                      : Person, Family models
+
+4. Example of the structure in code. Here’s how this might look simplified:
+// MARK: - DesktopView
+ForEach($model.cards) { $card in
+    DraggableCardView(model: model, card: $card) {
+        ResizableCardView(card: $card) {
+            CardView(card: $card) {
+                switch card.kind {
+                case .person(let person): PersonCardView(person: person)
+                case .family(let family): FamilyCardView(family: family)
+                case .indexCard(let person): IndexCardView(person: person)
+                }
+            }
+        }
+    }
+}
+
+Then each wrapper layer looks like this:
+DraggableCardView
+struct DraggableCardView<Content: View>: View {
+    @ObservedObject var model: DesktopModel
+    @Binding var card: Card
+    @GestureState private var dragOffset: CGSize = .zero
+    let content: Content
+    init(model: DesktopModel, card: Binding<Card>, @ViewBuilder content: () -> Content) {
+        self._card = card
+        self.model = model
+        self.content = content()
+    }
+    var body: some View {
+        content
+            .position(x: card.position.x + dragOffset.width,
+                      y: card.position.y + dragOffset.height)
+            .gesture(
+                DragGesture()
+                    .updating($dragOffset) { value, state, _ in
+                        state = value.translation
+                    }
+                    .onEnded { value in
+                        card.position.x += value.translation.width
+                        card.position.y += value.translation.height
+                        model.updatePosition(for: card, to: card.position)
+                    }
+            )
+    }
+}
+
+ResizableCardView
+struct ResizableCardView<Content: View>: View {
+    @Binding var card: Card
+    let content: Content
+    init(card: Binding<Card>, @ViewBuilder content: () -> Content) {
+        self._card = card
+        self.content = content()
+    }
+    var body: some View {
+        content
+            .frame(width: card.size.width, height: card.size.height)
+            // Optional: add resize handles or pinch gestures here
+    }
+}
+
+CardView
+struct CardView<Content: View>: View {
+    @Binding var card: Card
+    let content: Content
+    init(card: Binding<Card>, @ViewBuilder content: () -> Content) {
+        self._card = card
+        self.content = content()
+    }
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            IndexCardBackground()
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(radius: 3)
+            VStack(spacing: 0) {
+                CardControls(card: $card)
+                    .padding(.leading, 8)
+                    .padding(.top, 6)
+                content
+                    .padding(8)
+            }
+        }
+    }
+}
+
+5. Why this cascade is future-proof.  This structure gives you isolation, composability, scalability, and simplicity inside each type--no one struct grows into a god view.  It’s the SwiftUI analog to what older frameworks  achieve with a class hierarchy and delegates, but here it’s flat, compositional, and pure.
+
+6. One subtle but important rule. Each wrapper should only mutate its own slice of state: Dragging changes position; resizing changes size; the inner CardView shouldn’t directly edit position or size (only visual aspects). Geometry behaviors live in outer wrappers, visual behaviors in inner wrappers.
+
+In summary:
+the cascading design:
+DraggableCardView
+    → ResizableCardView
+        → CardView
+            → PersonCardView / FamilyCardView
+is not only sensible, it’s the best possible organization for SwiftUI — clean, modular, and expressive.
+
+----------------------------------------------------
+So in this approach it is in the DesktopView that the cascade is formed. Otherwise the Card views stand more or less on their own?
+----------------------------------------------------
+
+That’s the key insight.  The cascade is assembled in DesktopView, because that’s the place that knows the context in which cards live (the desktop, the model, and the list of cards). Each “Card view” itself should remain self-contained — knowing only about its own data and visual responsibilities, not about the behaviors layered around it.
+
+Another review
+1. The Role of DesktopView
+DesktopView is the composition point — the “conductor” that decides which wrappers and behaviors each card needs.  It is the scene director: it holds the array of Card models; it decides which behaviors (draggable, resizable, etc.) to wrap around each card; and it provides the environment (database access, etc.).  So inside DesktopView, you create the cascade:
+
+ForEach($model.cards) { $card in
+    DraggableCardView(model: model, card: $card) {
+        ResizableCardView(card: $card) {
+            CardView(card: $card) {
+                switch card.kind {
+                case .person(let person):
+                    PersonCardView(person: person)
+                case .family(let family):
+                    FamilyCardView(family: family)
+                case .indexCard(let person):
+                    IndexCardView(person: person)
+                }
+            }
+        }
+    }
+}
+This code says: “Every card on the desktop should be draggable, resizable, look like an index card, and then show its content. The individual card-related views do not need to know they are in a cascade — that’s DesktopView’s job.
+
+2. Each Card View’s Role
+View             : Knows about                                          : Doesn’t know about:
+DraggableCardView: Desktop model, drag gestures, card position          : How cards are drawn or sized:
+ResizableCardView: Card size, resize gestures/buttons                   : Dragging or content:
+CardView         : Card’s size, index-card appearance, 3 control buttons: Position or gestures:
+PersonCardView   : Person/family data                                   : Size, position, drag, resize:
+
+Outside of DesktopView, each layer stands on its own. CardView doesn’t contain ResizableCardView; instead, it’s contained by it when the desktop chooses to give it that behavior.  This makes the system: flexible — you can use a CardView elsewhere without drag/resize logic; testable — you can preview any layer in isolation; and extensible — later, you might have SelectableCardView, RotatableCardView, etc.
+
+3. Analogy to C or Unix Design.  Think of this like Unix pipes or C library layering: each layer does one job; you compose them in whatever order makes sense; and the composition happens in the main program, not deep in a library.
+
+Your DesktopView is like main(): draggable(resizable(card(personView())));
+
+4. What to Keep in Each File.  This helps reduce cognitive load:
+File                    : Contents
+-----------------------------------
+DesktopView.swift       : The cascade and global environment:
+DraggableCardView.swift : Handles drag gestures and position updates
+ResizableCardView.swift : Handles size changes
+CardView.swift          : Draws index-card look and red/yellow/green buttons
+PersonCardView.swift    : Displays person info
+FamilyCardView.swift    : Displays family inf:
+IndexCardView.swift     : Optional placeholder version for now
+ 
+5. Why this feels clearer than nested views. It’s natural to think, “Shouldn’t CardView contain the draggable behavior itself?”. That’s how many older UI frameworks worked (e.g., subclass NSView and add gesture recognizers).  But in SwiftUI, composition is the correct mindset. Each behavior is a pure function of state, not a persistent object with side effects.
+So your cascade in DesktopView isn’t an implementation trick — it’s idiomatic SwiftUI.
+
+6. Summary
+• The cascade belongs in DesktopView, the composition site.
+• Each individual card-related view stands alone and focuses on one concern.
+• You can reuse or test any of those inner layers in isolation.
+• SwiftUI encourages this declarative composition model; it’s how behaviors are meant to be layered.
+
+------------------------------------------------
+So for the cascade to work, the DesktopView composes the final card views. This means that the actual various card views will have to the next lower card view be a parameter that is passed in. That they won't know implicitly (as they do now) what their "sub-card view type will be), they will have to be passed in as a parameter. Is this how is works?
+------------------------------------------------
+
+You’re on the edge of the key insight.
+
+1. What You’re Noticing.
+You’re right that in your current setup, something like CardView “knows” what its inner view will be — it switches on card.kind and instantiates a PersonCardView, FamilyCardView, etc.
+That’s fine if CardView is the final layer.
+
+But once you start composing behaviors around it (Resizable, Draggable, Selectable, etc.), it’s actually DesktopView that is doing the composing — and each layer shouldn’t assume what comes next inside it.  That’s the compositional model.
+
+2. The General Rule in SwiftUI Composition.
+Each layer in the cascade receives its child content via a @ViewBuilder closure parameter, not by knowing it implicitly.  That looks like this pattern:
+
+struct WrapperView<Content: View>: View {
+    let content: Content
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    var body: some View {
+        // Use `content` wherever you want the child to appear.
+        ZStack {
+            background
+            content
+        }
+    }
+}
+You can then write:
+WrapperView {
+    InnerView()
+}
+The wrapper doesn’t know what InnerView is — it just renders the content it was given.
+
+3. Applied to Your Cascade.
+Here’s how the parameter passing works at each layer:
+
+DraggableCardView
+struct DraggableCardView<Content: View>: View {
+    @ObservedObject var model: DesktopModel
+    @Binding var card: Card
+    let content: Content
+    init(model: DesktopModel, card: Binding<Card>, @ViewBuilder content: () -> Content) {
+        self.model = model
+        self._card = card
+        self.content = content()
+    }
+    var body: some View {
+        content
+            .position(card.position)
+            .gesture( /* drag logic */ )
+    }
+}
+
+It doesn’t know or care what content is — just that it’s something visual that can be dragged.
+
+ResizableCardView
+struct ResizableCardView<Content: View>: View {
+    @Binding var card: Card
+    let content: Content
+    init(card: Binding<Card>, @ViewBuilder content: () -> Content) {
+        self._card = card
+        self.content = content()
+    }
+    var body: some View {
+        content
+            .frame(width: card.size.width, height: card.size.height)
+    }
+}
+Same idea — it wraps whatever it’s given, applying resizing behavior.
+
+CardView
+struct CardView<Content: View>: View {
+    @Binding var card: Card
+    let content: Content
+    init(card: Binding<Card>, @ViewBuilder content: () -> Content) {
+        self._card = card
+        self.content = content()
+    }
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            IndexCardBackground()
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            VStack {
+                CardControls(card: $card)
+                content   // <-- the specific PersonCardView or FamilyCardView
+            }
+        }
+    }
+}
+Again, it just renders whatever content was passed in.
+
+PersonCardView
+This is now the innermost view — it doesn’t need to pass content to anyone else:
+struct PersonCardView: View {
+    let person: Person
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(person.displayName)
+            Text(person.lifespanDescription)
+        }
+        .padding()
+    }
+}
+
+4. Assembled in DesktopView.  And now you can build the cascade cleanly:
+ForEach($model.cards) { $card in
+    DraggableCardView(model: model, card: $card) {
+        ResizableCardView(card: $card) {
+            CardView(card: $card) {
+                switch card.kind {
+                case .person(let person):
+                    PersonCardView(person: person)
+                case .family(let family):
+                    FamilyCardView(family: family)
+                case .indexCard(let person):
+                    IndexCardView(person: person)
+                }
+            }
+        }
+    }
+}
+No type in that chain knows about the next one down — they accept a child View parameter via a @ViewBuilder.
+That’s what allows the cascade to be built in one place (the DesktopView) instead of hard-coded inside each view.
+
+5. Why This Matters.
+This pattern gives you: modularity, testability, composability; and clarity.
+Itis normal that the inner views (PersonCardView, etc.) are parameters rather than “hard-coded” inside the card — that’s the declarative SwiftUI style.
+
+Summary
+
+Layer            : Receives     : Passes to child : Knows child type?
+DesktopView      : DesktopModel : All subviews    : yes (explicitly)
+DraggableCardView: child content : next layer     : no
+ResizableCardView: child content : next layer     : no
+CardView         : child content : leaf view      : no
+PersonCardView   : actual data   : none           : yes (base content)
+
+Each card view takes its next-lower view as a parameter, passed in explicitly — they don’t know it implicitly.

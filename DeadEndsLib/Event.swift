@@ -33,8 +33,20 @@ import Foundation
      }
  }
 
+public extension GedcomNode {
+
+    var date: String? {
+        self.kidVal(forTag: "DATE")
+    }
+
+    var place: String? {
+        self.kidVal(forTag: "PLAC")
+    }
+}
+
 extension GedcomNode {
 
+    /// Returns the summary for an event.
     public func eventSummary(tag: String) -> String? {
         guard let event = self.event(withTag: tag) else { return nil }
         let date = year(from: event.dateValue())
@@ -48,7 +60,8 @@ extension GedcomNode {
         }
     }
 
-    /// Returns the first child event node with the given tag (e.g., "BIRT")
+    /// Returns the first child event node with the given tag (e.g., "BIRT"),
+    /// A convience method because kid(withTag: tag) does the same thing.
     func event(withTag tag: String) -> GedcomNode? {
         kid(withTag: tag)
     }

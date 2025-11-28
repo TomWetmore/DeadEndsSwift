@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 30 July 2025.
+//  Last changed on 22 November 2025.
 //
 
 import Foundation
@@ -33,7 +33,7 @@ public struct RefnIndex {
     }
 
     /// Prints the entire REFN index. For debugging.
-    public func printIndex() {
+    public func showContents() {
         for (refn, key) in index {
             print("REFN \(refn) → Record \(key)")
         }

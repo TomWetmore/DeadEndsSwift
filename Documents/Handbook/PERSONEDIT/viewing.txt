@@ -1,0 +1,324 @@
+----------------------------- ME -----------------------------------
+I'm trying to find a way to "chart the essentials" in order to understand the architecture of all the Views and their @-properties. Here is the chart so far. Please comment.
+---------------------------
+RootView
+...
+case .gedcomTreeEditor(let person):
+    GedcomTreeEditor( viewModel: GedcomTreeModel(), root: person.root)
+       .navigationTitle("Gedcom Tree Editor")
+...
+--------------------------------
+GedcomTreeEditor
+--------------------------------
+struct GedcomTreeEditor: View
+    @ObservedObject var viewModel: GedcomTreeModel
+    var root: GedcomNode // Root of editable tree.
+    var body: some View
+        VStack
+            ScrollView
+                LazyVStack(alignment: .leading, spacing: 0)
+                    NodeRow(node: root, viewModel: viewModel)
+            GedcomTreeEditorButtons(viewModel: viewModel)
+--------------------------------
+GedcomTreeEditorButtons
+--------------------------------
+struct GedcomTreeEditorButtons: View
+    @ObservedObject var viewModel: GedcomTreeModel
+    var undoManager: UndoManager?
+    var body: some View
+        HStack
+            Button("Parent")
+            Button("First Child")
+            Button("Next Sib")
+            Button("Prev Sib")
+                Divider()
+
+----------------- CHAT GPT-------------------------------------------------------
+Your chart captures much of the component hierarchy, @-property responsibilities, and data flow in your SwiftUI architecture.  Let me walk through:
+
+🧭 Overall Observations
+✅ What’s Working Well
+• Clear separation of concerns between:
+• GedcomTreeEditor (View-level layout)
+• GedcomTreeModel (state and logic)
+• GedcomTreeUndoManager (history management)
+• Good object ownership model: GedcomTreeModel holds state, GedcomNode is the data, views observe it.
+• Your ViewModel chart shows well-thought command verbs like addChild, moveDown, selectNextSibling, etc.
+• Use of @ObservedObject and @Published looks clean and deliberate.
+
+📊 Architectural Suggestions
+
+1. Fixing Undo Hook-Up
+You’re managing GedcomTreeUndoManager privately inside the view model:
+    @StateObject private var undoManager = GedcomTreeUndoManager()
+But your button view expects:
+    var undoManager: UndoManager?
+These are not the same:
+• UndoManager is Apple’s Cocoa-style mechanism (.undo() / .redo())
+• Your GedcomTreeUndoManager is your own custom logic
+
+🛠 Suggestions:
+• ✅ Either rename yours to avoid confusion (GedcomUndoStack? CustomUndoManager?)
+• ✅ Or wrap your manager to make it look like an UndoManager to the button bar
+• ✅ Or just pass it through cleanly:
+
+    GedcomTreeEditorButtons(viewModel: viewModel, undoManager: viewModel.undoManager)
+And expose:
+    var undoManager: GedcomTreeUndoManager { undoManager }
+
+2. Pass Down EnvironmentObject?
+Rather than @ObservedObject var viewModel: GedcomTreeModel everywhere, consider injecting @EnvironmentObject into all subviews after the root GedcomTreeEditor.  This reduces argument repetition:
+    GedcomTreeEditorButtons().environmentObject(viewModel)
+    NodeRow(node: kid)
+
+And in those views:
+    @EnvironmentObject var viewModel: GedcomTreeModel
+You can mix both — keep explicit for the top-level, and use @EnvironmentObject for leaf views.
+
+3. Consider a Single Source of Truth for Selection
+If you’re treating selectedNode as a cursor throughout the tree, make sure:
+• Changes always go through viewModel.select(...)
+• Clicking or editing in a row promotes that row to selectedNode
+You’ve already started doing this — that’s perfect.
+
+4. Document @-Properties
+You’re asking about “annotating” SwiftUI codebases. For @-property annotations, I recommend:
+
+📖 Inline Comments Above Each:
+    /// The node currently selected by the user for editing.
+    @Published var selectedNode: GedcomNode?
+
+    /// Tracks expansion state of each node in the view by UUID.
+    @Published var expanded: Set<UUID>
+Or use SwiftDocC (///) for tools like Xcode’s documentation viewer.
+
+🧾 Suggested Enhancements to Your Chart
+
+Here’s a lightly enhanced version of your structure:
+
+RootView
+
+NavigationStack {
+    case .gedcomTreeEditor(let person):
+        GedcomTreeEditor(viewModel: GedcomTreeModel(), root: person.root)
+}
+
+GedcomTreeEditor: View
+• Props:
+• @ObservedObject var viewModel (or .environmentObject)
+• var root: GedcomNode
+• Layout:
+• ScrollView with LazyVStack of NodeRows
+• GedcomTreeEditorButtons
+
+NodeRow: View
+• Props:
+• @ObservedObject var node
+• @ObservedObject var viewModel
+• UI:
+• Chevron if expandable
+• Level, Key, Tag, Value
+• Recursive children if expanded
+
+GedcomTreeEditorButtons: View
+• Props:
+• @ObservedObject var viewModel
+• var undoManager: GedcomTreeUndoManager?
+• Button Groups:
+• Selection/navigation
+• Structural editing (add/delete/move)
+• Undo/redo
+
+GedcomTreeModel: ObservableObject
+• @Published:
+• expanded, selectedNode
+• Private State:
+• undoManager: GedcomTreeUndoManager
+• Commands:
+• addChild(to:), moveDown(_), selectParent()…
+
+GedcomTreeUndoManager
+• Stacks: undoStack, redoStack
+• Deltas:
+• .add, .remove, .move, .editTag, .editValue
+• Methods:
+• register(_ delta)
+• undo(), redo()
+• apply(delta), applyInverse(delta)
+
+✍️ Developer Documentation Tips
+Here are common tricks developers use to understand SwiftUI view architecture:
+📄 1. Static ASCII View Diagrams
+Just like you’ve done. This is immensely helpful. Some teams annotate these with colors or icons for state/data direction.
+
+🧱 2. SwiftUI Previews with Comments
+You can write:
+
+#Preview {
+    GedcomTreeEditor(viewModel: previewViewModel, root: previewRoot)
+        // View: Tree Editor
+        // Props: Editable root, view model
+}
+
+🔍 3. Live View Tree
+Use Xcode’s View Debugger to visually inspect the hierarchy at runtime:
+• Run your app
+• Choose “Debug View Hierarchy”
+• You’ll see exactly what view owns what
+
+📒 4. Codebook
+Maintain a DEVELOPERS.md or ARCHITECTURE.md file at the root of your repo, containing:
+• View hierarchy diagrams
+• Rules for state ownership
+• Notes about where @StateObject vs. @EnvironmentObject is used
+
+✅ Summary
+You’re building a well-architected SwiftUI app, with:
+• Strong MVVM patterns
+• Good data bindings
+• Clean command handling
+• Excellent use of Swift structures (UndoManager, custom enums, extensions)
+
+You’re already at a point where many seasoned SwiftUI devs plateau — keep refining and documenting what you’ve got and your understanding will snowball.
+
+Here is a structured, human-readable Architecture Sheet for your GedcomTreeEditor feature in DeadEndsSwift, designed to help you grasp the relationships between Views, Models, and Data Bindings at a glance.
+
+🧭 Gedcom Tree Editor – Architecture Sheet
+
+📍 Top-Level View Hierarchy
+
+RootView
+└── GedcomTreeEditor (for a selected person)
+    ├── ScrollView
+    │   └── LazyVStack
+    │       └── NodeRow (recursive)
+    │           └── NodeRow (for each child)
+    └── GedcomTreeEditorButtons
+
+📦 View Components and Data Bindings
+
+🧱 GedcomTreeEditor: View
+
+Property
+Type
+Purpose
+@ObservedObject viewModel
+GedcomTreeModel
+Central view model for tree manipulation
+root
+GedcomNode
+Root node of the editable GEDCOM record
+
+📌 Subviews:
+• Displays one full record as a collapsible tree of editable NodeRows
+• Button bar for navigation, structural changes, and undo/redo
+
+🧱 NodeRow: View (Recursive)
+
+Property
+Type
+Purpose
+@ObservedObject node
+GedcomNode
+The GEDCOM node this row represents
+@ObservedObject viewModel
+GedcomTreeModel
+For expansion state, selection, actions
+
+📌 Key Behaviors:
+• Indents by level (node.lev)
+• Expand/collapse chevron if node has children
+• Editable text fields for tag and value
+• Recursively renders children when expanded
+
+🧱 GedcomTreeEditorButtons: View
+
+Property: Type: Purpose
+@ObservedObject viewModel: GedcomTreeModel: For button actions and state
+undoManager: GedcomTreeUndoManager?: Custom undo/redo logic
+
+📌 Button Groups:
+
+Group: Buttons
+Navigation: Parent / First Child / Next / Prev
+Structure: Add Child / Add Sibling / Delete
+History: Undo / Redo
+
+🔧 Consider grouping buttons visually with spacing or dividers
+
+🎛️ ViewModel and State Objects
+
+🧠 GedcomTreeModel: ObservableObject
+
+Property: Type: Purpose
+@Published expanded: Set<UUID>: Tracks which nodes are expanded
+@Published selectedNode: GedcomNode?: Currently selected node for editing
+@StateObject undoManager: GedcomTreeUndoManager: Custom undo stack for tree changes
+
+📌 Commands (API surface):
+
+toggleExpansion(for:)
+addChild(to:)
+addSibling(to:)
+remove(_:)
+moveUp(_:) / moveDown(_:)
+selectParent()
+selectFirstChild()
+selectNextSibling()
+selectPrevSibling()
+
+🔁 GedcomTreeUndoManager: ObservableObject
+
+Property: Type: Purpose
+undoStack: [EditDelta]: Stack of reversible tree edits
+redoStack: [EditDelta]: Stack of undone edits
+canUndo: Bool: Computed from undoStack
+canRedo: Bool: Computed from redoStack
+
+📌 Key Methods:
+
+register(_:)
+undo()
+redo()
+
+📌 EditDelta Enum Cases:
+• add(parent, newNode)
+• remove(parent, removedNode, previousSibling)
+• move(node, oldParent, newParent, oldPrevSib, newPrevSib)
+• editTag(node, oldTag, newTag)
+• editValue(node, oldVal, newVal)
+
+📎 Data Types
+
+🧱 GedcomNode: ObservableObject
+
+Property: Type: Purpose
+id: UUID: Uniquely identifies each node
+tag: String: GEDCOM tag (e.g., NAME, BIRT)
+val: String?: GEDCOM value
+kid: GedcomNode?: First child in sibling chain
+sib: GedcomNode?: Next sibling
+
+📌 Extensions Used
+    insertChild(_:afterSibling:)
+    removeChild(_:)
+    move(toParent:afterSibling:)
+
+🧭 Data Flow Summary (mermaid)
+graph TD
+  RootView --> GedcomTreeEditor
+  GedcomTreeEditor -->|recursively renders| NodeRow
+  GedcomTreeEditor --> GedcomTreeEditorButtons
+
+  GedcomTreeEditor -->|injects| GedcomTreeModel
+  NodeRow -->|reads/writes| GedcomTreeModel
+  GedcomTreeEditorButtons -->|uses| GedcomTreeModel
+  GedcomTreeModel -->|owns| GedcomTreeUndoManager
+  GedcomTreeUndoManager -->|registers/applys| EditDelta
+
+📋 Recommendations
+• ✅ Rename undoManager to avoid confusion with UIKit’s UndoManager
+• ✅ Convert subviews to use @EnvironmentObject for GedcomTreeModel
+• ✅ Document @Published properties with /// comments
+• ✅ Maintain this architecture sheet in your repo (ARCHITECTURE.md)
+• ✅ Consider visual grouping of buttons (e.g., HStack + Divider or Spacer)

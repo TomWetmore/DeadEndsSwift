@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 2 October 2025.
-//  Last changed on 17 October 2025.
+//  Last changed on 27 November 2025.
 //
 
 import SwiftUI
@@ -11,17 +11,26 @@ import DeadEndsLib
 
 /// Model for a GedcomTreeEditor; tracks the selected and expanded nodes.
 @MainActor
-final class GedcomTreeEditorModel: ObservableObject {
+@Observable
+final class GedcomTreeEditorModel {
 
-    @Published var expandedSet: Set<UUID> = []  // Set of all nodes that are expanded in the full view.
-    @Published var selectedNode: GedcomNode? = nil  // The selected node in the full view.
+    var expandedSet: Set<UUID> = []  // Set of all nodes that are expanded in the view.
+    var selectedNode: GedcomNode? = nil  // The selected node in the view.
+    var rowFrames: [UUID: CGRect] = [:]  // The frames of the visible GedcomTreeEditorRows.
+
+    /// Convenience initializer; a root node is selected and expanded.
+    /// expanded.
+    init(root: GedcomNode? = nil) {
+        self.selectedNode = root
+        if let root = root { expandedSet.insert(root.uid) }
+    }
 
     /// Toggles the expanded state of a node and makes it the selected node.
     func toggleExpansion(for node: GedcomNode) {
-        if expandedSet.contains(node.id) {
-            expandedSet.remove(node.id)
+        if expandedSet.contains(node.uid) {
+            expandedSet.remove(node.uid)
         } else {
-            expandedSet.insert(node.id)
+            expandedSet.insert(node.uid)
         }
         selectedNode = node
     }
@@ -34,11 +43,13 @@ final class GedcomTreeEditorModel: ObservableObject {
         return true
     }
 
+    /// Checks if the selected node can be moved after its next sibling.
     var canMoveDownSelectedNode: Bool {
         guard let node = selectedNode else { return false }
         return node.sib != nil
     }
 
+    /// Checks if the selected node can be moved before its previous sibling.
     var canMoveUpSelectedNode: Bool {
         guard let node = selectedNode else { return false }
         return node.prevSib != nil
@@ -55,7 +66,7 @@ final class GedcomTreeEditorModel: ObservableObject {
     func selectFirstKid() {
         guard let dad = selectedNode, let kid = dad.kid else { return }
         // Be sure dad is expanded so kid is visible.
-        expandedSet.insert(dad.id)
+        expandedSet.insert(dad.uid)
         selectedNode = kid
     }
 

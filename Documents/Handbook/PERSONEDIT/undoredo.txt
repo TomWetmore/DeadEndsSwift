@@ -1,0 +1,429 @@
+UNDO/REDO
+
+Here is the sequence of steps that happens when the "Add Child" button is hit on the GedcomEditorView.
+
+1. There is a Button in the GedcomTreeEditorButtons view (subview GedcomEditorView) implemented as:
+
+   Button("Add Child") { viewModel.addChild(to: selected) }
+   That is, it calls the viewModel's method addChild(to: selected)
+NOTE: Later discussions indicate at the button push should create an EditDelta and then send it to the controller.
+2. GedcomTreeEditorModel is the model for the GedcomTreeEditor. It's addChild method is currently (things are always elastic aren't they?):
+
+    func addChild(to node: GedcomNode) {
+        let newKid = GedcomNode(tag: "NEW", val: nil)
+        node.addKidAfter(newKid, sib: nil)
+        undoManager.register(
+            apply: { node.addKidAfter(newKid, sib: nil) // Redo },
+            applyInverse: { node.removeKid(newKid) // Undo }
+        )
+        selectedNode = newKid
+        expanded.insert(node.id)
+    }
+
+    The view model is an ObservableObject so changes made to its @Published properties cause the view to redraw.
+    What does the model do in this case?
+    1. Creates the new kid node to add to the tree.
+    2. Calls the GedcomNode method addKidAfter to add the node to the tree. Details below.
+    3. Registers the change with the undo manager. Details below.
+    4. Makes the newly created node the selected node.
+    5. Makes sure the dad node is expanded so the new and selected node is visible.
+
+3. GedcomNode is the "low level" class of GedcomNodes. It has the method:
+    func addKidAfter(_ kid: GedcomNode, sib: GedcomNode?) {
+        assert(kid.dad == nil && kid.sib == nil, "addKidAfter: cannot add a kid with links")
+        let dad = self
+        kid.dad = dad
+        guard let sib = sib else {
+            kid.sib = dad.kid
+            dad.kid = kid
+            return
+        }
+        assert(dad.kid != nil, "addKidAfter: sib is non-nil but dad has no kids")
+        var found = false
+        var cur = dad.kid
+        while let node = cur {
+            if node === sib {
+                found = true
+                break
+            }
+            cur = node.sib
+        }
+        assert(found, "addKidAfter: sib is not a child of the dad")
+        kid.sib = sib.sib
+        sib.sib = kid
+    }
+
+    This is the method that handle all cases of addiing a kid to a dad. In this context, the sib parameter is nil.
+
+4. GedcomTreeUndoManager is the undo/redo manager for the tree.
+   The addchild method in the GedcomTreeModel calls:
+
+    undoManager.register(
+        apply: { node.addKidAfter(newKid, sib: nil) // Redo },
+        applyInverse: { node.removeKid(newKid) // Undo }
+    )
+
+    What does this do?
+    1. Overall its adds an undo and redo delta to the undo and redo stacks.
+    2. Some of the deltas require deep copies of parts of the Gedcom tree being edited.
+    3. This part is not compiling yet as I work to better understand what should be done.
+    4. I am limiting work currently to the add child case.
+
+
+
+
+--------------------------------------------- SCENARIO OF MULTIPLE CHANGES ----------
+
+ASSUMPTION. 
+I assume that in our architecture the GedcomTreeEditorModel is doing both of:
+    1. Making the actual changes to the GedcomTree by calling GedcomNode methods; and
+    2. Making all the calls to the undo manager via its methods.
+
+SCENARIO.
+1. User changes the value of a node.
+2. User removes the dad of the node (so all the descendents of the dad as well)
+3. User decides to undo the removal operation.
+4. User decides to undo the value change.
+
+NOTE.
+I have been thinking that step 2. might need a deep copy, maybe preserving UUIDs, but I'm hoping I am worrying too much and this is ovderkill. Let's start finding out.
+
+WHAT ACTUALLY HAPPENS.
+1. User edits the value.
+
+2. Via some "hook" (I'm not sure how to get access to), when editing is done, the model changes the value in the tree and the models creates a .editVal delta that is pushed on the undo stack. In the rough version of the manager that I now have I think this operation on the undo manager is called a "register." That delta pushed on the undo stack is the inverse of the change that just happened. The arguments to the delta are a) the actual node that changed; 2) & 3) the two before and after values. As part of this registration the redo stack is emptied.
+
+3. The user selects the parent of the node whose value was just changed and deletes it. So the node and all of its descendants must be deleted from the tree. In order to support a future undo, the deleted tree must be kept around in the Delta. At first I thought this would require a deep copy, but now I'm not sure sure. Why can't we just keep the deleted tree exactly as it was in the full tree. We have fixed up the pointers in the real tree to heal the "scars" of removal, and we do the corresponding changes to the pointers in the elided tree. A new Delta has to now be pushed onto the undo stack, and that Delta must maintain the knowledge of exactly where to replace the elided tree if the user decides to undo.
+
+4. The user undos the tree removal. The arguments to the Delta are used by the manager to put the deleted nodes directly back into the tree. The inverse of the tree addition (which which be equivalent to the original deletion (which ironicsally I guess) never did have a Delta created for it) is now pushed on the redo stack.
+
+5. The user undos the value change, and a Delta coming off the undo and the inverse added to the redo stack.
+
+That's the overall process. What I don't know yet, and what I will now be looking at in more detail, is whether Deltas can be designed to make this whole thing work.
+
+-----------------------------------------------
+What is an EditDelta?  It is an enumerated type with associated values. The associated values refer to GedcomNodes and Strings.
+
+What does an EditDelta represent? It represents an action that can be (hopefully!) unambiguously "performed" on a GedcomTree to make a deterministic change to that tree.  Each of the enumeration "values" is designed/selected to represent some important kind of change to the Gedcom tree.
+
+How are the changes reresented by the EditDeltas actually done? For each EditDelta enumeration there must be a real function or method (always in the undo manager?) that calls methods of the model to effect the undo or redo state changes in the real tree.
+
+Important note. The model must make changes to the tree both on behalf of the user and on behalf of the undo manager. There is an important different between them. When working on behalf of the user the model must change the tree and add an undo EditDelta. When working on behalf of the undo manager I think it should just change the tree and let the undo manager handle the EditDelta work.
+------------------------------
+Then had a conversation with ChatGPT about this. It recommends a slightly different pattern, which has me thinking about a different process also.
+
+1. Consider all UI actions on the Gedcom tree as discreet EditDeltas.
+2. The EditorModel can take a EditDelta and chage the tree based on that EditDelta.
+3. Consider the user editing value field.p
+
+It seems to me that every user action might create a Delta -- that is, that's how all user actioins start. That Delta goes to what we now call the Undo Manager. Let me change that name for the time being to simlply the Manager (a better name may occur later). The UI sends the Delta to the Manager. The Manager directs the Model to make the changes. It inverts the Delta and puts it on the Undo stack; it empties the Redo Stack.
+
+WHen the User elects undo, that comes directly into the Manager. The Manages takes the top of the Undo Stack and uses the Model to run it and then puts its inverse on the Redo stack. When the user elects to to a redo the request goes to the Manager. The Manager takes the current top of the redo stack, uses the Model to run it, and then puts the inverse on the undo stack.
+
+Your evolving architecture sounds excellent — it’s converging on a clean, canonical design that centralizes control, makes deltas the universal unit of change, and provides a consistent interface for both user-driven and programmatic edits.
+
+Let me walk through and respond to your proposal with headings, refinements, and possible extensions.
+
+Summary of Your Current Architecture
+
+Roles:
+	•	UI: Constructs EditDelta objects to describe user intent.
+	•	Manager: Receives deltas, directs all state mutations, manages undo/redo stacks.
+	•	Model: Owns the Gedcom tree; performs actual changes as instructed by the Manager.
+
+Flow for User-Initiated Actions:
+
+UI → Delta → Manager
+Manager:
+    → sends Delta to Model to apply
+    → pushes Inverse(Delta) to UndoStack
+    → clears RedoStack
+
+Flow for Undo:
+
+Undo → Manager
+Manager:
+    → pops Delta from UndoStack
+    → sends Delta to Model to apply
+    → pushes Inverse(Delta) to RedoStack
+
+Flow for Redo:
+
+Redo → Manager
+Manager:
+    → pops Delta from RedoStack
+    → sends Delta to Model to apply
+    → pushes Inverse(Delta) to UndoStack
+
+This is exactly right. You’ve landed on the key idea that “execution” and “inversion” are duals, and you maintain one active stack (Undo) and a shadow stack (Redo), rebuilding the shadow each time the inverse is run.
+
+⸻
+
+🌲 Why This Works Well for Tree Models
+
+Your model works especially well for your Gedcom tree, where actions may involve inserting, deleting, or moving subtrees, because:
+	•	All changes are funneled through the Manager, avoiding leaks or external mutations.
+	•	Tree mutation logic remains centralized in the Model, keeping it focused and testable.
+	•	Inverse logic stays near each delta type — encouraging local reasoning.
+
+⸻
+
+🧠 Design Refinement Ideas
+
+1. Rename Manager Thoughtfully
+
+The temporary name “Manager” is okay, but you might later prefer a more expressive name like:
+	•	EditController
+	•	UndoRedoController
+	•	HistoryManager
+	•	DeltaCoordinator
+
+These signal more precisely what it’s doing: managing reversible edits via deltas.
+
+2. Make EditDelta Self-Invertible
+
+Ensure each enum case has an .inverted() method or computed property:
+
+enum EditDelta {
+    case editValue(nodeID: UUID, old: String, new: String)
+    case insertNode(parentID: UUID, node: GedcomNode)
+    case deleteNode(nodeID: UUID, subtree: GedcomNode)
+    
+    func inverted() -> EditDelta {
+        switch self {
+        case .editValue(let id, let old, let new):
+            return .editValue(nodeID: id, old: new, new: old)
+        case .insertNode(let parentID, let node):
+            return .deleteNode(nodeID: node.id, subtree: node)
+        case .deleteNode(_, let subtree):
+            return .insertNode(parentID: subtree.parent!.id, node: subtree)
+        }
+    }
+}
+
+You already implied this — but it’s worth being explicit and idiomatic.
+
+3. Make Model Methods Deterministic
+
+Model methods must behave identically for both:
+	•	A user-initiated Delta
+	•	An undo/redo application of a Delta
+
+Therefore, all state-changing methods in the model should:
+	•	Be idempotent (or at least repeatable)
+	•	Not trigger side-effects (like animations or user alerts)
+
+This will keep the redo/undo engine solid.
+
+4. Optional: Batched Deltas
+
+Later, you might want the ability to group multiple small deltas into a single logical undo step — e.g. moving a subtree, changing all children, and updating tags. That can be done via:
+
+enum EditDelta {
+    case single(Delta)
+    case batch([Delta])
+}
+
+You could start with single only, and extend if/when needed.
+
+⸻
+
+✅ What You’ve Solved by This Design
+
+Problem
+Solved By
+Avoiding side-channel mutations
+Centralizing edits in Manager
+Consistent undo/redo
+Inverting deltas systematically
+Avoiding noisy UI commits
+UI hands off intent only, doesn’t apply state
+Easy to test
+Deliberate separation of UI, Manager, and Model
+
+
+🧪 Next Step Suggestions
+	•	Implement EditDelta.inverted().
+	•	Make Manager call model.apply(delta) only.
+	•	Create a simple log in the Manager that prints each applied delta (for debugging).
+	•	Add a test function: manually apply a few deltas and then undo/redo them to check integrity.
+
+⸻
+
+Would you like a code sketch of this full three-layer design (UI ➝ Manager ➝ Model), showing how each piece collaborates?
+
+
+
+--------------------- HOW TO CAPTURE USER EDITING -------------------------
+
+Here is the code (newly renamed) GedcomTreeEditorRow that allows the user to edit the value field of the Gedcom node.
+
+            // Value is editable in some contexts; the field shows a summary if there are DATE or PLAC kids.
+            ZStack(alignment: .leading) {
+                if (node.val ?? "").isEmpty,
+                   let summary = eventSummary(for: node),
+                   !viewModel.expanded.contains(node.id) {
+                    Text(summary)
+                        .italic()
+                        .foregroundColor(.secondary)
+                        .padding(.leading, 4)  // Don't clash with caret.
+                }
+                TextField("", text: $node.val.bound)
+                    .textFieldStyle(.plain)  // Avoids double backgrounds.
+            }
+            
+Can you explain how knowledge of the change propogates. What is the 'event' that would allow me to create the EditDelta for the user making that change. I don't want an event at every key stroke. I don't think I want the user to have to hit a special "save" button when they are done editing. This exact situation must occuts on every GUI everywhere, but I don't know how it's done yet.
+
+------------
+You’re describing a classic and subtle problem in UI programming: how to detect when an editable text field has been “committed” by the user, especially when you want to defer expensive side effects (like pushing an undo delta) until editing is done, not after every keystroke.
+
+
+Your Code Context
+
+TextField("", text: $node.val.bound)
+    .textFieldStyle(.plain)
+
+node.val is a String?, and you’re using a .bound extension to safely bind it to a TextField (probably using something like $node.val.bound, which wraps optionals for SwiftUI binding). The value is edited inline by the user. You want to be notified after the user is done editing, so you can push an EditDelta.
+
+
+When Does SwiftUI Know Editing is “Done”?
+
+There are three levels of awareness in SwiftUI:
+
+1. Every keystroke (you don’t want this). This happens automatically via the $binding. You get constant updates as the user types. That’s great for live previews or validation, but noisy for undo tracking.
+
+2. On commit. The TextField has an optional onCommit closure that fires when the user presses Return (on hardware keyboard or on-screen “Done”).
+
+TextField("", text: $node.val.bound, onCommit: {
+    // Editing committed — user hit Return
+})
+
+However, this only works in certain UI contexts and can miss edits on iOS/iPadOS where the user simply taps away or the focus shifts. So relying on onCommit is fragile.
+
+3. Using FocusState (recommended). SwiftUI’s modern solution is @FocusState — you bind the focus of the TextField to a state variable, and then you get notified when focus is lost, which is the best proxy for “done editing”.
+
+Recommended Approach: Use @FocusState
+
+Step 1: Add focus tracking. In your GedcomTreeEditorRow, add:
+    @FocusState private var isFocused: Bool
+    @State private var previousValue: String = ""
+
+Step 2: Attach it to your TextField
+    TextField("", text: $node.val.bound)
+        .textFieldStyle(.plain)
+         .focused($isFocused)
+
+Step 3: Watch for focus changes. In .onChange(of:) you compare the old and new value when editing ends:
+
+.onChange(of: isFocused) { newFocused in
+    if !newFocused {
+        let newValue = node.val ?? ""
+        if newValue != previousValue {
+            undoManager.register(.editVal(node: node, before: previousValue, after: newValue))
+        }
+    } else {
+        previousValue = node.val ?? ""
+    }
+}
+
+This does exactly what you want:
+	•	Records the original value when the user starts editing.
+	•	Pushes a delta to the undo manager only when the user leaves the field.
+	•	Ignores intermediate keystrokes.
+	•	Doesn’t require a “Save” button.
+
+Bonus: Dismiss Keyboard Programmatically. If you want to offer a way to finish editing (e.g. “Done” button in toolbar), you can call:
+
+-------------------------------------------------------
+
+NOTES ON THE CODE.
+
+COMMAND: Add child.
+
+A. When the Add Child button is pushed this code runs:
+
+    Button("Add Child") {
+        treeManager.addKid(GedcomNode(tag: "NEW"), to: selected)
+    }
+
+This creates an otherwise empty node with the tag NEW and then calls the addKid method on the tree manager.
+
+B. The addKid code in the tree manager is:
+
+    func addKid(_ kid: GedcomNode, to dad: GedcomNode) {
+        let delta = EditDelta.addKid(kid: kid, dad: dad, sib: dad.kid)
+        edit(delta: delta)
+    }
+
+This creates an .addKid delta, defined as: case addKid(kid: GedcomNode, dad: GedcomNode, sib: GedcomNode?)
+
+The sib is to be the sib of the new kid, so it is set to the current first kid of the dad. The cases often have more parameters than the user interface commands. This supports the undo/redo mechanism.
+
+C. The call to edit(delta: delta) causes the method addKidCase to be called, which is:
+
+    func addKidCase(kid: GedcomNode, dad: GedcomNode, sib: GedcomNode?) {
+        // Debug phase.
+        print("addKidCase: kid id: \(kid.id)")
+        print("addKidCase: dad id: \(dad.id)")
+        if let sib = sib { print("addKidCase: sib id: \(sib.id)")
+        } else { print("addKidCase: sib id: no sib") }
+        // Precondition phase.
+        precondition(dad.kid === sib, "Dad's kid must be sib")
+        precondition(kid.dad == nil, "Kid must be disconnected")
+        precondition(kid.sib == nil, "kid must be disconnected")
+        // Do it.
+        dad.addKid(kid)
+        // Model change phase.
+        treeModel.expandedSet.insert(dad.id)
+        treeModel.selectedNode = kid
+        treeModel.objectWillChange.send()
+    }
+
+The preconditions seem a little like overkill. But the delta can be "used" many times during redos and undos, and the preconditions serve to check that whatever undos and redos have happened the state is still sane.
+
+D. As the last part of the edit(delta: delta) call, the delta is then put on the undo stack
+
+E. Undo. When this add kid operation is undone, the associated values in the .addKid enum are passed to:
+
+    func removeNodeCase(node: GedcomNode, dad: GedcomNode?, sib: GedcomNode?) {
+        print("removeCase: node id: \(node.id)")
+        treeModel.expandedSet.remove(node.id)
+        if let dad = node.dad { treeModel.selectedNode = dad }
+        node.removeKid()
+        treeModel.objectWillChange.send()
+    }
+
+So node is the "new kid" which should now be removed, dad should be the current dad of that new kid, and sib should be ghe current sib of new kid.
+
+
+
+
+//////////// SAME PATH FOR ADD SIB
+
+A. Buttons:
+    Button("Add Sib") {
+        treeManager.addSib(GedcomNode(tag: "NEW"), to: selected, dad: selected.dad!)
+    }.disabled(selected.lev == 0)
+
+This creates an .addSib enum:   case addSib(sib: GedcomNode, node: GedcomNode, dad: GedcomNode)
+    sib is
+    node is
+    dad is the data of the two nodes.
+
+
+//////////////////// SAME PATH FOR DELETE.
+
+A. Buttons:
+    Button("Delete") {
+        treeManager.remove(node: selected)
+    }.disabled(!viewModel.canDeleteSelectedNode) /
+
+B. Tree Manager:
+    func remove(node: GedcomNode) {
+        let delta = EditDelta.remove(node: node, dad: node.dad, sib: node.sib)
+        edit(delta: delta)
+    }
+
+C. Apply:
+
+ZZ

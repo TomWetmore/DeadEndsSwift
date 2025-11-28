@@ -1,0 +1,546 @@
+------------------------------
+Swift DeadEnds for iPad.
+------------------------------
+On iPad you get the nice big-screen affordances that aren’t natural on iPhone: split views, sidebars, multi-column navigation. This works well with genealogy data, which is inherently hierarchical.
+
+Core Layout Idea:
+• Sidebar (left) → navigation through major record types (Persons, Families, Sources, etc.).
+• Main column (middle) → list/detail view (search results, person list, or a family group).
+• Detail column (right) → the record editor, which could be a form view or the GEDCOM tree editor.
+This is exactly what Apple’s NavigationSplitView was built for.
+
+Sketch in SwiftUI:
+
+struct DeadEndsAppView: View {
+    @State private var selection: SidebarItem? = .persons
+    @State private var selectedRecord: GedcomNode?
+
+    var body: some View {
+        NavigationSplitView {
+            // Sidebar
+            List(selection: $selection) {
+                NavigationLink(value: SidebarItem.persons) {
+                    Label("Persons", systemImage: "person.3")
+                }
+                NavigationLink(value: SidebarItem.families) {
+                    Label("Families", systemImage: "house")
+                }
+                NavigationLink(value: SidebarItem.sources) {
+                    Label("Sources", systemImage: "doc.plaintext")
+                }
+            }
+            .navigationTitle("DeadEnds")
+        } content: {
+            // Middle column (lists of records)
+            if let selection {
+                RecordListView(selection: selection,
+                               onSelect: { selectedRecord = $0 })
+            } else {
+                Text("Select a category")
+            }
+        } detail: {
+            // Right-hand detail/editor
+            if let record = selectedRecord {
+                // Toggle between form or tree editor
+                TabView {
+                    PersonEditorView(person: Person(record))
+                        .tabItem { Label("Form", systemImage: "list.bullet") }
+
+                    GedcomTreeEditor(viewModel: GedcomTreeViewModel(),
+                                     root: record)
+                        .tabItem { Label("Tree", systemImage: "chevron.right.square") }
+                }
+            } else {
+                Text("Select a record to edit")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+enum SidebarItem {
+    case persons, families, sources
+}
+
+Why this works well on iPad
+• Three panels at once: perfect for exploring trees, you don’t feel cramped.
+• Form vs Tree toggle: editor is always there, you just flip tabs depending on whether you want “structured” entry or raw GEDCOM.
+• Scalable: as you add other record types (Sources, Notes, Media), the sidebar grows naturally.
+• Keyboard + Touch: text fields and disclosure chevrons work equally well with either.
+
+Bonus affordances for iPad
+• Drag-and-drop: drop a person into a family editor to add them as a child/spouse.
+• Multi-window: open two DeadEnds windows side by side (say two people, or a person vs. a source).
+• Pencil editing: long-term, you could imagine Apple Pencil scribble for name/date fields.
+
+This way, the GedcomTreeEditor you just built drops straight into the detail pane, and you don’t have to redesign it — you just wrap it in a split-view navigation structure.
+
+-------------------------------------
+How are Gedcom files stored?
+-------------------------------------
+This is one of the “hidden” iOS/iPadOS things that isn’t obvious. You don’t quite get a free-for-all file system, but you do get a serviceable sandbox that integrates with the Files app.
+
+Where files live:
+• Every iOS/iPadOS app has its own sandbox in the file system.
+• Inside the sandbox, there is a Documents directory.
+• If you declare in your Info.plist that your app supports document types (e.g. .ged), then Files.app will expose your app’s Documents folder like a mini-Dropbox. Users can drop files in/out from iCloud, USB, AirDrop, etc.
+
+So you get an area to store files, but it only shows up to users if you enable it.
+
+Ways to get GEDCOM files onto the iPad
+1. Files app (most common)
+  • Enable file sharing support in your app.
+  • Users can copy .ged files into your app’s Documents folder via Files.app, iCloud Drive, or Finder on a Mac.
+  • Your app can open them with a UIDocumentPicker or just by scanning the Documents directory.
+2. Open in… / Share sheet
+  • If someone has a GEDCOM file in Mail, Safari, or Dropbox, they can “Open in DeadEnds” via the share sheet.
+  • Your app receives the file copy in its sandbox.
+3. iCloud Drive integration
+  • You can store user files in iCloud Drive using a UIDocumentBrowserViewController or SwiftUI’s DocumentGroup.
+  • This makes GEDCOM files live “in the cloud,” sync automatically between devices, and show up in Files under iCloud.
+4. Direct sync / import
+  • AirDrop, email attachment, or even dragging into Files on your Mac with iPad connected.
+
+The modern SwiftUI way:
+Apple really wants you to use DocumentGroup in SwiftUI for apps that edit documents:
+
+@main
+struct DeadEndsApp: App {
+    var body: some Scene {
+        DocumentGroup(newDocument: GedcomDocument()) { file in
+            ContentView(document: file.$document)
+        }
+    }
+}
+
+• This gives you file-based storage (each GEDCOM is its own document).
+• The user can browse, create, duplicate, and move GEDCOM files in Files.app.
+• You don’t have to write your own file picker — the system does it.
+
+Recommendation for DeadEnds on iPad
+
+Since your data is naturally file-based (GEDCOM), I’d lean strongly toward using DocumentGroup (or at least UIDocumentPicker). That way:
+• Users can keep their master GEDCOM in iCloud Drive,
+• Open it in DeadEnds on their iPad,
+• Edit and save back seamlessly,
+• And share/export like any normal document type.
+
+That would feel native to iPad users, who are used to Files.app being the place where “their stuff lives.”
+
+In short:
+• Yes, you automatically get a storage sandbox.
+• You can expose it to Files.app with a few plist tweaks.
+• But the nicest iPad UX comes from treating .ged files as proper documents via DocumentGroup.
+
+------------------------------------------------
+Make a SwiftUI document type for Gedcom files
+------------------------------------------------
+
+Here’s how you can make a SwiftUI Document type for GEDCOM files. This is the modern way Apple wants you to handle user documents on iPad, because it integrates beautifully with the Files app, iCloud Drive, AirDrop, Mail attachments, etc.
+
+Step 1. Create a GedcomDocument
+
+Conform to the FileDocument protocol (part of SwiftUI):
+
+import SwiftUI
+import UniformTypeIdentifiers
+
+// Tell the system what file types this supports
+extension UTType {
+    static var gedcom: UTType {
+        UTType(importedAs: "com.example.gedcom", conformingTo: .text)
+    }
+}
+struct GedcomDocument: FileDocument {
+    // What file types we support
+    static var readableContentTypes: [UTType] { [.gedcom] }
+
+    // Your in-memory representation
+    var text: String
+
+    // Initializer for new docs
+    init(text: String = "") {
+        self.text = text
+    }
+
+    // Load from disk
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents,
+              let string = String(data: data, encoding: .utf8) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        self.text = string
+    }
+
+    // Save to disk
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        let data = text.data(using: .utf8)!
+        return .init(regularFileWithContents: data)
+    }
+}
+
+This tells iPadOS:
+• “I know how to read/write .ged files.”
+• “Inside, they’re just UTF-8 text.”
+• “My in-memory model is a String (you’ll later replace this with your parsed Database).”
+
+Step 2. Use DocumentGroup in your App
+Replace your @main scene with something like:
+
+@main
+struct DeadEndsApp: App {
+    var body: some Scene {
+        DocumentGroup(newDocument: GedcomDocument()) { file in
+            // file.$document is a Binding<GedcomDocument>
+            GedcomEditorView(document: file.$document)
+        }
+    }
+}
+
+Step 3. Make a simple editor view
+For now, just show the text. Later, you’ll plug in your full Database + GedcomTreeEditor.
+
+struct GedcomEditorView: View {
+    @Binding var document: GedcomDocument
+    var body: some View {
+        TextEditor(text: $document.text)
+            .padding()
+            .navigationTitle("GEDCOM Editor")
+    }
+}
+
+Step 4. Update Info.plist
+Add a Document Type entry so the system knows DeadEnds opens .ged:
+• Name: GEDCOM File
+• UTType Identifier: com.example.gedcom
+• Conforms To: public.text
+• Extensions: ged
+
+What you get for free
+• Files.app integration: GEDCOM files show with your app’s icon.
+• iCloud sync: Users can keep GEDCOMs in iCloud Drive, edit on iPad, pick up on Mac.
+• “Open in DeadEnds” from Mail/Safari/Dropbox.
+• Multiple documents open at once in Split View.
+• Auto-save & versioning handled by the system.
+
+At this point, you’ve got the scaffolding. The big step later will be to replace the text: String inside GedcomDocument with your Swift database model (parse on open, serialize on save). But the iPad “document workflow” is already taken care of.
+
+-------------------------------------------------------
+Plug existing Database/GedcomNode parser into GedcomDocument, so opening a .ged file gives you a parsed tree instead of raw text.
+-------------------------------------------------------
+
+Let’s make the GedcomDocument talk directly to your DeadEnds Database instead of just passing around raw text.
+Right now you already have the Swift import stack: getGNodeListFromFile → build Database → hold [String: GedcomNode] etc. We can slot that in.
+
+Step 1. Use Database as the in-memory model
+Instead of var text: String, the document will hold your parsed Database:
+
+struct GedcomDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.gedcom] }
+
+    var database: Database
+
+    init(database: Database = Database(recordIndex: [:])) {
+        self.database = database
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents,
+              let string = String(data: data, encoding: .utf8) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+
+        // Parse the GEDCOM text into your database
+        self.database = try GedcomParser.parse(string)
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        // Convert your database back into GEDCOM text
+        let string = database.toGedcomText()
+        let data = string.data(using: .utf8)!
+        return .init(regularFileWithContents: data)
+    }
+}
+
+Step 2. Hook it up to your parser/serializer
+You’ve already got parsing functions that take text and produce Database. Wrap them in helpers:
+
+enum GedcomParser {
+    static func parse(_ text: String) throws -> Database {
+        // Call your existing Swift import stack here
+        let source = StringGedcomSource(text)        // your GedcomSource abstraction
+        let recordIndex = getRecordIndexFromSource(source)
+        return Database(recordIndex: recordIndex)
+    }
+}
+
+extension Database {
+    func toGedcomText() -> String {
+        // You already have gedcomText methods on GedcomNode/Record
+        var lines: [String] = []
+        if let header = header {
+            lines.append(header.gedcomText())
+        }
+        for person in persons {
+            lines.append(person.gedcomText())
+        }
+        for family in families {
+            lines.append(family.gedcomText())
+        }
+        return lines.joined(separator: "\n")
+    }
+}
+
+Step 3. Update your editor view
+Now when you open a .ged file, you’ll get a full Database already parsed:
+
+struct GedcomEditorView: View {
+    @Binding var document: GedcomDocument
+
+    var body: some View {
+        VStack {
+            if document.database.persons.isEmpty {
+                Text("No persons in file")
+            } else {
+                // For now, just show a count
+                Text("Persons: \(document.database.persons.count)")
+                Text("Families: \(document.database.families.count)")
+
+                // Later plug in your PersonView, TreeEditor, etc.
+                PersonSelectionView()
+                    .environmentObject(AppModel(database: document.database))
+            }
+        }
+        .padding()
+    }
+}
+
+With this design:
+• Opening a GEDCOM file automatically parses it into your in-RAM model.
+• Editing updates the Database.
+• Closing or saving serializes it back out to valid GEDCOM text.
+• You’re ready to wire in PersonView, GedcomTreeEditor, etc. as the UI.
+
+-----------------------------------------------------
+Xcode organization for a libary, Mac app, and iPad app.
+-----------------------------------------------------
+
+With your goals (a shared DeadEnds library, a Mac app, an iPad app, and maybe some conditional code) you’ve got a few solid options in Xcode.
+
+1. Core Library First (the DeadEnds engine)
+• Make a target called DeadEndsLib (you’ve already got this started).
+• This contains:
+• Database.swift, GedcomNode.swift, Record.swift, parsers, indexes, etc.
+• NO SwiftUI, NO platform UI — just pure model + logic.
+• This can be a Swift Package or an internal framework target inside your project.
+• Advantage: both Mac and iPad apps can import it cleanly.
+
+2. Platform-specific App Targets
+• Add a macOS App target (SwiftUI lifecycle).
+• Add an iPadOS App target (iOS/iPadOS SwiftUI lifecycle).
+• Both link against DeadEndsLib.
+
+Each target has its own:
+• AppDelegate / App.swift entry point.
+• Assets, Info.plist, entitlements.
+• Platform-specific UI files (e.g. Mac might use menus, toolbars; iPad might use SplitView, Drag & Drop).
+
+3. Shared App Code Layer
+• Put shared SwiftUI views and view models in a group/folder called “AppShared”.
+• Add those files to both the Mac and iPad targets.
+• Examples:
+• PersonView.swift, GedcomTreeEditor.swift, DatabaseBrowser.swift.
+• Xcode lets you check multiple targets for a single file in the File Inspector pane.
+
+So:
+• AppShared → used by both apps.
+• AppMac → macOS-only SwiftUI (menus, keyboard shortcuts, resizable panes).
+• AppiPad → iPad-only SwiftUI (SplitView, compact layouts, touch affordances).
+
+4. Conditional Code (the #if path)
+Swift doesn’t have #ifdef like C, but it has conditional compilation flags:
+
+#if os(macOS)
+    // macOS-only
+    import AppKit
+    MenuBarExtra("Tools", systemImage: "gear") { ... }
+#elseif os(iOS)
+    // iPad/iPhone
+    import UIKit
+    NavigationSplitView { ... }
+#endif
+
+You can use this inside shared files when a small platform-specific tweak is needed.
+But the main strategy should be shared files where possible, separate files where necessary.
+
+5. Recommended Xcode Structure
+Here’s a clean layout:
+
+DeadEndsSwift.xcodeproj
+├── DeadEndsLib/        (pure model & parser code, platform-neutral)
+│   ├── Database.swift
+│   ├── GedcomNode.swift
+│   └── …
+├── AppShared/          (views & models shared between Mac and iPad apps)
+│   ├── PersonView.swift
+│   ├── GedcomTreeEditor.swift
+│   └── …
+├── AppMac/             (macOS-only code)
+│   ├── DeadEndsMacApp.swift
+│   ├── MenuCommands.swift
+│   └── …
+├── AppiPad/            (iPad-only code)
+│   ├── DeadEndsiPadApp.swift
+│   ├── SplitView.swift
+│   └── …
+└── Resources/
+    ├── Assets.xcassets
+    └── …
+
+This way:
+• Library: completely independent, testable, reusable.
+• AppShared: code you truly want to write once.
+• AppMac / AppiPad: clean homes for divergences.
+• #if os(…): only for little one-off differences.
+
+The next step is mostly about tidy organization:
+• Keep DeadEndsLib pure: models, parser, indexes, algorithms.
+• Use AppShared groups for views/view models that both Mac and iPad need.
+• Add AppMac and AppiPad groups for platform-specific extras.
+• Use #if os(macOS) vs. #if os(iOS) sparingly inside shared files, just for little tweaks.
+
+Since you already have the package boundary, you’ve insulated your core logic. Everything else is about keeping the SwiftUI layers tidy.
+
+-------------------------------------------
+What belongs in DeadEndsLib (the library)
+-------------------------------------------
+
+Think of this as “the engine”: it knows GEDCOM, but it doesn’t know SwiftUI or platforms.
+• Core data structures
+• GedcomNode, Record, Person, Family
+• Parsing / Import
+• String → GNode list → record index
+• Serialization
+• Database → GEDCOM text
+• Indexes
+• NameIndex, RefnIndex, TagMap
+• Algorithms
+• Traversal, ancestry, descendancy, connectedness
+• Business rules
+• Consistency checks, validation
+• Cross-platform utilities
+• Date parsing, name formatting, etc.
+
+These are your models in the classic sense: the “M” in MVC. They define what data is and how it behaves.
+
+What belongs in the Apps
+This is “the cockpit”: it decides how humans see and interact with that engine.
+• ViewModels
+• PersonEditorViewModel, GedcomTreeViewModel (they translate raw GedcomNodes into @Published SwiftUI-friendly state)
+• Views
+• PersonView, FamilyView, GedcomTreeEditorView, etc.
+• Navigation
+• Routes, NavigationStack, split views
+• Platform polish
+• macOS: menus, toolbars, keyboard shortcuts
+• iPad: split view, multi-document, drag/drop
+• Undo/Redo integration
+• Hooking into NSUndoManager (macOS/iPadOS)
+
+Why the split matters
+If you keep DeadEndsLib as the GEDCOM engine:
+• You can unit-test it independently of UI.
+• You can reuse it in command-line tools, Swift Playgrounds, server-side Swift, etc.
+• Your app targets stay lighter — they just bind models to views.
+
+If you push models up into the app layer, you lose that flexibility — and your core logic gets tangled up with SwiftUI reactivity. That’s fine for toy projects, but you have a 30-year codebase evolution in play. Keeping the models “pure” is the right call.
+
+Platform differences you’ll likely hit
+• Navigation
+• macOS: multiple windows, menus, Command-N to create a new Person
+• iPad: split view, document browser, touch gestures
+• File management
+• macOS: open/save panels, standard menu commands
+• iPad: DocumentGroup with Files integration
+• Layout
+• macOS: resizable panes, sidebars, tables with column headers
+• iPad: stacked forms, larger hit targets, adaptive layouts
+• Input style
+• macOS: keyboard-first, context menus
+• iPad: touch-first, drag and drop
+
+Those differences go in AppMac or AppiPad. The underlying models and algorithms don’t need to know.
+In short:
+• Library = models + engine.
+• Apps = viewmodels + views + navigation.
+
+-----------------------------------------------------
+Using my own iPad during development
+-----------------------------------------------------
+
+Using your own iPad as the test device is one of the nicest perks of being in the Apple Developer Program. It’s actually pretty straightforward once you’ve done it the first time. Here’s the step-by-step:
+
+1. Make sure you’re set up
+• You’re already in the Apple Developer Program (you mentioned that earlier).
+• On your Mac: open Xcode → Settings → Accounts and sign in with your Apple ID that’s in the program.
+
+2. Connect your iPad
+• Plug in your iPad via USB-C/Lightning cable (or if you’ve enabled wireless debugging before, Wi-Fi works too).
+• When prompted on the iPad, tap Trust this Computer and enter your passcode.
+
+3. Add your device in Xcode
+• In Xcode, go to Window → Devices and Simulators.
+• You should see your iPad listed under Devices. If it has a yellow warning triangle, Xcode may need to install some “support files” — it’ll do that automatically.
+• Xcode will also register your iPad with your developer account the first time you try to run on it.
+
+4. Adjust your project settings
+• In your project navigator, select the iPad app target.
+• Go to the Signing & Capabilities tab.
+• Make sure Team is set to your Apple Developer Team.
+• Set Bundle Identifier to something unique, e.g. com.yourname.DeadEnds.
+• Under Deployment Info, set Target Device Family to include iPad.
+
+5. Select your iPad as the run destination
+• At the very top of Xcode’s window, where you normally pick a simulator (e.g. “iPhone 16 Pro Simulator”), your iPad should now appear in the list.
+• Pick it, hit Run ▶︎, and Xcode will build, sign, and install the app on your iPad.
+
+6. Trust your developer certificate (only the first time)
+• On the iPad, if you see a message like “Untrusted Developer”, go to:
+• Settings → General → VPN & Device Management → Developer App
+• Tap Trust [Your Name].
+• After that, the app will launch normally.
+
+That’s it — once set up, it’s as easy as choosing your iPad instead of a simulator. From then on, you can code–run–test directly on your real iPad in one click.
+
+------------------------------
+Wireless debugging
+------------------------------
+
+Wireless debugging is a quality of life thing that feels magical when it’s running. How to set it up:
+
+1. First-time connection with cable
+You already did this part (plug iPad into your Mac, trust the computer, and make sure Xcode sees it under Window → Devices and Simulators).
+
+2. Enable wireless debugging
+1. In Xcode, open Window → Devices and Simulators.
+2. Select your iPad in the left sidebar.
+3. In the detail pane, check Connect via network.
+  • Xcode will pair the device over Wi-Fi.
+  • The iPad and your Mac must be on the same network.
+
+3. Disconnect the cable
+• Once Xcode shows the device as connected via network (green dot next to it), you can unplug the cable.
+• Your iPad should remain listed in the run destinations menu at the top of Xcode.
+
+4. Run & debug wirelessly
+• Select your iPad as the run destination.
+• Hit Run ▶︎.
+• Xcode will build on the Mac, transfer the app over Wi-Fi, and launch it on the iPad.
+• You can even set breakpoints and use the debugger wirelessly.
+
+5. Notes
+• The first wireless install/debug session can be slower than wired, but after that it’s very smooth.
+• If the connection drops, sometimes toggling Devices and Simulators → Uncheck / Recheck Connect via network refreshes it.
+• Keep in mind: builds still happen on the Mac — only deployment & debugging are wireless.
+
+Result: You can sit on the couch with your iPad, hit Run in Xcode on your Mac across the room, and the app launches right on the iPad without plugging in a cable.

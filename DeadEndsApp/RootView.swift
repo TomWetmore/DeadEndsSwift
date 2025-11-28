@@ -3,13 +3,13 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 12 October 2025.
+//  Last changed on 15 November 2025.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Enumeration of values pushed onto the DeadEndsApp NavigationStack.
+/// Values pushed onto the DeadEndsApp NavigationStack.
 enum Route: Hashable {
     case person(Person)
     case pedigree(Person)
@@ -20,12 +20,28 @@ enum Route: Hashable {
     case personEditor(Person)
     case personEditorNew(Person)
     case gedcomTreeEditor(Person)
+    case desktop(Person)
 }
 
-/// RootView is ...
+private struct RecordIndexKey: EnvironmentKey {
+    static let defaultValue: RecordIndex = [:] // Default in case nothing is injected.
+}
+
+extension EnvironmentValues {
+    var recordIndex: RecordIndex {
+        get { self[RecordIndexKey.self] }
+        set { self[RecordIndexKey.self] = newValue }
+    }
+}
+
+/// Root View of the DeadEnds SwiftUI App.
 struct RootView: View {
 
     @EnvironmentObject var model: AppModel
+
+    init() {
+        print("RootView init")  // Debug.
+    }
 
     /// Body property for the RootView.
     var body: some View {
@@ -38,9 +54,10 @@ struct RootView: View {
                     PersonSelectionView()
                 }
             }
-            .environmentObject(model)
+            //.environment(\.recordIndex, model.database?.recordIndex ?? [:])
+            //.environmentObject(model) // Already down at a top level.
             // The closure builds Views when the navigation system finds a matching route on the navigation stack.
-            // This code runs when code elsewhere 'model.path.append(Route.personEditor(person))' is called.
+            // This code runs when 'model.path.append(Route...)' is called.
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .person(let person):
@@ -67,7 +84,7 @@ struct RootView: View {
                 case .gedcomTreeEditor(let person):
                     if let db = model.database {
                         let manager = GedcomTreeManager(database: db)
-                        GedcomTreeEditor(
+                        GedcomEditorView(
                             viewModel: manager.treeModel,
                             manager: manager,
                             root: person.root
@@ -83,8 +100,13 @@ struct RootView: View {
                     } else {
                         Text("No record index or person available.")
                     }
+                case .desktop(let person):
+                    DesktopView(person: person)
+
+
                 }
             }
         }
+        .environment(\.recordIndex, model.database?.recordIndex ?? [:])
     }
 }

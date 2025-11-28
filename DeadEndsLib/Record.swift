@@ -34,6 +34,7 @@ public extension Record {
 
     func kids(withTag tag: String) -> [GedcomNode] { root.kids(withTag: tag) }
     func kidVals(forTag tag: String) -> [String] { root.kidVals(forTag: tag) }
+    func kidVals(forTags tags: [String]) -> [String] {root.kidVals(forTags: tags) }
 
 
 

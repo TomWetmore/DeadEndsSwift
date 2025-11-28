@@ -1,0 +1,227 @@
+------------------------------------------
+NEED TO KNOW WHEN USER FINISHES EDITING TAG OR VALUE
+HERE IS INFO FROM CHATGPT FOR HANDLING
+------------------------------------------
+GOALS
+1. Track which node + field is being edited (tag or val).
+2. Use SwiftUI’s .focused(...) modifier to reflect and control this state.
+3. Update GedcomTreeEditorModel to store the current focused field.
+4. Leave EditDelta logic untouched for now (as you requested).
+
+To add focus management to your GedcomTreeEditorRow, we’ll implement the following:
+
+PROPOSED FOCUS MODEL
+We’ll define an enum to represent what’s focused:
+
+    enum EditorFieldFocus: Hashable {
+        case tag(UUID)
+        case val(UUID)
+    }
+
+Add a "@Published var focusedField: EditorFieldFocus?" to your GedcomTreeEditorModel.
+
+STEP-BY-STEP CODE CHANGES
+
+1. Extend GedcomTreeEditorModel.  Update the model to include:
+
+    @Published var focusedField: EditorFieldFocus?
+
+2. Modify GedcomTreeEditorRow.swift.  Add a @FocusState to track focus in this row:
+
+    @FocusState private var isTagFocused: Bool
+    @FocusState private var isValFocused: Bool
+
+Bind those to the viewModel.focusedField like this:
+
+    .focused($isTagFocused, equals: true)
+    .onChange(of: isTagFocused) { focused in
+        if focused {
+            viewModel.focusedField = .tag(node.id)
+        } else if viewModel.focusedField == .tag(node.id) {
+        viewModel.focusedField = nil
+        }
+    }
+
+And similarly for val.
+
+Final Modified Section (Tag and Val only):
+Replace your tag and val field declarations with this version:
+
+    // Tag field
+    TextField("", text: $node.tag)
+        .frame(width: 80)
+        .textFieldStyle(PlainTextFieldStyle())
+        .focused($isTagFocused)
+        .onChange(of: isTagFocused) { focused in
+            if focused {
+                viewModel.focusedField = .tag(node.id)
+            } else if viewModel.focusedField == .tag(node.id) {
+                viewModel.focusedField = nil
+            }
+        }
+        .background(Color.clear)
+        .disabled(false)
+    
+    // Value field
+    ZStack(alignment: .leading) {
+        if (node.val ?? "").isEmpty,
+           let summary = eventSummary(for: node),
+           !viewModel.expanded.contains(node.id) {
+            Text(summary)
+                .italic()
+                .foregroundColor(.secondary)
+                .padding(.leading, 4)
+        }
+        TextField("", text: $node.val.bound)
+            .textFieldStyle(.plain)
+            .focused($isValFocused)
+            .onChange(of: isValFocused) { focused in
+                if focused {
+                    viewModel.focusedField = .val(node.id)
+                } else if viewModel.focusedField == .val(node.id) {
+                    viewModel.focusedField = nil
+                }
+            }
+    }
+
+RESULT
+This gives you:
+• Per-row focus tracking.
+• Updates to a shared focusedField in the model.
+• A path forward to trigger EditDelta creation only when editing ends on a focused field.
+
+Let me know if you’d like to:
+• Enable programmatic focus setting from the model
+• Add .onSubmit or .onDisappear hooks
+• Wire this to EditDelta creation logic
+
+Or if you’d like me to edit the file directly with both model and row updated together.
+
+To summarize the core idea in a single sentence:
+
+We’re building a lightweight mechanism to track which field the user is actively editing, so that we can later decide when and how to generate a corresponding EditDelta.
+
+This is a decoupling step — separating “user starts editing” from “actual database modification,” giving you control over when to snapshot and record the change.
+
+When you’re ready to proceed:
+• I can walk through how to use this focus system to generate deltas only after editing ends.
+• Or, if you’d like to try other approaches (e.g., text debounce, blur detection, commit-on-navigation), we can explore those too.
+
+ME
+Okay, when editing ends I will want to create either a .editTag or .editVal edit delta. Their associated types will likely be (GedcomNode, String, String). They will be used on calls to the "Manager" (GedcomTreeEditorManager??). Could you show me where to insert them?
+
+Let’s walk through how to insert the call to your GedcomTreeEditorManager when editing ends, and create an .editTag or .editVal EditDelta.
+
+GOAL
+When the user finishes editing a tag or value:
+• Capture the node, old value, and new value
+• If different, create an EditDelta
+• Send it to your manager (called GedcomTreeEditorManager or just Manager)
+• Manager applies the change, stores the inverse on the undo stack, etc.
+
+STEP-BY-STEP IMPLEMENTATION
+
+We’ll extend the previous FocusedField system. Here’s how to do it cleanly:
+
+1. Add onFocusChange closure to ViewModel.  In your GedcomTreeEditorModel, add:
+
+    @MainActor
+    final class GedcomTreeEditorModel: ObservableObject {
+        // ...
+        /// Called when editing of a tag or val field ends.
+        var onEditFieldChange: ((_ field: FocusedField, _ oldValue: String, _ newValue: String) -> Void)? = nil
+    }
+
+This closure gives your ViewModel a “hook” to talk to the manager when a value actually changes.
+
+2. Update GedcomTreeEditorRow.  Update the two TextFields to call your viewModel.onEditFieldChange(...) when focus is lost and the value has changed.
+
+At the top of the file:
+
+    @FocusState private var focusedField: FocusedField?
+    @State private var tagBeforeEdit: String = ""
+    @State private var valBeforeEdit: String = ""
+
+For the .tag TextField:
+
+    TextField("", text: $node.tag)
+        .frame(width: 80)
+        .textFieldStyle(PlainTextFieldStyle())
+        .background(Color.clear)
+        .disabled(false)
+        .focused($focusedField, equals: .tag(node.id))
+        .onChange(of: focusedField) { newFocus in
+            if newFocus == .tag(node.id) {
+                tagBeforeEdit = node.tag
+            } else if focusedField == .tag(node.id) {
+                if node.tag != tagBeforeEdit {
+                    viewModel.onEditFieldChange?(.tag(node.id), tagBeforeEdit, node.tag)
+                }
+            }
+        }
+
+For the .val TextField:
+
+    TextField("", text: $node.val.bound)
+        .textFieldStyle(.plain)
+        .focused($focusedField, equals: .val(node.id))
+        .onChange(of: focusedField) { newFocus in
+            if newFocus == .val(node.id) {
+                valBeforeEdit = node.val ?? ""
+            } else if focusedField == .val(node.id) {
+                if let currentVal = node.val, currentVal != valBeforeEdit {
+                    viewModel.onEditFieldChange?(.val(node.id), valBeforeEdit, currentVal)
+                }
+            }
+        }
+
+3. Set the onEditFieldChange callback in your Editor View.  Wherever you create your GedcomTreeEditorModel, add the handler. Example:
+
+    model.onEditFieldChange = { field, oldVal, newVal in
+        switch field {
+        case .tag(let id):
+            guard let node = model.node(for: id) else { return }
+            manager.apply(.editTag(node, oldVal, newVal))
+        case .val(let id):
+            guard let node = model.node(for: id) else { return }
+            manager.apply(.editVal(node, oldVal, newVal))
+        }
+    }
+
+4. Define the EditDelta cases.  You likely already have something like:
+
+    enum EditDelta {
+        case editTag(GedcomNode, String, String)  // (node, oldTag, newTag)
+        case editVal(GedcomNode, String, String)  // (node, oldVal, newVal)
+        // ...
+    }
+
+And in your GedcomTreeEditorManager, you’d implement:
+
+    func apply(_ delta: EditDelta) {
+        switch delta {
+        case let .editTag(node, _, new):
+            node.tag = new
+            undoStack.append(.editTag(node, new, node.tag))
+            redoStack.removeAll()
+
+        case let .editVal(node, _, new):
+            node.val = new
+            undoStack.append(.editVal(node, new, node.val))
+            redoStack.removeAll()
+    
+        // ... other deltas ...
+        }
+    }
+
+Of course, you can encapsulate invert(delta) and apply(delta, inverted: Bool) if you want to keep this logic cleaner.
+
+SUMMARY
+
+This solution:
+• Records the value being edited when focus begins
+• Compares the value after focus ends
+• Calls viewModel.onEditFieldChange only when value changed
+• Delegates to the Manager to apply the change and record the inverse delta
+
+No Save button. No per-keystroke updates. Clean, Swifty, and focused only on true edits.

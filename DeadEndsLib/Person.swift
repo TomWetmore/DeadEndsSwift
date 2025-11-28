@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 20 September 2025.
+//  Last changed on 26 October 2025.
 //
 
 import Foundation
@@ -13,11 +13,30 @@ public struct Person: Record {
 
     public let root: GedcomNode  // Root GedcomNode; protocol requirement.
 
-    /// Person initializer fails if root's tag is not "INDI" and/or root has no key. This guarantees that every
-    /// Person has a non-optional key.
+    /// Person initializer fails if root's tag is not "INDI" and/or root has no key.
     public init?(_ root: GedcomNode) {
         guard root.tag == "INDI", root.key != nil else { return nil }
         self.root = root
+    }
+}
+
+extension Person {
+
+    /// The person's preferred name taken from the first 1 NAME node.
+    public var name: String? {
+        guard let nameNode = root.kid(withTag: "NAME") else { return nil }  // Get the first 1 NAME node.
+        guard let gedcomName = GedcomName(from: nameNode) else { return nil }  // Create a GedcomName from its value.
+        return gedcomName.displayName()  // Return default name String.
+    }
+
+    /// Returns the first birth event of this Person, its first 1 BIRT Gedcom node.
+    public var birth: GedcomNode? {
+        return root.kid(withTag: "BIRT")
+    }
+
+    /// Returns the first death event of this Person, its first 1 DEAT Gedcom node.
+    public var death: GedcomNode? {
+        return root.kid(withTag: "DEAT")
     }
 }
 
@@ -41,7 +60,7 @@ public enum SexType: String {
 public extension Person {
 
     /// Returns sex of Person.
-    public var sex: SexType {
+    var sex: SexType {
         guard let value = kidVal(forTag: "SEX")?.uppercased() else { return .unknown }
         switch value {
         case "M": return .male
@@ -59,7 +78,7 @@ public extension Person {
         }
     }
 
-    // Returns a GedcomName object for Person.
+    // Returns the GedcomName of the Person, from the value of the first 1 NAME line.
     var gedcomName: GedcomName? {
         GedcomName(from: self.root)
     }
@@ -129,6 +148,30 @@ public extension Person {
     }
 }
 
+/// Extension for Families
+public extension Person {
+
+    /// Returns the Families this Person is in as a spouse.
+    func spouseFamilies(in index: RecordIndex) -> [Family] {
+        var families: [Family] = []
+        for famsKey in kidVals(forTag: "FAMS") {
+            guard let family = index.family(for:famsKey) else { continue }
+            families.append(family)
+        }
+        return families
+    }
+
+    /// Returns the Families this Person is in as a child.
+    func childFamilies(in index: RecordIndex) -> [Family] {
+        var families: [Family] = []
+        for famcKey in kidVals(forTag: "FAMC") {
+            guard let family = index.family(for: famcKey) else { continue }
+            families.append(family)
+        }
+        return families
+    }
+}
+
 /// Extension for Spouses, Husbands, and Wives
 public extension Person {
 
@@ -152,6 +195,7 @@ public extension Person {
 
     /// Returns all spouses across all FAMS, filtered by roles, deduped in encounter order.
     func spouses(in index: RecordIndex, roles: [String] = ["HUSB","WIFE"]) -> [Person] {
+        print("spouses called on \(self.name ?? "no name")")
         let selfKey = self.key
         var seen = Set<String>()
         var spouses: [Person] = []
