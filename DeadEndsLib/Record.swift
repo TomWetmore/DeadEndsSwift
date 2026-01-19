@@ -3,19 +3,20 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 20 September 2025.
+//  Last changed on 9 January 2026.
 //
 
 import Foundation
 
-/// Defines a Protocol for Gedcom Records. Allows Person, Family, Source, et al, to be their own Swift types.
-/// A Record holds a level 0 GedcomNode and its reference key.
+/// Protocol for Gedcom Records. Allows Person, Family, etc, to be types; holds a root and its key.
+
 public protocol Record {
     var root: GedcomNode { get }  // Root of Record.
     var key: String { get }  // Key of Record.
 }
 
-/// Extension with the basic properties and methods of GedcomNodes.
+/// Extension with basic properties that are forwarded to a root GedcomNode.
+
 public extension Record {
 
     // Base properties.
@@ -36,20 +37,21 @@ public extension Record {
     func kidVals(forTag tag: String) -> [String] { root.kidVals(forTag: tag) }
     func kidVals(forTags tags: [String]) -> [String] {root.kidVals(forTags: tags) }
 
-
-
-
 }
 
 /// Extensions to Dictionary that allows Record retrieval from RecordIndexes.
+
 extension Dictionary where Key == String, Value == GedcomNode {
+
     public func person(for key: String) -> Person? { self[key].flatMap(Person.init) }
     public func family(for key: String) -> Family? { self[key].flatMap(Family.init) }
     //public func source(for key: String) -> Source? { self[key].flatMap(Source.init) } // Future.
 }
 
-/// Extensions that foward useful methods to the Record level.
+/// Extensions that foward useful methods to the GedcomNode level.
+
 public extension Record {
+
     func gedcomText(level: Int = 0, indent: Bool = false) -> String { root.gedcomText(level: level, indent: indent) }
     func eventSummary(tag: String) -> String? { root.eventSummary(tag: tag) }
     func descendants() -> [GedcomNode] { root.descendants() }

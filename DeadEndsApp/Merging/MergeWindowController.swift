@@ -3,15 +3,16 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 7 November 2025.
-//  Last changed on 27 November 2025.
+//  Last changed on 3 January 2026.
 //
 
 import SwiftUI
 import AppKit
 import DeadEndsLib
 
-/// Transient state for an active merge operation. Currently holds the frame locations of the
-/// visible GedcomNodes in the central merge page.
+/// Transient state for an active merge operation. Holds the coordinates of the GedcomNodes that are
+/// visible in the central merge pane.
+
 final class MergeSession: ObservableObject {
 
     init() {}
@@ -21,6 +22,7 @@ final class MergeSession: ObservableObject {
 
 @MainActor
 enum MergeWindowController {
+
     static func open(left: Person, right: Person) {
         let host = MergeWindowHost(left: left, right: right)
         host.present()

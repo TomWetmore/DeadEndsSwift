@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2025.
-//  Last changed on 17 September 2025.
+//  Last changed on 12 January 2026.
 //
 
 import Foundation
@@ -104,7 +104,7 @@ extension Program {
         // Get the person whose next sibling is needed.
         let person = try personFromProgramNode(args[0], errorMessage: "nextsib() expects a person argument")
         // Get the next sibling of the person.
-        if let nextSibling = person.nextSibling(index: self.recordIndex) {
+        if let nextSibling = person.nextSibling(in: self.recordIndex) {
             return .person(nextSibling)
         } else {
             return .null
@@ -115,7 +115,7 @@ extension Program {
         // Get the person whose previous sibling is needed.
         let person = try personFromProgramNode(args[0], errorMessage: "prevsib() expects a person argument")
         // Get the previous sibling of the person.
-        if let previousSibling = person.previousSibling(index: self.recordIndex) {
+        if let previousSibling = person.previousSibling(in: self.recordIndex) {
             return .person(previousSibling)
         } else {
             return .null

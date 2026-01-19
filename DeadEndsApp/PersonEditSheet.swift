@@ -1,15 +1,20 @@
 //
-//  EditPersonView.swift
+//  EditPersonSheet.swift
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 15 September 2025.
+//  Last changed on 6 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-// PersonEditView is used as a sheet to edit Person Gedcom records.
+/// PersonEditSheet is used as a sheet to edit Person Gedcom records. Records are converted to text and
+/// edited with a TextEditor. When editing is done the text is parsed into a Gedcom tree and validated.
+/// If the user selects to save the changes, the new Person replaces the original in the Database.
+///
+/// The name should be changed as this does not to be a Sheet.
+
 struct PersonEditSheet: View {
 
     @State private var editedText: String
@@ -19,9 +24,10 @@ struct PersonEditSheet: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) var dismiss
 
-    let person: Person
+    let person: Person  // Person edited.
 
-    /// Initializes a PersonEditView
+    /// Initialize the PersonEditSheet.
+
     init(person: Person) {
         self.person = person
         _editedText = State(initialValue: person.gedcomText(indent: true))
@@ -33,7 +39,9 @@ struct PersonEditSheet: View {
     }
 
     var body: some View {
+        
         VStack(spacing: 8) {
+
             HStack {
                 Text("Editing \(person.displayName())")
                     .font(.headline)
@@ -59,46 +67,43 @@ struct PersonEditSheet: View {
             Button("Cancel", role: .cancel) {
                 dismiss()
             }
-            Button("Re-edit") {
-                // Do nothing, just return to the view
+            Button("Re-edit") { // Do nothing; return to the view.
             }
         } message: {
             Text("The edited record must contain exactly one record.")
         }
         .sheet(isPresented: $showErrorSheet) {
             ErrorSheet(errors: editErrors, onCancel: {
-                dismiss()  // cancel both error sheet and edit view
+                dismiss()  // Cancel the error sheet and edit view.
             }, onReedit: {
-                showErrorSheet = false  // just close the error sheet and allow re-edit
+                showErrorSheet = false  // Close error sheet and allow re-edit
             })
         }
     }
 
-    /// Handles the Save button push on the EditPersonView.
-    ///
-    /// Parses the text into a new record; validates the edited person; and replaces
-    /// the old person with the new.
-    ///
+    /// Handle the Save button. Parses text into a record; validates; replaces old person with new.
+
     func handleSave() {
 
-        // Parse the edited text into a Person record. This may fail.
+        // Parse edited text into a Person record. This may fail.
         var (editedPerson, errors) = parsePerson(text: editedText)
         if errors.count > 0 {
             presentErrorSheet(errors: errors)
             return
         }
-        // Get PersonInfo for the two versions of the Person. There may be errors.
+
+        // Get PersonInfo for the two versions.
         let (old, _) = getPersonInfo(for: self.person)
         let (new, extractErrors) = getPersonInfo(for: editedPerson!)
         
-        // Initialze errors with those found while extracting the new PersonInfo.
+        // Initialze errors with those from the new PersonInfo.
         errors.append(contentsOf: extractErrors)
 
-        // Validate the edited person (may add more errors)
+        // Validate the edited person.
         let recordIndex = model.database!.recordIndex
         errors.append(contentsOf: validateEditedPerson(old: old, new: new, index: recordIndex))
 
-        // If any errors were found show them and present the error sheet.
+        // Show any errors found..
         if !errors.isEmpty {
             presentErrorSheet(errors: errors)
             return
@@ -118,12 +123,13 @@ struct PersonEditSheet: View {
 
 extension PersonEditSheet {
 
-    /// Parses edited text into a Person record. Returns nil and error list if there are errors.
+    /// Parse edited text into a Person; return Person if okay, else return the errors.
+
     func parsePerson(text: String) -> (edited: Person?, errors: [String]) {
         
         let source = StringGedcomSource(name: "edit view", content: text)
         var errlog = ErrorLog()
-        var tagmap = model.database!.tagmap
+        var tagmap = model.database!.tagmap  // Reference copy.
 
         guard let nodes = loadRecords(from: source, tagMap: &tagmap, errlog: &errlog) else {
             return (nil, ["Error parsing record"])
@@ -237,10 +243,10 @@ struct PersonInfo {
     let refns: Set<String>
 }
 
-/// Extracts the PersonInfo of a Person record.
-///
-/// The internal structure (`child`, `sibling` and `parent` links) of the Person is not affected.
+/// Returns the PersonInfo of a Person record. The internal structure (kid, sib, dad) is not affected.
+
 func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
+    
     var names: Set<String> = []
     var refns: Set<String> = []
     var sex: String? = nil
@@ -268,7 +274,7 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
         current = node.sib
     }
 
-    // Construct PersonInfo even if there are errors
+    // Construct PersonInfo even if errors.
     let info = PersonInfo(
         root: person,
         key: person.key,

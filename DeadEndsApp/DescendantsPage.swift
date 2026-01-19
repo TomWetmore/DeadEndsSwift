@@ -1,9 +1,9 @@
 //
-//  DescendantsView.swift
+//  DescendantsPage.swift
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 7 August 2025.
-//  Last changed on 2 January 2026.
+//  Last changed on 7 January 2026.
 //
 
 import SwiftUI
@@ -32,7 +32,7 @@ struct DescendantsPage: View {
                     node: buildTree(from: root),
                     expanded: $expanded
                 ) { person in
-                    PersonRow(person: person, isInteractive: true)
+                    PersonTile(person: person)
                         .onTapGesture { model.path.append(Route.person(person)) }
                 }
             }

@@ -52,7 +52,7 @@ struct GedcomTreeView: View {
             .padding(.leading, CGFloat(node.lev) * 16)
 
             if isExpanded {
-                ForEach(children(of: node), id: \.uid) { child in
+                ForEach(children(of: node), id: \.id) { child in
                     AnyView(treeRow(for: child))   // 👈 type-erasure here
                 }
             }

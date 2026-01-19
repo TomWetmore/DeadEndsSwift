@@ -1,0 +1,61 @@
+This file is for reorganizing the merge directories, files, views, etc.
+
+GedcomTreeEditor/
+	GedcomTreeEditor.swift
+	GedcomTreeEditorModel.swift
+	GedcomTreeEditorRow.swift
+	GedcomTreeManager.swift
+	GedcomTreeValidator.swift
+	TreeEditorButtons.swift
+
+GedcomViews/
+	GedcomTreeDisplay.swift --- Central pane in the three pane Merging Window.
+		------------------------------
+		struct GedcomTreeDisplay: View -- Displays a Gedcom tree.
+    			@Stuff -- root; expanded; consumed
+    			var body: some View 
+        			ScrollView {VStack {GedcomTreeDisplayRow(root, expanded, consumed, 0, tint) }}
+		------------------------------
+		struct GedcomTreeDisplayRow: View -- Shows a row in the GedcomTreeDisplay
+			@Stuff -- node, expanded, consumed; vars -- level, tint, allowDrag
+			body -- VStack of rowContent with recursive GedcomTreeDisplayRow below
+			rowContent: View {
+        			HStack of { indentView chevronView levelView keyView tagText valueText }
+        			.allowsHitTesting(!consumed.contains(node.id))
+        			.if(allowDrag && !consumed.contains(node.id)) { view in view.draggable({
+            	    		consumeSubtree(node) // Marks it consumed as soon as drag starts
+                			return DraggedGedcomSubtree(node: node) }())
+			private func consumeSubtree(_ node: GedcomNode) -- Marks node and descendents as consummed
+			Views for indentView, chevronView, levelView, keyView, tagText, valueText
+			private func toggleExpansion(node) -- toggles expansion state of a node
+		------------------------------
+		struct DraggedGedcomSubtree: Transferable, Codable
+    			static var transferRepresentation: TransferRepresentation { CodableRepresentation(.json) }
+    			var tag: String, val: String?,  children: [DraggedGedcomSubtree]
+    			init(node: GedcomNode) // sets tag, val, children (recursively)
+    			func toGedcomNode() -> GedcomNode  // converts dragged object back to node tree
+		------------------------------
+
+Merging/
+	MergeEditorPane.swift
+	MergeWarehouse.swift
+	MergeWindowController.swift
+
+Desktop/
+	Tools/
+		MergePersonTool.swift
+		------------------------------
+			struct MergePersonsTool: View {
+				@stuff--DesktopModel, 2 CGRect slots, 2 docked Cards
+				var body: some View -- Tool with 2 slots and a merge button
+				private func performMerge
+				private func updateMagneticBehavior
+			private struct MergeSlotView: View -- Slot in merge tool that detect card proximity.
+		Tool.swift
+			enum ToolKind & class ToolModel
+		------------------------------
+
+
+
+
+

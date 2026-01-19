@@ -3,12 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 26 November 2025.
+//  Last changed on 7 January 2026.
 //
 
 import Foundation
 
-/// [String: String] map that ensures only one copy of each tag is used per database.
+/// Dictionary to ensure that only one copy of each tag is used in a Database.
+
 public class TagMap {
 
     private var map: [String: String] = [:]
@@ -20,22 +21,24 @@ public class TagMap {
     }
 }
 
-/// Class of Gedcom nodes. A GedcomNode represents a line in a Gedcom file. key, tag and
-/// value are the key (cross reference identifier), tag, and value fields of the Gedcom line.
-/// The line's level number is inferred when needed.
-final public class GedcomNode: CustomStringConvertible {
+/// A GedcomNode represents a line in a Gedcom file. The key, tag and val fields are the key
+/// (cross reference identifier), tag, and value fields of the Gedcom line. The line's level is
+/// computed when needed.
+
+final public class GedcomNode: Identifiable, CustomStringConvertible {
 
     // For id requirements.
-    public let uid = UUID()
+    public let id = UUID()
 
     // Gedcom fields (lev defined below).
     public var key: RecordKey?  // Key found on root lines only
     public var tag: String  // Tag found on all lines.
     public var val: String? // Optional value.
 
-    // Tree structure fields.
-    public var sib: GedcomNode?  // Next sibling.
-    public var kid: GedcomNode?  // First child
+    // Tree structure fields. Using sib, kid and dad as field names is regrettable but
+    // disambiguates from genealogical relationships like parent, father, sibling, child.
+    public var sib: GedcomNode?  // Next sibling, the next line on the same level.
+    public var kid: GedcomNode?  // First child, the first line one level deeper.
     public weak var dad: GedcomNode? // Optional parent found on all non-roots.
 
     /// Returns the kids of a dad node.
@@ -85,18 +88,6 @@ final public class GedcomNode: CustomStringConvertible {
         kid?.printTree(level: level + 1, indent: indent)
         sib?.printTree(level: level, indent: indent)
     }
-
-    /// Returns a dictionary that maps tags to a node's kids that have the tag.
-    /// A litte dangerous becuase later changes to not cause the dictionary to be recomputed.
-//    lazy var kidsByTag: [String: [GedcomNode]] = {
-//        var result: [String: [GedcomNode]] = [:]
-//        var current = kid
-//        while let node = current {
-//            result[node.tag, default: []].append(node)
-//            current = node.sib
-//        }
-//        return result
-//    }()
 }
 
 // Methods that return child (kid) nodes or their values.
@@ -154,15 +145,15 @@ public extension GedcomNode {
         return results
     }
 
-    /// Returns the value of .self's first child with given tag.
-    /// This method suffers by the issue of disabiuating what a nil return means: it could mean there were no
-    /// nodes with the tag, the the first node with the tag has no value.
+    /// Returns the value of .self's first kid with the given tag.
+    /// A return of nil is ambiguous -- there may be no kids with the tag, or all all kids
+    /// with the tag have nil vals.
     func kidVal(forTag tag: String) -> String? {
         return kid(withTag: tag)?.val
     }
 
-    /// Returns the value of .self's first child with tag from list of set.
-    /// The method suffers from the same ambiguity of the last method.
+    /// Returns the value of .self's first child with tag from a list of tags.
+    /// The method suffers from the same ambiguity of the last.
     func kidVal(forTags tags: [String]) -> String? {
         return kid(withTags: tags)?.val
     }
@@ -219,6 +210,7 @@ extension GedcomNode {
 
     /// Returns all GedcomNodes in a tree.
     public func descendants() -> [GedcomNode] {
+
         var result: [GedcomNode] = []
         func visit(_ node: GedcomNode?) {
             guard let node = node else { return }
@@ -233,13 +225,16 @@ extension GedcomNode {
 
 public extension GedcomNode {
 
+    /// Returns whether .self has kids.
     func hasKids() -> Bool {
+
         return self.kid != nil
     }
 
     /// Creates and adds a new first kid to this node.
     @discardableResult
     func addKid(tag: String, val: String? = nil) -> GedcomNode {
+
         let child = GedcomNode(tag: tag, val: val)
         return addKid(child)
     }
@@ -247,6 +242,7 @@ public extension GedcomNode {
     /// Adds an existing node as this node's new first kid.
     @discardableResult
     func addKid(_ kid: GedcomNode) -> GedcomNode {
+        
         let dad = self
         kid.dad = dad // Set the kid's three links.
         kid.kid = nil
@@ -263,6 +259,7 @@ public extension GedcomNode {
     /// Adds a newly created, unlinked child (defensive).
     @discardableResult
     func addBareKid(_ kid: GedcomNode) -> GedcomNode {
+
         kid.dad = self
         kid.kid = nil
         kid.sib = nil
@@ -278,6 +275,7 @@ public extension GedcomNode {
     /// Adds an existing subtree, preserving its internal structure.
     @discardableResult
     func addSubtree(_ kid: GedcomNode) -> GedcomNode {
+        
         kid.dad = self
         if self.kid == nil {
             self.kid = kid
@@ -470,11 +468,11 @@ public extension GedcomNode {
         return true
     }
 
-    /// Moves this node one position later in its parent's children list.
-    /// Does nothing if it's already the last child or has no parent.
-    /// Returns true if moved, false if it was already the last sibling.
+    /// Moves this node one position down in its dad's kid list. Does nothing
+    /// if it has no dad or is already the last kid. Returns true if it moved.
     @discardableResult
     func moveDown() -> Bool {
+
         guard let parent = dad else { return false }
         guard let first = parent.kid else { return false }
 
@@ -483,8 +481,8 @@ public extension GedcomNode {
 
         while let curr = current, let next = curr.sib {
             if curr === self {
-                // Swap `curr` (self) and `next`
-                curr.sib = next.sib
+
+                curr.sib = next.sib  // Swap curr with next.
                 next.sib = curr
 
                 if let prev = prev {

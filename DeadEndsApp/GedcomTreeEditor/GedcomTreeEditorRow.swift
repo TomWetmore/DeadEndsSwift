@@ -3,165 +3,232 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 8 October 2025.
-//  Last changed on 27 November 2025.
+//  Last changed on 4 January 2026.
+//
 
 import SwiftUI
 import DeadEndsLib
 
-/// Builds an event summary for a level one node with no value.
-func eventSummary(for node: GedcomNode) -> String? {
-
-    guard node.val == nil, node.lev == 1 else { return nil }
-    let date = node.kid(withTag: "DATE")?.val
-	let place = node.kid(withTag: "PLAC")?.val
-    var parts: [String] = []
-    if let d = date, !d.isEmpty { parts.append(d) }
-    if let p = place, !p.isEmpty { parts.append(p) }
-    return parts.isEmpty ? nil : parts.joined(separator: ", ")
-}
-
-/// View for a Gedcom Tree Editor Row.
 struct GedcomTreeEditorRow: View {
-    var node: GedcomNode
+    
     @Bindable var viewModel: GedcomTreeEditorModel
+
     let treeManager: GedcomTreeManager
+    var node: GedcomNode
 
-    /// Body of the GedcomTreeEditorRow View.
+    // Focus Tracking
+    enum Field: Hashable {
+        case tag(UUID)
+        case val(UUID)
+    }
+    // Holds the field (tag, val, nil) with focus.
+    @FocusState private var focusedField: Field?
+    
+    // Original tag/val values during editing
+    @State private var originalTag: String = ""
+    @State private var originalVal: String = ""
+    
+    @State private var editTag: String = ""
+    @State private var editVal: String = ""
+    
     var body: some View {
-        VStack(spacing: 0) {
+        
+        let _ = viewModel.textCounter   // Force dependency.
+        print("Render node:", node.tag, ObjectIdentifier(node))  // Debug.
+        
+        return VStack(spacing: 0) {
+            
             rowContent
-            if viewModel.expandedSet.contains(node.uid) {
-                ForEach(node.kids, id: \.uid) { kid in
-                    GedcomTreeEditorRow(node: kid, viewModel: viewModel, treeManager: treeManager)
+                .onTapGesture {
+                    focusedField = nil
+                    viewModel.selectedNode = node
+                }
+            
+            if viewModel.expandedSet.contains(node.id) {
+                ForEach(node.kids) { kid in
+                    GedcomTreeEditorRow(viewModel: viewModel, treeManager: treeManager, node:kid)
                 }
             }
         }
+        .onAppear {
+            editTag = node.tag
+            editVal = node.val ?? ""
+        }
+        .onChange(of: viewModel.textCounter) { _, _ in
+            editTag = node.tag
+            editVal = node.val ?? ""
+        }
+        .onChange(of: viewModel.selectedNode?.id) { _, _ in
+            focusedField = nil
+        }
     }
-
-    /// Returns the Content View of a GedcomTreeEditorRow.
+    
+    /// Computed property that returns the row content View.
     private var rowContent: some View {
-        GeometryReader { geo in
-            HStack {
-                indentView
-                chevronView
-                levelView
-                tagText
-                valueText
-                Spacer()
-            }
-            .contentShape(Rectangle())
-            .background(rowBackground)
-            .onAppear { recordFrame(geo) }
-            .onChange(of: geo.frame(in: .named("gedcomTree"))) { _, _ in recordFrame(geo) }
-
-            // This block activates when session != nil (inside a MergeWorkspace)
-            .draggable(DraggedGedcomSubtree(node: node))
-            .dropDestination(for: DraggedGedcomSubtree.self) { items, location in
-                guard let first = items.first else { return false }
-                let newNode = first.toGedcomNode()
-
-                // Checks the drop rules before before inserting.
-                if !canDrop(newNode, onto: node) {
-                    print("Rejected drop: level mismatch (\(newNode.lev) → \(node.lev))")  // DEBUG.
-                    return false  // Drop not accepted.
-                }
-
-                // Drop is valid; do the insertion.
-                handleDrop(items, location: location)
-                return true
-            }
+        
+        HStack {
+            indentView
+            chevronView
+            levelView
+            keyView
+            tagField
+            valueField
+            Spacer()
         }
-        .frame(height: 20)
+        .contentShape(Rectangle())
+        .monospaced()
+        .padding(.horizontal, 10)
+        .padding(.vertical, 2)
+        .background(
+            viewModel.selectedNode === node
+            ? Color.accentColor.opacity(0.2)
+            : Color.clear
+        )
     }
+    
+    /// Indent.
 
-    /// View that adds the Gedcom indentation.
     private var indentView: some View {
-        ForEach(0..<node.lev, id: \.self) { _ in Spacer().frame(width: 16) }
+        
+        ForEach(0..<node.lev, id: \.self) { _ in
+            Spacer().frame(width: 32)
+        }
     }
-
-    /// View that shows expanding chevron on internal nodes.
+    
+    /// Chevron (visible or invisible).
     private var chevronView: some View {
+
         Group {
             if node.hasKids() {
-                Image(systemName: viewModel.expandedSet.contains(node.uid) ? "chevron.down" : "chevron.right")
+                Button {
+                    viewModel.toggleExpansion(for: node)
+                } label: {
+                    Image(systemName: viewModel.expandedSet.contains(node.id)
+                          ? "chevron.down" : "chevron.right")
                     .foregroundColor(.secondary)
-                    .onTapGesture { viewModel.toggleExpansion(for: node) }
-                    .frame(width: 16)
+                }
+                .buttonStyle(.plain)
+                .frame(width: 16)
             } else {
-                Image(systemName: "chevron.right").opacity(0).frame(width: 16)  // Invisible on leaves.
+                Image(systemName: "chevron.right")  // Pretend it's there for spacing,
+                    .opacity(0)  // by making it invisible.
+                    .frame(width: 16)
             }
         }
     }
     
-    /// View that show the Gedcom level of the node.
+    /// Level.
+
     private var levelView: some View {
-        Text("\(node.lev)")
-            .frame(width: 20)
-    }
 
-    /// View that show the tag of the node.
-    private var tagText: some View {
-        Text(node.tag)
-            .fontWeight(.semibold)
-            .foregroundColor(.primary)
+        Text("\(node.lev)").frame(width: 20)
     }
+    
+    /// Key (on root nodes).
 
-    /// View that shows the value text of the node.
-    private var valueText: some View {
+    private var keyView: some View {
+        
         Group {
-            if let val = node.val, !val.isEmpty {
-                Text(val)
-            } else if let summary = eventSummary(for: node) {
-                Text(summary).italic().foregroundColor(.secondary)
+            if let key = node.key {
+                Text(key)
+                    .foregroundColor(.blue)
+                    .font(.title2)
             }
         }
     }
+    
+    /// Tag.
 
-    /// View that adds a background View (a Color) to the row.
-    private var rowBackground: some View {
-        (viewModel.selectedNode === node)
-        ? Color.accentColor.opacity(0.15)
-        : Color.clear
-    }
-
-    /// Finds the frame of a GedcomTreeEditorRow and stores it in a table.
-    private func recordFrame(_ geo: GeometryProxy) {
-        let rect = geo.frame(in: .named("gedcomTree"))
-        viewModel.rowFrames[node.uid] = rect
-    }
-
-    /// Handles a drop into a Gedcom tree.
-    private func handleDrop(_ items: [DraggedGedcomSubtree], location: CGPoint) {
-        guard let rect = viewModel.rowFrames[node.uid] else { return }
-
-        // See if the drop is in the upper or lower helf of the target row.
-        let isUpperHalf = location.y > rect.midY
-
-        for item in items {
-            let newNode = item.toGedcomNode()
-
-            if isUpperHalf, let parent = node.dad {
-                // Drop on upper half → insert *after this node* as sibling
-                print("📥 Inserting \(newNode.tag) after sibling \(node.tag)")  // DEBUG
-                parent.addKidAfter(newNode, sib: node)
-            } else {
-                // Drop on lower half → insert *as child* of this node
-                print("📥 Inserting \(newNode.tag) as child of \(node.tag)")  // DEBUG
-                node.addKidAfter(newNode, sib: nil)
-                viewModel.expandedSet.insert(node.uid)
+    private var tagField: some View {
+        
+        TextField("", text: $editTag)
+            .frame(width: 80)
+            .textFieldStyle(.plain)
+            .focused($focusedField, equals: .tag(node.id))
+            .onSubmit {
+                focusedField = nil    // Clears focus.
             }
-        }
+            .allowsHitTesting(viewModel.selectedNode === node)
+            .onAppear {
+                // When the row appears, seed local edit buffer from the node.
+                editTag = node.tag
+            }
+            .onChange(of: focusedField) { oldFocus, newFocus in
+                if newFocus == .tag(node.id) {  // Focus gained.
+                    print("Focus gained")  // Debug.
+                    originalTag = node.tag   // store model’s tag
+                    editTag     = node.tag   // sync UI to model
+                    return
+                }
+                if oldFocus == .tag(node.id) {  // Focus lost.
+                    print("Focus lost")
+                    if editTag != originalTag {
+                        print("Tag changed from \(originalTag) → \(editTag)")
+                        treeManager.editTag(node, from: originalTag, to: editTag)
+                    } else {
+                        print("Tag unchanged.")
+                    }
+                }
+            }
+        
     }
 
-    func canDrop(_ dropped: GedcomNode, onto target: GedcomNode) -> Bool {
-        // Same level as target’s existing children → allowed
-        if let parent = target.dad {
-            return dropped.lev == target.lev
+    /// Value.
+
+    private var valueField: some View {
+        
+        ZStack(alignment: .leading) {
+            
+            // Summary text when no value and collapsed.
+            if editVal.isEmpty,
+               !viewModel.expandedSet.contains(node.id),
+               let summary = eventSummary(for: node) {
+                Text(summary)
+                    .italic()
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 4)
+            }
+
+            TextField("", text: $editVal)
+                .textFieldStyle(.plain)
+                .focused($focusedField, equals: .val(node.id))
+                .allowsHitTesting(viewModel.selectedNode === node)
+                .onChange(of: focusedField) { oldFocus, newFocus in
+                    if newFocus == .val(node.id) {  // Focus gained.
+                        originalVal = node.val ?? ""
+                        editVal = node.val ?? ""     // Sync UI with model.
+                        return
+                    }
+                    if oldFocus == .val(node.id) {  // Focus lost.
+                        if editVal != originalVal {
+                            print("Value changed from \(originalVal) to \(editVal)")  // Debug.
+                            treeManager.editVal(node, from: originalVal, to: editVal)
+                        } else {
+                            print("Value unchanged.")  // Debug.
+                        }
+                    }
+                }
         }
-        // Root-level only allowed if both are roots
-        if target.lev == 0 {
-            return dropped.lev == 0
-        }
-        return false
     }
 }
+
+/// Build event summary for a top-level event node.
+
+func eventSummary(for node: GedcomNode) -> String? {
+
+    //guard !expanded else { return nil }  // suppress if expanded
+    // Only event-style nodes with no value
+    guard node.val == nil else { return nil }
+    switch node.tag {
+    case "BIRT", "DEAT", "MARR", "CHR", "BAPM", "BCHL", "RESI", "LAND", "EDU", "OCCU": // add other events you like
+        let date = node.kid(withTag: "DATE")?.val
+        let place = node.kid(withTag: "PLAC")?.val
+        var parts: [String] = []
+        if let d = date, !d.isEmpty { parts.append(d) }
+        if let p = place, !p.isEmpty { parts.append(p) }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    default:
+        return nil
+    }
+}
+

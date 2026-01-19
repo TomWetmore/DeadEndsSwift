@@ -60,14 +60,14 @@ struct PedigreeDetail: View {
                 }
             }
         }
-        .frame(minWidth: 600, minHeight: 400)
-        .navigationTitle("Pedigree")
-        .onAppear {
-            if layout.isEmpty, let database = model.database {
-                layout = buildPedigreeLayout(from: person, generations: generations,
-                                             recordIndex: database.recordIndex
-                )
+        .task(id: "\(person.key)|\(generations)|\(model.database != nil)") {
+            guard let database = model.database else {
+                layout = []
+                return
             }
+            layout = buildPedigreeLayout(from: person,
+                                         generations: generations,
+                                         recordIndex: database.recordIndex)
         }
     }
 }
@@ -96,8 +96,7 @@ private func buildPedigreeLayout(from person: Person,  generations: Int,
         }
     }
 
-    addPerson(person, gen: 0, index: 0)  // Call local function to uild PedigreeNodes.
-    // showPedigreeNodes(pedigreeNodes)  // Debug.
+    addPerson(person, gen: 0, index: 0)  // Call to build the pedigree nodes.
     return pedigreeNodes
 }
 

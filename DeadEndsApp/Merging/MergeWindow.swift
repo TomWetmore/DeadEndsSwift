@@ -3,14 +3,15 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 7 November 2025.
-//  Last changed on 15 November 2025.
+//  Last changed on 3 January 2026.
 //
 
 import SwiftUI
-import AppKit
 import DeadEndsLib
 
-/// Three pane View where Person merging occurs.
+/// Three pane Window where Person merging happens. The side panes are wrapped PersonTreeDisplays and the
+/// central pane is a wrapped GedcomTreeEditor.
+
 struct MergeWindow: View {
 
     @StateObject private var session = MergeSession()
@@ -20,6 +21,7 @@ struct MergeWindow: View {
     var onCancel: () -> Void
 
     var body: some View {
+        
         VStack(spacing: 0) {
             HStack {
                 Spacer()
@@ -27,7 +29,7 @@ struct MergeWindow: View {
             }
             Divider()
 
-            // Panes for two existing Persons and a merged Person.
+            // Panes for two existing Persons and the merged Person.
             HSplitView {
 
                 SideMergePane(person: left, tint: .blue)
@@ -45,12 +47,15 @@ struct MergeWindow: View {
     }
 }
 
+/// View for the side panes shown in the MergeWindow. It is a wrapper around a GedcomTreeDisplay View.
+
 struct SideMergePane: View {
 
     let person: Person
     let tint: Color
 
     var body: some View {
+        
         VStack {
             Text(person.displayName())
             Divider()

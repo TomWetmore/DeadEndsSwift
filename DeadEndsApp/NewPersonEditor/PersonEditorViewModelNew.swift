@@ -56,14 +56,14 @@ final class PersonEditorViewModelNew: ObservableObject {
     func addChild(to node: GedcomNode) {
         let newChild = GedcomNode(tag: "NEW")
         node.addKid(newChild)
-        expanded.insert(node.uid)
+        expanded.insert(node.id)
         objectWillChange.send()
     }
 
     func addSibling(to node: GedcomNode) {
         let newSibling = GedcomNode(tag: "NEW")
         node.addSib(newSibling)
-        expanded.insert(node.uid)
+        expanded.insert(node.id)
         objectWillChange.send()
     }
 

@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 31 October 2025.
-//  Last changed on 23 November 2025.
+//  Last changed on 16 January 2026.
 //
 
 import SwiftUI
@@ -17,7 +17,6 @@ struct DraggableCard<Content: View>: View {
     private let content: Content
 
     @State private var dragStartPosition: CGPoint? = nil
-    @State private var lastDragCancelledToken: Int = 0   // local watcher
 
     private var card: Card? {
         model.cards.first(where: { $0.id == cardID })
@@ -32,10 +31,10 @@ struct DraggableCard<Content: View>: View {
     private var currentPosition: CGPoint {
         guard let card else { return .zero }
 
-        if model.activeId == cardID {
+        if model.draggingID == cardID {
             return CGPoint(
-                x: card.position.x + model.activeOffset.width,
-                y: card.position.y + model.activeOffset.height
+                x: card.position.x + model.dragOffset.width,
+                y: card.position.y + model.dragOffset.height
             )
         }
         return card.position
@@ -47,49 +46,32 @@ struct DraggableCard<Content: View>: View {
         return AnyView(
             content
                 .position(currentPosition)
-                .onChange(of: model.dragCancelledToken) { _, newValue in
-                    // Snap or external cancel: kill the drag
-                    lastDragCancelledToken = newValue
-                    dragStartPosition = nil
-                }
                 .gesture(
                     DragGesture()
                         .onChanged { value in
-                            //guard let card = card else { return }
 
-                            // If a snap cancelled our drag, ignore further changes
-                            if dragStartPosition == nil && model.activeId == nil {
+                            // If another card is active, ignore
+                            if model.draggingID != nil && model.draggingID != cardID {
                                 return
                             }
-
-                            // If another card is the active drag, ignore this one
-                            if model.activeId != nil && model.activeId != cardID {
-                                return
-                            }
-
-                            // BEGIN DRAG
-                            if model.activeId == nil {
+                            if model.draggingID == nil { // Begin drag.
                                 dragStartPosition = card.position
-                                model.activeId = cardID
-                                model.baseSize = card.baseSize
+                                model.draggingID = cardID
                             }
-
-                            // CONTINUE DRAG
-                            model.activeOffset = value.translation
-                            model.tick &+= 1
+                            model.dragOffset = value.translation // Continue drag.
                         }
 
                         .onEnded { value in
-                            // If the drag was cancelled (via snap), ignore this onEnded
                             guard let start = dragStartPosition else {
+                                // Drag was cancelled by snap
                                 dragStartPosition = nil
-                                model.activeId = nil
-                                model.activeOffset = .zero
-                                model.baseSize = nil
+                                model.draggingID = nil
+                                model.dragOffset = .zero
+                                //model.baseSize = nil
                                 return
                             }
 
-                            // Final destination
+                            // Commit new position
                             let newPosition = CGPoint(
                                 x: start.x + value.translation.width,
                                 y: start.y + value.translation.height
@@ -97,11 +79,9 @@ struct DraggableCard<Content: View>: View {
 
                             model.updatePosition(for: cardID, to: newPosition)
 
-                            // Reset drag state
-                            dragStartPosition = nil
-                            model.activeOffset = .zero
-                            model.activeId = nil
-                            model.baseSize = nil
+                            dragStartPosition = nil // Reset.
+                            model.dragOffset = .zero
+                            model.draggingID = nil
                         }
                 )
         )

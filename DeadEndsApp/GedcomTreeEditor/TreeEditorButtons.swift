@@ -17,6 +17,9 @@ struct TreeEditorButtons: View {
     let treeManager: GedcomTreeManager
 
     var body: some View {
+
+        let _ = viewModel.undoCounter   // Depend on undo/redo changes
+
         HStack {
             // Buttons that navigate and select nodes.
             Button("Parent") {

@@ -3,14 +3,15 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 15 November 2025.
+//  Last changed on 17 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Values pushed onto the DeadEndsApp NavigationStack.
+/// Values on the navigation stack.
 enum Route: Hashable {
+
     case person(Person)
     case pedigree(Person)
     case family(Family)
@@ -18,7 +19,7 @@ enum Route: Hashable {
     case familyTree(Person)
     case descendancy(Person)
     case personEditor(Person)
-    case personEditorNew(Person)
+    //case personEditorNew(Person)
     case gedcomTreeEditor(Person)
     case desktop(Person)
 }
@@ -54,20 +55,17 @@ struct RootView: View {
                     PersonSelectionView()
                 }
             }
-            //.environment(\.recordIndex, model.database?.recordIndex ?? [:])
-            //.environmentObject(model) // Already down at a top level.
-            // The closure builds Views when the navigation system finds a matching route on the navigation stack.
-            // This code runs when 'model.path.append(Route...)' is called.
+            // Build page if a route is on the nav stack; runs when model.path.append is called.
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .person(let person):
-                    PersonView(person: person)
+                    PersonPage(person: person)
                 case .pedigree(let person):
-                    PedigreeView(person: person, generations: 4, buttonWidth: 400)
+                    PedigreePage(person: person, generations: 4, buttonWidth: 400)
                 case .family(let family):
-                    FamilyView(family: family)
+                    FamilyPage(family: family)
                 case .descendants(let p):
-                    DescendantsView(root: p)
+                    DescendantsPage(root: p)
                 case .familyTree(let person):
                     FamilyTreeView(person: person)
                 case .personEditor(let person):
@@ -76,15 +74,16 @@ struct RootView: View {
                         model.database?.updatePerson(newPerson)
                         model.path.removeLast()  // Pop the editor view.
                     }
-                case .personEditorNew(let person):
-                    PersonEditorViewNew(person: person) { newPerson in
-                        model.database?.updatePerson(newPerson)
-                        model.path.removeLast()
-                    }
+//                case .personEditorNew(let person):
+//                    PersonEditorViewNew(person: person) { newPerson in
+//                        model.database?.updatePerson(newPerson)
+//                        model.path.removeLast()
+//                    }
                 case .gedcomTreeEditor(let person):
+
                     if let db = model.database {
                         let manager = GedcomTreeManager(database: db)
-                        GedcomEditorView(
+                        GedcomEditorWindow(
                             viewModel: manager.treeModel,
                             manager: manager,
                             root: person.root
@@ -102,8 +101,6 @@ struct RootView: View {
                     }
                 case .desktop(let person):
                     DesktopView(person: person)
-
-
                 }
             }
         }

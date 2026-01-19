@@ -19,14 +19,14 @@ struct GedcomTreeViewNew: View {
         } else {
             DisclosureGroup(
                 isExpanded: Binding(
-                    get: { viewModel.expanded.contains(node.uid) },
+                    get: { viewModel.expanded.contains(node.id) },
                     set: { isExpanded in
-                        if isExpanded { viewModel.expanded.insert(node.uid) }
-                        else { viewModel.expanded.remove(node.uid) }
+                        if isExpanded { viewModel.expanded.insert(node.id) }
+                        else { viewModel.expanded.remove(node.id) }
                     }
                 ),
                 content: {
-                    ForEach(node.kids, id: \.uid) { child in
+                    ForEach(node.kids, id: \.id) { child in
                         GedcomTreeViewNew(viewModel: viewModel, node: child)
                             .padding(.leading, 20)
                     }

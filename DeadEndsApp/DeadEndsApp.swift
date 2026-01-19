@@ -3,25 +3,20 @@
 //  DeadEndsApp.swift
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 7 January 2026.
+//  Last changed on 17 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// DeadEnds SwiftUI Application.
+/// DeadEnds SwiftUI application.
 @main
 struct DeadEndsApp: App {
 
     // System wide application model injected into the environment.
     @StateObject private var model = AppModel()
 
-    /// Not required -- for debugging.
-    init() {
-        print("DeadEndsApp init")
-    }
-
-    /// Application's Scene.
+    /// Application scene.
     var body: some Scene {
 
         WindowGroup {

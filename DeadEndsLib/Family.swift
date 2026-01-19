@@ -3,123 +3,119 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 20 September 2025.
+//  Last changed on 14 January 2026.
 //
 
 import Foundation
 
+extension FamilyRoleTag {
+    static let HUSB = FamilyRoleTag.husband.rawValue
+    static let WIFE = FamilyRoleTag.wife.rawValue
+    static let CHIL = FamilyRoleTag.child.rawValue
+}
+
+/// Structure holding a family.
 public struct Family: Record {
+
     public let root: GedcomNode
-    public init?(_ root: GedcomNode) { guard root.tag == "FAM", root.key != nil  else { return nil }
+
+    /// Init a new family from a 0 FAM node.
+    public init?(_ root: GedcomNode) {
+        guard root.tag == "FAM", root.key != nil  else { return nil }
         self.root = root
     }
 }
 
+/// Extension for husbands, wives and children.
 extension Family {
 
-    /// Returns the first husband in a Family.
-    public func husband(in index: RecordIndex) -> Person? {
-        guard let husbKey = kidVal(forTag: "HUSB"), let husband = index.person(for: husbKey)
-        else { return nil }
-        return husband
-    }
-
-    /// Returns the first wife in a Family.
-    public func wife(in index: RecordIndex) -> Person? {
-        guard let wifeKey = kidVal(forTag: "WIFE"), let wife = index.person(for: wifeKey)
-        else { return nil }
-        return wife
-    }
-
-    /// Returns the children in a Family.
-    public func children(in index: RecordIndex) -> [Person] {
-        return kids(withTag: "CHIL").compactMap { node in
+    /// Return array of all persons in a role with self in gedcom order.
+    private func people(in index: RecordIndex, role: FamilyRoleTag) -> [Person] {
+        root.kids(withTag: role.rawValue).compactMap { node in
             node.val.flatMap { index.person(for: $0) }
         }
     }
 
-    // Returns the husbands in a Family. (For unconventional families.)
-    public func husbands(in index: RecordIndex) -> [Person] {
-        return kids(withTag: "HUSB").compactMap { node in
-            node.val.flatMap { index.person(for: $0)}
+    /// Return array of all persons with a set of roles with self in gedcom order.
+    private func people(in index: RecordIndex, roles: Set<FamilyRoleTag>) -> [Person] {
+
+        var out: [Person] = []
+        var seen = Set<RecordKey>()
+
+        for node in root.kids {
+            guard roles.contains(where: { $0.rawValue == node.tag }) else { continue }
+            guard let key = node.val else { continue }
+            guard seen.insert(key).inserted else { continue }
+            if let person = index.person(for: key) { out.append(person) }
         }
+        return out
     }
 
-    // Returns the wives in a Family. (For unconventional families.)
+    /// Return first husband of self in gedcom order.
+    public func husband(in index: RecordIndex) -> Person? {
+        people(in: index, role: .husband).first
+    }
+
+    /// Return first wife of self in gedcom order.
+    public func wife(in index: RecordIndex) -> Person? {
+        people(in: index, role: .wife).first
+    }
+
+    /// Return all children of self in gedcom order.
+    public func children(in index: RecordIndex) -> [Person] {
+        people(in: index, role: .child)
+    }
+
+    /// Return all husbands of self in gedcom order.
+    public func husbands(in index: RecordIndex) -> [Person] {
+        people(in: index, role: .husband)
+    }
+
+    /// Return all wives of self in gedcom order.
     public func wives(in index: RecordIndex) -> [Person] {
-        return kids(withTag: "WIFE").compactMap { node in
-            node.val.flatMap { index.person(for: $0)}
-        }
+        people(in: index, role: .wife)
     }
 }
 
 public extension Family {
 
-    /// Returns the first spouse (husband or wife) who is **not** the given person.
-    /// Returns `nil` if the given person is not part of this family, or if no other spouse exists.
+    /// Return all spouses in self in gedcom order.
+    func spouses(in index: RecordIndex) -> [Person] {
+        people(in: index, roles: [.husband, .wife])
+    }
+
+//    func spouses(in index: RecordIndex) -> [Person] {
+//        var out: [Person] = []
+//        var seen = Set<RecordKey>()
+//
+//        for node in root.kids {
+//            guard node.tag == FamilyRoleTag.HUSB || node.tag == FamilyRoleTag.WIFE else { continue }
+//            guard let key = node.val else { continue }
+//            guard seen.insert(key).inserted else { continue }
+//            if let p = index.person(for: key) { out.append(p) }
+//        }
+//        return out
+//    }
+
+    /// Return all spouses except given person in self in gedcom order.
+    func spouses(excluding person: Person, in index: RecordIndex) -> [Person] {
+        spouses(in: index).filter { $0.key != person.key }
+    }
+
+    /// Return first spouse other than given person in self.
     func spouse(of person: Person, in index: RecordIndex) -> Person? {
-        // Sanity check: ensure `person` is a spouse in this family
-        let husband = husband(in: index)
-        let wife = wife(in: index)
-
-        guard person.root.key == husband?.root.key || person.root.key == wife?.root.key else {
-            // The person isn’t a spouse in this family
-            return nil
-        }
-
-        // Return the opposite spouse, if any
-        if person.root.key == husband?.root.key {
-            return wife
-        } else if person.root.key == wife?.root.key {
-            return husband
-        } else {
-            return nil
-        }
+        spouses(excluding: person, in: index).first
     }
 
-    /// Returns all spouses (husband and wife) who are **not** the given person.
-    /// If the given person isn’t part of the family, returns an empty array.
-    func oldspouses(of person: Person, in index: RecordIndex) -> [Person] {
-        let husband = husband(in: index)
-        let wife = wife(in: index)
-
-        // Sanity check
-        guard person.root.key == husband?.root.key || person.root.key == wife?.root.key else {
-            return []
-        }
-
-        // Collect all nonmatching spouses
-        var result: [Person] = []
-        if let h = husband, h.root.key != person.root.key {
-            result.append(h)
-        }
-        if let w = wife, w.root.key != person.root.key {
-            result.append(w)
-        }
-        return result
-    }
-
-    // TODO: After change below this method has not been tested.
-    func spouses(of person: GedcomNode, in index: RecordIndex) -> [Person] {
-        //var foundSelf = false
-        var results: [Person] = []
-
-        let spouseKeys = self.kidVals(forTags: ["HUSB", "WIFE"])
-        for key in spouseKeys {
-            if key != person.key, let root = index[key], let spouse = Person(root) {
-                results.append(spouse)
-            }
-//            if key == person.key {
-//                foundSelf = true
-//            } else if let root = index[key], let spouse = Person(root) {
-//                results.append(spouse)
-//            }
-        }
-        return results
+    /// Return true if person is a spouse in self.
+    func containsSpouse(_ person: Person, in index: RecordIndex) -> Bool {
+        spouses(in: index).contains(where: { $0.key == person.key })
     }
 }
 
-extension Family: Equatable, Hashable {
+/// Extension to meet protocols
+extension Family: Equatable, Hashable, Identifiable {
+
     public static func == (lhs: Family, rhs: Family) -> Bool {
         lhs.root.key == rhs.root.key
     }
@@ -127,8 +123,6 @@ extension Family: Equatable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(root.key)
     }
-}
 
-extension Family: Identifiable {
     public var id: String { key }
 }

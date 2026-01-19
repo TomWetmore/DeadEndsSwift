@@ -1,5 +1,5 @@
 //
-//  GedcomEditorView.swift
+//  GedcomEditorWindow.swift
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 November 2025.
@@ -19,6 +19,7 @@ struct GedcomEditorWindow: View {
     var title: String = "Edit Gedcom Record"
 
     var body: some View {
+        
         VStack(spacing: 0) {
 
             // Header
@@ -38,7 +39,7 @@ struct GedcomEditorWindow: View {
 
             Divider()
 
-            // Tree editing buttons
+            // Tree editing buttons.
             TreeEditorButtons(viewModel: viewModel, treeManager: manager)
         }
     }

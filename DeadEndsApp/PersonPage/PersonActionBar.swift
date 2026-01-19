@@ -3,23 +3,18 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 2 October 2025.
+//  Last changed on 11 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
-
-struct GedcomNodeList: Identifiable {  // TODO: DEPRECATED
-    let id = UUID()
-    let nodes: [GedcomNode]
-}
 
 struct FamilyList: Identifiable {
     let id = UUID()
     let nodes: [Family]
 }
 
-/// Row of Buttons displayed on the Person edit window.
+/// Row of action buttons displayed on PersonPage views.
 
 struct PersonActionBar: View {
 
@@ -29,8 +24,9 @@ struct PersonActionBar: View {
     @State private var showEditSheet = false
     @State private var showingDescList = false
 
-
+    /// Row of action buttons.
     var body: some View {
+
         HStack {
             Button("Father") {
                 navigateToParent(sex: "M")
@@ -39,10 +35,10 @@ struct PersonActionBar: View {
                 navigateToParent(sex: "F")
             }
             Button("Older Sibling") {
-                navigateToSibling(offset: -1)
+                navigateToNextSibling()
             }
             Button("Younger Sibling") {
-                navigateToSibling(offset: +1)
+                navigateToPreviousSibling()
             }
             Button("Pedigree") {
                 model.path.append(Route.pedigree(person))
@@ -51,9 +47,9 @@ struct PersonActionBar: View {
                 model.path.append(Route.descendants(person))
             }
             Button("Family") {
-                guard let ri = model.database?.recordIndex else { return }
+                guard let index = model.database?.recordIndex else { return }
                 let families = person.kids(withTag: "FAMS").compactMap {
-                    $0.val.flatMap { ri.family(for: $0) }
+                    $0.val.flatMap { index.family(for: $0) }
                 }
                 if families.count == 1 {
                     model.path.append(Route.family(families[0]))
@@ -74,8 +70,10 @@ struct PersonActionBar: View {
                 model.path.append(Route.descendancy(person))
             }
             Button("New Person") {
-                let newPerson = Person(GedcomNode(key: generateRandomKey(), tag: "INDI"))
-                model.path.append(Route.personEditor(newPerson!))
+                guard let index = model.database?.recordIndex,
+                      let newPerson = Person(GedcomNode(key: generateRandomKey(index: index), tag: "INDI"))
+                else { return }
+                model.path.append(Route.personEditor(newPerson))
             }
             Button("Tree Editor") {
                 // assuming you're inside a PersonView and have `person`
@@ -121,7 +119,7 @@ struct PersonActionBar: View {
             model.status = "No database loaded"
             return
         }
-        if let parent = person.resolveParent(sex: sex, recordIndex: ri) {
+        if let parent = person.resolveParent(sex: sex, index: ri) {
             model.path.append(Route.person(parent))
             model.status = nil
         } else {
@@ -129,42 +127,55 @@ struct PersonActionBar: View {
         }
     }
 
-    /// Navigates to a sibling.
-    private func navigateToSibling(offset: Int) {
-        guard let rindex = model.database?.recordIndex else {
-            model.status = "No database loaded"
+    /// Navigate to the older sibling of current person.
+    private func navigateToNextSibling() {
+        guard let index = model.database?.recordIndex else {
+            model.status = "No database found"
             return
         }
-        guard let famcKey = person.kid(withTag: "FAMC")?.val,
-              let family = rindex.family(for: famcKey) else {
-            model.status = "No family found"
+        guard let sibling = person.nextSibling(in: index) else {
+            model.status = "No older sibling"
             return
         }
-        let siblings = family.kids(withTag: "CHIL").compactMap { $0.val.flatMap { rindex.person(for: $0) } }
-        guard let index = siblings.firstIndex(of: person) else {
-            model.status = "Could not locate person in siblings"
-            return
-        }
+        model.path.append(Route.person(sibling))
+        model.status = nil
+    }
 
-        let newIndex = index + offset
-        guard siblings.indices.contains(newIndex) else {
-            model.status = offset < 0 ? "No older sibling" : "No younger sibling"
+    /// Navigate to the younger sibling of the current person.
+    private func navigateToPreviousSibling() {
+        guard let index = model.database?.recordIndex else {
+            model.status = "No database found"
             return
         }
-        model.path.append(Route.person(siblings[newIndex]))
+        guard let sibling = person.previousSibling(in: index) else {
+            model.status = "No younger sibling"
+            return
+        }
+        model.path.append(Route.person(sibling))
         model.status = nil
     }
 }
 
 private func tidyTest(person: Person, index: RecordIndex) {
+
     guard let uniontree = buildDescendantsTree(from: person, index: index, depth: 3)
             else { return }
     showDescendantsTree(uniontree, index: index)
 
 }
 
-func generateRandomKey() -> String {
-    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    let randomChars = (0..<6).compactMap { _ in alphabet.randomElement() }
-    return "@I" + String(randomChars) + "@"
+/// Generate a random Record key.
+
+func generateRandomKey(index: RecordIndex) -> String {
+
+    let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+    for _ in 0..<10 {
+        let randomChars = (0..<6).map { _ in alphabet.randomElement()! }
+        let key = "@I" + String(randomChars) + "@"
+        if index[key] == nil {
+            return key
+        }
+    }
+    fatalError("Unable to generate unique Record key.")
 }

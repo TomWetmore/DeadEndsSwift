@@ -29,8 +29,8 @@ struct ResizeableCard<Content: View>: View {
         return AnyView(
             ZStack(alignment: .bottomTrailing) {
                 content
-                    .frame(width: card.displaySize.width, height: card.displaySize.height)
-                    .clipped()
+                    .frame(width: card.size.width, height: card.size.height)
+                    //.clipped()
                 resizeHandle
             }
         )
@@ -44,50 +44,49 @@ struct ResizeableCard<Content: View>: View {
             .background(Color.white.opacity(0.7))
             .clipShape(Circle())
             .contentShape(Rectangle())  // hit test only here
-            .gesture(dragGesture)  // .highPriorityGesture?
+            .gesture(resizeGesture)
     }
 
-
-    /// Smart resize gesture using DesktopModel
-    private var dragGesture: some Gesture {
+    /// Card resize gesture.
+    private var resizeGesture: some Gesture {
         DragGesture()
             .onChanged { value in
                 guard let card else { return }
 
-                // Cancel active drag so resizing wins
-                model.activeId = cardID
-                model.activeOffset = .zero
+                if model.resizingId != cardID {  // Resizing in progress.
+                    model.resizingId = cardID
+                }
 
-                let old = card.baseSize
+                let oldSize = card.size
 
                 // Proposed size
-                var newWidth = old.width + value.translation.width
-                var newHeight = old.height + value.translation.height
+                var newWidth = oldSize.width + value.translation.width
+                var newHeight = oldSize.height + value.translation.height
 
                 // Clamp
-                newWidth = min(max(newWidth, CardConstants.minSize.width),
-                               CardConstants.maxSize.width)
-                newHeight = min(max(newHeight, CardConstants.minSize.height),
-                                CardConstants.maxSize.height)
+                newWidth = min(max(newWidth, CardSizes.minSize.width),
+                               CardSizes.maxSize.width)
+                newHeight = min(max(newHeight, CardSizes.minSize.height),
+                                CardSizes.maxSize.height)
 
                 let newSize = CGSize(width: newWidth, height: newHeight)
 
                 // Keep top-left corner fixed
-                let dx = newWidth - old.width
-                let dy = newHeight - old.height
+                let dx = newWidth - oldSize.width
+                let dy = newHeight - oldSize.height
 
                 let newPosition = CGPoint(
                     x: card.position.x + dx / 2,
                     y: card.position.y + dy / 2
                 )
 
-                model.updateBaseSize(for: cardID, to: newSize)
-                model.updateDisplaySize(for: cardID, to: newSize)
+                model.updateSize(for: cardID, to: newSize)
                 model.updatePosition(for: cardID, to: newPosition)
             }
             .onEnded { _ in
-                model.activeId = nil
-                model.activeOffset = .zero
+                if model.resizingId == cardID {
+                                model.resizingId = nil
+                            }
             }
     }
 }

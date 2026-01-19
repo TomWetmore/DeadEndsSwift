@@ -3,12 +3,13 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 31 October 2025.
-//  Last changed on 23 November 2025.
+//  Last changed on 18 January 2026..
 //
 
 import SwiftUI
 import DeadEndsLib
 
+/// View that renders a card on the desktop.
 struct CardView: View {
 
     @Bindable var model: DesktopModel
@@ -19,63 +20,34 @@ struct CardView: View {
         model.cards.first(where: { $0.id == cardID })
     }
 
+    private var isSelected: Bool {
+        model.selectedIDs.contains(cardID)
+    }
+
     private let step = 1.13
 
-//    var body: some View {
-//        guard let card else { return AnyView(EmptyView()) }
-//
-//        return AnyView(
-//            ZStack(alignment: .topLeading) {
-//
-//                RoundedRectangle(cornerRadius: 8)
-//                    .fill(Color(red: 1.0, green: 0.98, blue: 0.9))
-//                    .shadow(radius: 8)
-//                    .overlay(indexCardLines)
-//
-//                VStack(alignment: .leading, spacing: 6) {
-//
-//                    controls
-//
-//                    switch card.kind {
-//                    case .string(let text):
-//                        Text(text)
-//                    case .person(let person):
-//                        PersonCard(model: model, person: person)
-//                    case .family:
-//                        Text("Family Card")
-//                            .font(.headline)
-//                    }
-//                    Spacer()
-//                }
-//                .padding(.bottom, 8)
-//                .padding(.leading, 6)
-//            }
-//                .frame(width: card.displaySize.width,
-//                       height: card.displaySize.height)
-//                .contextMenu { contextMenu(for: card) }
-//        )
-//    }
-
+	/// View to render a card on the desktop.
     var body: some View {
+        
         if let card {
             ZStack(alignment: .topLeading) {
 
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 8)  // Blank index card.
                     .fill(Color(red: 1.0, green: 0.98, blue: 0.9))
                     .shadow(radius: 8)
                     .overlay(indexCardLines)
 
                 VStack(alignment: .leading, spacing: 6) {
 
-                    controls
+                    controls // Red, yellow, green control buttons.
 
-                    switch card.kind {
+                    switch card.kind {  // Person, family, string.
                     case let .string(_, value):
                         Text(value)
                     case .person(let person):
                         PersonCard(model: model, person: person)
                     case .family:
-                        Text("Family Card")
+                        Text("Family Card")  // Replace with family card.
                             .font(.headline)
                     }
                     Spacer()
@@ -83,25 +55,38 @@ struct CardView: View {
                 .padding(.bottom, 8)
                 .padding(.leading, 6)
             }
-            .frame(width: card.displaySize.width,
-                   height: card.displaySize.height)
+            .frame(width: card.size.width, height: card.size.height)
+//            .overlay(
+//                    RoundedRectangle(cornerRadius: 8)
+//                        .stroke(isSelected ? Color.accentColor : .clear,
+//                                lineWidth: isSelected ? 3 : 0)
+//                        .padding(0)
+//                )
+            .overlay {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.accentColor, lineWidth: 3)
+                        .padding(-2)               // OUTSIDE the card
+                        .allowsHitTesting(false)   // <-- CRITICAL: don't steal taps
+                }
+            }
             .contextMenu { contextMenu(for: card) }
         } else {
-            // The card disappeared or was removed.
-            EmptyView()
+            EmptyView()  // Disappeared or removed.
         }
     }
 
-    /// The three controls in the upper left corner of the Card.
+    /// Red, yellow, and green buttoms in the upper left corner.
     private var controls: some View {
+        
         HStack(spacing: 4) {
-            Button(action: deleteCard) {
+            Button(action: deleteCard) {  // Delete button.
                 Circle().fill(Color.red).frame(width: 12, height: 10)
             }
-            Button(action: shrinkCard) {
+            Button(action: shrinkCard) {  // Shrink button.
                 Circle().fill(Color.yellow).frame(width: 12, height: 10)
             }
-            Button(action: enlargeCard) {
+            Button(action: enlargeCard) {  // Grow button.
                 Circle().fill(Color.green).frame(width: 12, height: 10)
             }
             Spacer()
@@ -111,7 +96,7 @@ struct CardView: View {
         .padding(.leading, 4)
     }
 
-    /// Delete the Card from the Desktop.
+    /// Delete card from the desktop.
     private func deleteCard() {
         guard let card else { return }
         withAnimation(.easeOut(duration: 0.2)) {
@@ -119,23 +104,26 @@ struct CardView: View {
         }
     }
 
-    /// Enlarge the Card by one step factor.
-    private func enlargeCard() { applyScale(step) }
+    /// Enlarge card one step.
+    private func enlargeCard() {
+        applyScale(step)
+    }
 
-    /// Shrink the Card by one step factor.
-    private func shrinkCard()  { applyScale(1 / step) }
+    /// Shrink one step.
+    private func shrinkCard()  {
+        applyScale(1 / step)
+    }
 
-    /// Change the size of the Card by some factor.
+    /// Change size of card by factor.
     private func applyScale(_ factor: CGFloat) {
+        
         guard let card else { return }
-
-        let old = card.baseSize      // <-- use baseSize now
+        let old = card.size
         var new = CGSize(width: old.width * factor, height: old.height * factor)
-
-        new.width = min(max(new.width, CardConstants.minSize.width),
-                        CardConstants.maxSize.width)
-        new.height = min(max(new.height, CardConstants.minSize.height),
-                         CardConstants.maxSize.height)
+        new.width = min(max(new.width, CardSizes.minSize.width),
+                        CardSizes.maxSize.width)
+        new.height = min(max(new.height, CardSizes.minSize.height),
+                         CardSizes.maxSize.height)
 
         let dx = new.width - old.width
         let dy = new.height - old.height
@@ -143,14 +131,14 @@ struct CardView: View {
                                   y: card.position.y + dy / 2)
 
         withAnimation(.easeOut(duration: 0.15)) {
-            model.updateBaseSize(for: cardID, to: new)
-            model.updateDisplaySize(for: cardID, to: new)   // immediate sync
+            model.updateSize(for: cardID, to: new)
             model.updatePosition(for: cardID, to: newPosition)
         }
     }
 
-    /// Context Menu for a Card based on its CardKind.
+    /// Context Menu for a Card based on its CardValue.
     private func contextMenu(for card: Card) -> some View {
+        
         switch card.kind {
         case .person(let person):
             return AnyView(PersonContextMenu(person: person, index: index, model: model))
@@ -161,7 +149,9 @@ struct CardView: View {
         }
     }
 
+	/// Adds index card lines to the Card's view.
     private var indexCardLines: some View {
+        
         GeometryReader { geo in
             Path { path in
                 let lineSpacing: CGFloat = 14

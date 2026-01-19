@@ -3,15 +3,16 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 22 November 2025.
+//  Last changed on 3 January 2026.
 //
 
 import Foundation
 
-/// A NameIndex maps name keys to the sets of keys of persons with names that match the name key.
+/// A NameIndex maps NameKeys to Sets of RecordKeys of persons with names that match the NameKey.
+
 final public class NameIndex {
 
-	static let map: [Character: String] = [ // Soundex based map used to generate name keys (not for phonetics).
+	static let map: [Character: String] = [ // Soundex based map used to generate name keys.
 		"B": "1", "F": "1", "P": "1", "V": "1",
 		"C": "2", "G": "2", "J": "2", "K": "2", "Q": "2", "S": "2", "X": "2", "Z": "2",
 		"D": "3", "T": "3",
@@ -23,7 +24,7 @@ final public class NameIndex {
 	/// Underlying name index dictionary.
 	var index = [NameKey: Set<RecordKey>]()
 
-	/// Adds an entry to the NameIndex; value is a 1 NAME value and is converted to a name key.
+	/// Adds an entry to the NameIndex; value is a 1 NAME value and is converted to a NameKey.
 	public func add(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value) else { return }
 		self.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
@@ -34,18 +35,19 @@ final public class NameIndex {
 		index[nameKey, default: Set()].insert(recordKey)
 	}
 
-    /// Removes an entry from the NameIndex; value is 1 NAME value and is converted to a name key.
-    public func remove(value: String, recordKey: String) {
+    /// Removes an entry from the NameIndex; value is a 1 NAME value that is converted to a NameKey.
+    public func remove(value: String, recordKey: RecordKey) {
+		
         guard let gedcomName = GedcomName(string: value) else { return }
         remove(nameKey: gedcomName.nameKey, recordKey: recordKey)
     }
 
     /// Removes an entry from the NameIndex.
-    func remove(nameKey: String, recordKey: String) {
+    func remove(nameKey: NameKey, recordKey: RecordKey) {
+		
         if var records = index[nameKey] {
             records.remove(recordKey)
-            // Remove record key set if now empty.
-            if records.isEmpty { index.removeValue(forKey: nameKey) }  // Remove record set if empty.
+            if records.isEmpty { index.removeValue(forKey: nameKey) }
             else { index[nameKey] = records } // Update the record set.
         }
     }
@@ -105,15 +107,12 @@ func soundex(for surname: String) -> String {
 	return result
 }
 
-/// Alias for a `GedcomNode` that is the root of a person record.
-//public typealias Person = GedcomNode
-
 // Extension of GedcomNode where self is a Person root.
 extension Person {
 
 	/// Returns the array of non-nil values of the 1 NAME lines in a Person.
     var nameValues: [String] {
-        self.root.kidVals(forTag: "NAME") // TODO: Change to not need .node.
+        self.root.kidVals(forTag: "NAME")
     }
 }
 
@@ -124,7 +123,7 @@ func squeeze(_ input: String) -> [String] {
 		.map { String($0.uppercased()) }
 }
 
-// exactMatch checks that all words in the partial array are found in the full array and in the same order.
+// Checks that all words in the partial array are found in the full array and in the same order.
 func exactMatch(partial: [String], complete: [String]) -> Bool {
 	var partialIndex = 0
 	var completeIndex = 0

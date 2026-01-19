@@ -3,17 +3,17 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 19 September 2025.
+//  Last changed on 7 January 2026.
 //
 
 import SwiftUI
-import AppKit
 import DeadEndsLib
 
-/// A view that prompts the user to select a Gedcom file and then loads it into a DeadEnds Database.
+/// Prompts user to select a Gedcom file and then loads it into a DeadEnds Database.
+
 struct LoaderView: View {
 
-    @EnvironmentObject var model: AppModel  // Application model holding the Database.
+    @EnvironmentObject var model: AppModel  // Holds the Database.
 
     /// Body property for LoaderView.
     var body: some View {

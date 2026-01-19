@@ -1,9 +1,9 @@
 //
-//  PersonView.swift
+//  PersonPage.swift
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 7 January 2026.
+//  Last changed on 8 January 2026.
 //
 
 import SwiftUI
@@ -42,13 +42,17 @@ struct PersonPage: View {
             ScrollView {
                 // Father
                 if let ri = model.database?.recordIndex,
-                   let father = person.resolveParent(sex: "M", recordIndex: ri) {
-                    PersonRow(person: father, label: "Father", tint: .blue)
+                   let father = person.resolveParent(sex: "M", index: ri) {
+                    PersonTile(person: father, label: "Father", tint: .blue) { p in
+                        model.path.append(Route.person(p))
+                    }
                 }
                 // Mother
                 if let ri = model.database?.recordIndex,
-                   let mother = person.resolveParent(sex: "F", recordIndex: ri) {
-                    PersonRow(person: mother, label: "Mother", tint: .pink)
+                   let mother = person.resolveParent(sex: "F", index: ri) {
+                    PersonTile(person: mother, label: "Mother", tint: .pink) { p in
+                        model.path.append(Route.person(p))
+                    }
                 }
                 
                 Divider()
@@ -60,13 +64,17 @@ struct PersonPage: View {
                     
                     ForEach(families, id: \.self) { family in
                         if let spouse = family.resolveSpouse(for: person, index: ri) {
-                            PersonRow(person: spouse, label: "Spouse", tint: backgroundColor(for: spouse))
+                            PersonTile(person: spouse, label: "Spouse", tint: backgroundColor(for: spouse)) { p in
+                                model.path.append(Route.person(p))
+                            }
                         }
                         let children = family.kids(withTag: "CHIL").compactMap { node in
                             node.val.flatMap { ri.person(for: $0) }
                         }
                         ForEach(children, id: \.self) { child in
-                            PersonRow(person: child, label: "Child", tint: backgroundColor(for: child))
+                            PersonTile(person: child, label: "Child", tint: backgroundColor(for: child)) { p in
+                                model.path.append(Route.person(p))
+                            }
                         }
                     }
                 }
@@ -94,12 +102,11 @@ struct PersonPage: View {
 public extension Person {
     
     /// Return first parent with specified sex of self. It uses the first FAMC family.
-    
-    func resolveParent(sex: String, recordIndex: RecordIndex) -> Person? {
+    func resolveParent(sex: String, index: RecordIndex) -> Person? {
         guard let familyKey = self.kidVal(forTag: "FAMC"),
-              let family = recordIndex.family(for: familyKey),
+              let family = index.family(for: familyKey),
               let parentKey = family.kid(withTag: sex == "M" ? "HUSB" : "WIFE")?.val,
-              let parent = recordIndex.person(for: parentKey) else {
+              let parent = index.person(for: parentKey) else {
             return nil
         }
         return parent

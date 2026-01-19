@@ -66,6 +66,8 @@
 		2644BEC42E63C62A00A073F1 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Desktop/Tools/MergePersonTool.swift,
+				Desktop/Tools/Tool.swift,
 				UnifiedPersonView.swift,
 			);
 			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;

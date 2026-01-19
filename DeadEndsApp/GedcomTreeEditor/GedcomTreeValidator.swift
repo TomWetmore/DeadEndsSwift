@@ -36,11 +36,11 @@ struct GedcomTreeValidator {
 
     private mutating func dfs(node: GedcomNode, expectedParent: GedcomNode?) {
 
-        if seen.contains(node.uid) {
+        if seen.contains(node.id) {
             errors.append(.init(node: node, message: "Cycle detected"))
             return
         }
-        seen.insert(node.uid)
+        seen.insert(node.id)
 
         // Check parent pointer
         if node.dad !== expectedParent {

@@ -3,64 +3,65 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 October 2025.
-//  Last changed on 16 November 2025.
+//  Last changed on 19 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// View that contains DraggableCardViews and supports genealogical activities.
+/// View that contains draggable cards and supports genealogical activities.
 struct DesktopView: View {
 
     @State private var model: DesktopModel
     @State private var showingSearchSheet = false
 
-    /// Create a DesktopView with a first PersonCard; also creates the DesktopModel.
+    /// Create a desktop view with a person card.
     init(person: Person) {
-        let desktopModel = DesktopModel() // Create model as an ordinary class object.
-        desktopModel.addCard(kind: .person(person), position: CGPoint(x: 200, y: 200), // Add a Person card to it.
-                             size: CardConstants.startSize)
-        _model = State(wrappedValue: desktopModel) // Install the model into @StateObject memory.
+        
+        let desktopModel = DesktopModel()
+        desktopModel.addCard(
+            kind: .person(person),
+            position: CGPoint(x: 200, y: 200),
+            size: CardSizes.startSize
+        )
+        _model = State(wrappedValue: desktopModel)
     }
 
-    /// DesktopView's body property.
     var body: some View {
-        GeometryReader { geo in  // Defines available desktop area.
-
-            // This View holds the whole Desktop.
+        GeometryReader { geo in
             ZStack {
-                Rectangle()  // Background is a blue gradient covering the desktop.
+
+                // Background
+                Rectangle()
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
                                 Color(red: 118/255, green: 214/255, blue: 255/255),
                                 Color(red: 90/255, green: 190/255, blue: 240/255)
                             ]),
-                            startPoint: .topLeading, endPoint: .bottomTrailing
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
                     )
                     .border(Color.gray.opacity(0.3))
                     .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { model.selectedIDs.removeAll() }
 
-                // FIRST TOOL EXPERIMENT
-                MergePersonTool(model: model) // DEBUG: Turn this back on soon
-
-                // Card layer. Card views measure their frames in “desktop” space, and are placed on
-                // the Desktop surface.
+                // Cards
                 ForEach(model.cards) { card in
                     DraggableCard(model: model, cardID: card.id) {
-                        ResizeableCard(model: model, cardID: card.id) {
-                            CardView(model: model, cardID: card.id)
+                        SelectableCard(model: model, cardID: card.id) {
+                            ResizeableCard(model: model, cardID: card.id) {
+                                CardView(model: model, cardID: card.id)
+                            }
                         }
                     }
                 }
             }
-            // Define the coordinate space for all subviews. (.frame(in: .named("desktop")).
             .coordinateSpace(name: "desktop")
-            .frame(minWidth: 800, minHeight: 500)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
-
-        // Context menu for the Desktop.
         .contextMenu {
             Button("Add Person to Desktop...") {
                 showingSearchSheet = true
@@ -68,7 +69,7 @@ struct DesktopView: View {
         }
         .sheet(isPresented: $showingSearchSheet) {
             PersonSearchSheet(model: model)
-                .frame(minWidth: 500, minHeight: 400)
+                .frame(minWidth: 500, minHeight: 200)
         }
     }
 }
@@ -78,7 +79,7 @@ struct PersonSearchSheet: View {
 
     @Environment(\.dismiss) var dismiss
     var model: DesktopModel
-    @EnvironmentObject var appModel: AppModel  // Provides Database access.
+    @EnvironmentObject var appModel: AppModel
 
     @State private var query: String = ""
     @State private var results: [PersonMatch] = []
@@ -101,7 +102,7 @@ struct PersonSearchSheet: View {
                 List(results) { match in
                     Button(match.displayLine) {
                         model.addCard(kind: .person(match.person), position: CGPoint(x: 100, y: 100),
-                                      size: CardConstants.startSize)
+                                      size: CardSizes.startSize)
                         dismiss()
                     }
                 }

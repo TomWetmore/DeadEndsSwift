@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 25 October 2025.
-//  Last changed on 22 November 2025.
+//  Last changed on 17 January 2026.
 //
 
 import SwiftUI
@@ -13,10 +13,11 @@ import DeadEndsLib
 struct PersonCard: View {
 
     let model: DesktopModel
-    @Environment(\.recordIndex) private var index: RecordIndex  // Provide access to the Database.
-    var person: Person  // Person represented by this Card.
+    @Environment(\.recordIndex) private var index: RecordIndex
+    var person: Person  // Person on this card.
 
     var body: some View {
+        
         VStack(alignment: .leading, spacing: 4) {
             Text(person.name ?? "Unknown Person")
                 .font(.headline)
@@ -30,8 +31,9 @@ struct PersonCard: View {
     }
 }
 
-/// Context menu shown on PersonCardViews.
+/// Context menu on person cards.
 struct PersonContextMenu: View {
+    
     let person: Person
     let index: RecordIndex
 
@@ -53,10 +55,10 @@ struct PersonContextMenu: View {
                 ForEach(spouseList, id: \.root.key) { spouse in
                     if !(model?.contains(person: spouse) ?? false) {
                         Button("Add \(spouse.name ?? "no name")") {
-                            model?.addCard(
+                            model?.addCard(  // Add spouse to desktop.
                                 kind: .person(spouse),
                                 position: CGPoint(x: 200, y: 200),
-                                size: CardConstants.startSize
+                                size: CardSizes.startSize
                             )
                         }
                     }
@@ -66,7 +68,7 @@ struct PersonContextMenu: View {
             Divider()
 
             Button("Remove \(person.name ?? "no name")") {
-                model?.removeCard(kind: .person(person))
+                model?.removeCard(kind: .person(person)) // Remove person from desktop.
             }
         }
     }

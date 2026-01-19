@@ -1,0 +1,68 @@
+CHANGED FOR THE BASESIZE AND DISPLAYSIZE WORK:
+
+private func updateMagneticBehavior() {
+    // 1. Find active card
+    guard let activeId = model.activeId,
+          let card = model.card(withId: activeId)
+    else { return }
+
+    // 2. Compute live position (accounting for drag offset)
+    let livePosition = CGPoint(
+        x: card.position.x + model.activeOffset.width,
+        y: card.position.y + model.activeOffset.height
+    )
+
+    // 3. Use *displaySize* (NOT baseSize) for card rect
+    let size = card.displaySize
+    let cardRect = CGRect(
+        x: livePosition.x - size.width / 2,
+        y: livePosition.y - size.height / 2,
+        width: size.width,
+        height: size.height
+    )
+
+    // 4. Centers
+    let cardCenter = CGPoint(x: cardRect.midX, y: cardRect.midY)
+    let centerA = CGPoint(x: slotAFrame.midX, y: slotAFrame.midY)
+    let centerB = CGPoint(x: slotBFrame.midX, y: slotBFrame.midY)
+
+    // 5. Distances → magnetic pull factors
+    let distA = hypot(cardCenter.x - centerA.x, cardCenter.y - centerA.y)
+    let distB = hypot(cardCenter.x - centerB.x, cardCenter.y - centerB.y)
+
+    let pA = max(0, 1 - distA / magneticRadius)
+    let pB = max(0, 1 - distB / magneticRadius)
+
+    // 6. Magnetic resizing
+    if pA > pB && pA > 0.05 {
+        let newSize = lerpSize(from: card.baseSize, to: slotSize, amount: pA)
+        model.updateDisplaySize(for: activeId, to: newSize)
+
+    } else if pB > 0.05 {
+        let newSize = lerpSize(from: card.baseSize, to: slotSize, amount: pB)
+        model.updateDisplaySize(for: activeId, to: newSize)
+
+    } else {
+        // No magnetic influence → restore permanent size
+        model.updateDisplaySize(for: activeId, to: card.baseSize)
+    }
+
+    // 7. Snap logic
+    if distA < 25 {
+        snap(cardID: activeId, to: centerA)
+        dockedA = activeId
+        dockedB = (dockedB == activeId) ? nil : dockedB
+        return
+    }
+
+    if distB < 25 {
+        snap(cardID: activeId, to: centerB)
+        dockedB = activeId
+        dockedA = (dockedA == activeId) ? nil : dockedA
+        return
+    }
+
+    // 8. Automatically undock when not close
+    if dockedA == activeId && distA ≥ 25 { dockedA = nil }
+    if dockedB == activeId && distB ≥ 25 { dockedB = nil }
+}

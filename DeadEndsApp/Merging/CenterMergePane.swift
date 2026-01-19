@@ -3,14 +3,15 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 9 November 2025.
-//  Last changed on 15 November 2025.
+//  Last changed on 3 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Central editable pane of the Merge Workspace. Accepts dropped Gedcom subtrees from side displays
-/// and allows in-place editing. Uses
+/// Central editable pane of the MergeWindow. Accepts dropped Gedcom subtrees from side panels
+/// and allows in-place editing.
+
 struct CenterMergePane: View {
 
     @State private var mergedRoot: GedcomNode = GedcomNode(tag: "INDI")
@@ -19,6 +20,7 @@ struct CenterMergePane: View {
     @EnvironmentObject private var session: MergeSession
 
     init() {
+        
         let model = GedcomTreeEditorModel(root: nil)
         let index = RecordIndex()
         _viewModel = State(wrappedValue: model)
@@ -54,9 +56,9 @@ struct CenterMergePane: View {
         }
 
         // Expand the root and its new children so they are visible
-        viewModel.expandedSet.insert(mergedRoot.uid)
+        viewModel.expandedSet.insert(mergedRoot.id)
         for kid in mergedRoot.kids {
-            viewModel.expandedSet.insert(kid.uid)
+            viewModel.expandedSet.insert(kid.id)
         }
         print("✅ After drop: \(mergedRoot.kids.count) kids now attached to root")  // DEBUG
     }
