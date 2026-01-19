@@ -3,14 +3,15 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 21 September 2025.
+//  Last changed on 7 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// View that show Person in a full resizable window.
-struct PersonView: View {
+/// View that shows a Person in a DeadEnds Page. Uses PersonActionBar, PersonRow and message area Text.
+
+struct PersonPage: View {
 
     @EnvironmentObject var model: AppModel
     let person: Person
@@ -37,7 +38,6 @@ struct PersonView: View {
                 .frame(height: 1)
                 .padding(.horizontal)
                 .padding(.bottom, 0)
-            //.background(Color.gray.opacity(0.5))
             
             ScrollView {
                 // Father
@@ -74,7 +74,7 @@ struct PersonView: View {
             .padding([.top], 0)
             .padding([.leading, .trailing], 8)
             
-            // Status area to give user important messages.
+            // Area for messages and action buttons.
             VStack(alignment: .leading, spacing: 4) {
                 if let message = model.status {
                     Text(message)
@@ -84,7 +84,6 @@ struct PersonView: View {
                 PersonActionBar(person: person)
             }
             .padding()
-            //.background(Color(.gray)) // optional but gives a footer effect
             
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -94,8 +93,8 @@ struct PersonView: View {
 
 public extension Person {
     
-    /// Returns the first parent of the specified sex of self.
-    /// It only looks in the first FAMC family.
+    /// Return first parent with specified sex of self. It uses the first FAMC family.
+    
     func resolveParent(sex: String, recordIndex: RecordIndex) -> Person? {
         guard let familyKey = self.kidVal(forTag: "FAMC"),
               let family = recordIndex.family(for: familyKey),
@@ -108,9 +107,11 @@ public extension Person {
 }
 
 public extension Family {
+
+    /// Find first spouse of Person in self Family.
     
     func resolveSpouse(for person: Person, index: RecordIndex) -> Person? {
-        // Called on a FAM record
+
         let husbKey = self.kid(withTag: "HUSB")?.val
         let wifeKey = self.kid(withTag: "WIFE")?.val
         let selfKey = person.key
@@ -120,9 +121,12 @@ public extension Family {
     }
 }
 
-/// backgroundColor ...
+/// Return backgroundColor of person based on sex.
+/// Note: Should this be an extention on Person?
+
 func backgroundColor(for person: Person) -> Color {
-    let sexType = person.sex
+    
+    let sexType = person.sex // Note: Remove this variable?
     switch sexType {
     case .male: return Color.blue.opacity(0.05)
     case .female: return Color.pink.opacity(0.05)

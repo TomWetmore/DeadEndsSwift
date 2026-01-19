@@ -10,7 +10,7 @@ import SwiftUI
 import DeadEndsLib
 
 // Provides the top level View of a Family.
-struct FamilyView: View {
+struct FamilyPage: View {
 
     @EnvironmentObject var model: AppModel
     let family: Family  // Family in View.
@@ -19,19 +19,19 @@ struct FamilyView: View {
         VStack(alignment: .leading, spacing: 12) {
             // Display Husband.
             if let husband = resolveRole("HUSB") {
-                PersonRow(person: husband, label: "Husband")
+                PersonTile(person: husband, label: "Husband")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             // Display Wife.
             if let wife = resolveRole("WIFE") {
-                PersonRow(person: wife, label: "Wife")
+                PersonTile(person: wife, label: "Wife")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             // Display Children.
             ScrollView {
                 if let index = model.database?.recordIndex {
                     ForEach(family.children(in: index), id: \.self) { child in
-                        PersonRow(person: child, label: "Child")
+                        PersonTile(person: child, label: "Child")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }

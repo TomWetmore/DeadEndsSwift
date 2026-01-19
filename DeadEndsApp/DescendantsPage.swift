@@ -3,25 +3,27 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 7 August 2025.
-//  Last changed on 18 September 2025.
+//  Last changed on 2 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
 /// A lightweight structure for building a descendant display tree.
-/// It wraps a `GedcomNode` for the person and precomputes the person's children.
+/// It wraps a GedcomNode for the person and precomputes the person's children.
 struct DescendantNode: Identifiable {
+
     let person: Person
     let children: [DescendantNode]
     var id: String { person.key }
 }
 
-struct DescendantsView: View {
-    @EnvironmentObject var model: AppModel
-    let root: Person
+struct DescendantsPage: View {
 
     @State private var expanded: Set<String> = []   // which nodes are open
+    @EnvironmentObject var model: AppModel
+
+    let root: Person
 
     var body: some View {
         ScrollView {

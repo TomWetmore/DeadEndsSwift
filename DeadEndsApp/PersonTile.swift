@@ -1,24 +1,26 @@
 //
-//  PersonRow.swift
+//  PersonTile.swift
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 4 July 2025.
-//  Last changed on 19 September 2025.
+//  Last changed on 10 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-// PersonRow is a wideish button.
-struct PersonRow: View {
+/// Flexible view for showing a person.
+struct PersonTile: View {
+
     @EnvironmentObject var model: AppModel
     let person: Person
     var label: String? = nil
     var showSummary: Bool = true
-    var isInteractive: Bool = true
     var tint: Color? = nil
+    var onActivate: ((Person) -> Void)? = nil
 
     var body: some View {
+
         let content = VStack(alignment: .leading) {
             HStack {
                 if let label = label {
@@ -40,24 +42,21 @@ struct PersonRow: View {
                 .font(.title3)
             }
         }
-        //.font(.title3)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
         .background(backgroundColor(for: person))
         .cornerRadius(6)
 
-        if isInteractive {
+        if let onActivate {  // Handle the view if it is can be a button.
             Button {
-                model.path.append(Route.person(person))
+                onActivate(person)
             } label: {
                 content
-                .frame(maxWidth: .infinity, alignment: .leading)
+                //.frame(maxWidth: .infinity, alignment: .leading)
             }
-            //.buttonStyle(.plain)
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(.plain)
         } else {
             content
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
