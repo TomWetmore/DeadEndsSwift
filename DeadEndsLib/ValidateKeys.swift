@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 20 July 2025.
+//  Last changed on 19 January 2026.
 //
 
 import Foundation
@@ -105,11 +105,10 @@ extension GedcomNode {
     }
 }
 
-/// Return `true` if a `String` has the form of a Gedcom key.
+/// Return true if a string Gedcom key form.
 public func isKey(_ value: String) -> Bool {
     return value.hasPrefix("@") && value.hasSuffix("@")
 }
-
 
 enum RecordType {
     case header, trailer, person, family, source, other

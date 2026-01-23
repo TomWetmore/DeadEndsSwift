@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 31 October 2025.
-//  Last changed on 18 January 2026..
+//  Last changed on 19 January 2026..
 //
 
 import SwiftUI
@@ -56,18 +56,12 @@ struct CardView: View {
                 .padding(.leading, 6)
             }
             .frame(width: card.size.width, height: card.size.height)
-//            .overlay(
-//                    RoundedRectangle(cornerRadius: 8)
-//                        .stroke(isSelected ? Color.accentColor : .clear,
-//                                lineWidth: isSelected ? 3 : 0)
-//                        .padding(0)
-//                )
-            .overlay {
+            .overlay {  // Add selection ring to the card.
                 if isSelected {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color.accentColor, lineWidth: 3)
-                        .padding(-2)               // OUTSIDE the card
-                        .allowsHitTesting(false)   // <-- CRITICAL: don't steal taps
+                        .padding(-2)
+                        .allowsHitTesting(false)
                 }
             }
             .contextMenu { contextMenu(for: card) }
@@ -76,7 +70,7 @@ struct CardView: View {
         }
     }
 
-    /// Red, yellow, and green buttoms in the upper left corner.
+    /// Red, yellow, and green buttons in the upper left corner.
     private var controls: some View {
         
         HStack(spacing: 4) {
@@ -86,7 +80,7 @@ struct CardView: View {
             Button(action: shrinkCard) {  // Shrink button.
                 Circle().fill(Color.yellow).frame(width: 12, height: 10)
             }
-            Button(action: enlargeCard) {  // Grow button.
+            Button(action: enlargeCard) {  // Enlarge button.
                 Circle().fill(Color.green).frame(width: 12, height: 10)
             }
             Spacer()
@@ -109,12 +103,12 @@ struct CardView: View {
         applyScale(step)
     }
 
-    /// Shrink one step.
+    /// Shrink card one step.
     private func shrinkCard()  {
         applyScale(1 / step)
     }
 
-    /// Change size of card by factor.
+    /// Change card size by factor.
     private func applyScale(_ factor: CGFloat) {
         
         guard let card else { return }
@@ -124,21 +118,18 @@ struct CardView: View {
                         CardSizes.maxSize.width)
         new.height = min(max(new.height, CardSizes.minSize.height),
                          CardSizes.maxSize.height)
-
         let dx = new.width - old.width
         let dy = new.height - old.height
         let newPosition = CGPoint(x: card.position.x + dx / 2,
                                   y: card.position.y + dy / 2)
-
         withAnimation(.easeOut(duration: 0.15)) {
             model.updateSize(for: cardID, to: new)
             model.updatePosition(for: cardID, to: newPosition)
         }
     }
 
-    /// Context Menu for a Card based on its CardValue.
+    /// Context menu for card based on its kind.
     private func contextMenu(for card: Card) -> some View {
-        
         switch card.kind {
         case .person(let person):
             return AnyView(PersonContextMenu(person: person, index: index, model: model))

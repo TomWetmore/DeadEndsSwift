@@ -1,0 +1,109 @@
+That’s exactly the right next step. The moving parts are:
+	1.	each card reports its frame in desktop coordinates via a PreferenceKey
+	2.	DesktopView collects those frames into a [UUID: CGRect] map
+	3.	during the marquee drag, compute hitIDs = frames where frame.intersects(marqueeRect)
+	4.	update model.selectedIDs (replace / add / toggle later)
+
+A) Add the preference plumbing
+
+1) PreferenceKey (inside DesktopView.swift or a small new file)
+
+private struct CardFramePrefKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
+
+2) A helper modifier you can attach to the card wrapper
+
+private struct ReportCardFrame: ViewModifier {
+    let id: UUID
+    func body(content: Content) -> some View {
+        content.background(
+            GeometryReader { geo in
+                Color.clear.preference(
+                    key: CardFramePrefKey.self,
+                    value: [id: geo.frame(in: .named("desktop"))]
+                )
+            }
+        )
+    }
+}
+private extension View {
+    func reportCardFrame(id: UUID) -> some View {
+        modifier(ReportCardFrame(id: id))
+    }
+}
+
+B) Capture frames in DesktopView
+Add state:
+
+@State private var cardFrames: [UUID: CGRect] = [:]
+
+Then on your ZStack (or the outermost container inside the GeometryReader), add:
+
+.onPreferenceChange(CardFramePrefKey.self) { cardFrames = $0 }
+
+(Important: you already have .coordinateSpace(name: "desktop") — keep that.)
+
+C) Attach the reporting to each rendered card
+In cardsLayer, attach it at the outermost card wrapper you want to measure. Since your stack is:
+
+DraggableCard { SelectableCard { ResizeableCard { CardView }}}
+
+A good place is the outer wrapper view returned by DraggableCard. Since you’re creating it inline, you can do:
+
+private var cardsLayer: some View {
+    ForEach(model.cards) { card in
+        DraggableCard(model: model, cardID: card.id) {
+            SelectableCard(model: model, cardID: card.id) {
+                ResizeableCard(model: model, cardID: card.id) {
+                    CardView(model: model, cardID: card.id)
+                }
+            }
+        }
+        .reportCardFrame(id: card.id)
+    }
+}
+
+That way you’re measuring the actual positioned card container, not the internals.
+
+D) Use the frames during marquee drag
+Right now your marquee gesture only updates marqueeRect. Add selection computation inside .onChanged.
+
+Minimal “replace selection” version:
+
+private var marqueeGesture: some Gesture {
+    DragGesture(minimumDistance: 2)
+        .onChanged { value in
+            if marqueeStart == nil { marqueeStart = value.startLocation }
+            let s = marqueeStart ?? value.startLocation
+            let rect = CGRect(
+                x: min(s.x, value.location.x),
+                y: min(s.y, value.location.y),
+                width: abs(value.location.x - s.x),
+                height: abs(value.location.y - s.y)
+            )
+            marqueeRect = rect
+
+            // Selection: intersects is usually the nicest feel
+            let hit = Set(cardFrames.compactMap { (id, frame) in
+                frame.intersects(rect) ? id : nil
+            })
+            model.selectedIDs = hit
+        }
+        .onEnded { _ in
+            marqueeStart = nil
+            marqueeRect = nil
+        }
+}
+
+That’s the whole feature.
+
+E) Two practical gotchas (worth knowing up front)
+1) Frames won’t exist until after first layout pass
+On the first drag right after view appears, cardFrames might be empty for a moment. That’s fine — selection just won’t happen until preferences arrive. It will “self-correct” immediately.
+
+2) Geometry must be in the "desktop" coordinate space
+You already set .coordinateSpace(name: "desktop") on the ZStack container. That’s perfect. Just make sure you don’t accidentally move it outside the region where cards are measured.

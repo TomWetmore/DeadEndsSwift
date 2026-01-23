@@ -87,9 +87,7 @@ private struct SemicircleButton: View {
     }
 }
 
-// MARK: - FamilyTreePersonView
-
-/// Shows a single centered person card with four semicircle controls.
+/// Centered person card with four semicircle controls.
 /// Bind this view into your FamilyTree host; it owns its own simple UI state for now.
 struct FamilyTreePersonView: View {
     // Inputs from caller (map these from your Gedcom model upstream)
@@ -104,7 +102,7 @@ struct FamilyTreePersonView: View {
     @State private var spouseIndex = -1    // -1 == none selected
 
     // Visual tuning
-    private let cardSize = CGSize(width: 180, height: 180)
+    private let cardSize = CGSize(width: 200, height: 250)
     private let cornerRadius: CGFloat = 14
     private let buttonRadius: CGFloat = 16
 
@@ -120,7 +118,7 @@ struct FamilyTreePersonView: View {
                 .frame(width: cardSize.width, height: cardSize.height)
                 .overlay(cardContent) // text + status inside
 
-            // Parents link
+            // Parents link on top.
             SemicircleButton(
                 edge: .top, radius: buttonRadius,
                 //systemName: showParents ? "person.badge.minus" : "person.badge.plus",
@@ -130,7 +128,7 @@ struct FamilyTreePersonView: View {
             )
             .offset(x: 0, y: -(cardSize.height / 2))
 
-            // Siblings link
+            // Siblings link on left.
             SemicircleButton(
                 edge: .left, radius: buttonRadius,
                 //systemName: showSiblings ? "person.2.fill" : "person.2",
@@ -140,7 +138,7 @@ struct FamilyTreePersonView: View {
             )
             .offset(x: -(cardSize.width / 2), y: 0)
 
-            // Spouse link
+            // Spouse link on right.
             SemicircleButton(
                 edge: .right, radius: buttonRadius,
                 //systemName: spouseIndex >= 0 ? "heart.text.square.fill" : "heart.text.square",
@@ -150,7 +148,7 @@ struct FamilyTreePersonView: View {
             )
             .offset(x: (cardSize.width / 2), y: 0)
 
-            // Children link
+            // Children link on bottom.
             SemicircleButton(
                 edge: .bottom, radius: buttonRadius,
                 //systemName: showChildren ? "figure.child.circle.fill" : "figure.child.circle",
@@ -171,6 +169,11 @@ struct FamilyTreePersonView: View {
         .animation(.snappy, value: spouseIndex)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Person card for \(name)")
+        .onAppear {  // DEBUG.
+            for spouse in spouses {
+                print(spouse)
+            }
+        }
     }
 
     // MARK: - Subviews / Helpers

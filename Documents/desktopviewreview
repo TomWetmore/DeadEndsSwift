@@ -1,0 +1,175 @@
+
+This is in really nice shape already: the body reads like a storyboard (background → marqueeOverlay → cardsLayer), and the “baby step” marquee is isolated cleanly.
+
+Here are the refactors / tweaks I’d consider next, roughly in order of payoff.
+
+⸻
+
+1) Fix the big structural issue: model shouldn’t be @State if it’s a reference model
+
+Right now you have:
+
+@State private var model: DesktopModel
+
+If DesktopModel is a class that’s intended to drive view updates (very likely), SwiftUI expects either:
+	•	@StateObject var model: DesktopModel (if it conforms to ObservableObject), or
+	•	@State var model: DesktopModel only if it’s a value type (struct), or
+	•	@State private var model = DesktopModel() and DesktopModel is @Observable (new Observation framework).
+
+Why it matters: @State is meant for value storage. With a reference type you can get subtle “why didn’t my view update?” issues depending on how DesktopModel publishes changes.
+
+Recommendation (most common):
+
+If DesktopModel: ObservableObject (old style), change to:
+
+@StateObject private var model: DesktopModel
+
+and in init:
+
+init(person: Person) {
+    let desktopModel = DesktopModel()
+    desktopModel.addCard(...)
+    _model = StateObject(wrappedValue: desktopModel)
+}
+
+If you’re on the new @Observable approach (iOS 17/macOS 14+), your current pattern can work, but the “best practice” is usually to store it as plain let model and inject it from above, or use @State with care. If you tell me which you’re using (ObservableObject vs @Observable), I’ll give you the exact best-practice version.
+
+⸻
+
+2) PersonSearchSheet should receive a bindable/observable model, not a plain var model
+
+Right now:
+
+struct PersonSearchSheet: View {
+    var model: DesktopModel
+    ...
+}
+
+This works because the sheet and the desktop share the same reference, but it’s not explicit about change propagation.
+
+Depending on your model style:
+	•	ObservableObject: @ObservedObject var model: DesktopModel
+	•	@Observable: @Bindable var model: DesktopModel
+
+That makes it clear the sheet is allowed to mutate and that mutations should refresh the UI.
+
+(Also: you don’t use dismiss unless you call it; you do — good.)
+
+3) Clean up the marquee overlay drawing
+
+Right now you draw two rectangles with identical frame/position. Wrap them in a tiny view so the “double render” reads as one thing.
+
+private struct MarqueeOverlay: View {
+    let rect: CGRect?
+
+    var body: some View {
+        if let rect {
+            ZStack {
+                Rectangle().fill(.primary.opacity(0.06))
+                Rectangle().stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 3]))
+            }
+            .frame(width: rect.width, height: rect.height)
+            .position(x: rect.midX, y: rect.midY)
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+Then your desktop becomes:
+
+MarqueeOverlay(rect: marqueeRect)
+
+It reads even better and makes it easier to tweak visuals later.
+
+⸻
+
+4) Extract the background gradient as a constant
+
+You’re repeating the “blue desktop” recipe inline. Make it a constant so the view code stays semantic:
+
+private static let desktopGradient = LinearGradient(
+    gradient: Gradient(colors: [
+        Color(red: 118/255, green: 214/255, blue: 255/255),
+        Color(red: 90/255, green: 190/255, blue: 240/255)
+    ]),
+    startPoint: .topLeading,
+    endPoint: .bottomTrailing
+)
+
+Then:
+
+Rectangle().fill(Self.desktopGradient)
+
+Also: .border(...) on a full-screen background can be a bit odd when resizing; you might prefer an overlay stroke:
+
+.overlay(Rectangle().stroke(Color.gray.opacity(0.3)))
+
+5) Cards layer: small readability fixes
+
+Your cardsLayer ends with }} which is easy to mis-edit. I’d format as:
+
+private var cardsLayer: some View {
+    ForEach(model.cards) { card in
+        DraggableCard(model: model, cardID: card.id) {
+            SelectableCard(model: model, cardID: card.id) {
+                ResizeableCard(model: model, cardID: card.id) {
+                    CardView(model: model, cardID: card.id)
+                }
+            }
+        }
+    }
+}
+
+(Just to avoid “brace drift” as this grows.)
+
+⸻
+
+6) PersonSearchSheet UX: “No results” should only appear after a search attempt
+
+Right now it shows “No results.” even before the user searches. Add:
+
+@State private var didSearch = false
+
+Set it in doSearch():
+
+didSearch = true
+
+And display:
+
+if didSearch && results.isEmpty {
+    Text("No results.").italic()
+}
+
+That feels much more natural.
+
+⸻
+
+7) Placement of new cards: choose a better default than (0,0-ish)
+
+You currently drop new cards at upper-left:
+
+let x = CardSizes.startSize.width / 2
+let y = CardSizes.startSize.height / 2
+
+This is fine as an experiment, but a really nice next step is:
+	•	Drop at the center of the visible desktop, or
+	•	Drop near the last click point (store it in DesktopView), or
+	•	“Cascade” cards (offset each new one by +20,+20).
+
+The simplest is center. That requires giving the sheet the desktop size or a drop point; easiest pattern is: store a nextDropPoint in DesktopModel and let the sheet just call model.addPersonCard(match.person).
+
+⸻
+
+8) Tiny SwiftUI nits
+	•	Your .coordinateSpace(name: "desktop") is good. You don’t strictly need .frame(width:geo.size...) inside GeometryReader (the reader already sizes its content), but it’s harmless.
+	•	If you ever see tap-to-deselect not firing because of tiny drags, your minimumDistance: 2 on the drag gesture is exactly the right fix.
+
+⸻
+
+If you tell me one thing…
+
+Is DesktopModel:
+	•	ObservableObject (with @Published), or
+	•	@Observable (new Observation)?
+
+With that, I’ll give you the exact “best practice” signatures for DesktopView and PersonSearchSheet (and it’ll eliminate a whole class of future weirdness).

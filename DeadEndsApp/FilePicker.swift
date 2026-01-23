@@ -3,8 +3,10 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 6/23/25.
+//. Last changed on 19 January 2026.
 //
 
+import SwiftUI
 import Foundation
 import AppKit
 
@@ -17,8 +19,6 @@ func chooseGedcomFile() -> String? {
 
     return panel.runModal() == .OK ? panel.url?.path : nil
 }
-
-import SwiftUI
 
 struct FileChooserButton: View {
     let label: String

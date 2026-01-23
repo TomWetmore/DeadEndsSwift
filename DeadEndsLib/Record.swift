@@ -3,20 +3,20 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 9 January 2026.
+//  Last changed on 20 January 2026.
 //
 
 import Foundation
 
-/// Protocol for Gedcom Records. Allows Person, Family, etc, to be types; holds a root and its key.
+/// Would it be useful to have a RecordKind enum?
 
+/// Protocol for Gedcom records. Allows Person, Family, etc, to be types; holds a root and its key.
 public protocol Record {
     var root: GedcomNode { get }  // Root of Record.
     var key: String { get }  // Key of Record.
 }
 
-/// Extension with basic properties that are forwarded to a root GedcomNode.
-
+/// Basic properties that forward to the record root.
 public extension Record {
 
     // Base properties.
@@ -39,17 +39,13 @@ public extension Record {
 
 }
 
-/// Extensions to Dictionary that allows Record retrieval from RecordIndexes.
-
+/// Dictionary extension for record retrieval from indexes.
 extension Dictionary where Key == String, Value == GedcomNode {
-
     public func person(for key: String) -> Person? { self[key].flatMap(Person.init) }
     public func family(for key: String) -> Family? { self[key].flatMap(Family.init) }
-    //public func source(for key: String) -> Source? { self[key].flatMap(Source.init) } // Future.
 }
 
-/// Extensions that foward useful methods to the GedcomNode level.
-
+/// Foward useful methods to the Gedcom node level.
 public extension Record {
 
     func gedcomText(level: Int = 0, indent: Bool = false) -> String { root.gedcomText(level: level, indent: indent) }

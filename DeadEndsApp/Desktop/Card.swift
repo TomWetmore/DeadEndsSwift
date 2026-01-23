@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 October 2025.
-//  Last changed on 16 January 2026.
+//  Last changed on 21 January 2026.
 //
 
 import SwiftUI
@@ -29,31 +29,34 @@ enum CardValue: Identifiable, Hashable {
     }
 }
 
-/// Card size constants.
+/// Size constants.
 struct CardSizes {
     static let minSize  = CGSize(width: 171.0, height: 107.0)
     static let startSize = CGSize(width: 240.0, height: 150.0)
     static let maxSize  = CGSize(width: 934.0, height: 584.0)
 }
 
-/// Struct holding a card value.
+/// Struct holding a card value, position and size.
 struct Card: Identifiable, Equatable, Hashable {
 
     let id = UUID()
     let kind: CardValue  // Person, family, ...
-    var position: CGPoint  // Card center in desktop coordinates.
-    var size: CGSize  // Card size.
+    var position: CGPoint  // Center coordinate in desktop system.
+    var size: CGSize
 
+    /// Init a new card from its value, position and size.
     init(kind: CardValue, position: CGPoint, size: CGSize) {
         self.kind = kind
         self.position = position
         self.size = size
     }
 
+    /// Compare two cards for Equatable.
     static func == (lhs: Card, rhs: Card) -> Bool {
         lhs.id == rhs.id
     }
 
+    /// Hash card to Hashable.
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

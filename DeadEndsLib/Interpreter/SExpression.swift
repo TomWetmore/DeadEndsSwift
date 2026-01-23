@@ -1,27 +1,27 @@
 //
 //  SExpression.swift
 //  DeadEndsLib
-//  SExpressions are used as a transfer format for DeadEnds programs. A LifeLines-based C program parses
-//  DeadEnds programs and then writes them to text files as SExpressions. This Swift program reads those
-//  SExpressions and builds ProgramNode trees for the original DeadEnds progrem. Those ProgramNode trees
-//  are interpreted by this program's interpreter component.
 //
-//  Note: It is possible to interpret SExpressions's directly instead of converting them to ProgramNodes. This
-//  may be a future enhancement.
+//  S-Expressions are used as the transfer format for DeadEnds programs. A LifeLines-based C program
+//  parses DeadEnds programs and writes them as S-Expressions text. DeadEnds reads the S-Expressions and
+//  builds program node trees for the original progrem. The trees are interpreted by this the interpreter.
+//
+//  It is possible to interpret S-Expressions directly instead of first converting them to program nodes.
+//  This may be a future enhancement.
 //
 //  Created by Thomas Wetmore on 5 April 2025.
-//  Last changed on 21 April 2025.
+//  Last changed on 20 January 2026.
 //
 
 import Foundation
 
-// SExpression is the data type used to transfer DeadEnds programs as text files.
+// Data type used to transfer DeadEnds programs as text files.
 public enum SExpression: CustomStringConvertible {
 
     case atom(String, line: Int?) // Atoms (constants, identifiers, strings) with optional line number.
     case list([SExpression])  // Lists (nested expressions).
 
-    // description describes an SExpression.
+    // Describe an s-expression.
     public var description: String {
         switch self {
         case .atom(let value, let line):
@@ -35,7 +35,6 @@ public enum SExpression: CustomStringConvertible {
         }
     }
 
-    // debugging flag.
     static let debugging = false
 }
 
@@ -44,27 +43,26 @@ public enum SExprPNodeError: Swift.Error {
     case malformedExpression(_ reason: String)
 }
 
-// SExpressionParser implements an SExpression parser. The initializer takes a String holding an SExpression
-// and tokenizes it. The method parseProgramSExpression parses the sequence of tokens and returns the full,
-// program-level SExpression.
+/// An s-expression parser. The initializer tokenizes an s-expression string. Method
+/// parseProgramSExpression parses the sequence of tokens and returns the full,
+/// program-level s-expression.
 public struct SExpressionParser {
 
     private var tokens: [String] // Tokens that make up the SExpression.
     private var index = 0 // Current location in the token array.
 
-    // init creates an SExpressionParser with a string holding SExpression text. It tokenizes the String into an
-    // array of tokens.
+    /// Create an s-expression parser with starting text. Tokenize the text into a token array.
     public init(_ input: String) {
         self.tokens = SExpressionParser.tokenize(input)
     }
 
-    // tokenArry returns the tokens. This method gives public access to the tokens. It is intended for debugging.
+    /// Returns the tokens, giving public access to the tokens; intended for debugging.
     public func tokenArray() -> [String] {
         self.tokens
     }
 
-    // tokenize tokenizes the initial String into atoms and brackets. This version uses a regular expression
-    // that has grown long an unwieldy. TODO: Convert to a hand-crafted lexer.
+    // Tokenize the initial string into atoms and brackets. This version uses a regular expression
+    // that has grown long and unwieldy. TODO: Convert to a hand-crafted lexer.
     private static func tokenize(_ input: String) -> [String] {
         let pattern = #""(?:\\.|[^"])*"\[\d+\]|\(|\)|\{|\}|[^\s(){}"]+\[\d+\]|"(?:\\.|[^"])*"|\[\d+\]|[^\s(){}"]+"#
         let regex = try! NSRegularExpression(pattern: pattern)
@@ -73,8 +71,8 @@ public struct SExpressionParser {
         return matches.map { nsInput.substring(with: $0.range) }
     }
 
-    // An atom has an optional field that can time them to their original line number in a LifeLines program.
-    // This function splits the atom into a (String, Int?) tuple.
+    /// An atom has an optional field that can tie it to its original line number in a LifeLines program.
+    /// This function splits the atom into a (String, Int?) tuple.
     private static func splitAtomAndLine(_ token: String) -> (String, Int?) {
         let regex = try! NSRegularExpression(pattern: #"^(.*)\[(\d+)\]$"#)
         let range = NSRange(location: 0, length: token.utf16.count)
@@ -88,10 +86,10 @@ public struct SExpressionParser {
         return (token, nil)
     }
 
-    // parseProgramSExpression parses the full SExpression and checks that there are no characters left over.
-    // It returns the SExpression it parses. This SExpression must be the .list of the procedure and function
-    // definitions and the global declarations that make up the program. This is not checked here, but in the
-    // convertToTables function .
+    /// Parse a full s-expression and check there are no characters left over. Return the
+    /// s-expression. This s-expression is the list of procedure and function definitions
+    /// and the global declarations that make up the program. Thischecked in the
+    /// convertToTables function .
     public mutating func parseProgramSExpression() throws -> SExpression {
         let result = try parseSExpression()  // Use the general purpose recursive parser ...
         if index < tokens.count { // ... and then check for left over tokens.
@@ -101,9 +99,9 @@ public struct SExpressionParser {
         return result
     }
 
-    // parseSExpression is the general purpose, recursive SExpression parser. It keeps track of the recursive
-    // depth of the parse. However the depth is not currently used; its original purpose was to help
-    // SExpression description routines to find good places to insert newlies.
+    /// General purpose recursive s-expression parser. Keeps track of the recursive
+    /// depth of the parse (not currently used); intended to help description methods
+    /// find good places to insert newlies.
     private mutating func parseSExpression(depth: Int = 0) throws -> SExpression {
         guard index < tokens.count else {
             throw SExprPNodeError.malformedExpression("Unexpected end of input")

@@ -3,44 +3,46 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 26 April 2025.
+//  Last changed on 21 January 2026.
 //
 
 import Foundation
 
-// SortType specifies how a sequence is sorted.
+// Specify how a sequence is sorted.
 enum SortType {
 	case notSorted
 	case keySorted
 	case nameSorted
 }
 
-// SequenceElement is an element in a RecordSequence.
+// Element in a record sequence.
 struct SequenceElement: Hashable {
 	let node: GedcomNode
 	let key: String
 	let name: String?
 
-    // == checks if two SequenceElements are equal.
+    /// Check if two sequence elements are equal.
 	static func == (lhs: SequenceElement, rhs: SequenceElement) -> Bool {
 		return lhs.key == rhs.key && lhs.name == rhs.name
 	}
 
+	/// Hash a sequence element.
 	func hash(into hasher: inout Hasher) {
 		hasher.combine(key)
 		hasher.combine(name)
 	}
 }
 
+/// Sequence of record elements.
 class RecordSequence: Collection {
     typealias Index = Int
     typealias Element = SequenceElement
 
     private var elements: [SequenceElement] = []
     var sortType: SortType = .notSorted
-    var unique: Bool = false
+    var unique: Bool = false  // Remove dupes.
 
-    // MARK: - Collection requirements
+    // Collection requirements.
     var startIndex: Int { elements.startIndex }
     var endIndex: Int { elements.endIndex }
 
@@ -52,11 +54,12 @@ class RecordSequence: Collection {
         elements[position]
     }
 
-    // MARK: - Custom methods
+    /// Append existing element to sequence.
     func append(_ element: SequenceElement) {
         elements.append(element)
     }
 
+	/// Append new element to sequence.
     func append(root: GedcomNode, key: String, name: String? = nil) {
         let element = SequenceElement(node: root, key: key, name: name)
         append(element)

@@ -9,10 +9,9 @@
 import SwiftUI
 import DeadEndsLib
 
-/// A lightweight structure for building a descendant display tree.
-/// It wraps a GedcomNode for the person and precomputes the person's children.
+/// Structure for building a descendant display tree.
+/// It wraps a gedcom node for a person and computes the person's children.
 struct DescendantNode: Identifiable {
-
     let person: Person
     let children: [DescendantNode]
     var id: String { person.key }
@@ -20,9 +19,8 @@ struct DescendantNode: Identifiable {
 
 struct DescendantsPage: View {
 
-    @State private var expanded: Set<String> = []   // which nodes are open
+    @State private var expanded: Set<RecordKey> = []  // Expanded nodes/persons.
     @EnvironmentObject var model: AppModel
-
     let root: Person
 
     var body: some View {
@@ -40,13 +38,14 @@ struct DescendantsPage: View {
         }
         .navigationTitle("Descendants")
         .onAppear {
-            // Optional: pre-open first two levels
-            preexpandFirstTwoLevels(from: root)
+            expandFirstTwoLevels(from: root)
         }
     }
 
     private func buildTree(from person: Person) -> DescendantNode {
         let index = model.database?.recordIndex ?? [:]
+        
+        ///
         func rec(_ person: Person) -> DescendantNode {
             let families = person.kids(withTag: "FAMS")
                 .compactMap { $0.val }
@@ -64,7 +63,7 @@ struct DescendantsPage: View {
         return rec(person)
     }
 
-    private func preexpandFirstTwoLevels(from person: Person) {
+    private func expandFirstTwoLevels(from person: Person) {
         let index = model.database?.recordIndex ?? [:]
         func walk(_ person: Person, depth: Int) {
             let id = person.key

@@ -1,0 +1,326 @@
+The Marquee Selection Pattern
+(rubber-band selection): click/drag on empty desktop space to draw a rectangle; any items intersecting (or fully contained) become selected. Then the selection exposes “arrange/align/distribute” commands.
+
+1) Marquee sweep selection on the Desktop
+	•	Only starts when the drag begins on empty desktop (not on a card).
+	•	As you drag, show a translucent rectangle.
+	•	Every card whose frame intersects the rectangle becomes selected.
+	•	Modifier keys:
+	•	Shift: add to selection
+	•	Command: toggle selection (in/out)
+	•	No modifier: replace selection
+Intersection rule
+	•	Start with intersects (feels forgiving).
+	•	Optionally support “containment” if you want (e.g., Option key means must be fully inside).
+Data you need
+	•	Each card needs a known frame in desktop coordinates.
+	•	Easiest: have each CardView report its frame via a preference key (or your existing “card geometry registry” if you already have one for hit-testing/z-order).
+Result
+	•	Desktop owns marqueeRect during the drag.
+	•	Desktop updates selectedCardIDs in the model as the drag changes.
+
+2) Context menu for multi-selection
+Show it when selected.count > 1 and the user right-clicks on empty space (or on any selected card—both are fine). Items you listed map cleanly:
+
+Size
+	•	Make Same Size
+	•	Choose a reference: usually the “primary” selected card (last clicked) or the front-most.
+	•	Apply that card’s size to all selected cards (optionally keep centers fixed).
+Align
+	•	Align Left / Right / Top / Bottom
+	•	Use the reference card’s corresponding edge.
+	•	Move each selected card so its edge matches.
+Distribute
+	•	Distribute Horizontally / Vertically
+	•	Sort selected cards by x (or y).
+	•	Keep the outermost two fixed (min and max).
+	•	Evenly space the gaps between cards (or evenly space centers—pick one; “gaps” feels more like design tools).
+Bonus (you didn’t ask, but you’ll want)
+	•	Bring to Front / Send to Back (or “Bring Forward/Send Back”) for the selection.
+	•	Group / Ungroup later when you get to connected families.
+3) Little details that make it feel “standard”
+	•	Don’t steal the gesture: if the drag begins on a card, it’s a move; if it begins on empty desktop, it’s a marquee.
+	•	Selection preview: while dragging the rectangle, update selection live (not only on end).
+	•	Z-order behavior:
+	•	Selecting should probably not reorder (you already noticed the subtlety).
+	•	Moving a selected set might optionally bring them forward as a block, but that’s a design choice. Many apps don’t.
+	•	Animation:
+	•	The marquee rectangle should be immediate, but card selection highlighting can be subtly animated.
+	•	Performance:
+	•	Intersection checks are cheap unless you have hundreds/thousands of cards; still fine.
+	•	If you later get large trees, a simple spatial index (grid bucketing) can speed hit-testing, but you won’t need it yet.
+4) A concrete model-level way to implement the actions
+Each of these actions is just “edit a bunch of card frames in the model”:
+	•	Represent each card by:
+	•	id
+	•	frame (or position + size)
+	•	Provide model ops:
+	•	setSelection(Set<CardID>)
+	•	resizeSelection(to size: CGSize, anchor: …)
+	•	alignSelection(edge: Edge, to reference: CardID)
+	•	distributeSelection(axis: Axis, mode: gaps|centers)
+That keeps DesktopView thin: it detects marquee rectangle + invokes model ops; model mutates card geometry; views update.
+I pulled the four files you uploaded, and I can see the shape of what you already have:
+	•	DesktopView builds the desktop as a ZStack and renders cards via
+ForEach(model.cards) { card in
+    DraggableCard(...)
+        SelectableCard(...)
+            ResizeableCard(...)
+                CardView(...)
+}
+	•	DesktopModel already has a selectedIDs-style set (I can see model.selectedIDs.removeAll() being used in the desktop tap-to-clear).
+	•	Cards have position and size (in Card.swift), so you already have the right underlying representation for align/distribute/same-size.
+
+One snag: the versions of the files that made it into the upload contain literal ... elisions, so I can’t see your existing implementations of DraggableCard, SelectableCard, ResizeableCard, nor how you currently track frames/geometry. That said, you don’t need anything exotic: the “standard” way to do marquee selection in SwiftUI is (1) a named coordinate space, (2) a preference key to report each card’s frame in that space, and (3) a drag gesture on the desktop background that updates a selection rectangle and recomputes selectedIDs.
+
+Below is a concrete drop-in pattern that will fit your current structure with minimal disruption.
+
+1) Track each card’s frame in Desktop coordinates
+
+A. Add a preference key (new file or near DesktopView)
+private struct CardFramePrefKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
+
+B. In the view that sits at the outermost boundary of the card (ideally DraggableCard or SelectableCard), report the frame
+This assumes you’ve set a desktop coordinate space name:
+.background(
+    GeometryReader { geo in
+        Color.clear.preference(
+            key: CardFramePrefKey.self,
+            value: [cardID: geo.frame(in: .named("desktop"))]
+        )
+    }
+)
+Where to put it?
+	•	Best: inside DraggableCard (because it likely owns the transform / position).
+	•	Acceptable: inside CardView, but then you’re measuring the “inside,” and wrappers might add padding/borders.
+
+C. In DesktopView, define the coordinate space and capture frames
+.coordinateSpace(name: "desktop")
+.onPreferenceChange(CardFramePrefKey.self) { frames in
+    cardFrames = frames
+}
+
+You’ll need:
+@State private var cardFrames: [UUID: CGRect] = [:]
+
+2) Add the marquee drag gesture on the desktop background
+In DesktopView, add state:
+@State private var marqueeStart: CGPoint? = nil
+@State private var marqueeRect: CGRect? = nil
+
+Add a rectangle overlay (so you can see the sweep):
+if let rect = marqueeRect {
+    Rectangle()
+        .path(in: rect)
+        .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+        .background(Rectangle().fill(.primary.opacity(0.08)).frame(width: rect.width, height: rect.height).position(x: rect.midX, y: rect.midY))
+        .allowsHitTesting(false)
+}
+
+Now the gesture. Attach it to the desktop background view (you already have a background with .contentShape(Rectangle())):
+.gesture(
+    DragGesture(minimumDistance: 0)
+        .onChanged { value in
+            // Only start marquee if the drag began on "empty" desktop.
+            // (If you can reliably detect card hits, use that; otherwise see note below.)
+            if marqueeStart == nil {
+                marqueeStart = value.startLocation
+            }
+            let rect = CGRect(
+                x: min(value.startLocation.x, value.location.x),
+                y: min(value.startLocation.y, value.location.y),
+                width: abs(value.location.x - value.startLocation.x),
+                height: abs(value.location.y - value.startLocation.y)
+            )
+            marqueeRect = rect
+
+            // Update selection live
+            let hit = Set(cardFrames.compactMap { (id, frame) in
+                frame.intersects(rect) ? id : nil
+            })
+
+            // Modifier behavior (macOS standard-ish)
+            let flags = NSEvent.modifierFlags
+            if flags.contains(.shift) {
+                model.selectedIDs.formUnion(hit)
+            } else if flags.contains(.command) {
+                // toggle in/out
+                for id in hit {
+                    if model.selectedIDs.contains(id) { model.selectedIDs.remove(id) }
+                    else { model.selectedIDs.insert(id) }
+                }
+            } else {
+                model.selectedIDs = hit
+            }
+        }
+        .onEnded { _ in
+            marqueeStart = nil
+            marqueeRect = nil
+        }
+)
+
+“Only start on empty desktop”
+Right now your cards sit above the background, so the background gesture won’t fire if a card consumes the drag. That’s good.
+If you also want the marquee to work when you start the drag on empty space between cards but still inside the ZStack, you’re already fine.
+If, however, your cards allow “click-through” or the wrappers attach gestures in ways that sometimes pass the drag down, then you can also gate the start like:
+
+if marqueeStart == nil {
+    marqueeStart = value.startLocation
+    if cardFrames.values.contains(where: { $0.contains(value.startLocation) }) {
+        // Started on a card -> don’t marquee
+        marqueeStart = nil
+        return
+    }
+}
+
+3) Context menu for selected cards: same size / align / distribute
+You’ve already got position and size on each Card, which is perfect. The cleanest place to implement these is DesktopModel as pure “geometry transforms” on cards.
+
+Below are the core algorithms (expressed assuming Card.position is the center point and Card.size is width/height). Adjust if your semantics differ.
+
+Helpers
+extension Card {
+    var frame: CGRect {
+        CGRect(
+            x: position.x - size.width/2,
+            y: position.y - size.height/2,
+            width: size.width,
+            height: size.height
+        )
+    }
+}
+
+Make same size
+func makeSelectionSameSize(referenceID: UUID) {
+    guard let ref = cards.first(where: { $0.id == referenceID }) else { return }
+    for i in cards.indices where selectedIDs.contains(cards[i].id) {
+        cards[i].size = ref.size
+    }
+}
+
+Align edges (left/right/top/bottom)
+enum AlignEdge { case left, right, top, bottom }
+
+func alignSelection(_ edge: AlignEdge, referenceID: UUID) {
+    guard let ref = cards.first(where: { $0.id == referenceID }) else { return }
+    let refFrame = ref.frame
+
+    for i in cards.indices where selectedIDs.contains(cards[i].id) {
+        var c = cards[i]
+        var f = c.frame
+
+        switch edge {
+        case .left:
+            let dx = refFrame.minX - f.minX
+            c.position.x += dx
+        case .right:
+            let dx = refFrame.maxX - f.maxX
+            c.position.x += dx
+        case .top:
+            let dy = refFrame.minY - f.minY
+            c.position.y += dy
+        case .bottom:
+            let dy = refFrame.maxY - f.maxY
+            c.position.y += dy
+        }
+        cards[i] = c
+    }
+}
+
+Distribute evenly (by gaps, keeping outer two fixed)
+enum DistributeAxis { case horizontal, vertical }
+
+func distributeSelection(_ axis: DistributeAxis) {
+    let ids = selectedIDs
+    var sel = cards.enumerated().filter { ids.contains($0.element.id) }
+    guard sel.count >= 3 else { return }
+    // Sort by axis
+    sel.sort {
+        switch axis {
+        case .horizontal: return $0.element.frame.minX < $1.element.frame.minX
+        case .vertical:   return $0.element.frame.minY < $1.element.frame.minY
+        }
+    }
+    // Compute total span and total sizes
+    let frames = sel.map { $0.element.frame }
+    let minEdge: CGFloat
+    let maxEdge: CGFloat
+    let totalSize: CGFloat
+
+    switch axis {
+    case .horizontal:
+        minEdge = frames.first!.minX
+        maxEdge = frames.last!.maxX
+        totalSize = frames.reduce(0) { $0 + $1.width }
+    case .vertical:
+        minEdge = frames.first!.minY
+        maxEdge = frames.last!.maxY
+        totalSize = frames.reduce(0) { $0 + $1.height }
+    }
+    let span = maxEdge - minEdge
+    let gapCount = CGFloat(frames.count - 1)
+    let gap = (span - totalSize) / gapCount
+
+    // Walk left->right (or top->bottom), placing each after the prior
+    var cursor = minEdge
+    for (idx, pair) in sel.enumerated() {
+        let (cardIndex, card) = pair
+        var c = card
+        let f = c.frame
+
+        if idx == 0 {
+            cursor = (axis == .horizontal) ? f.maxX : f.maxY
+            continue
+        }
+        // new min edge = cursor + gap
+        let desiredMin = cursor + gap
+        switch axis {
+        case .horizontal:
+            let dx = desiredMin - f.minX
+            c.position.x += dx
+            cursor = (f.maxX + dx)
+        case .vertical:
+            let dy = desiredMin - f.minY
+            c.position.y += dy
+            cursor = (f.maxY + dy)
+        }
+        cards[cardIndex] = c
+    }
+}
+
+Hook it to a context menu in DesktopView
+Attach to the desktop background (or a transparent overlay) and only show when multiple selected:
+
+.contextMenu {
+    if model.selectedIDs.count > 1 {
+        Button("Make Same Size") { model.makeSelectionSameSize(referenceID: model.primarySelectionID) }
+        Menu("Align") {
+            Button("Left")   { model.alignSelection(.left, referenceID: model.primarySelectionID) }
+            Button("Right")  { model.alignSelection(.right, referenceID: model.primarySelectionID) }
+            Button("Top")    { model.alignSelection(.top, referenceID: model.primarySelectionID) }
+            Button("Bottom") { model.alignSelection(.bottom, referenceID: model.primarySelectionID) }
+        }
+        Menu("Distribute") {
+            Button("Horizontally") { model.distributeSelection(.horizontal) }
+            Button("Vertically")   { model.distributeSelection(.vertical) }
+        }
+    }
+}
+
+You’ll want a notion of “primary selection” (last clicked). If you don’t have it yet, add:
+var primarySelectionID: UUID {
+    selectedOrder.last ?? selectedIDs.first!
+}
+
+(or simply use “frontmost” / last interacted card).
+
+What I’d change in your current structure
+Given the wrappers you already have (DraggableCard, SelectableCard, ResizeableCard), I’d do it like this:
+	1.	Frame reporting belongs in DraggableCard (it defines position).
+	2.	Marquee gesture + marquee overlay belong in DesktopView.
+	3.	All align/resize/distribute mutations belong in DesktopModel (so your view remains declarative).

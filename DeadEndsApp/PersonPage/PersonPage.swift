@@ -3,14 +3,13 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 8 January 2026.
+//  Last changed on 21 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// View that shows a Person in a DeadEnds Page. Uses PersonActionBar, PersonRow and message area Text.
-
+/// Show a person on a person page. Uses a person action bar, person rows and message area.
 struct PersonPage: View {
 
     @EnvironmentObject var model: AppModel
@@ -20,7 +19,7 @@ struct PersonPage: View {
         
         VStack(alignment: .leading, spacing: 10) {
             
-            Text(person.displayName(upSurname: true))
+            Text(person.displayName(upSurname: true))  // Name line.
                 .font(.title3)
                 .fontWeight(.semibold)
                 .padding(8)
@@ -31,25 +30,23 @@ struct PersonPage: View {
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                 )
             
-            Text("Born: \(person.eventSummary(tag: "BIRT") ?? "")").padding(.horizontal)
-            Text("Death: \(person.eventSummary(tag: "DEAT") ?? "")").padding(.horizontal)
-            
+            Text("Born: \(person.eventSummary(tag: "BIRT") ?? "")").padding(.horizontal)  // Birth line.
+            Text("Death: \(person.eventSummary(tag: "DEAT") ?? "")").padding(.horizontal)  // Death line.
+
             Divider()
                 .frame(height: 1)
                 .padding(.horizontal)
                 .padding(.bottom, 0)
             
             ScrollView {
-                // Father
                 if let ri = model.database?.recordIndex,
-                   let father = person.resolveParent(sex: "M", index: ri) {
+                   let father = person.resolveParent(sex: "M", index: ri) {  // Father tile.
                     PersonTile(person: father, label: "Father", tint: .blue) { p in
                         model.path.append(Route.person(p))
                     }
                 }
-                // Mother
                 if let ri = model.database?.recordIndex,
-                   let mother = person.resolveParent(sex: "F", index: ri) {
+                   let mother = person.resolveParent(sex: "F", index: ri) {  // Mother tile.
                     PersonTile(person: mother, label: "Mother", tint: .pink) { p in
                         model.path.append(Route.person(p))
                     }
@@ -82,7 +79,7 @@ struct PersonPage: View {
             .padding([.top], 0)
             .padding([.leading, .trailing], 8)
             
-            // Area for messages and action buttons.
+            // Messages and action buttons.
             VStack(alignment: .leading, spacing: 4) {
                 if let message = model.status {
                     Text(message)

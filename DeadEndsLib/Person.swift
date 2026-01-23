@@ -153,7 +153,7 @@ public extension Person {
 
         var families: [Family] = []
         for famsKey in kidVals(forTag: FamilyLinkTag.fams.rawValue) {
-            guard let family = index.family(for:famsKey)
+            guard let family = index.family(for: famsKey)
             else { continue }
             families.append(family)
         }
@@ -293,25 +293,6 @@ extension Database {
     }
 
     public func updatePerson(_ person: Person) {
-        //        // 1. Validate
-        //        guard !person.kidVals(forTag: "NAME").isEmpty else {
-        //            throw PersonUpdateError.missingName
-        //        }
-        //        if let sex = person.sex {
-        //            try validateSexConsistency(person, sex: sex)
-        //        }
-        //
-        //        // 2. Canonicalize (placeholder for now)
-        //        let canonical = canonicalize(person)
-        //
-        //        // 3. Maintain indexes
-        //        updateIndexesForPerson(canonical)
-        //
-        //        // 4. History / undo
-        //        recordDelta(.personUpdated(canonical))
-        //
-        //        // 5. Commit
-        //recordIndex[canonical.key] = canonical.root
         recordIndex[person.key] = person.root
     }
 }
