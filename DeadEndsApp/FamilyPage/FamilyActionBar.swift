@@ -1,3 +1,11 @@
+//
+//  FamilyActionBar.swift
+//  DeadEndsSwift
+//
+//  Created by Thomas Wetmore on 24 January 2026.
+//  Last changed on 24 Januaury 2026.
+//
+
 import SwiftUI
 import DeadEndsLib
 
@@ -13,16 +21,16 @@ struct FamilyActionBar: View {
             }
 
             Button("Tree Editor") {
-                model.path.append(Route.gedcomTreeEditor(family)) // if you support family
+                model.path.append(Route.gedcomFamilyEditor(family)) // if you support family
             }
 
-            Button("Edit") {
-                showEditSheet = true
-            }
-            .sheet(isPresented: $showEditSheet) {
-                FamilyEditSheet(family: family)
-                    .environmentObject(model)
-            }
+//            Button("Edit") {
+//                showEditSheet = true
+//            }
+//            .sheet(isPresented: $showEditSheet) {
+//                FamilyEditSheet(family: family)
+//                    .environmentObject(model)
+//            }
         }
         .buttonStyle(.bordered)
         .font(.body)

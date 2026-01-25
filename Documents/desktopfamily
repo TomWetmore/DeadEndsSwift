@@ -1,0 +1,182 @@
+Whow a family on the desktop, two parents above and children in a row centered below. This would also be the best time to start drawing connecting lines.
+
+That’s a very natural next experiment, and it fits perfectly with what you’ve already built:
+you already have cards; you already have positions (center points); you already have cardFrames (so you can compute connection endpoints); you already have selection (so later you can select a whole family cluster, etc.).
+
+The one subtlety: you can’t do good family layout in init, because you don’t know the desktop size yet. So the clean pattern is: 1.DesktopView(family:) stores the family you want to show; 2.in body, inside GeometryReader, on first appearance, you “seed” the desktop layout using geo.size
+
+Below is a concrete shape for this.
+
+1) Add a second initializer and defer layout until you know geo.size
+
+struct DesktopView: View {
+
+    @State private var model: DesktopModel
+    @State private var didSeed = false
+
+    private let seedPerson: Person?
+    private let seedFamily: Family?
+
+    init(person: Person) {
+        _model = State(wrappedValue: DesktopModel())
+        seedPerson = person
+        seedFamily = nil
+    }
+
+    init(family: Family) {
+        _model = State(wrappedValue: DesktopModel())
+        seedPerson = nil
+        seedFamily = family
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                background
+                connectionsLayer   // later
+                cardsLayer
+            }
+            .coordinateSpace(name: "desktop")
+            .onPreferenceChange(CardFramePrefKey.self) { cardFrames = $0 }
+            .onAppear {
+                guard !didSeed else { return }
+                didSeed = true
+
+                if let p = seedPerson {
+                    model.addCard(kind: .person(p),
+                                  position: CGPoint(x: 200, y: 200),
+                                  size: CardSizes.startSize)
+                } else if let f = seedFamily {
+                    model.seedFamily(f, desktopSize: geo.size /*, index: ... */)
+                }
+            }
+        }
+        // context menu, sheet, etc...
+    }
+}
+
+You’ll notice seedFamily(..., desktopSize:) — that’s where the layout policy should live.
+
+2) Implement seedFamily in DesktopModel
+This is the “two parents above, kids centered below” layout. It assumes you can get parents/children as Persons from the family + index.
+
+I don’t know the exact DeadEndsLib API names you’re using for family members, so I’ll write it in a way that makes the dependency obvious (you’ll swap in the right calls).
+
+extension DesktopModel {
+
+    func seedFamily(_ family: Family, desktopSize: CGSize, index: RecordIndex? = nil) {
+
+        // 1) Resolve people (adapt these lines to your actual API)
+        // -------------------------------------------------------
+        let father: Person? = family.husband(in: index)   // replace if needed
+        let mother: Person? = family.wife(in: index)      // replace if needed
+        let children: [Person] = family.children(in: index) // replace if needed
+
+        // If you don’t have these helpers, you can resolve by keys via RecordIndex.
+
+        // 2) Layout constants (tune later)
+        // -------------------------------
+        let parentSize = CardSizes.startSize
+        let childSize  = CardSizes.startSize
+
+        let hGapParents: CGFloat = 40
+        let hGapKids: CGFloat = 22
+        let vGap: CGFloat = 60
+
+        let centerX = desktopSize.width / 2
+
+        let parentsY = max(160, parentSize.height / 2 + 20)
+        let kidsY = parentsY + parentSize.height / 2 + vGap + childSize.height / 2
+
+        // 3) Place parents
+        // ----------------
+        var parentIDs: [UUID] = []
+
+        if let father {
+            let x = centerX - (parentSize.width / 2 + hGapParents / 2)
+            addCard(kind: .person(father), position: CGPoint(x: x, y: parentsY), size: parentSize)
+            parentIDs.append(cards.last!.id)
+        }
+
+        if let mother {
+            let x = centerX + (parentSize.width / 2 + hGapParents / 2)
+            addCard(kind: .person(mother), position: CGPoint(x: x, y: parentsY), size: parentSize)
+            parentIDs.append(cards.last!.id)
+        }
+
+        // 4) Place children centered under parents
+        // ----------------------------------------
+        let n = children.count
+        guard n > 0 else { return }
+
+        let totalWidth = CGFloat(n) * childSize.width + CGFloat(max(0, n - 1)) * hGapKids
+        var x = centerX - totalWidth / 2 + childSize.width / 2
+
+        for child in children {
+            addCard(kind: .person(child), position: CGPoint(x: x, y: kidsY), size: childSize)
+            x += childSize.width + hGapKids
+        }
+    }
+}
+
+Two notes: 1) This uses the fact that your Card.position is the center point, which matches your existing drag/resize semantics; 2) This is a first layout only. Later you’ll refine to avoid overlaps and keep everything on-screen.
+
+3) Drawing connecting lines (best done from cardFrames)
+Once the family cards are on the desktop and your CardFramePrefKey is working, lines become surprisingly straightforward.
+Endpoints you want: 1)parent bottom center: (frame.midX, frame.maxY); 2 	child top center: (frame.midX, frame.minY)
+
+So you can render an overlay:
+
+private var connectionsLayer: some View {
+    FamilyConnectionsOverlay(lines: connectionLines)
+        .allowsHitTesting(false)
+}
+
+Where connectionLines is computed from the family relationships and cardFrames.
+At first, you can even cheat: connect both parents to every child just to prove the drawing path works. Then refine to “connect family node” or “connect midpoint between parents” etc.
+A simple overlay view:
+
+private struct FamilyConnectionsOverlay: View {
+    let lines: [(CGPoint, CGPoint)]
+
+    var body: some View {
+        Canvas { context, _ in
+            var path = Path()
+            for (a, b) in lines {
+                path.move(to: a)
+                path.addLine(to: b)
+            }
+            context.stroke(path, with: .color(.black.opacity(0.35)), lineWidth: 1)
+        }
+    }
+}
+
+And connectionLines can be built as soon as you have a mapping from Person.key -> cardID (see next section).
+
+4) The one extra thing you’ll want: map “person” → “cardID”
+For drawing lines you need to know which card corresponds to which person in the family.
+Right now, Card.kind holds .person(Person), so you can build a dictionary on the fly:
+
+private var personKeyToCardID: [String: UUID] {
+    var out: [String: UUID] = [:]
+    for c in model.cards {
+        if case .person(let p) = c.kind {
+            out[p.key] = c.id
+        }
+    }
+    return out
+}
+
+Then you can turn family relationships into actual frame endpoints using cardFrames[id].
+
+5) Your “experiment button” idea from FamilyPage is perfect
+Yes: add a button to the family button bar that navigates to:
+	•	DesktopView(family: family)
+It’s an “expedient entry point,” and that’s exactly the right move for exploratory work.
+If your FamilyPage already uses NavigationStack, this can be a simple NavigationLink. If it doesn’t, present it as a sheet or push it however you currently push person pages.
+
+Suggested sequence (so nothing feels too confusing at once)
+	1.	Add DesktopView(family:) + seedFamily layout (no lines)
+	2.	Verify parents/kids placement feels right
+	3.	Add connection overlay using simple straight lines
+	4.	Replace straight lines with a nice “elbow” or curve (optional polish)

@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 17 January 2026.
+//  Last changed on 25 January 2026.
 //
 
 import SwiftUI
@@ -19,9 +19,10 @@ enum Route: Hashable {
     case familyTree(Person)
     case descendancy(Person)
     case personEditor(Person)
-    //case personEditorNew(Person)
     case gedcomTreeEditor(Person)
+    case gedcomFamilyEditor(Family)
     case desktop(Person)
+    case desktopFamily(Family)  // Ugly name.
 }
 
 private struct RecordIndexKey: EnvironmentKey {
@@ -101,6 +102,12 @@ struct RootView: View {
                     }
                 case .desktop(let person):
                     DesktopView(person: person)
+                case .desktopFamily(let fam):
+                    DesktopView(family: fam)
+                case .gedcomFamilyEditor(_):
+                    Text("hello")
+                case .desktopFamily(_):
+                    Text("hello")
                 }
             }
         }

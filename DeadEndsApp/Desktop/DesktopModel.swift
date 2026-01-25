@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 October 2025.
-//  Last changed on 22 January 2026.
+//  Last changed on 24 January 2026.
 //
 
 import Foundation
@@ -19,6 +19,7 @@ class DesktopModel {
     var resizingId: UUID? = nil   // ID of card being resized.
     var dragOffset: CGSize = .zero
     var selectedIDs: Set<UUID> = []  // IDs of selected cards.
+    var dragStartPositions: [UUID: CGPoint] = [:]  // Group dragging.
 
     /// Add card to model unless an equivalent exists.
     func addCard(kind: CardValue, position: CGPoint, size: CGSize) {
@@ -103,11 +104,12 @@ class DesktopModel {
 
 extension DesktopModel {
 
-    /// Front-most selected card (top of z-order = last in `cards`).
+    /// Return the primary, front-most, top z-order, selected card ID.
     func primarySelectedCardID() -> UUID? {
         cards.last(where: { selectedIDs.contains($0.id) })?.id
     }
 
+    /// Return currently selected cards.
     func selectedCards() -> [Card] {
         cards.filter { selectedIDs.contains($0.id) }
     }
@@ -115,6 +117,7 @@ extension DesktopModel {
 
 extension DesktopModel {
 
+    /// Make selected cards the same size as the primary card.
     func makeSelectedSameSize() {
         guard selectedIDs.count >= 2 else { return }
         guard let primaryID = primarySelectedCardID(),
@@ -122,53 +125,51 @@ extension DesktopModel {
 
         let target = primary.size
 
-        for id in selectedIDs {
+        for id in selectedIDs {  // Change size; center positions stay fixed.
             guard let idx = indexOfCard(withId: id) else { continue }
             cards[idx].size = target
-            // keep center position unchanged
         }
     }
 }
 
 extension DesktopModel {
 
+    /// Enum for card edges.
     enum AlignEdge {
         case left, right, top, bottom
     }
 
+    /// Align selected cards to edge.
     func alignSelected(_ edge: AlignEdge) {
         guard selectedIDs.count >= 2 else { return }
-
-        // Compute the target edge value among selected cards.
         let selected = selectedCards()
         guard !selected.isEmpty else { return }
 
-        func left(_ c: Card) -> CGFloat { c.position.x - c.size.width / 2 }
-        func right(_ c: Card) -> CGFloat { c.position.x + c.size.width / 2 }
-        func top(_ c: Card) -> CGFloat { c.position.y - c.size.height / 2 }
-        func bottom(_ c: Card) -> CGFloat { c.position.y + c.size.height / 2 }
+        func left(_ card: Card) -> CGFloat { card.position.x - card.size.width / 2 }
+        func right(_ card: Card) -> CGFloat { card.position.x + card.size.width / 2 }
+        func top(_ card: Card) -> CGFloat { card.position.y - card.size.height / 2 }
+        func bottom(_ card: Card) -> CGFloat { card.position.y + card.size.height / 2 }
 
         let target: CGFloat
-        switch edge {
+        switch edge {  // Get value of edge coordinate.
         case .left:   target = selected.map(left).min() ?? 0
         case .right:  target = selected.map(right).max() ?? 0
         case .top:    target = selected.map(top).min() ?? 0
         case .bottom: target = selected.map(bottom).max() ?? 0
         }
 
-        // Move each selected card so its chosen edge matches target.
-        for id in selectedIDs {
+        for id in selectedIDs {  // Align selected cards.
             guard let idx = indexOfCard(withId: id) else { continue }
-            let c = cards[idx]
+            let card = cards[idx]
             switch edge {
             case .left:
-                cards[idx].position.x = target + c.size.width / 2
+                cards[idx].position.x = target + card.size.width / 2
             case .right:
-                cards[idx].position.x = target - c.size.width / 2
+                cards[idx].position.x = target - card.size.width / 2
             case .top:
-                cards[idx].position.y = target + c.size.height / 2
+                cards[idx].position.y = target + card.size.height / 2
             case .bottom:
-                cards[idx].position.y = target - c.size.height / 2
+                cards[idx].position.y = target - card.size.height / 2
             }
         }
     }
@@ -178,6 +179,7 @@ extension DesktopModel {
 
     enum DistributeAxis { case horizontal, vertical }
 
+    /// Distribute selected cards along axis.
     func distributeSelected(_ axis: DistributeAxis) {
         guard selectedIDs.count >= 3 else { return }
 

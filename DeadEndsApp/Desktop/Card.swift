@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 October 2025.
-//  Last changed on 21 January 2026.
+//  Last changed on 24 January 2026.
 //
 
 import SwiftUI
@@ -41,8 +41,17 @@ struct Card: Identifiable, Equatable, Hashable {
 
     let id = UUID()
     let kind: CardValue  // Person, family, ...
-    var position: CGPoint  // Center coordinate in desktop system.
+    var position: CGPoint  // Center coords in desktop system.
     var size: CGSize
+
+    // Computed properties.
+    var rect: CGRect {  // Card's rectangle.
+        CGRect(x: position.x - size.width / 2,
+               y: position.y - size.height / 2,
+               width: size.width, height: size.height)
+    }
+    var topCenter: CGPoint { CGPoint(x: rect.midX, y: rect.minY) }
+    var bottomCenter: CGPoint { CGPoint(x: rect.midX, y: rect.maxY) }
 
     /// Init a new card from its value, position and size.
     init(kind: CardValue, position: CGPoint, size: CGSize) {

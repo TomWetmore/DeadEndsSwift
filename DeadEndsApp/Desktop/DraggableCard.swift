@@ -3,87 +3,96 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 31 October 2025.
-//  Last changed on 16 January 2026.
+//  Last changed on 25 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// DraggableCard handles dragging Cards on the Desktop.
+/// Handle dragging cards on the desktop.
 struct DraggableCard<Content: View>: View {
 
     @Bindable var model: DesktopModel
     private let cardID: UUID
     private let content: Content
+    private var card: Card? { model.cards.first(where: { $0.id == cardID }) }
 
-    @State private var dragStartPosition: CGPoint? = nil
-
-    private var card: Card? {
-        model.cards.first(where: { $0.id == cardID })
-    }
-
+    /// Create a draggable card.
     init(model: DesktopModel, cardID: UUID, @ViewBuilder content: () -> Content) {
         self.model = model
         self.cardID = cardID
         self.content = content()
     }
 
-    private var currentPosition: CGPoint {
-        guard let card else { return .zero }
-
-        if model.draggingID == cardID {
-            return CGPoint(
-                x: card.position.x + model.dragOffset.width,
-                y: card.position.y + model.dragOffset.height
-            )
+    // Draggable card view.
+    var body: some View {
+        Group {
+            if let card = self.card {
+                content
+                    .position(currentPosition)
+                    .gesture(dragGesture(for: card))
+            } else {
+                EmptyView()
+            }
         }
-        return card.position
     }
 
-    var body: some View {
-        guard let card else { return AnyView(EmptyView()) }
+    /// Current card position.
+    private var currentPosition: CGPoint {
+        guard let card = card else { return .zero }
+        if model.draggingID != nil, let start = model.dragStartPositions[card.id] {
+            return CGPoint(
+                x: start.x + model.dragOffset.width,
+                y: start.y + model.dragOffset.height
+            )
+        }
+        return card.position  // Not dragging.
+    }
 
-        return AnyView(
-            content
-                .position(currentPosition)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
+    /// Drag gesture for draggable cards.
+    private func dragGesture(for card: Card) -> some Gesture {
+        DragGesture()
+            .onChanged { value in
+                if model.draggingID == nil {
+                    model.draggingID = card.id
+                    model.dragOffset = .zero
 
-                            // If another card is active, ignore
-                            if model.draggingID != nil && model.draggingID != cardID {
-                                return
-                            }
-                            if model.draggingID == nil { // Begin drag.
-                                dragStartPosition = card.position
-                                model.draggingID = cardID
-                            }
-                            model.dragOffset = value.translation // Continue drag.
+                    let dragIDs: Set<UUID>
+                    if model.selectedIDs.contains(card.id) && model.selectedIDs.count > 1 {
+                        dragIDs = model.selectedIDs
+                    } else {
+                        dragIDs = [card.id]
+                    }
+                    /*
+                     // ChatGPT says this is a better way to get the dictionary.
+                     model.dragStartPositions = Dictionary(uniqueKeysWithValues:
+                         dragIDs.compactMap { id in
+                             model.card(withId: id).map { (id, $0.position) }
+                         }
+                     )
+                     */
+                    var starts: [UUID: CGPoint] = [:]
+                    for id in dragIDs {
+                        if let c = model.card(withId: id) {
+                            starts[id] = c.position
                         }
-
-                        .onEnded { value in
-                            guard let start = dragStartPosition else {
-                                // Drag was cancelled by snap
-                                dragStartPosition = nil
-                                model.draggingID = nil
-                                model.dragOffset = .zero
-                                //model.baseSize = nil
-                                return
-                            }
-
-                            // Commit new position
-                            let newPosition = CGPoint(
-                                x: start.x + value.translation.width,
-                                y: start.y + value.translation.height
-                            )
-
-                            model.updatePosition(for: cardID, to: newPosition)
-
-                            dragStartPosition = nil // Reset.
-                            model.dragOffset = .zero
-                            model.draggingID = nil
-                        }
-                )
-        )
+                    }
+                    model.dragStartPositions = starts
+                    model.bringToFront(card.id)
+                }
+                model.dragOffset = value.translation
+            }
+            .onEnded { _ in
+                for (id, start) in model.dragStartPositions {
+                    let newPos = CGPoint(
+                        x: start.x + model.dragOffset.width,
+                        y: start.y + model.dragOffset.height
+                    )
+                    model.updatePosition(for: id, to: newPos)
+                }
+                model.draggingID = nil
+                model.dragOffset = .zero
+                model.dragStartPositions = [:]
+            }
     }
 }

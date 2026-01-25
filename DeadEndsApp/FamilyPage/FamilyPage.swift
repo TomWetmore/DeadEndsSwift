@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 11 July 2025.
-//  Last changed on 19 September 2025.
+//  Last changed on 25 January 2026.
 //
 
 import SwiftUI
@@ -38,6 +38,17 @@ struct FamilyPage: View {
                 Spacer()
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding()
+
+            // Messages and action buttons.
+            VStack(alignment: .leading, spacing: 4) {
+                if let message = model.status {
+                    Text(message)
+                        .font(.callout)
+                        .foregroundColor(.gray)
+                }
+                FamilyActionBar(family: family)
+            }
             .padding()
         }
         .padding()

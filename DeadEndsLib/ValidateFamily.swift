@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 2 January 2025.
-//  Last changed 12 July 2025.
+//  Last changed 24 January 2026.
 //
 
 import Foundation
@@ -20,10 +20,9 @@ func validateFamilies(families: RecordList, index: RecordIndex, source: String, 
 
 func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keymap: KeyMap, errlog: inout ErrorLog) {
 
-
 	if (family.key == nil) { fatalError("Family with no key.") }
 	let fkey = family.key!
-	let line = keymap[fkey]! // Location of familiy in the source.
+	let line = keymap[fkey]! // Location of family in the source.
 	var errorCount = 0
 	var husbKeys: Set<String> = []
 	var wifeKeys: Set<String> = []

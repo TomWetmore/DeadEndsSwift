@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 October 2025.
-//  Last changed on 23 January 2026.
+//  Last changed on 25 January 2026.
 //
 
 import SwiftUI
@@ -12,13 +12,15 @@ import DeadEndsLib
 /// View that contains draggable cards and supports genealogical activities.
 struct DesktopView: View {
 
+    @EnvironmentObject var appModel: AppModel
     @State private var model: DesktopModel
     @State private var showingSearchSheet = false
     @State private var marqueeStart: CGPoint? = nil
     @State private var marqueeRect: CGRect? = nil
-    @State private var cardFrames: [UUID: CGRect] = [:]
+    private let seedFamily: Family?
+    @State private var didSeed = false
 
-    /// Create desktop view with a person card.
+    /// Create desktop with single person.
     init(person: Person) {
         let desktopModel = DesktopModel()
         desktopModel.addCard(
@@ -26,7 +28,14 @@ struct DesktopView: View {
             position: CGPoint(x: 200, y: 200),
             size: CardSizes.startSize
         )
+        self.seedFamily = nil
         _model = State(wrappedValue: desktopModel)
+    }
+
+    /// Create desktop with family group.
+    init(family: Family) {
+        self.seedFamily = family
+        _model = State(wrappedValue: DesktopModel())
     }
 
     // Desktop view.
@@ -42,13 +51,12 @@ struct DesktopView: View {
                 cardsLayer // Cards on desktop.
             }
             .coordinateSpace(name: "desktop")
-            .onPreferenceChange(CardFramePrefKey.self) { cardFrames = $0 }
-        }
-        .contextMenu {
-            Button("Add Person to Desktop...") {
-                showingSearchSheet = true
+            .onAppear {
+                seedIfNeeded(desktopSize: geo.size)
             }
+            //.onPreferenceChange(CardFramePrefKey.self) { cardFrames = $0 }  // Now using model rects.
         }
+        .contextMenu { desktopContextMenu }
         .sheet(isPresented: $showingSearchSheet) {
             PersonSearchSheet(model: model)
                 .frame(minWidth: 500, minHeight: 200)
@@ -70,10 +78,21 @@ struct DesktopView: View {
                 marqueeRect = rect
 
                 // Selection: intersects is usually the nicest feel
-                let hit = Set(cardFrames.compactMap { (id, frame) in
-                    frame.intersects(rect) ? id : nil
+//                let hit = Set(cardFrames.compactMap { (id, frame) in
+//                    frame.intersects(rect) ? id : nil
+//                })
+//                model.selectedIDs = hit
+
+                // Selection: intersects is usually the nicest feel
+                let hit = Set(model.cards.compactMap { card in
+                    card.rect.intersects(rect) ? card.id : nil
                 })
-                model.selectedIDs = hit
+
+                if hit != model.selectedIDs {
+                    model.selectedIDs = hit
+                }
+
+
             }
             .onEnded { _ in
                 marqueeStart = nil
@@ -115,7 +134,7 @@ struct DesktopView: View {
                 SelectableCard(model: model, cardID: card.id) {
                     ResizeableCard(model: model, cardID: card.id) {
                         CardView(model: model, cardID: card.id)
-                            .reportCardFrame(id: card.id)
+                            //.reportCardFrame(id: card.id)
                     }
                 }
             }
@@ -131,6 +150,39 @@ struct DesktopView: View {
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
+
+    /// Add family to desktop if needed.
+    private func seedIfNeeded(desktopSize: CGSize) {
+        guard !didSeed else { return }
+        didSeed = true
+
+        guard let family = seedFamily else { return }
+        guard let index = appModel.database?.recordIndex else { return }
+        let parents = family.parents(in: index)
+        let children = family.children(in: index)
+        layoutFamily(parents: parents, children: children, desktopSize: desktopSize)  // Layout family.
+    }
+
+    /// Layout family on desktop.
+    private func layoutFamily(parents: [Person], children: [Person], desktopSize: CGSize) {
+        let parentY: CGFloat = desktopSize.height * 0.25  // Offsets to parent and child rows.
+        let childY: CGFloat  = desktopSize.height * 0.55
+
+        let parentSpacing: CGFloat = CardSizes.startSize.width * 1.2  // Inter card spacing.
+        let childSpacing: CGFloat  = CardSizes.startSize.width * 1.05
+
+        let px0 = desktopSize.width/2 - parentSpacing * CGFloat(max(parents.count - 1, 0))/2  // Parents.
+        for (i, p) in parents.enumerated() {
+            let x = px0 + CGFloat(i) * parentSpacing
+            model.addCard(kind: .person(p), position: CGPoint(x: x, y: parentY), size: CardSizes.startSize)
+        }
+
+        let cx0 = desktopSize.width/2 - childSpacing * CGFloat(max(children.count - 1, 0))/2  // Children.
+        for (i, c) in children.enumerated() {
+            let x = cx0 + CGFloat(i) * childSpacing
+            model.addCard(kind: .person(c), position: CGPoint(x: x, y: childY), size: CardSizes.startSize)
+        }
+    }
 }
 
 /// Sheet to search for a Person and add its card to the desktop.
@@ -204,31 +256,107 @@ struct PersonSearchSheet: View {
 /// contributions into a single value.
 /// Example:
 /// 1. The desktop builds the 'tree', say cardViews a, b and c.
-private struct CardFramePrefKey: PreferenceKey {
+//private struct CardFramePrefKey: PreferenceKey {
+//
+//    static var defaultValue: [UUID: CGRect] = [:]
+//
+//    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+//        value.merge(nextValue(), uniquingKeysWith: { $1 })
+//    }
+//}
+//
+//private struct ReportCardFrame: ViewModifier {
+//    let id: UUID
+//    func body(content: Content) -> some View {
+//        content.background(
+//            GeometryReader { geo in
+//                Color.clear.preference(
+//                    key: CardFramePrefKey.self,
+//                    value: [id: geo.frame(in: .named("desktop"))]
+//                )
+//            }
+//        )
+//    }
+//}
+//
+//private extension View {
+//    func reportCardFrame(id: UUID) -> some View {
+//        modifier(ReportCardFrame(id: id))
+//    }
+//}
 
-    static var defaultValue: [UUID: CGRect] = [:]
+// MARK: - Desktop Context Menu
+/// Desktop context menu as a computed property.
+extension DesktopView {
 
-    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { $1 })
-    }
-}
+    @ViewBuilder
+    var desktopContextMenu: some View {
+        let selectedCount = model.selectedIDs.count
 
-private struct ReportCardFrame: ViewModifier {
-    let id: UUID
-    func body(content: Content) -> some View {
-        content.background(
-            GeometryReader { geo in
-                Color.clear.preference(
-                    key: CardFramePrefKey.self,
-                    value: [id: geo.frame(in: .named("desktop"))]
-                )
+        if selectedCount >= 2 {
+            Button("Make Same Size") {
+                model.makeSelectedSameSize()
             }
-        )
+
+            Menu("Align") {
+                Button("Left")   { model.alignSelected(.left) }
+                Button("Right")  { model.alignSelected(.right) }
+                Button("Top")    { model.alignSelected(.top) }
+                Button("Bottom") { model.alignSelected(.bottom) }
+            }
+
+            Menu("Distribute") {
+                Button("Horizontally") {
+                    model.distributeSelected(.horizontal)
+                }
+                .disabled(selectedCount < 3)
+
+                Button("Vertically") {
+                    model.distributeSelected(.vertical)
+                }
+                .disabled(selectedCount < 3)
+            }
+
+            Divider()
+        }
+
+        Button("Add Person to Desktop...") {
+            showingSearchSheet = true
+        }
     }
 }
 
-private extension View {
-    func reportCardFrame(id: UUID) -> some View {
-        modifier(ReportCardFrame(id: id))
+/// Desktop context menu as a view.
+extension DesktopView {
+
+    private struct DesktopContextMenu: View {
+        @Bindable var model: DesktopModel
+        @Binding var showingSearchSheet: Bool
+
+        var body: some View {
+            let selectedCount = model.selectedIDs.count
+
+            if selectedCount >= 2 {
+                Button("Make Same Size") { model.makeSelectedSameSize() }
+
+                Menu("Align") {
+                    Button("Left")   { model.alignSelected(.left) }
+                    Button("Right")  { model.alignSelected(.right) }
+                    Button("Top")    { model.alignSelected(.top) }
+                    Button("Bottom") { model.alignSelected(.bottom) }
+                }
+
+                Menu("Distribute") {
+                    Button("Horizontally") { model.distributeSelected(.horizontal) }
+                        .disabled(selectedCount < 3)
+                    Button("Vertically") { model.distributeSelected(.vertical) }
+                        .disabled(selectedCount < 3)
+                }
+
+                Divider()
+            }
+
+            Button("Add Person to Desktop...") { showingSearchSheet = true }
+        }
     }
 }

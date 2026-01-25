@@ -66,6 +66,15 @@ extension Family {
         people(in: index, role: .child)
     }
 
+    /// Return all spouses/parents of self in gedcom order.
+//    public func spouses(in index: RecordIndex) -> [Person] {
+//        people(in: index, roles: [.husband, .wife])
+//    }
+
+    public func parents(in index: RecordIndex) -> [Person] {
+        spouses(in: index)
+    }
+    
     /// Return all husbands of self in gedcom order.
     public func husbands(in index: RecordIndex) -> [Person] {
         people(in: index, role: .husband)
@@ -83,19 +92,6 @@ public extension Family {
     func spouses(in index: RecordIndex) -> [Person] {
         people(in: index, roles: [.husband, .wife])
     }
-
-//    func spouses(in index: RecordIndex) -> [Person] {
-//        var out: [Person] = []
-//        var seen = Set<RecordKey>()
-//
-//        for node in root.kids {
-//            guard node.tag == FamilyRoleTag.HUSB || node.tag == FamilyRoleTag.WIFE else { continue }
-//            guard let key = node.val else { continue }
-//            guard seen.insert(key).inserted else { continue }
-//            if let p = index.person(for: key) { out.append(p) }
-//        }
-//        return out
-//    }
 
     /// Return all spouses except given person in self in gedcom order.
     func spouses(excluding person: Person, in index: RecordIndex) -> [Person] {

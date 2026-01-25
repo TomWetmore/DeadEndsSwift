@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 31 October 2025.
-//  Last changed on 19 January 2026..
+//  Last changed on 24 January 2026..
 //
 
 import SwiftUI
@@ -16,11 +16,11 @@ struct CardView: View {
     let cardID: UUID
     @Environment(\.recordIndex) private var index: RecordIndex
 
-    private var card: Card? {
+    private var card: Card? {  // Card shown by this view.
         model.cards.first(where: { $0.id == cardID })
     }
 
-    private var isSelected: Bool {
+    private var isSelected: Bool {  // True if this card is selected.
         model.selectedIDs.contains(cardID)
     }
 
