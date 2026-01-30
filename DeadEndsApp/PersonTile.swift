@@ -3,13 +3,13 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 4 July 2025.
-//  Last changed on 19 January 2026.
+//  Last changed on 27 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Flexible view for showing a person on a page views.
+/// Flexible view to show a person on a page views.
 struct PersonTile: View {
 
     @EnvironmentObject var model: AppModel
@@ -17,7 +17,7 @@ struct PersonTile: View {
     var label: String? = nil
     var showSummary: Bool = true
     var tint: Color? = nil
-    var onActivate: ((Person) -> Void)? = nil  // Action if used as button.
+    var onActivate: ((Person) -> Void)? = nil  // Action when used as button.
 
     var body: some View {
 
@@ -30,7 +30,6 @@ struct PersonTile: View {
                 Text(person.displayName())  // Name.
                     .fontWeight(.semibold)
             }
-            
             if showSummary {  // Birth and death.
                 VStack(alignment: .leading) {
                     if let birth = person.eventSummary(tag: "BIRT") {
@@ -45,10 +44,10 @@ struct PersonTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
-        .background(backgroundColor(for: person))
+        .background(person.sexTint)
         .cornerRadius(6)
 
-        if let onActivate {  // Handle the tile when a button.
+        if let onActivate {
             Button {
                 onActivate(person)
             } label: {

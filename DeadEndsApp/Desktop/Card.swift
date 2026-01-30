@@ -3,30 +3,17 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 October 2025.
-//  Last changed on 24 January 2026.
+//  Last changed on 26 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Values of cards that appear on the desktop.
-enum CardValue: Identifiable, Hashable {
-
+/// Card value of card that appears on the desktop.
+enum CardValue {
     case person(Person)
     case family(Family)
     case string(id: UUID, value: String)
-
-    /// Stable ID for each card value type.
-    var id: String {
-        switch self {
-        case .person(let person):
-            return person.root.key ?? UUID().uuidString
-        case .family(let family):
-            return family.root.key ?? UUID().uuidString
-        case .string(let id, _):
-            return id.uuidString
-        }
-    }
 }
 
 /// Size constants.
@@ -40,20 +27,20 @@ struct CardSizes {
 struct Card: Identifiable, Equatable, Hashable {
 
     let id = UUID()
-    let kind: CardValue  // Person, family, ...
-    var position: CGPoint  // Center coords in desktop system.
-    var size: CGSize
+    let kind: CardValue  // Person, family, ... ('value' of Card).
+    var position: CGPoint  // Center coords in 'desktop' system.
+    var size: CGSize  // Card's size.
 
-    // Computed properties.
-    var rect: CGRect {  // Card's rectangle.
-        CGRect(x: position.x - size.width / 2,
-               y: position.y - size.height / 2,
+    var rect: CGRect {  // Card's rectangle (computed property).
+        CGRect(x: position.x - size.width / 2, y: position.y - size.height / 2,
                width: size.width, height: size.height)
     }
     var topCenter: CGPoint { CGPoint(x: rect.midX, y: rect.minY) }
     var bottomCenter: CGPoint { CGPoint(x: rect.midX, y: rect.maxY) }
+    var leftCenter: CGPoint { CGPoint(x: rect.minX, y: rect.midY) }
+    var rightCenter: CGPoint { CGPoint(x: rect.maxX, y: rect.midY) }
 
-    /// Init a new card from its value, position and size.
+    /// Create a new card.
     init(kind: CardValue, position: CGPoint, size: CGSize) {
         self.kind = kind
         self.position = position

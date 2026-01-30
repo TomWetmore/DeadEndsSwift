@@ -50,7 +50,7 @@ class DesktopModel {
         }
     }
 
-    /// Move card to first position in array.
+    /// Move card to last position in array.
     func bringToFront(_ id: UUID) {
         guard let i = cards.firstIndex(where: { $0.id == id }) else { return }
         let card = cards.remove(at: i)
@@ -151,7 +151,7 @@ extension DesktopModel {
         func bottom(_ card: Card) -> CGFloat { card.position.y + card.size.height / 2 }
 
         let target: CGFloat
-        switch edge {  // Get value of edge coordinate.
+        switch edge {  // Edge coordinate.
         case .left:   target = selected.map(left).min() ?? 0
         case .right:  target = selected.map(right).max() ?? 0
         case .top:    target = selected.map(top).min() ?? 0

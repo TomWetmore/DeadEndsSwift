@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 13 January 2026.
+//  Last changed on 28 January 2026.
 //
 
 import Foundation
@@ -24,12 +24,18 @@ public enum FamilyLinkTag: String {
     case famc = "FAMC"
 }
 
+public enum SexType: String {
+    case male = "M"
+    case female = "F"
+    case unknown = "U"
+}
+
 /// Type of  Person Record.
 public struct Person: Record {
 
     public let root: GedcomNode  // Protocol requirement.
 
-    /// Initializer fails if root's tag is not "INDI" or root has no key.
+    /// Create person. Fail if root is not INDI or has no key.
     public init?(_ root: GedcomNode) {
         guard root.tag == "INDI", root.key != nil
         else { return nil }
@@ -70,18 +76,10 @@ extension Person: Equatable, Hashable {
     }
 }
 
-/// Enumeration for sex values.
-public enum SexType: String {
-    case male = "M"
-    case female = "F"
-    case unknown = "U"
-}
-
 public extension Person {
 
-    /// Return sex of self.
+    /// Return sex type of self.
     var sex: SexType {
-
         guard let value = kidVal(forTag: "SEX")?.uppercased()
         else { return .unknown }
         switch value {
@@ -117,7 +115,6 @@ public extension Person {
 
     /// Return self's parents.
     private func parents(in index: RecordIndex, role: ParentRoleTag) -> [Person] {
-
         var result: [Person] = []
         var seen: Set<RecordKey> = []
 
@@ -148,9 +145,8 @@ public extension Person {
 /// Extension for Families.
 public extension Person {
 
-    /// Return the families self is a spouse in.
+    /// Return families self is a spouse in.
     func spouseFamilies(in index: RecordIndex) -> [Family] {
-
         var families: [Family] = []
         for famsKey in kidVals(forTag: FamilyLinkTag.fams.rawValue) {
             guard let family = index.family(for: famsKey)
@@ -160,9 +156,8 @@ public extension Person {
         return families
     }
 
-    /// Return the families self is a child in.
+    /// Return families self is a child in.
     func childFamilies(in index: RecordIndex) -> [Family] {
-
         var families: [Family] = []
         for famcKey in kidVals(forTag: FamilyLinkTag.famc.rawValue) {
             guard let family = index.family(for: famcKey)
@@ -178,7 +173,6 @@ public extension Person {
 
     /// Return first spouse of self by role. There is no restriction on the sex of spouse.
     func spouse(in index: RecordIndex, roles: [FamilyRoleTag]) -> Person? {
-
         for family in spouseFamilies(in: index) {
             for role in roles {
                 for key in family.kidVals(forTag: role.rawValue) where key != self.key {
@@ -201,7 +195,6 @@ public extension Person {
 
     /// Return all spouses of self, filtered by roles, deduped, in gedcom order.
     func spouses(in index: RecordIndex, roles: [FamilyRoleTag] = [.husband, .wife]) -> [Person] {
-
         var seen = Set<RecordKey>()
         var out: [Person] = []
 
@@ -232,7 +225,6 @@ extension Person {
 
     /// Return self's siblings from all self's FAMC families, deduped and in gedcom order.
     public func siblings(in index: RecordIndex) -> [Person] {
-
         var seen: Set<RecordKey> = []
         var result: [Person] = []
 
@@ -267,9 +259,8 @@ extension Person {
 
 public extension Person {
 
-    /// Return all children of self; deduped and in gedcom order.
+    /// Return children of self, deduped in Gedcom order.
     func children(in index: RecordIndex) -> [Person] {
-
         var seen: Set<RecordKey> = []
         var result: [Person] = []
 

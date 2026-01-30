@@ -1,0 +1,30 @@
+Proposed Public API for Families
+
+extension FamilyRoleTag {
+    static let HUSB = FamilyRoleTag.husband.rawValue
+    static let WIFE = FamilyRoleTag.wife.rawValue
+    static let CHIL = FamilyRoleTag.child.rawValue
+}
+===============
+DEFN OF FAMILY
+===============
+struct Family: Record { public let root: GedcomNode }
+===============
+INITIALIZER
+===============
+init?(_: GedcomNode) -- 
+===============
+ROLE PLAYERS
+===============
+func people(in:, role:) -> [Person] -- all persons with role.
+func people(in:, roles:) -> [Person] -- all persons with roles.
+func husband(in:) -> Person? -- first HUSB in family.
+func wife(in:) -> Person? -- first WIFE in family.
+func children(in:) -> [Person] -- all children in family.
+func spouses(in:) -> [Person] -- all spouses/parents in family (same as next).
+func parents(in:) -> [Person] -- all spouses/parents in family (same as prev).
+func husbands(in:) -> [Person] -- all husbands in family.
+func wives(in:) -> [Person] -- all wives in family.
+func spouses(excluding:, in:) -> [Person] -- all spouses in family excluding one.
+func spouse(of: Person, in:) -> Person? -- first spouse other than given person
+func containsSpouse(_: Person, in: RecordIndex) -> Bool -- true if family has spouse.

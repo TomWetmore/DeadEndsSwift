@@ -66,11 +66,6 @@ extension Family {
         people(in: index, role: .child)
     }
 
-    /// Return all spouses/parents of self in gedcom order.
-//    public func spouses(in index: RecordIndex) -> [Person] {
-//        people(in: index, roles: [.husband, .wife])
-//    }
-
     public func parents(in index: RecordIndex) -> [Person] {
         spouses(in: index)
     }

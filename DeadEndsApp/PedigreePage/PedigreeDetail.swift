@@ -3,23 +3,21 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 5 July 2025.
-//  Last changed on 10 January 2026.
+//  Last changed on 28 January 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Layout information about a person in a pedigree. Unit square coordinates.
+/// Layout information about person in unit square coords.
 private struct PedigreeNode: Identifiable {
-
-    let id: String  // Person key.
+    let id: UUID = UUID()
     let person: Person  // Person.
     let x: CGFloat  // X-coord in unit square.
     let y: CGFloat  // Y-coord in unit square.
 }
 
-/// DeadEnds Page view that shows a person with pedigree.
-
+/// DeadEnds Page showing a person with pedigree.
 struct PedigreeDetail: View {
 
     @State private var layout: [PedigreeNode] = []
@@ -29,8 +27,7 @@ struct PedigreeDetail: View {
     let generations: Int  // Number of generations.
     let buttonWidth: CGFloat  // Max button width.
 
-    /// Show the PedigreeView.
-
+    /// Render the pedigree detail view.
     var body: some View {
 
         GeometryReader { geometry in
@@ -44,16 +41,14 @@ struct PedigreeDetail: View {
                         path.addLine(to: CGPoint(x: x, y: geometry.size.height))
                     }.stroke(Color.blue.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [5]))
                 }
-
-                // Layout constants.
-                let colwidth = geometry.size.width / CGFloat(generations)
+                let colwidth = geometry.size.width / CGFloat(generations)  // Layout constants.
                 let offset = colwidth / 2.0
 
                 ForEach(layout) { node in  // Layout each person.
-                    let x = node.x * geometry.size.width + offset  // Get view coordinates.
+                    let x = node.x * geometry.size.width + offset  // View coords.
                     let y = node.y * geometry.size.height
-                    PersonTile(person: node.person) { p in
-                        model.path.append(Route.person(p))
+                    PersonTile(person: node.person) { person in
+                        model.path.append(Route.person(person))
                     }
                     .frame(width: min(colwidth, buttonWidth), alignment: .leading)
                     .position(x: x, y: y)
@@ -72,19 +67,16 @@ struct PedigreeDetail: View {
     }
 }
 
-/// Position the persons in a unit square, returning an array of PedigreeNodes.
-
+/// Position persons in unit square; return array of pedigree nodes.
 private func buildPedigreeLayout(from person: Person,  generations: Int,
                                  recordIndex: RecordIndex) -> [PedigreeNode] {
     var pedigreeNodes = [PedigreeNode]()
 
-    /// Local function to build the PedigreeNodes.
+    /// Function to build pedigree nodes.
     func addPerson(_ person: Person, gen: Int, index: Int) {
-
-        let x = CGFloat(gen) / CGFloat(generations)  // Place person in unit square.
+        let x = CGFloat(gen) / CGFloat(generations)  // Compute unit square coords.
         let y = CGFloat(2 * index + 1) / CGFloat(1 << (gen + 1))
-        let id = person.key
-        pedigreeNodes.append(PedigreeNode(id: id, person: person, x: x, y: y))
+        pedigreeNodes.append(PedigreeNode(person: person, x: x, y: y))
 
         if gen < generations - 1 {  // Recurse to next generation.
             if let father = person.father(in: recordIndex) {
@@ -95,7 +87,6 @@ private func buildPedigreeLayout(from person: Person,  generations: Int,
             }
         }
     }
-
     addPerson(person, gen: 0, index: 0)  // Call to build the pedigree nodes.
     return pedigreeNodes
 }

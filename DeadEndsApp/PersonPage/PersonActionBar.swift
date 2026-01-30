@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 11 January 2026.
+//  Last changed on 27 January 2026.
 //
 
 import SwiftUI
@@ -14,40 +14,29 @@ struct FamilyList: Identifiable {
     let nodes: [Family]
 }
 
-/// Row of action buttons displayed on PersonPage views.
-
+/// Row of action buttons displayed on person page views.
 struct PersonActionBar: View {
 
-    @EnvironmentObject var model: AppModel
+    @EnvironmentObject private var model: AppModel
     let person: Person
     @State private var familyList: FamilyList? = nil
     @State private var showEditSheet = false
     @State private var showingDescList = false
 
-    /// Row of action buttons.
+    private var index: RecordIndex? { model.database?.recordIndex }
+
+    /// Render action bar buttons.
     var body: some View {
 
         HStack {
-            Button("Father") {
-                navigateToParent(sex: "M")
-            }
-            Button("Mother") {
-                navigateToParent(sex: "F")
-            }
-            Button("Older Sibling") {
-                navigateToNextSibling()
-            }
-            Button("Younger Sibling") {
-                navigateToPreviousSibling()
-            }
-            Button("Pedigree") {
-                model.path.append(Route.pedigree(person))
-            }
-            Button("Descendants") {
-                model.path.append(Route.descendants(person))
-            }
+            Button("Father") { navigateToFather() }
+            Button("Mother") { navigateToMother() }
+            Button("Older Sibling") { navigateToNextSibling() }
+            Button("Younger Sibling") { navigateToPreviousSibling()}
+            Button("Pedigree") { model.path.append(Route.pedigree(person))}
+            Button("Descendants") { model.path.append(Route.descendants(person)) }
             Button("Family") {
-                guard let index = model.database?.recordIndex else { return }
+                guard let index else { return }
                 let families = person.kids(withTag: "FAMS").compactMap {
                     $0.val.flatMap { index.family(for: $0) }
                 }
@@ -59,26 +48,19 @@ struct PersonActionBar: View {
                     model.status = "\(String(describing: person.displayName)) is not a spouse in any family."
                 }
             }
-            Button("Family Tree") {
-                model.path.append(Route.familyTree(person))
-            }
+            Button("Family Tree") { model.path.append(Route.familyTree(person)) }
 //            Button("Tidy Test") {
 //                guard let index = model.database?.recordIndex else { return }
 //                tidyTest(person: person, index: index);
 //            }
-            Button("Descendancy List") {
-                model.path.append(Route.descendancy(person))
-            }
+            Button("Descendancy List") { model.path.append(Route.descendancy(person)) }
             Button("New Person") {
-                guard let index = model.database?.recordIndex,
+                guard let index,
                       let newPerson = Person(GedcomNode(key: generateRandomKey(index: index), tag: "INDI"))
                 else { return }
                 model.path.append(Route.personEditor(newPerson))
             }
-            Button("Tree Editor") {
-                // assuming you're inside a PersonView and have `person`
-                model.path.append(Route.gedcomTreeEditor(person))
-            }
+            Button("Tree Editor") { model.path.append(Route.gedcomTreeEditor(person)) }
 //            Button("New Edit") {
 //                model.path.append(Route.personEditor(person))
 //            }
@@ -103,9 +85,8 @@ struct PersonActionBar: View {
         .font(.body)
         .tint(.secondary)
         .padding(.top)
-        // Learn a little Swift. .sheet takes an optional. If nil nothing happens. If non-nil
-        // the content closure is called. It takes the unwrapped item and returns a View.
-        .sheet(item: $familyList) { wrapped in // shown if familyList is non-nil
+        // .sheet takes an optional. If nil nothing happens. If non-nil content is rendered.
+        .sheet(item: $familyList) { wrapped in
             FamilySelectionSheet(families: wrapped.nodes) { selectedFamily in
                 familyList = nil
                 model.path.append(Route.family(selectedFamily))
@@ -114,22 +95,38 @@ struct PersonActionBar: View {
         }
     }
 
-    private func navigateToParent(sex: String) {
-        guard let ri = model.database?.recordIndex else {
+    /// Navigate to father.
+    private func navigateToFather() {
+        guard let index else {
             model.status = "No database loaded"
             return
         }
-        if let parent = person.resolveParent(sex: sex, index: ri) {
-            model.path.append(Route.person(parent))
+        if let father = person.father(in: index) {
+            model.path.append(Route.person(father))
             model.status = nil
         } else {
-            model.status = "No \(sex == "M" ? "father" : "mother") found"
+            model.status = "No father found"
         }
     }
 
-    /// Navigate to the older sibling of current person.
+    /// Navigate to mother.
+    private func navigateToMother() {
+        guard let index else {
+            model.status = "No database loaded"
+            return
+        }
+        if let mother = person.mother(in: index) {
+            model.path.append(Route.person(mother))
+            model.status = nil
+        } else {
+            model.status = "No father found"
+        }
+    }
+
+
+    /// Navigate to the older sibling.
     private func navigateToNextSibling() {
-        guard let index = model.database?.recordIndex else {
+        guard let index else {
             model.status = "No database found"
             return
         }
@@ -141,9 +138,9 @@ struct PersonActionBar: View {
         model.status = nil
     }
 
-    /// Navigate to the younger sibling of the current person.
+    /// Navigate to the younger sibling.
     private func navigateToPreviousSibling() {
-        guard let index = model.database?.recordIndex else {
+        guard let index else {
             model.status = "No database found"
             return
         }
@@ -164,9 +161,8 @@ private func tidyTest(person: Person, index: RecordIndex) {
 
 }
 
-/// Generate a random Record key.
-
-func generateRandomKey(index: RecordIndex) -> String {
+/// Generate a random record key.
+func generateRandomKey(index: RecordIndex) -> RecordKey {
 
     let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 

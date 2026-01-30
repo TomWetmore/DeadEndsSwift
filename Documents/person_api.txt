@@ -1,0 +1,73 @@
+PROPOSED PUBLIC API FOR PERSONS
+
+===============
+ENUMERATIONS
+===============
+enum FamilyRoleTag: String { case husband = "HUSB", wife = "WIFE", child   = "CHIL" }
+enum ParentRoleTag: String { case husband = "HUSB", wife = "WIFE" }
+enum FamilyLinkTag: String { case fams = "FAMS", famc = "FAMC" }
+===============
+DEFN OF PERSON
+===============
+struct Person: Record { let root: GedcomNode }
+===============
+INITIALIZER
+init?(_ root: GedcomNode) -- create person; fail if not INDI or no key.
+===============
+METHODS ON PERSON.
+===============
+NAMES
+===============
+var name: String? -- displayName of value of first NAME node
+var gedcomName: GedcomName? -- value of first NAME node
+===============
+EVENTS
+===============
+var birth: GedcomNode? -- first BIRT node in person 
+var death: GedcomNode? -- first DEAT node in person
+===============
+IDENTITY
+===============
+static func == (lhs: Person, rhs: Person) -> Bool -- checks via keys
+func hash(into hasher: inout Hasher) -- hash function based on key
+enum SexType: String { case male = "M", female = "F", unknown = "U" }
+===============
+SEX
+===============
+var sex: SexType -- sex type based on value of first SEX node
+var sexSymbol: String -- sex type symbol for M, F, & anything else.
+var isFemale: Bool -- person is female.
+var isMale: Bool -- person is male.
+===============
+PARENTS
+===============
+func parents(in:, role:) -> [Person] -- parent persons
+func father(in:) -> Person? -- first HUSB in first FAMC.
+func mother(in:) -> Person? -- first WIFE in first FAMC.
+func fathers(in:) -> [Person] -- all HUSBs from all FAMCs.
+func mothers(in:) -> [Person] -- all WIFEs from all FAMCs.
+===============
+FAMILIES
+===============
+func spouseFamilies(in:) -> [Family] -- all FAMS families.
+func childFamilies(in:) -> [Family]  -- all FAMC families.
+===============
+SPOUSES
+===============
+func spouse(in:, roles:) -> Person? -- first spouse from first FAMS with role.
+func husband(in:) -> Person? -- first HUSB from first FAMS with role.
+func wife(in:) -> Person? -- first WIFE from first FAMS with role.
+func spouses(in:, roles:) -> [Person] -- all spouses from all FAMSs with role/s.
+func husbands(in:) -> [Person] -- all HUSBs from all FAMSs with role.
+func wives(in:) -> [Person] -- all WIFEs from all FAMSs with role.
+===============
+SIBLINGS
+===============
+func siblings(in:) -> [Person] -- all siblings from all FAMCs.
+func previousSibling(in:) -> Person? -- previous sibling in first FAMC.
+func nextSibling(in) -> Person? -- next sibling in first FAMC.
+===============
+CHILDREN
+===============
+func children(in: RecordIndex) -> [Person] -- all children in all FAMSs.
+===============

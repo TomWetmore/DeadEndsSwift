@@ -17,8 +17,8 @@ struct DesktopView: View {
     @State private var showingSearchSheet = false
     @State private var marqueeStart: CGPoint? = nil
     @State private var marqueeRect: CGRect? = nil
-    private let seedFamily: Family?
     @State private var didSeed = false
+    private let seedFamily: Family?
 
     /// Create desktop with single person.
     init(person: Person) {
@@ -40,7 +40,6 @@ struct DesktopView: View {
 
     // Desktop view.
     var body: some View {
-
         GeometryReader { geo in
             ZStack {
                 background  // Blue background.
@@ -54,7 +53,6 @@ struct DesktopView: View {
             .onAppear {
                 seedIfNeeded(desktopSize: geo.size)
             }
-            //.onPreferenceChange(CardFramePrefKey.self) { cardFrames = $0 }  // Now using model rects.
         }
         .contextMenu { desktopContextMenu }
         .sheet(isPresented: $showingSearchSheet) {
@@ -76,23 +74,12 @@ struct DesktopView: View {
                     height: abs(value.location.y - s.y)
                 )
                 marqueeRect = rect
-
-                // Selection: intersects is usually the nicest feel
-//                let hit = Set(cardFrames.compactMap { (id, frame) in
-//                    frame.intersects(rect) ? id : nil
-//                })
-//                model.selectedIDs = hit
-
-                // Selection: intersects is usually the nicest feel
-                let hit = Set(model.cards.compactMap { card in
+                let hit = Set(model.cards.compactMap { card in  // Cards within marquee.
                     card.rect.intersects(rect) ? card.id : nil
                 })
-
                 if hit != model.selectedIDs {
                     model.selectedIDs = hit
                 }
-
-
             }
             .onEnded { _ in
                 marqueeStart = nil
@@ -124,17 +111,16 @@ struct DesktopView: View {
             .border(Color.gray.opacity(0.3))
             .ignoresSafeArea()
             .contentShape(Rectangle())
-            .onTapGesture { model.selectedIDs.removeAll() }  // Tap deselects all cards.
+            .onTapGesture { model.selectedIDs.removeAll() }  // Deselect cards.
     }
 
-    /// Card layer view.
+    /// Cards layer view.
     private var cardsLayer: some View {
         ForEach(model.cards) { card in
             DraggableCard(model: model, cardID: card.id) {
                 SelectableCard(model: model, cardID: card.id) {
                     ResizeableCard(model: model, cardID: card.id) {
                         CardView(model: model, cardID: card.id)
-                            //.reportCardFrame(id: card.id)
                     }
                 }
             }
@@ -165,22 +151,56 @@ struct DesktopView: View {
 
     /// Layout family on desktop.
     private func layoutFamily(parents: [Person], children: [Person], desktopSize: CGSize) {
-        let parentY: CGFloat = desktopSize.height * 0.25  // Offsets to parent and child rows.
-        let childY: CGFloat  = desktopSize.height * 0.55
+        let parentY: CGFloat = desktopSize.height * 0.25
+        let childTopY: CGFloat = desktopSize.height * 0.55
 
-        let parentSpacing: CGFloat = CardSizes.startSize.width * 1.2  // Inter card spacing.
-        let childSpacing: CGFloat  = CardSizes.startSize.width * 1.05
+        // Spacing
+        let parentSpacing: CGFloat = CardSizes.startSize.width * 1.2
+        let gapX: CGFloat = CardSizes.startSize.width * 0.08     // horizontal gap between child cards
+        let gapY: CGFloat = CardSizes.startSize.height * 0.15    // vertical gap between child rows
+        let margin: CGFloat = 24                                 // keep children away from edges
 
-        let px0 = desktopSize.width/2 - parentSpacing * CGFloat(max(parents.count - 1, 0))/2  // Parents.
+        let cardW = CardSizes.startSize.width
+        let cardH = CardSizes.startSize.height
+
+        // Parents.
+        let px0 = desktopSize.width / 2 - parentSpacing * CGFloat(max(parents.count - 1, 0)) / 2
         for (i, p) in parents.enumerated() {
             let x = px0 + CGFloat(i) * parentSpacing
-            model.addCard(kind: .person(p), position: CGPoint(x: x, y: parentY), size: CardSizes.startSize)
+            model.addCard(kind: .person(p),
+                          position: CGPoint(x: x, y: parentY),
+                          size: CardSizes.startSize)
         }
 
-        let cx0 = desktopSize.width/2 - childSpacing * CGFloat(max(children.count - 1, 0))/2  // Children.
-        for (i, c) in children.enumerated() {
-            let x = cx0 + CGFloat(i) * childSpacing
-            model.addCard(kind: .person(c), position: CGPoint(x: x, y: childY), size: CardSizes.startSize)
+        // Children (wrapped into centered rows).
+        guard !children.isEmpty else { return }
+
+        let usableW = max(1, desktopSize.width - 2 * margin)
+        let stepX = cardW + gapX
+
+        // How many child cards fit per row (at least 1)
+        let cols = max(1, Int((usableW + gapX) / stepX))
+
+        for (i, child) in children.enumerated() {
+            let row = i / cols
+            let col = i % cols
+
+            // Center each row independently (last row may be shorter)
+            let rowStartIndex = row * cols
+            let itemsInRow = min(cols, children.count - rowStartIndex)
+
+            let rowWidth =
+                CGFloat(itemsInRow) * cardW +
+                CGFloat(max(0, itemsInRow - 1)) * gapX
+
+            let rowX0 = desktopSize.width / 2 - rowWidth / 2 + cardW / 2
+
+            let x = rowX0 + CGFloat(col) * (cardW + gapX)
+            let y = childTopY + CGFloat(row) * (cardH + gapY)
+
+            model.addCard(kind: .person(child),
+                          position: CGPoint(x: x, y: y),
+                          size: CardSizes.startSize)
         }
     }
 }
@@ -251,42 +271,7 @@ struct PersonSearchSheet: View {
     }
 }
 
-/// Each card contributes one entry. The default value is what the parent sees if no children
-/// emit anything. The reduce function is how SwiftUI combines zero, one or many child
-/// contributions into a single value.
-/// Example:
-/// 1. The desktop builds the 'tree', say cardViews a, b and c.
-//private struct CardFramePrefKey: PreferenceKey {
-//
-//    static var defaultValue: [UUID: CGRect] = [:]
-//
-//    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
-//        value.merge(nextValue(), uniquingKeysWith: { $1 })
-//    }
-//}
-//
-//private struct ReportCardFrame: ViewModifier {
-//    let id: UUID
-//    func body(content: Content) -> some View {
-//        content.background(
-//            GeometryReader { geo in
-//                Color.clear.preference(
-//                    key: CardFramePrefKey.self,
-//                    value: [id: geo.frame(in: .named("desktop"))]
-//                )
-//            }
-//        )
-//    }
-//}
-//
-//private extension View {
-//    func reportCardFrame(id: UUID) -> some View {
-//        modifier(ReportCardFrame(id: id))
-//    }
-//}
-
-// MARK: - Desktop Context Menu
-/// Desktop context menu as a computed property.
+/// Desktop context menu, a computed property.
 extension DesktopView {
 
     @ViewBuilder
@@ -297,14 +282,12 @@ extension DesktopView {
             Button("Make Same Size") {
                 model.makeSelectedSameSize()
             }
-
             Menu("Align") {
-                Button("Left")   { model.alignSelected(.left) }
-                Button("Right")  { model.alignSelected(.right) }
                 Button("Top")    { model.alignSelected(.top) }
+                Button("Left")   { model.alignSelected(.left) }
                 Button("Bottom") { model.alignSelected(.bottom) }
+                Button("Right")  { model.alignSelected(.right) }
             }
-
             Menu("Distribute") {
                 Button("Horizontally") {
                     model.distributeSelected(.horizontal)
@@ -335,7 +318,6 @@ extension DesktopView {
 
         var body: some View {
             let selectedCount = model.selectedIDs.count
-
             if selectedCount >= 2 {
                 Button("Make Same Size") { model.makeSelectedSameSize() }
 
@@ -345,14 +327,12 @@ extension DesktopView {
                     Button("Top")    { model.alignSelected(.top) }
                     Button("Bottom") { model.alignSelected(.bottom) }
                 }
-
                 Menu("Distribute") {
                     Button("Horizontally") { model.distributeSelected(.horizontal) }
                         .disabled(selectedCount < 3)
                     Button("Vertically") { model.distributeSelected(.vertical) }
                         .disabled(selectedCount < 3)
                 }
-
                 Divider()
             }
 
