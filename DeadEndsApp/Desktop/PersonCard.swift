@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 25 October 2025.
-//  Last changed on 27 January 2026.
+//  Last changed on 1 February 2026.
 //
 
 import SwiftUI
@@ -20,10 +20,10 @@ struct PersonCard: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(person.name ?? "Unknown Person")
                 .font(.headline)
-            if let birth = person.eventSummary(tag: "BIRT") {
+            if let birth = person.eventSummary(kind: .birth) {
                 Text("b. \(birth)").foregroundColor(.secondary)
             }
-            if let death = person.eventSummary(tag: "DEAT") {
+            if let death = person.eventSummary(kind: .death) {
                 Text("d. \(death)").foregroundColor(.secondary)
             }
        }

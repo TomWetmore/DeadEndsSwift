@@ -3,19 +3,19 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 25 November 2025.
+//  Last changed on 4 February 2026.
 //
 
 import Foundation
 
 typealias PlaceKey = String
 
-/// Provides the PlaceIndex feature on a Database.
+/// Place index feature on a database.
 final public class PlaceIndex {
 
     private(set) var index: [PlaceKey : Set<RecordKey>] = [:]
 
-    /// Adds entries to the PlaceIndex. The place argument is canonicalized into parts.
+    /// Add entry to the place index; the place argument is separated into parts.
     func add(place: String, recordKey: RecordKey) {
         let parts = placeParts(place)
         guard !parts.isEmpty else { return }
@@ -25,7 +25,7 @@ final public class PlaceIndex {
         }
     }
 
-    /// Removes entries from the PlaceIndex. The place argument is canonicalized into parts.
+    /// Remove entry from the place index; the place argument is separated into parts.
     func remove(place: String, recordKey: RecordKey) {
         let parts = placeParts(place)
         for part in parts {
@@ -36,13 +36,13 @@ final public class PlaceIndex {
         }
     }
 
-    /// Gets the Set of RecordKeys for a Place component, aka PlaceKey.
+    /// Get the set of record keys for a place component, aka place key.
     func keys(placeKey: PlaceKey) -> Set<RecordKey>? {
         return index[placeKey]
     }
 }
 
-/// Collects all PLAC values, at any level, and returns them as an Array of Strings.
+/// Collect all PLAC values, at any level, and return them as a string array.
 func collectAllPlaceStrings(from recordIndex: RecordIndex) -> [String] {
     var results: [String] = []
     var records = 0

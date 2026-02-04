@@ -3,22 +3,23 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 November 2025.
-//  Last changed on 22 November 2025.
+//  Last changed on 1 February 2026.
 //
 
 import Foundation
 
-/// Provides the DateIndex feature on a Database.
+/// DateIndex feature on a DeadEnds database.
 final public class DateIndex {
+    
     private(set) var index: [DateIndexKey : Set<RecordKey>] = [:]
 
-    /// Adds an entry to the DateIndex.
+    /// Add entry to the date index.
     func add(year: Year, event: EventType, recordKey: RecordKey) {
         let dateKey = DateIndexKey(event: event, year: year)
         index[dateKey, default: Set()].insert(recordKey)
     }
 
-    /// Removes an entry from the DateIndex.
+    /// Remove entry from date index.
     func remove(year: Year, event: EventType, recordKey: RecordKey) {
         let dateKey = DateIndexKey(event: event, year: year)
         if var records = index[dateKey] {
@@ -28,7 +29,7 @@ final public class DateIndex {
         }
     }
 
-    /// Gets the Set of RecordKeys for a DateKey.
+    /// Get the set of record keys for a year and event.
     func keys(year: Year, event: EventType) -> Set<RecordKey>? {
         let dateKey = DateIndexKey(event: event, year: year)
         return index[dateKey]
@@ -40,14 +41,15 @@ struct DateIndexKey: Hashable {
     let year: Year
 }
 
+/// Events that are date indexed.
 enum EventType: String, Hashable {
-    case birth  // Maps to Sets of Person keys.
-    case marriage  // Maps to Sets of Family keys.
-    case death  // Maps to Sets of Person Keys
-    case other  // For all other Person events.
+    case birth
+    case marriage
+    case death
+    case other
 }
 
-/// Builds a DateIndex for the Records in a RecordIndex.
+/// Build date index for records in a record index.
 public func buildDateIndex(from recordIndex: RecordIndex) -> DateIndex {
     let dateIndex = DateIndex()
 
@@ -55,17 +57,15 @@ public func buildDateIndex(from recordIndex: RecordIndex) -> DateIndex {
         switch root.tag {
         case "INDI":
             if let person = Person(root) { datesFromPerson(person: person, dateIndex: dateIndex) }
-
         case "FAM" :
             if let family = Family(root) { datesFromFamily(family: family, dateIndex: dateIndex) }
-
-        default: break  // For now extract only from Persons and Families.
+        default: break  // Handle more record types.
         }
     }
     return dateIndex
 }
 
-/// Indexes the birth and death dates in a Person's record.
+/// Index the birth and death dates from a person's record.
 func datesFromPerson(person: Person, dateIndex: DateIndex) {
     guard let key = person.root.key else { return }
 
@@ -79,7 +79,7 @@ func datesFromPerson(person: Person, dateIndex: DateIndex) {
     }
 }
 
-/// Indexes the marriage dates in a Family's record.
+/// Index the marriage dates from a family's record.
 func datesFromFamily(family: Family, dateIndex: DateIndex) {
     guard let key = family.root.key else { return }
 
@@ -92,7 +92,7 @@ func datesFromFamily(family: Family, dateIndex: DateIndex) {
     }
 }
 
-/// Debugging aids.
+/// Debugging aid.
 extension DateIndex {
 
     /// Debug method that prints the contents of a DateIndex.
@@ -115,4 +115,3 @@ extension DateIndex {
         }
     }
 }
-

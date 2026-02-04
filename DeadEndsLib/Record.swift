@@ -3,14 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 20 January 2026.
+//  Last changed on 2 February 2026.
 //
 
 import Foundation
 
 /// Would it be useful to have a RecordKind enum?
 
-/// Protocol for Gedcom records. Allows Person, Family, etc, to be types; holds a root and its key.
+/// Record protocol; allows person, family, etc, to be types.
 public protocol Record {
     var root: GedcomNode { get }  // Root of Record.
     var key: String { get }  // Key of Record.
@@ -20,7 +20,7 @@ public protocol Record {
 public extension Record {
 
     // Base properties.
-    var key: String { root.key! }  // Meets protocol requirment.
+    var key: String { root.key! }
     var tag: String { root.tag }
     var val: String? { root.val }
     var kid: GedcomNode? { root.kid }
@@ -49,7 +49,8 @@ extension Dictionary where Key == String, Value == GedcomNode {
 public extension Record {
 
     func gedcomText(level: Int = 0, indent: Bool = false) -> String { root.gedcomText(level: level, indent: indent) }
-    func eventSummary(tag: String) -> String? { root.eventSummary(tag: tag) }
+    //func oldEventSummary(tag: String) -> String? { root.eventSummary(tag: tag) }
+    func eventSummary(kind: EventKind) -> String? { root.eventSummary(kind: kind) }
     func descendants() -> [GedcomNode] { root.descendants() }
     func count() -> Int { root.count() }
 }
@@ -67,4 +68,17 @@ public extension Record {
 //    guard let wrapped = wrap(nodes[0]) else { return .failure(["Record was not the expected type"]) }
 //    return .success(wrapped)
 //}
+
+public extension Record {
+
+    /// First event of this kind, in GEDCOM order.
+    func eventOfKind(_ kind: EventKind) -> Event? {
+        root.eventOfKind(kind)
+    }
+
+    /// All events of this kind, in GEDCOM order.
+    func eventsOfKind(_ kind: EventKind) -> [Event] {
+        root.eventsOfKind(kind)
+    }
+}
 

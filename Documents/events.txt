@@ -1,0 +1,92 @@
+
+public extension GedcomNode {
+    var dateNode: GedcomNode? { kid(withTag: "DATE") }
+    var placeNode: GedcomNode? { kid(withTag: "PLAC") }
+    var date: String? { dateNode?.val }
+    var place: String? { placeNode?.val }
+}
+
+
+That makes the API consistent, removes redundancy, and reads nicely at use sites.
+
+One caveat (your “event interface” direction)
+Right now these live on all GedcomNodes, but semantically they’re “event node helpers”. That’s fine if you accept “date/place just mean ‘first DATE/PLAC child’ for any node” (which is broadly true in GEDCOM), but if you’re trying to make a stronger type-level “Event” concept later, keep in mind you might eventually want:
+	•	a wrapper type (e.g., EventNode / Event)
+	•	or a protocol / predicate like isEventTag
+
+Even then, dot-syntax properties still tend to feel right.
+My bottom line: for this layer, make them computed properties; save methods for parsing/formatting (e.g., parsedDate(), formattedPlace(style:), primaryPlace(in:), etc.) where behavior/expense/parameters start to matter.
+
+There is an error in the comment at the top. In the extension it is assumed that the GedcomNode is the parent of the possible DATE and PLAC nodes. I have been struggling with the very idea you are emphasizing here, how to add some 'typing' clues to the "subtypes" of Gedcom nodes. Se have a somewhat similar goal in the "Record" type which is really a protocol that wraps a root node.\\
+
+Yep — good catch on the comment. The extension isn’t “root of a record”; it’s “a node that may have DATE/PLAC children” (often an event node, but not only).
+
+Fix the comment (and make the intent honest)
+Something like:
+
+// GedcomNode helpers for nodes that may have DATE/PLAC children
+// (commonly event nodes like BIRT, DEAT, MARR, etc.).
+
+That keeps it true without overpromising “eventness”.
+
+On “typing clues” for GedcomNode subtypes:
+You’re already doing the right thing conceptually with Record: a wrapper/protocol that gives a typed view onto an untyped tree.
+
+For “event-ish” nodes, I’d use the same pattern: a lightweight wrapper that declares intent and centralizes invariants, but doesn’t require changing your underlying tree model.
+
+Option A: a tiny wrapper (my default recommendation)
+
+struct Event {
+    let node: GedcomNode   // must be the event node (parent of DATE/PLAC)
+    var dateNode: GedcomNode?  { node.kid(withTag: "DATE") }
+    var placeNode: GedcomNode? { node.kid(withTag: "PLAC") }
+    var date: String?  { dateNode?.val }
+    var place: String? { placeNode?.val }
+}
+
+Then you can create one from a GedcomNode when appropriate:
+extension GedcomNode {
+    var asEvent: Event { Event(node: self) }   // or failable if you want checks
+}
+extension GedcomNode {
+    var asEvent: Event { Event(node: self) }   // or failable if you want checks
+}
+let event = personNode.kid(withTag: "BIRT")?.asEvent
+print(event?.date)
+
+If you want stronger typing, make the conversion failable and validate the tag:
+init?(_ node: GedcomNode) {
+    guard EventTag.isEvent(node.tag) else { return nil }
+    self.node = node
+}
+
+(You can keep your tag list in one place.)
+Why this helps
+	•	GedcomNode stays a faithful GEDCOM tree node (generic).
+	•	Event is the view: “treat this node as an event”.
+	•	You avoid making every GedcomNode look “event-typed” just because it has date/place.
+Option B: protocol-based “view” like your Record
+
+If you like the “Record wraps root node” style, you can mirror it:
+protocol NodeView {
+    var node: GedcomNode { get }
+}
+protocol EventView: NodeView { }
+extension EventView {
+    var date: String?  { node.kidVal(forTag: "DATE") }
+    var place: String? { node.kidVal(forTag: "PLAC") }
+}
+
+Then:
+struct Event: EventView {
+    let node: GedcomNode
+}
+
+This scales nicely if you later add NameView, AddressView, SourceCitationView, etc.
+
+Where I’d land for your specific snippet
+	1.	Keep the generic helpers if you want them broadly:
+	•	var dateNode, var placeNode, var date, var place
+…but update the comment to remove “root of record”.
+	2.	If you’re actively “improving the event interface”, introduce Event as a wrapper and start using it where you mean “event” semantically. That’s the “typing clue” you’re missing, without forcing a complicated inheritance/enum scheme onto GEDCOM.
+	3.	Eventually, you might remove GedcomNode.date/place entirely and make them live on Event (and other views), if you decide you want fewer “too-convenient” globals on the base node type.

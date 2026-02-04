@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 4 July 2025.
-//  Last changed on 27 January 2026.
+//  Last changed on 1 February 2026.
 //
 
 import SwiftUI
@@ -17,7 +17,7 @@ struct PersonTile: View {
     var label: String? = nil
     var showSummary: Bool = true
     var tint: Color? = nil
-    var onActivate: ((Person) -> Void)? = nil  // Action when used as button.
+    var onActivate: ((Person) -> Void)? = nil  // Button action.
 
     var body: some View {
 
@@ -32,10 +32,10 @@ struct PersonTile: View {
             }
             if showSummary {  // Birth and death.
                 VStack(alignment: .leading) {
-                    if let birth = person.eventSummary(tag: "BIRT") {
+                    if let birth = person.eventSummary(kind: .birth) {
                         Text("b. \(birth)").foregroundColor(.secondary)
                     }
-                    if let death = person.eventSummary(tag: "DEAT") {
+                    if let death = person.eventSummary(kind: .death) {
                         Text("d. \(death)").foregroundColor(.secondary)
                     }
                 }

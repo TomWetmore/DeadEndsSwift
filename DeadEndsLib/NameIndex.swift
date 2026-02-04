@@ -3,16 +3,15 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 3 January 2026.
+//  Last changed on 4 February 2026.
 //
 
 import Foundation
 
-/// A NameIndex maps NameKeys to Sets of RecordKeys of persons with names that match the NameKey.
-
+/// NameIndex maps name keys to sets of record keys of persons with names that match.
 final public class NameIndex {
 
-	static let map: [Character: String] = [ // Soundex based map used to generate name keys.
+	static let map: [Character: String] = [ // Soundex based.
 		"B": "1", "F": "1", "P": "1", "V": "1",
 		"C": "2", "G": "2", "J": "2", "K": "2", "Q": "2", "S": "2", "X": "2", "Z": "2",
 		"D": "3", "T": "3",
@@ -22,29 +21,28 @@ final public class NameIndex {
 	]
 
 	/// Underlying name index dictionary.
-	var index = [NameKey: Set<RecordKey>]()
+	var index = [NameKey: Set<RecordKey>]()  // Underlying dictionary.
 
-	/// Adds an entry to the NameIndex; value is a 1 NAME value and is converted to a NameKey.
+	/// Add entry to name index; value is converted to a name key.
 	public func add(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value) else { return }
 		self.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
 	}
 
-	/// Adds an entry to the NameIndex.
+	/// Add entry to the name index.
 	func add(nameKey: String, recordKey: String) {
 		index[nameKey, default: Set()].insert(recordKey)
 	}
 
-    /// Removes an entry from the NameIndex; value is a 1 NAME value that is converted to a NameKey.
+    /// Remove entry from name index; value is a 1 NAME value that is converted to a name key.
     public func remove(value: String, recordKey: RecordKey) {
-		
-        guard let gedcomName = GedcomName(string: value) else { return }
+        guard let gedcomName = GedcomName(string: value)
+		else { return }
         remove(nameKey: gedcomName.nameKey, recordKey: recordKey)
     }
 
-    /// Removes an entry from the NameIndex.
+    /// Remove entry from the name index.
     func remove(nameKey: NameKey, recordKey: RecordKey) {
-		
         if var records = index[nameKey] {
             records.remove(recordKey)
             if records.isEmpty { index.removeValue(forKey: nameKey) }
@@ -52,21 +50,21 @@ final public class NameIndex {
         }
     }
 
-	/// Gets the record keys that match a Gedcom name or pattern. The value is converted to a NameKey
-    /// and then looked up in the NameIndex.
+	/// Get record keys that match a name or pattern; convert value to a name key
+    /// that is looked up in the name index.
 	func keys(forName value: String) -> Set<RecordKey>? {
 		return index[nameKey(value: value)]
 	}
 
-	/// Debug method that shows the contents of the NameIndex.
+	/// Debug to show content of the name index.
 	func showContents() {
 		for (nameKey, recordKeys) in index {
-			print("Name Key: \(nameKey) => Records: \(Array(recordKeys))")
+			print("\(nameKey) => \(Array(recordKeys))")
 		}
 	}
 }
 
-/// Returns the name key of a 1 NAME value.
+/// Return name key of a 1 NAME value.
 func nameKey(value: String) -> String {
     guard let gedcomName = GedcomName(string: value) else {
         fatalError("Invalid name: \(value)")
@@ -74,11 +72,12 @@ func nameKey(value: String) -> String {
     return gedcomName.nameKey
 }
 
-/// This simple looking function builds the NameIndex for a Database.
+/// Build the name index from a record list.
 func buildNameIndex(from persons: RecordList) -> NameIndex {
     let index = NameIndex()
     for person in persons {
-        guard let recordKey = person.key else { continue }  // Will succeed.
+        guard let recordKey = person.key
+		else { continue }  // Will succeed.
         let nameNodes = person.kids(withTag: "NAME")
         for node in nameNodes {
             guard let name = node.val, !name.isEmpty, let gedcomName = GedcomName(string: name)
@@ -89,7 +88,7 @@ func buildNameIndex(from persons: RecordList) -> NameIndex {
     return index
 }
 
-// soundex finds the Soundex code of a string, generally a surname.
+// Find the Soundex code of a surname.
 func soundex(for surname: String) -> String {
 	var result = ""
 	var previousCode: String? = nil
@@ -110,20 +109,20 @@ func soundex(for surname: String) -> String {
 // Extension of GedcomNode where self is a Person root.
 extension Person {
 
-	/// Returns the array of non-nil values of the 1 NAME lines in a Person.
+	/// Return the array of non-nil values of the 1 NAME lines in a Person.
     var nameValues: [String] {
         self.root.kidVals(forTag: "NAME")
     }
 }
 
-// squeeze squeezes a string into an array of uppercase words.
+// Squeeze a string into an array of uppercase words.
 func squeeze(_ input: String) -> [String] {
 	input
 		.split { !$0.isLetter }
 		.map { String($0.uppercased()) }
 }
 
-// Checks that all words in the partial array are found in the full array and in the same order.
+// Check that all words in the partial array are found in the full array and in the same order.
 func exactMatch(partial: [String], complete: [String]) -> Bool {
 	var partialIndex = 0
 	var completeIndex = 0

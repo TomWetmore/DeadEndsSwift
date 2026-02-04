@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 11 July 2025.
-//  Last changed on 25 January 2026.
+//  Last changed on 3 February 2026.
 //
 
 import SwiftUI
@@ -14,6 +14,9 @@ struct FamilyPage: View {
 
     @EnvironmentObject var model: AppModel
     let family: Family  // Family in View.
+
+    private var index: RecordIndex? { model.database?.recordIndex }
+
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

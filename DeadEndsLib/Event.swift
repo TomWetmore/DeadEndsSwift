@@ -3,54 +3,35 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 June 2025.
-//  Last changed on 4 October 2025
+//  Last changed on 4 February 2026.
 //
 
 import Foundation
 
+public enum EventKind: String {
+    case birth = "BIRT"
+    case death = "DEAT"
+    case marriage = "MARR"
+    case divorce = "DIV"
+    case burial = "BUR"
+}
 
-// GedcomNode extension dealing with events. self should be the root of a Gedcom record.
- public extension GedcomNode {
-
-     // For an event node (like BIRT or MARR), return the first DATE subnode
-     func dateNode() -> GedcomNode? {
-         return self.kid(withTag: "DATE")
-     }
-
-     // For an event node (like BIRT or MARR), return the first PLAC subnode
-     func placeNode() -> GedcomNode? {
-         return self.kid(withTag: "PLAC")
-     }
-
-     // For an event node, return the value of the first DATE subnode, if any
-     func dateValue() -> String? {
-         return self.dateNode()?.val
-     }
-
-     // For an event node, return the value of the first PLAC subnode, if any
-     func placeValue() -> String? {
-         return self.placeNode()?.val
-     }
- }
-
+// Helpers for nodes with DATE/PLAC kids, e.g., BIRT, DEAT, MARR.
+/// NOTE: In most cases should now use the new Event API to get this information.
 public extension GedcomNode {
-
-    var date: String? {
-        self.kidVal(forTag: "DATE")
-    }
-
-    var place: String? {
-        self.kidVal(forTag: "PLAC")
-    }
+    var dateNode: GedcomNode? { self.kid(withTag: "DATE") }
+    var placeNode: GedcomNode? { self.kid(withTag: "PLAC") }
+    var dateVal: String? { self.kidVal(forTag: "DATE") }
+    var placeVal: String? { self.kidVal(forTag: "PLAC") }
 }
 
 extension GedcomNode {
 
-    /// Returns the summary for an event.
-    public func eventSummary(tag: String) -> String? {
-        guard let event = self.event(withTag: tag) else { return nil }
-        let date = year(from: event.dateValue())
-        let place = abbreviatedPlace(event.placeValue())
+    /// Returns the summary for an event. Assumes self is parent of DATE and PLAC nodes.
+    public func eventSummary(kind: EventKind) -> String? {
+        guard let event = self.eventOfKind(kind) else { return nil }
+        let date = year(from: event.dateVal)
+        let place = abbreviatedPlace(event.placeVal)
 
         switch (date, place) {
         case let (d?, p?): return "\(d), \(p)"
@@ -59,13 +40,74 @@ extension GedcomNode {
         default: return nil
         }
     }
+}
 
-    /// Returns the first child event node with the given tag (e.g., "BIRT"),
-    /// A convience method because kid(withTag: tag) does the same thing.
-    func event(withTag tag: String) -> GedcomNode? {
-        kid(withTag: tag)
+/// Event structure.
+public struct Event {
+    let node: GedcomNode   // Parent of DATE/PLAC nodes.
+    let kind: EventKind
+    public var dateNode: GedcomNode?  { node.dateNode }
+    public var placeNode: GedcomNode? { node.placeNode }
+    public var dateVal: String?  { node.dateVal }
+    public var placeVal: String? { node.placeVal }
+
+    public init?(node: GedcomNode, kind: EventKind) {
+        guard kind.rawValue == node.tag else { return nil }
+        self.node = node
+        self.kind = kind
+    }
+
+    public init?(node: GedcomNode) {
+        self.node = node
+        guard let kind = Event.eventKind(fromNode: node) else { return nil }
+        self.kind = kind
+    }
+
+    /// Determine event kind from node.
+    static func eventKind(fromNode node: GedcomNode) -> EventKind? {
+        eventKind(fromTag: node.tag)
+    }
+
+    /// Determine event kind from tag.
+    static func eventKind(fromTag tag: String) -> EventKind? {
+        switch tag {
+        case "BIRT": return .birth
+        case "DEAT": return .death
+        case "MARR": return .marriage
+        case "DIV": return .divorce
+        case "BUR": return .burial
+        default: return nil
+        }
     }
 }
 
+public extension GedcomNode {
 
+    /// Create event from node; failable.
+    var asEvent: Event? { Event(node: self) }
 
+    func eventOfKind(_ kind: EventKind) -> Event? {
+        self.eventsOfKind(kind).first
+    }
+
+    func eventsOfKind(_ kind: EventKind) -> [Event] {
+        self.kids(withTag: kind.rawValue).compactMap { Event(node: $0) }
+    }
+}
+
+// Option B, protocol-based like Record.
+
+protocol NodeView {
+    var node: GedcomNode { get }
+}
+protocol EventView: NodeView { }
+extension EventView {
+    var date: String?  { node.kidVal(forTag: "DATE") }
+    var place: String? { node.kidVal(forTag: "PLAC") }
+}
+
+//struct Event: EventView {  // Part of Option B, but Event is a name clash.
+//    let node: GedcomNode
+//}
+
+// This scales nicely if you later add NameView, AddressView, SourceCitationView, etc.

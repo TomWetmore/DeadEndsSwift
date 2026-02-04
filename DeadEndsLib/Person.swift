@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 28 January 2026.
+//  Last changed on 1 February 2026.
 //
 
 import Foundation
@@ -47,21 +47,22 @@ extension Person {
 
     /// Return self's name from the first 1 NAME node.
     public var name: String? {
-
         guard let nameNode = root.kid(withTag: "NAME"),
               let gedcomName = GedcomName(from: nameNode)
         else { return nil }
         return gedcomName.displayName()
     }
+}
 
-    /// Return self's birth event from its first 1 BIRT node.
-    public var birth: GedcomNode? {
-        return root.kid(withTag: "BIRT")
+/// Person event API.
+extension Person {
+
+    public var birthEvent: Event? {
+        root.eventOfKind(.birth)
     }
 
-    /// Return self's death event from its first 1 DEAT node.
-    public var death: GedcomNode? {
-        return root.kid(withTag: "DEAT")
+    public var deathEvent: Event? {
+        root.eventOfKind(.death)
     }
 }
 

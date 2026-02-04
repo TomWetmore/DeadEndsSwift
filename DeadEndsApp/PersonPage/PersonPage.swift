@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 28 January 2026.
+//  Last changed on 1 February 2026.
 //
 
 import SwiftUI
@@ -50,8 +50,8 @@ private extension PersonPage {
     /// Render person vitals.
     var vitals: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Born: \(person.eventSummary(tag: "BIRT") ?? "")")
-            Text("Death: \(person.eventSummary(tag: "DEAT") ?? "")")
+            Text("Born: \(person.eventSummary(kind: .birth) ?? "")")
+            Text("Death: \(person.eventSummary(kind: .death) ?? "")")
         }
         .padding(.horizontal)
     }

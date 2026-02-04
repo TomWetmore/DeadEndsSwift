@@ -94,7 +94,7 @@ struct RootView: View {
                     }
                 case .descendancy(let person):
                     if let idx = model.database?.recordIndex {
-                        DescendancyListView(root: person, index: idx)
+                        DescendancyListPage(root: person, index: idx)
                             .environmentObject(model)
                             .navigationTitle("Descendancy")
                     } else {
@@ -106,8 +106,8 @@ struct RootView: View {
                     DesktopView(family: fam)
                 case .gedcomFamilyEditor(_):
                     Text("hello")
-                case .desktopFamily(_):
-                    Text("hello")
+//                case .desktopFamily(_):
+//                    Text("hello")
                 }
             }
         }

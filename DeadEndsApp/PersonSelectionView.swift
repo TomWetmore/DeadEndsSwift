@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed 19 September 2025.
+//  Last changed 1 February 2026.
 //
 
 import SwiftUI
@@ -16,8 +16,8 @@ struct PersonMatch: Identifiable {
 
     var displayLine: String {
         let name = person.displayName() // Default formatting.
-        let birth = person.eventSummary(tag: "BIRT")
-        let death = person.eventSummary(tag: "DEAT")
+        let birth = person.eventSummary(kind: .birth)
+        let death = person.eventSummary(kind: .death)
         switch (birth, death) {
         case let (b?, d?): return "\(name) (born \(b) — died \(d))"
         case let (b?, nil): return "\(name) (born \(b))"

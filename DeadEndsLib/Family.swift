@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 14 January 2026.
+//  Last changed on 1 February 2026.
 //
 
 import Foundation
@@ -116,4 +116,15 @@ extension Family: Equatable, Hashable, Identifiable {
     }
 
     public var id: String { key }
+}
+
+extension Family {
+
+    public var marriageEvent: Event? {
+        root.eventOfKind(.marriage)
+    }
+
+    public var divorceEvent: Event? {
+        root.eventOfKind(.divorce)
+    }
 }

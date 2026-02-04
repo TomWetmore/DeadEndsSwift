@@ -3,13 +3,13 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 7 August 2025.
-//  Last changed on 29 January 2026.
+//  Last changed on 2 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Struct for descendant tree nodes.
+/// Descendant tree node.
 struct DescendantNode: Identifiable {
     let id = UUID()
     let person: Person
@@ -26,7 +26,7 @@ struct DescendantsPage: View {
 
     private var index: RecordIndex? { model.database?.recordIndex }
 
-    /// Render descendants page.
+    /// Render descendants page view.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 4) {
@@ -48,22 +48,18 @@ struct DescendantsPage: View {
         }
     }
 
-    /// Build full descendant tree and return root. Guard against graph cycles.
+    /// Build descendant tree and return root; guard against cycles.
     private func buildTree(from person: Person) -> DescendantNode {
         let index = index ?? [:]
 
-        /// Recursive helper with path-based cycle guard.
+        /// Recursive helper.
         func rec(_ person: Person, path: Set<RecordKey>) -> DescendantNode {
-
-            // If this person is already on the current path, stop descending.
-            if path.contains(person.key) {
+            if path.contains(person.key) {  // Seen before?
                 return DescendantNode(person: person, children: [])
             }
-
             let newPath = path.union([person.key])
             let children = person.children(in: index)
             let childNodes = children.map { rec($0, path: newPath) }
-
             return DescendantNode(person: person, children: childNodes)
         }
 
@@ -88,7 +84,7 @@ struct TreeRow<RowContent: View>: View {
     @Binding var expanded: Set<DescendantNode.ID>
     let row: (Person) -> RowContent
 
-    /// Render a tree row view, and its descendant row views.
+    /// Render a tree row view with its descendant row views.
     var body: some View {
         let id = node.id
 
