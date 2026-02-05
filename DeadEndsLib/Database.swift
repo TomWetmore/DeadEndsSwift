@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 3 February 2026.
+//  Last changed on 4 February 2026.
 //
 
 import Foundation
@@ -65,14 +65,14 @@ public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database?
     return loadDatabase(from: source, errlog: &errlog)
 }
 
-/// Load database from a Gedcom source. The keyMap does not persist: it is used to generate
-/// error message. The tagMap persists as a property of the Database.
-public func loadDatabase(from source: GedcomSource, errlog: inout ErrorLog) -> Database? {
+/// Load database from a source; keyMap is used in error messages and does not persist;
+/// tagMap persists as a database property.
+private func loadDatabase(from source: GedcomSource, errlog: inout ErrorLog) -> Database? {
 
     var keyMap = KeyMap()  // Map keys to lines for error messages.
-    var tagMap = TagMap()  // Keep single copy of each tag.
+    var tagMap = TagMap()  // Sngle copy of each tag in database.
 
-    // Attempt to read the records from the Gedcom source. This also validates the records.
+    // Read and validate the records from the source.
     guard let (index, persons, families, header) =
             loadValidRecords(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog)
     else { return nil }  // errlog holds the errors.
@@ -82,12 +82,12 @@ public func loadDatabase(from source: GedcomSource, errlog: inout ErrorLog) -> D
     let nameIndex = buildNameIndex(from: persons)
     let dateIndex = buildDateIndex(from: index)
     let placeIndex = buildPlaceIndex(from: persons)
-    
+//  let refnIndex = buildRefnIndex(from: index) // Implement when ready.
+
     //placeIndex.showContents(using: index)  // DEBUG
     //showPlaceFrequencyTable(placeIndex)  // DEBUG
     //dateIndex.showContents(using: index)  // DEBUG
-    // let refnIndex = buildRefnIndex(from: index) // Implement when ready.
-    
+
     return Database(recordIndex: index, persons: persons, families: families, header: header,
                     nameIndex: nameIndex, dateIndex: dateIndex, placeIndex: placeIndex, refnIndex: RefnIndex(),
                     tagmap: tagMap, dirty: false)

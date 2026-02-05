@@ -3,27 +3,24 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 19 January 2026.
+//  Last changed on 4 February 2026.
 //
 
 import Foundation
 
-// checkKeysAndReferences checks that all record keys are unique and that all values that are keys refer to an
-// existing record. records: the records to be checked; path: name of Gedom file; keyMap: key to line number map;
-// errlog: error log.
+// Check that record keys are unique and closed.
 func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, errlog: inout ErrorLog) {
-    var keyset = Set<String>() // All record keys in the records.
+    var keyset = Set<String>() // Encountered record keys.
 
-    // First pass checks record keys for existance and uniqueness.
-    for root in records {
-        let type = root.recordType()
+    for root in records {  // First pass: existance and uniqueness.
+        let type = root.recordKind()
         if type == .header || type == .trailer { continue }
-        guard let key = root.key else {
+        guard let key = root.key else {  // Existance.
             errlog.append(Error(type: .gedcom, severity: .fatal, source: path,
                                 message: "Record \(root) is missing a key"))
             continue
         }
-        if keyset.contains(key) {
+        if keyset.contains(key) {  // Uniqueness.
             let line = keymap[key]
             errlog.append(Error(type: .gedcom, severity: .fatal, source: path, line: line!,
                                 message: "Duplicate key: \(key)"))
@@ -31,11 +28,8 @@ func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, e
         }
         keyset.insert(key)
     }
-
-    // Second pass checks all key references found as node values.
-    // NOTE: THIS DOES NOT CHECK ANY KEY REFERENCES THAT MIGHT BE IN THE HEAD RECORD.
-    for root in records {
-        let key = root.key // Can be nil for .header, .trailer or error cases.
+    for root in records {  // Second pass: All keys found as values have targets.
+        let key = root.key
         root.traverse { node in
             guard let value = node.val, isKey(value) else { return }
             if !keyset.contains(value) {
@@ -49,10 +43,10 @@ func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, e
     }
 }
 
-// Extension to Node for tree operations.
+/// Extension to Node for tree operations.
 extension GedcomNode {
 
-    // traverse traverses the nodes in a tree doing an action. The order is top down, left to right.
+    /// Traverse a tree top down, left to right, doing an action.
     func traverse(_ action: (GedcomNode) -> Void) {
         action(self)
         var child = self.kid
@@ -62,7 +56,7 @@ extension GedcomNode {
         }
     }
 
-    // count returns the number of nodes in the tree rooted at this node.
+    // Return the number of nodes rooted at this node.
     func count() -> Int {
         var count = 1
         var child = self.kid
@@ -73,26 +67,26 @@ extension GedcomNode {
         return count
     }
 
-    /// Returns the number of `GedcomNode`s before `self` in its tree.
+    /// Return the number of nodes before self in its tree.
     public func offset() -> Int {
         var count = 0
         var curNode: GedcomNode? = self
         var loops = 0
         while let node = curNode, let parent = node.dad {
             loops += 1
-            if loops > 100000 { fatalError("Cycle detected in tree.") }
-            var sibling = parent.kid // Count siblings that occur before.
+            if loops > 10000 { fatalError("Cycle detected in tree.") }
+            var sibling = parent.kid // Count previous sibs.
             while let cursibling = sibling, cursibling !== node {
                 count += cursibling.count()
                 sibling = cursibling.sib
             }
-            curNode = parent // Move up tree.
-            count += 1 // Include parent.
+            curNode = parent  // Move up tree.
+            count += 1  // Include parent.
         }
         return count
     }
 
-    /// Return the level of `self` in its tree.
+    /// Return level of self in its tree.
     public func level() -> Int {
         var level = -1
         var curr: GedcomNode? = self
@@ -105,18 +99,14 @@ extension GedcomNode {
     }
 }
 
-/// Return true if a string Gedcom key form.
+/// Return true if string has Gedcom key form.
 public func isKey(_ value: String) -> Bool {
     return value.hasPrefix("@") && value.hasSuffix("@")
 }
 
-enum RecordType {
-    case header, trailer, person, family, source, other
-}
-
-// TODO: Add source, etc.
+/// Get record kind from root tag.
 extension GedcomNode {
-    func recordType() -> RecordType {
+    func recordKind() -> RecordKind {
         switch self.tag {
         case "INDI":
             return .person

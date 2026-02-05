@@ -3,12 +3,20 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 2 February 2026.
+//  Last changed on 4 February 2026.
 //
 
 import Foundation
 
 /// Would it be useful to have a RecordKind enum?
+enum RecordKind: String {
+    case header = "HEAD"
+    case trailer = "TRLR"
+    case person = "INDI"
+    case family = "FAM"
+    case source = "SOUR"
+    case other =  "OTHR"
+}
 
 /// Record protocol; allows person, family, etc, to be types.
 public protocol Record {

@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// May not need to have a raw value base on some current uses.
 public enum EventKind: String {
     case birth = "BIRT"
     case death = "DEAT"

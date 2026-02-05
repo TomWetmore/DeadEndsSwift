@@ -98,6 +98,7 @@
 				GedcomName.swift,
 				GedcomNode.swift,
 				GedcomPlace.swift,
+				GedcomTag.swift,
 				ImportStack.swift,
 				Interpreter/BuiltIn.swift,
 				Interpreter/BuiltinList.swift,

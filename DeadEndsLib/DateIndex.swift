@@ -3,24 +3,24 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 November 2025.
-//  Last changed on 1 February 2026.
+//  Last changed on 4 February 2026.
 //
 
 import Foundation
 
-/// DateIndex feature on a DeadEnds database.
+/// DateIndex feature for DeadEnds databases.
 final public class DateIndex {
     
     private(set) var index: [DateIndexKey : Set<RecordKey>] = [:]
 
-    /// Add entry to the date index.
-    func add(year: Year, event: EventType, recordKey: RecordKey) {
+    /// Add entry to date index.
+    func add(year: Year, event: EventKind, recordKey: RecordKey) {
         let dateKey = DateIndexKey(event: event, year: year)
         index[dateKey, default: Set()].insert(recordKey)
     }
 
     /// Remove entry from date index.
-    func remove(year: Year, event: EventType, recordKey: RecordKey) {
+    func remove(year: Year, event: EventKind, recordKey: RecordKey) {
         let dateKey = DateIndexKey(event: event, year: year)
         if var records = index[dateKey] {
             records.remove(recordKey)
@@ -30,64 +30,61 @@ final public class DateIndex {
     }
 
     /// Get the set of record keys for a year and event.
-    func keys(year: Year, event: EventType) -> Set<RecordKey>? {
+    public func keys(year: Year, event: EventKind) -> Set<RecordKey>? {
         let dateKey = DateIndexKey(event: event, year: year)
         return index[dateKey]
     }
 }
 
+/// Date index key.
 struct DateIndexKey: Hashable {
-    let event: EventType   // birth, death, marriage, ...
-    let year: Year
+    let event: EventKind   // birth, death, marriage, ...
+    let year: Year  // Int alias.
+
+    //public init(event: EventKind, year: Year) { self.event = event; self.year = year }
 }
 
-/// Events that are date indexed.
-enum EventType: String, Hashable {
-    case birth
-    case marriage
-    case death
-    case other
-}
-
-/// Build date index for records in a record index.
+/// Build date index for a record index.
 public func buildDateIndex(from recordIndex: RecordIndex) -> DateIndex {
     let dateIndex = DateIndex()
 
     for (_, root) in recordIndex {
         switch root.tag {
-        case "INDI":
-            if let person = Person(root) { datesFromPerson(person: person, dateIndex: dateIndex) }
-        case "FAM" :
-            if let family = Family(root) { datesFromFamily(family: family, dateIndex: dateIndex) }
-        default: break  // Handle more record types.
+        case GedcomTag.indi.rawValue:
+            if let person = Person(root) { dateIndex.indexDates(from: person) }
+        case GedcomTag.fam.rawValue:
+            if let family = Family(root) { dateIndex.indexDates(from: family) }
+        default: break
         }
     }
     return dateIndex
 }
 
-/// Index the birth and death dates from a person's record.
-func datesFromPerson(person: Person, dateIndex: DateIndex) {
-    guard let key = person.root.key else { return }
+extension DateIndex {
 
-    for node in person.root.kids where node.tag == "BIRT" || node.tag == "DEAT" {
-        let eventType: EventType = (node.tag == "BIRT") ? .birth : .death
-        for dateNode in node.kids(withTag: "DATE") {  // Allow more than 2 DATE nodes per event.
-            guard let string = year(from: dateNode), let year = Int(string)
+    /// Index the date nodes in an event tree.
+    private func indexDates(in eventNode: GedcomNode, kind: EventKind, recordKey: RecordKey) {
+        for dateNode in eventNode.kids(withTag: GedcomTag.date.rawValue) {
+            guard let string = year(from: dateNode), let year: Year = Int(string)
             else { continue }
-            dateIndex.add(year: year, event: eventType, recordKey: key)
+            add(year: year, event: kind, recordKey: recordKey)
         }
     }
-}
 
-/// Index the marriage dates from a family's record.
-func datesFromFamily(family: Family, dateIndex: DateIndex) {
-    guard let key = family.root.key else { return }
+    /// Index the birth and death dates of a person.
+    func indexDates(from person: Person) {
+        guard let key = person.root.key else { return }
+        for eventNode in person.root.kids where eventNode.hasTag(.birt) || eventNode.hasTag(.deat) {
+            let kind: EventKind = eventNode.hasTag(.birt) ? .birth : .death
+            indexDates(in: eventNode, kind: kind, recordKey: key)
+        }
+    }
 
-    for node in family.root.kids where node.tag == "MARR" {
-        for dateNode in node.kids(withTag: "DATE") {  // Allow more than 2 DATE nodes per event.
-            guard let string = year(from: dateNode), let year = Int(string)
-            else { continue }
-            dateIndex.add(year: year, event: .marriage, recordKey: key)
+    /// Index the marriage dates of a family.
+    func indexDates(from family: Family) {
+        guard let key = family.root.key else { return }
+        for eventNode in family.root.kids where eventNode.hasTag(.marr) {
+            indexDates(in: eventNode, kind: .marriage, recordKey: key)
         }
     }
 }
@@ -95,8 +92,8 @@ func datesFromFamily(family: Family, dateIndex: DateIndex) {
 /// Debugging aid.
 extension DateIndex {
 
-    /// Debug method that prints the contents of a DateIndex.
-    func showContents(using recordIndex: RecordIndex) {
+    /// Print the contents of a date index.
+    public func showContents(using recordIndex: RecordIndex) {
         let sortedEntries = index.sorted { $0.key.year < $1.key.year }
         for (dateKey, recordKeys) in sortedEntries {
             let event = dateKey.event.rawValue.capitalized
@@ -104,11 +101,9 @@ extension DateIndex {
             for key in recordKeys.sorted() {
                 if let person = recordIndex.person(for: key) {
                     print("\(event) \(year): \(person.displayName()) [\(key)]")
-                }
-                else if recordIndex.family(for: key) != nil {
+                } else if recordIndex.family(for: key) != nil {
                     print("\(event) \(year): Family \(key)")
-                }
-                else {
+                } else {
                     print("\(event) \(year): ??? (\(key))")
                 }
             }
