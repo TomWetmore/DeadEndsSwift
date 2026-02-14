@@ -3,40 +3,38 @@
 //  DeadEnds Library
 //
 //  Created by Thomas Wetmore on 1 January 2025.
-//  Last changed on 19 November 2025.
+//  Last changed on 10 February 2026.
 //
 
 import Foundation
 
-public typealias NameKey = String
-
-/// Internal representation of a Gedcom 1NAME value.
+/// Internal representation of a Gedcom 1 NAME value.
 public struct GedcomName: Comparable, CustomStringConvertible {
 
     var nameParts: [String]  // Name parts, before surname, surname, and after surname.
-    var surnameIndex: Int?  // Index of surname if it exists.
+    var surnameIndex: Int?  // Surname index if it exists.
 
-    /// Initializer using precomupted structure properties.
+    /// Create a Gedcom name from precomputed properties.
     private init(nameParts: [String], surnameIndex: Int?) {
         self.nameParts = nameParts
         if let s = surnameIndex, s >= 0, s < nameParts.count { self.surnameIndex = s }
         else { self.surnameIndex = nil }
     }
 
-    /// Initializer for GedcomName using a Gedcom formatted name string as used in 1 NAME values.
+    /// Create a Gedcom name from a Gedcom-formatted string.
     public init?(string: String) {
         guard let (parts, sindex) = parseGedcomName(value: string) else { return nil }
         self.init(nameParts: parts, surnameIndex: sindex)
     }
 
-    /// Initializer for GedcomName from a 0INDI or 0INDI:1NAME node.
+    /// Create a Gedcom name from a 0 INDI or 1 NAME node.
     public init?(from node: GedcomNode) {
         let nameNode: GedcomNode? = (node.tag == "NAME") ? node : node.kid(withTag: "NAME")
         guard let value = nameNode?.val else { return nil }
         self.init(string: value)
     }
 
-    /// Returns a String description of a GedcomName showing its internal struture.
+    /// Return description of a GedcomName showing its struture.
     public var description: String {
         let parts = nameParts.enumerated()
             .map { idx, part in
@@ -46,13 +44,13 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         return "GedcomName(parts: \(parts), surnameIndex: \(surnameIndex?.description ?? "nil"))"
     }
 
-    /// Returns the character length of a GedcomName.
-    /// In future may want to measure rendered text.
+    /// Return length of a Gedcom name.
     public var length: Int {
         return nameParts.count - 1 + nameParts.reduce(0) { $0 + $1.count }
     }
 
-    /// Returns text to use to display a name in a text View.
+    /// Return display version of a name. Surname can be capitalized and appear first. Name can be limited
+    /// in length.
     public func displayName(upSurname: Bool = false, surnameFirst: Bool = false, limit: Int = 0) -> String {
         var work = self
         if upSurname { work.uppercaseSurname() }
@@ -60,25 +58,18 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         return work.format(surnameFirst: surnameFirst)
     }
 
-    /// Formats a GNodeName to a String.
+    /// Format a Gedcom name to a string. This handles the surname variability.
     func format(surnameFirst: Bool) -> String {
         guard !nameParts.isEmpty else { return "" }
-        if surnameFirst, let si = surnameIndex {  // Handle the surname first case.
+        if surnameFirst, let si = surnameIndex {  // Surname first.
             let surname = nameParts[si]
             let before = nameParts[..<si]
             let after = nameParts[(si + 1)..<nameParts.count]
             let rest = (before + after).joined(separator: " ")  // Join givens and suffixes.
             return rest.isEmpty ? surname : "\(surname), \(rest)"
         } else {
-            return nameParts.joined(separator: " ")  // Else join all parts in order.
+            return nameParts.joined(separator: " ")  // Normal surname placement format.
         }
-    }
-
-    /// Returns the DeadEnds name key of this GedcomName.
-    var nameKey: String {
-        let firstInitial = firstInitial ?? "$"
-        let surname = surname ?? ""
-        return "\(firstInitial)\(soundex(for: surname))"
     }
 
     /// First initial (uppercased) of the first given name, or nil.
@@ -112,7 +103,7 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         if let c = nameParts[i].first { nameParts[i] = "\(c)." }
     }
 
-    /// Removes a name part. Note: Will not remove surname.
+    /// Remove a name part -- will not remove surname.
     mutating func removePart(at i: Int) {
         guard i >= 0 && i < nameParts.count && i != surnameIndex else { return }
         nameParts.remove(at: i)
@@ -120,7 +111,7 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         else if surnameIndex == i { surnameIndex = nil }
     }
 
-    /// Removes suffixes (I think). I don't think this will be useful.
+    /// Remove suffixes (I think). I don't think this will be useful.
     mutating func dropSuffix(range: Range<Int>) {
         guard !range.isEmpty else { return }
         nameParts.removeSubrange(range)
@@ -129,43 +120,38 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         }
     }
 
-    /// Compares two GedcomNames according to surname, initial, and given name order
+    /// Compare two Gedcom names by surname, initial, and given name order
     func compare(to other: GedcomName) -> ComparisonResult {
 
-        // First compare surnames.
-        let s1 = surname?.lowercased() ?? ""
+        let s1 = surname?.lowercased() ?? ""  // Compare surnames.
         let s2 = other.surname?.lowercased() ?? ""
         let r1 = s1.compare(s2)
         if r1 != .orderedSame { return r1  }
 
-        // Second compare first initials.
-        switch (firstInitial, other.firstInitial) {
+        switch (firstInitial, other.firstInitial) {  // Compare first initials.
         case let (a?, b?) where a != b:
             return a < b ? .orderedAscending : .orderedDescending
         case (.some, .none): return .orderedAscending
         case (.none, .some): return .orderedDescending
         default: break
         }
-
-        // Third go whole hog on the given names.
-        for (a, b) in zip(lowercaseGivens, other.lowercaseGivens) {
+        for (a, b) in zip(lowercaseGivens, other.lowercaseGivens) {  // Need big guns.
             let cmp = a.compare(b)
             if cmp != .orderedSame { return cmp }
         }
-
-        // If one has more remaining
         if lowercaseGivens.count < other.lowercaseGivens.count { return .orderedAscending }
         if lowercaseGivens.count > other.lowercaseGivens.count { return .orderedDescending }
 
         return .orderedSame
     }
 
+    /// Compare two Gedcom names -- for Comparable protocol.
     public static func < (lhs: GedcomName, rhs: GedcomName) -> Bool {
         lhs.compare(to: rhs) == .orderedAscending
     }
 }
 
-/// Parses a Gedcom name String into the constituents of a GedcomName.
+/// Parse a Gedcom name string into a Gedcom name.
 private func parseGedcomName(value: String) -> (parts: [String], surnameIndex: Int?)? {
 
     if value.isEmpty { return nil }
@@ -232,27 +218,11 @@ private func parseGedcomName(value: String) -> (parts: [String], surnameIndex: I
     }
 }
 
-//extension Person {
-//
-//    func displayName(upSurname: Bool = false, surnameFirst: Bool = false, length: Int? = nil) -> String? {
-//        // Get the GedcomName of the person.
-//        guard var gedcomname = GedcomName(from: self.root) else { return nil }
-//
-//        if upSurname { gedcomname.uppercaseSurname() }  // Handle the upSurname flag.
-//
-//        // Handle shortening
-//        if let length = length { gedcomname.shortened(to: length) }  // Handle shortening.
-//
-//        return gedcomname.format(surnameFirst: surnameFirst)
-//    }
-//}
-
-// Methods for shortening GedcomNames.
+// Methods for shortening Gedcom names.
 extension GedcomName {
 
     /// Shortens a GedcomName using a limit goal.
     mutating func shortened(to limit: Int) {
-
         while self.length > limit && initialiseNextMiddleGiven() {}      // Convert middle givens to initials.
         while self.length > limit && removeRightmostOptionalSuffix() {}  // Remove non-keeper suffixes.
         if self.length > limit { _ = initialiseFirstGiven() }            // Make first given an initial.
@@ -261,7 +231,7 @@ extension GedcomName {
                                                                          // Keep the first initial and surname.
     }
 
-    /// Converts the next middle given (right-to-left) to an initial and return true. Returns false
+    /// Convert next middle given (right-to-left) to an initial and return true. Return false
     /// when there are no more middle givens.
     @discardableResult
     private mutating func initialiseNextMiddleGiven() -> Bool {
@@ -281,7 +251,7 @@ extension GedcomName {
         return false  // No more middle givens to initialise.
     }
 
-    /// Converts the first given name to an initial. Returns true if the conversion occurred.
+    /// Convert first given to an initial. Return true if conversion occurred.
     @discardableResult
     private mutating func initialiseFirstGiven() -> Bool {
         guard let i = firstGivenIndex, !isInitial(nameParts[i]) else { return false }
@@ -289,7 +259,7 @@ extension GedcomName {
         return true
     }
 
-    /// Remove the rightmost middle **initial** (not the first given), adjusting `surnameIndex`.
+    /// Remove rightmost middle initial (not first given), adjusting surnameIndex.
     @discardableResult
     private mutating func removeRightmostMiddleInitial() -> Bool {
         for i in middleGivenIndices.reversed() where isInitial(nameParts[i]) {

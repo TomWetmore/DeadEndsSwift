@@ -3,11 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 4 February 2026.
-//  Last changed on 4 February 2026.
+//  Last changed on 12 February 2026.
 //
 
 import Foundation
 
+/// Gedcom tags referred to in code.
 enum GedcomTag: String {
     case indi = "INDI"
     case fam  = "FAM"
@@ -29,7 +30,10 @@ enum GedcomTag: String {
     case div  = "DIV"
     case buri = "BURI"
     case chr  = "CHR"
+    case refn = "REFN"
 }
 extension GedcomNode {
+    
+    /// Check if Gedcom node has specific tag.
     func hasTag(_ tag: GedcomTag) -> Bool { self.tag == tag.rawValue }
 }

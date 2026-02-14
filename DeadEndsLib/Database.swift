@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 4 February 2026.
+//  Last changed on 8 February 2026.
 //
 
 import Foundation
@@ -24,16 +24,16 @@ final public class Database {
     public var dateIndex: DateIndex
     public var placeIndex: PlaceIndex
 	public var refnIndex: RefnIndex
-	public var tagmap: TagMap  // Single copies of all tag Strings.
+	public var tagMap: TagMap  // Single copies of tag Strings.
     var dirty: Bool = false  // Set when Database changes.
 
     var personCount: Int { persons.count }  // Number of persons.
     var familyCount: Int { families.count }  // Number of families.
 
-    /// Create a database; all arguments must exist.
+    /// Create a database.
     init(recordIndex: RecordIndex, persons: RecordList, families: RecordList,
          header: GedcomNode?, nameIndex: NameIndex, dateIndex: DateIndex, placeIndex: PlaceIndex,
-         refnIndex: RefnIndex, tagmap: TagMap, dirty: Bool = false) {
+         refnIndex: RefnIndex, tagMap: TagMap, dirty: Bool = false) {
 
         self.recordIndex = recordIndex
         self.persons = persons
@@ -43,12 +43,12 @@ final public class Database {
         self.dateIndex = dateIndex
         self.placeIndex = placeIndex
         self.refnIndex = refnIndex
-        self.tagmap = tagmap
+        self.tagMap = tagMap
         self.dirty = dirty
     }
 }
 
-/// Load an array of database from each path in a list. This function isn't used yet.
+/// Load an array of databasea from the paths in a list. This function isn't used yet.
 public func loadDatabases(from paths: [String], errlog: inout ErrorLog) -> [Database] {
 	var databases = [Database]()
 	for path in paths {
@@ -62,35 +62,34 @@ public func loadDatabases(from paths: [String], errlog: inout ErrorLog) -> [Data
 /// Load a database from a Gedcom file. No Database is created if there are errors.
 public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? {
     let source = FileGedcomSource(path: path)
-    return loadDatabase(from: source, errlog: &errlog)
+    return loadDatabase(from: source, errLog: &errlog)
 }
 
-/// Load database from a source; keyMap is used in error messages and does not persist;
-/// tagMap persists as a database property.
-private func loadDatabase(from source: GedcomSource, errlog: inout ErrorLog) -> Database? {
+/// Load a database from a source; keyMap is used for error messages and does not persist.
+private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> Database? {
 
-    var keyMap = KeyMap()  // Map keys to lines for error messages.
-    var tagMap = TagMap()  // Sngle copy of each tag in database.
+    var keyMap = KeyMap()  // Map record keys to lines.
+    let tagMap = TagMap()  // Single copy of each tag in database.
 
-    // Read and validate the records from the source.
-    guard let (index, persons, families, header) =
-            loadValidRecords(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog)
+    guard let (index, persons, families, header) =  // Read and validate the records.
+            loadValidRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errLog)
     else { return nil }  // errlog holds the errors.
     print("Loaded \(persons.count) persons, \(families.count) families.")
 
     // Create indexes.
     let nameIndex = buildNameIndex(from: persons)
     let dateIndex = buildDateIndex(from: index)
-    let placeIndex = buildPlaceIndex(from: persons)
-//  let refnIndex = buildRefnIndex(from: index) // Implement when ready.
+    let placeIndex = buildPlaceIndex(from: index)
+    let refnIndex = validateRefns(from: index, keyMap: keyMap, errLog: errLog)
 
     //placeIndex.showContents(using: index)  // DEBUG
-    //showPlaceFrequencyTable(placeIndex)  // DEBUG
+    //placeIndex.showPlaceFrequencyTable()  // DEBUG
     //dateIndex.showContents(using: index)  // DEBUG
-
+    refnIndex.showContents()  
+    if errLog.count > 0 { return nil }
     return Database(recordIndex: index, persons: persons, families: families, header: header,
-                    nameIndex: nameIndex, dateIndex: dateIndex, placeIndex: placeIndex, refnIndex: RefnIndex(),
-                    tagmap: tagMap, dirty: false)
+                    nameIndex: nameIndex, dateIndex: dateIndex, placeIndex: placeIndex, refnIndex: refnIndex,
+                    tagMap: tagMap, dirty: false)
 }
 
 

@@ -3,10 +3,12 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 4 February 2026.
+//  Last changed on 12 February 2026.
 //
 
 import Foundation
+
+typealias NameKey = String
 
 /// NameIndex maps name keys to sets of record keys of persons with names that match.
 final public class NameIndex {
@@ -20,21 +22,20 @@ final public class NameIndex {
 		"R": "6"
 	]
 
-	/// Underlying name index dictionary.
-	var index = [NameKey: Set<RecordKey>]()  // Underlying dictionary.
+	private(set) var index = [NameKey: Set<RecordKey>]()  // Representation.
 
-	/// Add entry to name index; value is converted to a name key.
+	/// Add entry to name index; convert value to a name key.
 	public func add(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value) else { return }
 		self.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
 	}
 
 	/// Add entry to the name index.
-	func add(nameKey: String, recordKey: String) {
+	func add(nameKey: NameKey, recordKey: RecordKey) {
 		index[nameKey, default: Set()].insert(recordKey)
 	}
 
-    /// Remove entry from name index; value is a 1 NAME value that is converted to a name key.
+    /// Remove entry from name index; convert value to a name key.
     public func remove(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value)
 		else { return }
@@ -50,10 +51,9 @@ final public class NameIndex {
         }
     }
 
-	/// Get record keys that match a name or pattern; convert value to a name key
-    /// that is looked up in the name index.
-	func keys(forName value: String) -> Set<RecordKey>? {
-		return index[nameKey(value: value)]
+	/// Get record keys that match a name or pattern; convert value to a name key.
+	func recordKeys(forName value: String) -> Set<RecordKey> {
+		return index[nameKey(value: value)] ?? []
 	}
 
 	/// Debug to show content of the name index.
@@ -149,6 +149,16 @@ func pieceMatch(_ partial: String, _ complete: String) -> Bool {
 		completeIndex = complete.index(after: completeIndex)
 	}
 	return partialIndex == partial.endIndex
+}
+
+extension GedcomName {
+    
+    /// Return DeadEnds name key of this GedcomName.
+    var nameKey: String {
+        let firstInitial = firstInitial ?? "$"
+        let surname = surname ?? ""
+        return "\(firstInitial)\(soundex(for: surname))"
+    }
 }
 
 extension Database {

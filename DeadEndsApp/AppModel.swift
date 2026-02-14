@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 22 June 2025.
-//  Last changed on 17 January 2026.
+//  Last changed on 11 February 2026.
 //
 
 import SwiftUI
@@ -18,5 +18,15 @@ class AppModel: ObservableObject {
     var database: Database? // DeadEnds Database.
     var path = NavigationPath() // Navigation stack.
     var status: String? // Status text shown on some pages.
+}
+
+
+extension AppModel {
+
+    /// Search persons. Pass along to the database.
+    func searchPersons(_ criteria: SearchCriteria) -> SearchResults {
+        guard let db = database else { return [:] }
+        return db.searchPersons(criteria)
+    }
 }
 

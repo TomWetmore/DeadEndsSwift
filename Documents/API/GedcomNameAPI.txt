@@ -1,0 +1,59 @@
+GEDCOMNAME.SWIFT   
+================================================================================================================
+public typealias NameKey = String
+
+public struct GedcomName: Comparable, CustomStringConvertible {
+    var nameParts: [String]  // Name parts, before surname, surname, and after surname.
+    var surnameIndex: Int?  // Index of surname if it exists.
+
+    private init(nameParts: [String], surnameIndex: Int?) -- Private initializer.
+    public init?(string: String) -- Public initializer from Gedcom-fromatted name string.
+    public init?(from node: GedcomNode) -- Public initializer from either 0 INDI or 1 NAME node.
+    public var description: String -- String description of this GedcomName.
+    public var length: Int -- Return character lenth of name.
+    public func displayName(upSurname: = false, surnameFirst:= false, limit:= 0)  -- Return formatted name string
+    func format(surnameFirst: Bool) -> String -- [bad name] formats with surname first is flag true
+    var firstInitial: Character? -- Return first initial of Gedcom name.
+    var surname: String? -- Surname of this Gedcom name.
+    var lowercaseGivens: [String] -- return array of givens in lower case.
+    mutating func uppercaseSurname() -- Upper case the surname in situ.
+    mutating func initialiseGiven(at i: Int) -- Convert a given to an initial in situ.
+    mutating func removePart(at i: Int) -- Remove a name part (will not remove surname) in situ
+    mutating func dropSuffix(range: Range<Int>) -- Remove suffixes.
+    func compare(to other: GedcomName) -> ComparisonResult -- Compare two Gedcom names.
+    public static func < (lhs: GedcomName, rhs: GedcomName) -> Bool -- Comparable protocol.
+}
+
+extension Person {
+    public func displayName(upSurname: Bool, surnameFirst: Bool, limit: Int) -> String -- Return Person's display name.
+}
+
+NAMEINDEX
+================================================================================================================
+final public class NameIndex {
+    static let map: [Character: String] = [ ... ] // Soundex map.
+    var index = [NameKey: Set<RecordKey>]() // Underlying dictionary.
+    public func add(value: String, recordKey: RecordKey) // Add entry to index; onvert value to name key.
+    func add(nameKey:, recordKey:) // Add entry to the name index.
+    public func remove(value: String, recordKey:) // Remove entry from name index; value converted to name key.
+    func remove(nameKey: NameKey, recordKey: RecordKey) // Remove entry from the name index.
+    func keys(forName value: String) -> Set<RecordKey>? // Get record keys that match name or pattern; convert value to name key.
+    func showContents() { // Show contents of  index.
+}
+
+func nameKey(value: String) -> String // Return name key of a Gedcom-formatted name.
+
+func buildNameIndex(from persons: RecordList) -> NameIndex // Build the name index of record list.
+
+extension Person {
+    var nameValues: [String] // Return array of 1 NAME values in a Person.
+}
+
+extension Database {
+    public func personKeys(forName pattern: String) -> [RecordKey] // Return array of person keys with names that match pattern.
+    public func persons(withName pattern: String) -> [Person] // Return array of Persons with names that match pattern.
+}
+
+extension GedcomName {
+    var nameKey: String -- // Return DeadEnds name key of this Gedcom name.
+}

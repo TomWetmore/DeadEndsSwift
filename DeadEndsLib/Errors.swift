@@ -25,7 +25,7 @@ enum Severity {
 	case comment  // Message for user
 }
 
-// Error is the struct that holds a DeadEnds Error.
+// Struct that holds a DeadEnds error.
 public struct Error {
 	let type: ErrorType
 	let severity: Severity
@@ -33,6 +33,7 @@ public struct Error {
 	let line: Int?
 	public let message: String
 
+    /// Create an error.
 	init(type: ErrorType, severity: Severity, source: String? = nil, line: Int? = 0,
 		 message: String) {
 		self.type = type
@@ -43,5 +44,17 @@ public struct Error {
 	}
 }
 
-// ErrorLog is an array of Errors.
-public typealias ErrorLog = [Error]
+/// Error log class.
+public class ErrorLog {
+
+    var log: [Error] = []  // Array of errors.
+    public var count: Int { return log.count }  // Number of entries in log.
+
+    /// Create an error log.
+    public init() {}
+
+    /// Append an error to the log.
+    public func append(_ error: Error) {
+        log.append(error)
+    }
+}

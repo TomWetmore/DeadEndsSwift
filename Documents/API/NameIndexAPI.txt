@@ -1,0 +1,31 @@
+NAME INDEX API
+
+public typealias NameKey = String
+
+final public class NameIndex {
+
+    var index = [NameKey: Set<RecordKey>]() -- Representation.
+    public func add(value: String, recordKey: RecordKey) -- Add entry to index; onvert value to name key.
+    func add(nameKey:, recordKey:) -- Add entry to the name index.
+    public func remove(value: String, recordKey:) -- Remove entry from name index; value converted to name key.
+    func remove(nameKey: NameKey, recordKey: RecordKey) -- Remove entry from the name index.
+    func keys(forName value: String) -> Set<RecordKey>? -- Get record keys that match name or pattern; convert value to name key.
+    func showContents() -- Show contents of  index.
+}
+
+func nameKey(value: String) -> String -- Return name key of a Gedcom-formatted name.
+
+func buildNameIndex(from persons: RecordList) -> NameIndex -- Build a name index from a record list.
+
+extension Person {
+    var nameValues: [String] -- Return array of 1 NAME values in a Person.
+}
+
+extension Database {
+    public func personKeys(forName pattern: String) -> [RecordKey] -- Return array of person keys with names that match pattern.
+    public func persons(withName pattern: String) -> [Person] -- Return array of persons with names that match pattern.
+}
+
+extension GedcomName {
+    var nameKey: String -- Return name key of a Gedcom name.
+}

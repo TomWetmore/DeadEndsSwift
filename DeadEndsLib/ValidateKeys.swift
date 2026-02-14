@@ -3,16 +3,16 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 4 February 2026.
+//  Last changed on 7 February 2026.
 //
 
 import Foundation
 
 // Check that record keys are unique and closed.
-func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, errlog: inout ErrorLog) {
+func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, errlog: ErrorLog) {
     var keyset = Set<String>() // Encountered record keys.
 
-    for root in records {  // First pass: existance and uniqueness.
+    for root in records {  // Existance and uniqueness.
         let type = root.recordKind()
         if type == .header || type == .trailer { continue }
         guard let key = root.key else {  // Existance.
@@ -28,13 +28,13 @@ func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, e
         }
         keyset.insert(key)
     }
-    for root in records {  // Second pass: All keys found as values have targets.
+    for root in records {  // Check all keys found as values have targets.
         let key = root.key
         root.traverse { node in
             guard let value = node.val, isKey(value) else { return }
             if !keyset.contains(value) {
                 var line = 0
-                if let key = key { line = keymap[key]! + node.offset() }
+                if let key = key { line = keymap[key]! + node.offset }
                 let error = Error(type: .gedcom, severity: .fatal, source: path, line: line,
                                   message: "Invalid key value: \(value)")
                 errlog.append(error)
@@ -43,7 +43,7 @@ func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, e
     }
 }
 
-/// Extension to Node for tree operations.
+/// Extension to Gedcom node for tree operations.
 extension GedcomNode {
 
     /// Traverse a tree top down, left to right, doing an action.
@@ -56,7 +56,7 @@ extension GedcomNode {
         }
     }
 
-    // Return the number of nodes rooted at this node.
+    /// Return number of nodes rooted at this node.
     func count() -> Int {
         var count = 1
         var child = self.kid
@@ -67,20 +67,38 @@ extension GedcomNode {
         return count
     }
 
-    /// Return the number of nodes before self in its tree.
-    public func offset() -> Int {
+    /// Return number of nodes before self in its tree.
+//    public func offset() -> Int {
+//        var count = 0
+//        var curNode: GedcomNode? = self
+//        var loops = 0
+//        while let node = curNode, let parent = node.dad {
+//            loops += 1
+//            if loops > 100 { fatalError("Cycle detected in tree.") }
+//            var sibling = parent.kid // Count previous sibs.
+//            while let cursibling = sibling, cursibling !== node {
+//                count += cursibling.count()
+//                sibling = cursibling.sib
+//            }
+//            curNode = parent  // Move up.
+//            count += 1  // Include parent.
+//        }
+//        return count
+//    }
+
+    public var offset: Int {
         var count = 0
         var curNode: GedcomNode? = self
         var loops = 0
         while let node = curNode, let parent = node.dad {
             loops += 1
-            if loops > 10000 { fatalError("Cycle detected in tree.") }
+            if loops > 100 { fatalError("Cycle detected in tree.") }
             var sibling = parent.kid // Count previous sibs.
             while let cursibling = sibling, cursibling !== node {
                 count += cursibling.count()
                 sibling = cursibling.sib
             }
-            curNode = parent  // Move up tree.
+            curNode = parent  // Move up.
             count += 1  // Include parent.
         }
         return count
@@ -93,7 +111,7 @@ extension GedcomNode {
         while let node = curr {
             curr = node.dad
             level += 1
-            if level > 10000 { fatalError("Cycle detected in tree.") }
+            if level > 100 { fatalError("Cycle detected in tree.") }
         }
         return level
     }

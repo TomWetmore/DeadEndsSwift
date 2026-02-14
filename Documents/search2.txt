@@ -1,0 +1,254 @@
+
+I've had a little time to think about search. Here is what makes sense to me.
+Step one. Search for persons with matching names. Because the name key is based on soundex it is easy to search for names with different vowel combinations and so on. This set of persons becomes the full set of possible returned from the search persons.
+Step two (or three). Match against range of event dates, scoring on matching years.
+Step three (or two). Match against name parts, scoring on number of parts that match. A pattern matching approach based on the same techniques used for name matching could be employed.
+
+Any suggestions?
+That’s a very sensible progression, and it matches how “people search” usually feels: name is the anchor, then dates/places refine and rank.
+
+A few suggestions to make it both useful immediately and easy to evolve.
+1) Don’t make name mandatory (but do make it the default anchor)
+Your Step 1 “name candidates = universe” is great when a name is provided. But you’ll eventually want searches like: a) “born 1820–1840 in Maine” (name blank); b) “death 1918–1920” (pandemic-era research); c) “place contains ‘Ipswich’ ” (locality search).
+So I’d implement: a) If criteria.name is non-empty → candidates = NameIndex hits; b) Else → candidates start from the next strongest criterion (dates, then place); c) Else (no criteria) → return empty + UI message
+This keeps your design but avoids “no name → no search possible.”
+2) Separate “candidate generation” from “scoring”. This is the structure that will keep you from repainting yourself into a corner: a) candidateKeys(criteria) -> Set<RecordKey>; b) score(key, criteria, precomputedSets) -> Int; c) sort, threshold, return.
+
+Candidate generation should be “cheap unions,” scoring does the nuance.
+3) Dates: treat explicit ranges as strong signals.  Your idea “score on matching years” is good, but looping per candidate/year is expensive. Better: a) Precompute birthKeysInRange and/or deathKeysInRange once (union over years); b) Then for each candidate key: if set.contains(key) { score += weight }.
+
+If you want graduated scoring (closer years = higher), you can later add: “distance to nearest year in range” (but only if you store year-per-person, or can cheaply derive it).
+For now: in range = +40, unknown/outside = +0 (or small penalty).
+4) Places: score by parts matched, but be careful about “AND vs OR”. Your Step 3 makes sense: “score on number of parts that match.”
+I’d implement it like this: a) Canonicalize query into parts: ["ipswich","essex","massachusetts"; b) For each part, get a set of keys from PlaceIndex (optionally per event kind); and c) Score per person = count of parts where the person is in that part-set.
+That gives the behavior you want: more matching parts → higher score, without excluding partial matches.
+
+Later you can add: a) weights by specificity (e.g., “massachusetts” low weight, “ipswich” high weight); and b) event-kind selection toggles (birth only, death only, any)
+
+5) Name matching beyond Soundex: add a “display name contains tokens” bonus
+Your NameIndex already narrows by a Soundex-ish key. That’s great for candidates, but you still want ranking to prefer: a)“Thomas Wetmore” over “Thomas Whitmore”; and b) “Mary Ann Smith” over “Ann Marie Smith” when query is “Mary Ann”.
+
+So after candidate generation, score names with a simple token bonus:
+	•	exact normalized match: +80
+	•	contains full query substring: +40
+	•	per token contained: +10–15
+	•	maybe a small bonus for matching surname token
+
+No need for fancy regex yet.
+
+6) A simple scoring recipe that will feel good
+Start with integer weights:
+	•	Name hit (from NameIndex): baseline +20 (just for being in candidates)
+	•	Name token scoring: +0…+60
+	•	Birth in range: +40
+	•	Death in range: +40
+	•	Each place part match: +12 (cap at, say, 48)
+
+Then sort by score desc, and threshold at > 0 or >= 20.
+
+This will quickly feel “right” without any heavy framework.
+
+7) Keep it explainable while you tune
+During development, keep reasons (even if you hide it later). It will save you days:
+	•	"name tokens +30"
+	•	"birth in range +40"
+	•	"place parts matched 2 (+24)"
+
+8) What I would implement first (minimal working version)
+	1.	candidates:
+	•	if name present: NameIndex keys
+	•	else if birth range present: DateIndex range keys
+	•	else if place present: PlaceIndex union keys
+	2.	scoring:
+	•	+40 for birth in range / +40 for death in range
+	•	+12 per place part matched
+	•	name substring/token bonus
+	3.	return top N (e.g., first 200) to keep UI fast
+
+If you want, paste your current Database members (how you access recordIndex, nameIndex, dateIndex, placeIndex) and I’ll write the exact searchPersons(criteria:) -> [RecordKey] in your style with:
+	•	candidate generation,
+	•	precomputed range sets,
+	•	place-part scoring,
+	•	and a simple name token bonus.
+
+Great ideas. Thanks. it does get complex doesn't it? I hadn't thought of the case where the name is not used -- that's an important case that has to be included. i have more respect now for Ancestry and FamilySearch.
+
+It really does—mostly because “search” isn’t one problem, it’s three glued together: retrieval, ranking, interaction.
+You don’t need Ancestry-level machinery to get something that feels surprisingly good in DeadEnds. A small, principled version goes a long way.
+A pragmatic way to keep it from exploding:
+1) Treat name/date/place as independent evidence signals; 2) Always build candidates from whatever signals are present; 3) Keep scoring simple and explainable; 4) Add one refinement at a time (weights, tokenization, place specificity.
+
+And yes—seeing how many corner cases appear the moment you allow “no name” searches gives you immediate appreciation for the big sites. They’re also fighting messy data, variant spellings, partial dates, alternate calendars, transcription errors, etc.
+
+If you want a nice “next step” that keeps complexity under control: implement two modes behind the same UI: 1)Filter mode (strict): everything provided must match; and 2) Rank mode (default): partial matches allowed, sorted by score. You can even hide the toggle at first and just use Rank mode, but having the concept will help you structure the code cleanly.
+
+You’re thinking about it the right way: generate a candidate pool, then score against the remaining criteria. And supporting “no name” means candidate generation can’t depend solely on NameIndex.
+
+Given your actual index APIs (from the files you uploaded), here’s the best structure I’d implement next.
+
+The best structure (and why)
+A) Candidate generation = union of “signals that exist”
+	•	If name is present → start with personKeys(forName:) (your current NameIndex-based function is great).
+	•	If name is absent → start with “whatever else is present”:
+	•	date range sets from DateIndex.keys(year:event:)
+	•	place part sets from PlaceIndex (we’ll add a tiny query helper)
+This avoids the “intersection nukes everything” problem and supports the no-name case.
+
+B) Scoring = additive evidence
+For each candidate key, add points for each matching signal:
+	•	birth year in range: +40 (or whatever)
+	•	death year in range: +40
+	•	each place part matched: +12 (or weight by specificity later)
+	•	optional: extra name-token score (but since you already filtered names with exactMatch, you can keep name scoring minimal at first)
+
+C) Precompute sets once per search
+
+This is the big performance/clarity win: compute “keys-in-range” sets once, then per candidate do set.contains(key).
+
+Add two tiny helpers to make your indexes range/parts-friendly
+
+1) DateIndex: union keys over a year range
+
+Add this to DateIndex.swift: (ALREADY HAD THIS IN THE CODE).
+extension DateIndex {
+    public func keys(in range: ClosedRange<Year>, event: EventKind) -> Set<RecordKey> {
+        var out = Set<RecordKey>()
+        for y in range {
+            if let s = keys(year: y, event: event) {
+                out.formUnion(s)
+            }
+        }
+        return out
+    }
+}
+
+2) PlaceIndex: get keys for a canonical part + event
+Add this to PlaceIndex.swift (simple and very useful) (ALREADY HAVE THIS TOO).
+extension PlaceIndex {
+    public func keys(part: String, event: EventKind) -> Set<RecordKey> {
+        index[PlaceIndexKey(part: part, event: event)] ?? []
+    }
+}
+Now Database doesn’t need to poke around inside placeIndex.index directly.
+
+Now implement Database.searchPersons(criteria:) (candidate union + scoring)
+Create Database+Search.swift in DeadEndsLib: (ALREADY HAVE THIS).
+public struct SearchResult: Identifiable {
+    public let id: RecordKey
+    public let key: RecordKey
+    public let score: Int
+}
+
+extension Database {
+
+    public func searchPersons(_ c: SearchCriteria) -> [SearchResult] {
+
+        // 1) Precompute sets for date ranges (so scoring is O(1) per candidate)
+        let birthSet: Set<RecordKey> = c.birthYearRange.map { dateIndex.keys(in: $0, event: .birth) } ?? []
+        let deathSet: Set<RecordKey> = c.deathYearRange.map { dateIndex.keys(in: $0, event: .death) } ?? []
+
+        // Precompute per-place-part sets (for birth/death to start)
+        let placeParts = (c.placeComponents ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+                                                 .filter { !$0.isEmpty }
+
+        let placePartSets: [String: Set<RecordKey>] = {
+            var dict: [String: Set<RecordKey>] = [:]
+            for part in placeParts {
+                var s = Set<RecordKey>()
+                s.formUnion(placeIndex.keys(part: part, event: .birth))
+                s.formUnion(placeIndex.keys(part: part, event: .death))
+                dict[part] = s
+            }
+            return dict
+        }()
+
+        // 2) Candidate generation (union)
+        var candidates = Set<RecordKey>()
+
+        if let name = c.name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            // Your strong name-based candidate set
+            candidates.formUnion(personKeys(forName: name))
+        }
+
+        if c.name == nil || c.name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
+            // No name: seed from whatever other criteria exist
+            candidates.formUnion(birthSet)
+            candidates.formUnion(deathSet)
+            for (_, s) in placePartSets { candidates.formUnion(s) }
+        } else {
+            // Name exists: still allow other criteria to expand candidates a little if name is very strict
+            // (optional) If you don't want expansion, remove this block.
+            candidates.formUnion(birthSet)
+            candidates.formUnion(deathSet)
+            for (_, s) in placePartSets { candidates.formUnion(s) }
+        }
+
+        // No criteria at all -> nothing (avoid huge lists)
+        if candidates.isEmpty {
+            return []
+        }
+
+        // 3) Score candidates
+        var results: [SearchResult] = []
+        results.reserveCapacity(candidates.count)
+
+        for key in candidates {
+            var score = 0
+
+            // Dates (strong)
+            if c.birthYearRange != nil, birthSet.contains(key) { score += 40 }
+            if c.deathYearRange != nil, deathSet.contains(key) { score += 40 }
+
+            // Place parts (incremental)
+            if !placePartSets.isEmpty {
+                var matched = 0
+                for (_, s) in placePartSets {
+                    if s.contains(key) { matched += 1 }
+                }
+                score += matched * 12
+            }
+
+            // If name was supplied, give a baseline bump for being a name match
+            if let name = c.name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+                // If you only want to bump true name matches, check membership in the name result:
+                // (but that would require storing that set — you can do that later.)
+                score += 20
+            }
+
+            // Threshold: keep only “meaningful” hits (tune later)
+            if score > 0 {
+                results.append(SearchResult(id: key, key: key, score: score))
+            }
+        }
+
+        // 4) Sort: score desc, then name
+        results.sort {
+            if $0.score != $1.score { return $0.score > $1.score }
+            let na = recordIndex.person(for: $0.key)?.displayName(upSurname: true) ?? $0.key
+            let nb = recordIndex.person(for: $1.key)?.displayName(upSurname: true) ?? $1.key
+            return na.localizedCaseInsensitiveCompare(nb) == .orderedAscending
+        }
+
+        return results
+    }
+}
+
+This gives you:
+	•	name-based search that feels good immediately (your personKeys(forName:) is already strong)
+	•	date and place refinement even if name is empty
+	•	scoring without intersections wiping things out
+	•	performance that scales because sets are precomputed once
+
+⸻
+
+A couple of practical tweaks you’ll likely want next
+	1.	Don’t expand candidates when name is present (optional).
+If you want “name defines the universe,” remove the “expand candidates” block. (I left it in as optional because sometimes name matching is too strict; your call.)
+	2.	Weight place parts by specificity
+“massachusetts” should be worth less than “ipswich”.
+	3.	Return RecordKey initially
+If you don’t want SearchResult in the UI yet, return results.map(\.key) and keep score internal.
+
+⸻
+
+If you upload Database.swift too (or paste the properties where nameIndex/dateIndex/placeIndex/recordIndex live), I can drop this in exactly matching your current member names and access levels—no guesswork.

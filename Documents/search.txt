@@ -1,0 +1,723 @@
+Started 9 February 2026. Have just started to implement the searching feature. A SearchPersonPanel view exists that I can pop up on the PersonPage.
+Here is the discussion with ChatGPT on how to get things to hookup at the model/database level.
+
+The cleanest structure is:
+• UI builds SearchCriteria
+• UI calls one method on the model (AppModel or Database)
+• Database does index-driven narrowing and returns RecordKey results
+• UI uses keys to navigate / display
+That keeps SwiftUI out of the indexing business, and keeps Database free of UI concerns.
+
+Recommended API shape: Make search a Database feature (because it uses its indexes):
+extension Database {
+    func searchPersons(_ criteria: SearchCriteria) -> [RecordKey] { ... } // implement with indexes
+}
+AppModel just forwards it; views don’t have to unwrap model.database? everywhere:
+extension AppModel {
+    func searchPersons(_ criteria: SearchCriteria) -> [RecordKey] {
+        guard let db = database else { return [] }
+        return db.searchPersons(criteria)
+    }
+}
+Then your panel calls model.searchPersons(criteria).
+
+The internal structure that scales:
+Inside Database.searchPersons:
+1.	collect candidate sets from each criterion using the indexes
+2.	intersect those sets (fast narrowing)
+3.	post-filter (only when necessary) and sort (by display name, etc.)
+Pseudo-layout:
+
+func searchPersons(_ c: SearchCriteria) -> [RecordKey] {
+    var candidates: Set<RecordKey>? = nil
+    func intersect(_ s: Set<RecordKey>) {
+        candidates = (candidates == nil) ? s : candidates!.intersection(s)
+    }
+    // NAME
+    if let name = c.name, !name.isEmpty {
+        let s = nameIndex.lookup(name)          // Set<RecordKey>
+        intersect(s)
+    }
+    // BIRTH YEARS
+    if let r = c.birthYearRange {
+        let s = dateIndex.lookup(event: .birth, years: r)
+        intersect(s)
+    }
+    // DEATH YEARS
+    if let r = c.deathYearRange {
+        let s = dateIndex.lookup(event: .death, years: r)
+        intersect(s)
+    }
+    // PLACES (all components must match)
+    if let parts = c.placeComponents, !parts.isEmpty {
+        for part in parts {
+            let s = placeIndex.lookup(part: part, events: [.birth, .death, .marriage /* etc */])
+            intersect(s)
+        }
+    }
+    let final = candidates ?? Set(allPersonKeys()) // if no criteria, decide behavior
+    return final.sorted(by: personNameSort)
+}
+
+That “candidate intersection” pattern is the key. It stays simple even as you add more criteria.
+
+What each index should expose (nice minimal interfaces):
+
+You don’t want UI calling raw index dictionaries; give each index a tiny query API:
+
+NameIndex: func keys(matching name: String) -> Set<RecordKey>
+DateIndex: func keys(event: EventKind, in years: ClosedRange<Year>) -> Set<RecordKey>
+    (Internally it unions the sets for each year in the range.)
+PlaceIndex: func keys(part: String, event: EventKind) -> Set<RecordKey>
+    and your searchPersons can decide which events to include for place filtering (birth/death/marriage/etc).
+
+Where to put SearchCriteria
+Keep it in DeadEndsLib (model layer), not in the app target, because:
+• Database needs it
+• tests can exercise it without SwiftUI
+• later your command-line tools can reuse it
+
+So: DeadEndsLib/Search/SearchCriteria.swift + Database+Search.swift.
+
+Hooking it up from SearchPanel (one line)
+
+Change your stub:
+onSearch: { crit in
+    model.database?.searchPersons(crit) ?? []
+}
+
+If you add the AppModel.searchPersons forwarder:
+onSearch: { model.searchPersons($0) }
+
+One decision you should make now: What should happen if the user hits Search with no criteria?
+Pick one:
+1. return [] (safe)
+2. return “all persons” (can be huge)
+3. require at least one field (best UX)
+
+My vote: return [] and show “Enter at least one criterion.” (keeps the app snappy).
+
+====================================
+
+Your current codebase is already very close to having a clean “one call into Database” search.  You already have this gem in NameIndex.swift:
+
+extension Database {
+    public func personKeys(forName pattern: String) -> [RecordKey] { ... }
+}
+
+So the best structure is:
+• DeadEndsLib defines SearchCriteria
+• DeadEndsLib.Database implements searchPersons(_:) using nameIndex/dateIndex/placeIndex
+• UI calls model.database?.searchPersons(criteria) ?? []
+
+Below is a solid first implementation that matches your existing index APIs as they are today.
+
+1) Put SearchCriteria in DeadEndsLib (so UI + Database share it).  Create a new file in DeadEndsLib (e.g. SearchCriteria.swift):
+
+import Foundation
+
+public struct SearchCriteria: Equatable {
+    public var name: String? = nil
+    public var birthYearRange: ClosedRange<Year>? = nil
+    public var deathYearRange: ClosedRange<Year>? = nil
+    public var placeComponents: [String]? = nil   // canonical parts (lowercased, etc.)
+
+    public init(
+        name: String? = nil,
+        birthYearRange: ClosedRange<Year>? = nil,
+        deathYearRange: ClosedRange<Year>? = nil,
+        placeComponents: [String]? = nil
+    ) {
+        self.name = name
+        self.birthYearRange = birthYearRange
+        self.deathYearRange = deathYearRange
+        self.placeComponents = placeComponents
+    }
+}
+
+Then remove the duplicate SearchCriteria from the app target.
+
+2) Add Database.searchPersons(_:) (index-driven intersection).  Create a new file in DeadEndsLib: Database+Search.swift
+
+import Foundation
+
+extension Database {
+
+    /// Search INDI records using NameIndex, DateIndex, PlaceIndex.
+    /// Returns RecordKeys (INDI keys).
+    public func searchPersons(_ criteria: SearchCriteria) -> [RecordKey] {
+
+        // Optional behavior decision: no criteria => no results (prevents huge lists)
+        if criteriaIsEmpty(criteria) {
+            return []
+        }
+
+        var candidates: Set<RecordKey>? = nil
+
+        func intersect(_ set: Set<RecordKey>) {
+            candidates = (candidates == nil) ? set : candidates!.intersection(set)
+        }
+
+        // --- Name ---
+        if let name = criteria.name?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !name.isEmpty
+        {
+            let keys = Set(personKeys(forName: name))   // uses your existing NameIndex logic
+            intersect(keys)
+        }
+
+        // --- Birth year range ---
+        if let range = criteria.birthYearRange {
+            let keys = keysForYears(range, event: .birth)
+            intersect(keys)
+        }
+
+        // --- Death year range ---
+        if let range = criteria.deathYearRange {
+            let keys = keysForYears(range, event: .death)
+            intersect(keys)
+        }
+
+        // --- Place components (canonical parts) ---
+        if let parts = criteria.placeComponents?.map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
+                                            .filter({ !$0.isEmpty }),
+           !parts.isEmpty
+        {
+            // For "person search", I’d start by matching birth/death places.
+            let events: [EventKind] = [.birth, .death]
+
+            // For each part: union matches across events, then intersect across parts.
+            for part in parts {
+                var partUnion = Set<RecordKey>()
+                for ev in events {
+                    let key = PlaceIndexKey(part: part.lowercased(), event: ev)
+                    partUnion.formUnion(placeIndex.index[key] ?? [])
+                }
+                intersect(partUnion)
+            }
+        }
+
+        let final = candidates ?? []
+        return sortPersonKeys(final)
+    }
+
+    // MARK: - Helpers
+
+    private func criteriaIsEmpty(_ c: SearchCriteria) -> Bool {
+        let nameEmpty = (c.name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let placesEmpty = (c.placeComponents?.isEmpty ?? true)
+        return nameEmpty && c.birthYearRange == nil && c.deathYearRange == nil && placesEmpty
+    }
+
+    /// Union keys for every year in the range for the given event kind.
+    private func keysForYears(_ range: ClosedRange<Year>, event: EventKind) -> Set<RecordKey> {
+        var out = Set<RecordKey>()
+        // ClosedRange<Year> is iterable for Int ranges
+        for y in range {
+            if let s = dateIndex.keys(year: y, event: event) {
+                out.formUnion(s)
+            }
+        }
+        return out
+    }
+
+    /// Sort by display name (fallback to key). Keeps UI stable and friendly.
+    private func sortPersonKeys(_ keys: Set<RecordKey>) -> [RecordKey] {
+        keys.sorted { a, b in
+            let na = recordIndex.person(for: a)?.displayName(upSurname: true) ?? a
+            let nb = recordIndex.person(for: b)?.displayName(upSurname: true) ?? b
+            if na == nb { return a < b }
+            return na.localizedCaseInsensitiveCompare(nb) == .orderedAscending
+        }
+    }
+}
+
+Why this fits your codebase
+• Uses existing Database.personKeys(forName:) (the Soundex + ordered token match).
+• Works with DateIndex as-is, works with PlaceIndex as-is.
+• Keeps the UI completely out of indexing logic.
+
+3) Hook it up in your SearchPanel call site (one line). In PersonPage.sheet:
+
+onSearch: { crit in
+    model.database?.searchPersons(crit) ?? []
+}
+
+4) One small improvement you’ll probably want next
+Now the SearchPanel displays Text(key) for results. Once search works, you’ll want to show names:
+• easiest: have onSearch return [Person] instead of [RecordKey], or
+• keep keys (good for navigation) and add labelForKey closure.
+
+Given your navigation uses Route.person(Person), you may eventually want:
+
+public func searchPersons(_ criteria: SearchCriteria) -> [Person]
+
+…but for now, keys are perfectly fine and match your indexes.
+
+AFTER I POINTED OUT THAT SO MUCH INTERSECTION IS NOT A GOOD IDEA.
+
+You’re exactly right: pure intersection is great for “structured filters” (AND semantics), but it’s not a good default for “search” in the human sense, where partial matches should still surface. The usual evolution is:
+	•	Phase 1: filtering mode (AND) — good for a first working version
+	•	Phase 2: ranking mode (score + threshold) — what you’re describing
+
+Best structure for ranking is: each criterion contributes a score, and you sum (or weighted sum) per person, optionally with a couple of “hard filters” (e.g., year range if explicitly set).
+
+A good structure that stays simple
+
+1) Add a SearchResult type
+
+Keep keys + score (and later: explainability).
+
+public struct SearchResult: Identifiable {
+    public let id: RecordKey
+    public let key: RecordKey
+    public let score: Int
+    public let reasons: [String]   // optional but super useful
+}
+
+2) Database entry point returns ranked results
+
+extension Database {
+    public func searchPersons(_ c: SearchCriteria) -> [SearchResult] { ... }
+}
+
+UI can show name + score while you debug, then hide score later.
+
+3) Candidate generation: union “sources”, then score
+
+You still need a finite candidate set. You get that by taking the union of candidates from each index, not the entire population.
+	•	NameIndex candidates
+	•	Birth-year candidates
+	•	Death-year candidates
+	•	Place candidates (birth/death places)
+
+Then you score each candidate against the criteria.
+
+4) Keep some things as hard filters (optional)
+
+Example: if a user enters a birth year range, they probably mean it. So:
+	•	either treat it as a strong score (+50 if in range, +0 if not)
+	•	or treat it as a hard filter (exclude if outside)
+
+Both are valid; I often do: hard filter only if the user provided a bounded range, and keep fuzzy behavior for name/place.
+
+⸻
+
+Concrete “scoring” implementation you can drop in now
+
+This keeps your existing indexes and avoids “intersect nukes everything”.
+
+extension Database {
+
+    public func searchPersons(_ c: SearchCriteria) -> [SearchResult] {
+
+        // 1) Build candidate set (union of index hits)
+        var candidates = Set<RecordKey>()
+
+        if let name = trimmed(c.name) {
+            candidates.formUnion(personKeys(forName: name))
+        }
+
+        if let r = c.birthYearRange {
+            candidates.formUnion(keysForYears(r, event: .birth))
+        }
+
+        if let r = c.deathYearRange {
+            candidates.formUnion(keysForYears(r, event: .death))
+        }
+
+        if let parts = normalizedParts(c.placeComponents), !parts.isEmpty {
+            candidates.formUnion(keysForPlaceParts(parts, events: [.birth, .death]))
+        }
+
+        // If user entered criteria but union found nothing, we can bail early.
+        if candidates.isEmpty {
+            return []
+        }
+
+        // 2) Score candidates
+        var results: [SearchResult] = []
+        results.reserveCapacity(candidates.count)
+
+        for key in candidates {
+            guard let person = recordIndex.person(for: key) else { continue }
+
+            var score = 0
+            var reasons: [String] = []
+
+            // Name scoring (fuzzy-ish)
+            if let name = trimmed(c.name) {
+                let s = scoreName(name, person: person)
+                if s > 0 { score += s; reasons.append("name+\(s)") }
+            }
+
+            // Birth year scoring (strong)
+            if let r = c.birthYearRange {
+                if year(of: person, kind: .birth, in: r) {
+                    score += 40
+                    reasons.append("birth in range")
+                } else {
+                    // choose: either penalize or hard-filter. Start with mild penalty.
+                    score -= 10
+                }
+            }
+
+            // Death year scoring (strong)
+            if let r = c.deathYearRange {
+                if year(of: person, kind: .death, in: r) {
+                    score += 40
+                    reasons.append("death in range")
+                } else {
+                    score -= 10
+                }
+            }
+
+            // Place scoring (increment per matching component)
+            if let parts = normalizedParts(c.placeComponents), !parts.isEmpty {
+                let s = scorePlaces(parts, person: person)
+                if s > 0 { score += s; reasons.append("place+\(s)") }
+            }
+
+            // Threshold: require positive score (tune later)
+            if score > 0 {
+                results.append(SearchResult(id: key, key: key, score: score, reasons: reasons))
+            }
+        }
+
+        // 3) Sort by score then name
+        results.sort {
+            if $0.score != $1.score { return $0.score > $1.score }
+            let na = recordIndex.person(for: $0.key)?.displayName(upSurname: true) ?? $0.key
+            let nb = recordIndex.person(for: $1.key)?.displayName(upSurname: true) ?? $1.key
+            return na.localizedCaseInsensitiveCompare(nb) == .orderedAscending
+        }
+
+        return results
+    }
+
+    // MARK: - Candidate helpers (reuse your indexes)
+
+    private func keysForYears(_ range: ClosedRange<Year>, event: EventKind) -> Set<RecordKey> {
+        var out = Set<RecordKey>()
+        for y in range {
+            if let s = dateIndex.keys(year: y, event: event) {
+                out.formUnion(s)
+            }
+        }
+        return out
+    }
+
+    private func keysForPlaceParts(_ parts: [String], events: [EventKind]) -> Set<RecordKey> {
+        var out = Set<RecordKey>()
+        for p in parts {
+            for ev in events {
+                let k = PlaceIndexKey(part: p, event: ev)
+                out.formUnion(placeIndex.index[k] ?? [])
+            }
+        }
+        return out
+    }
+
+    // MARK: - Scoring helpers (simple to start)
+
+    private func trimmed(_ s: String?) -> String? {
+        guard let s else { return nil }
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : t
+    }
+
+    private func normalizedParts(_ parts: [String]?) -> [String]? {
+        guard let parts else { return nil }
+        let out = parts.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+                       .filter { !$0.isEmpty }
+        return out.isEmpty ? nil : out
+    }
+
+    private func scoreName(_ query: String, person: Person) -> Int {
+        let q = query.lowercased()
+        let name = person.displayName(upSurname: true).lowercased()
+
+        if name == q { return 80 }
+        if name.contains(q) { return 40 }
+
+        // Token bonus (very crude, but useful)
+        let tokens = q.split(whereSeparator: { $0 == " " || $0 == "," }).map(String.init)
+        var s = 0
+        for tok in tokens where !tok.isEmpty {
+            if name.contains(tok) { s += 15 }
+        }
+        return s
+    }
+
+    private func year(of person: Person, kind: EventKind, in range: ClosedRange<Year>) -> Bool {
+        // Use whatever you have; if you can only access eventSummary, you may need a year extractor.
+        // Ideally: person.birthEvent?.year, person.deathEvent?.year etc.
+        // Placeholder: return false if unknown.
+        guard let y = person.year(kind: kind) else { return false } // implement or adapt
+        return range.contains(y)
+    }
+
+    private func scorePlaces(_ parts: [String], person: Person) -> Int {
+        // Start crude: check if the person’s birth/death place strings contain each part
+        // Better later: canonicalize person places into parts and compare sets.
+        var s = 0
+        let birth = (person.place(kind: .birth) ?? "").lowercased()
+        let death = (person.place(kind: .death) ?? "").lowercased()
+
+        for p in parts {
+            if birth.contains(p) || death.contains(p) { s += 12 }
+        }
+        return s
+    }
+}
+
+A couple of those helper calls (person.year(kind:), person.place(kind:)) you may not have exactly; swap in whatever you already have (you likely do, since you have event summaries). The main point is the structure:
+	•	candidate set = union
+	•	score per candidate
+	•	sort by score
+
+That avoids the “intersection shrinks to nothing” problem while staying dead simple.
+
+⸻
+
+Where intersection still belongs (and why you weren’t “wrong”)
+
+Intersections are still perfect for explicit filters like:
+	•	“birth between 1820–1840” AND “death between 1890–1910”
+
+If a user sets those, they usually expect exclusion. So a nice hybrid is:
+	•	treat year ranges as hard filters (intersection)
+	•	treat name/place as scoring contributions
+
+That gives you a predictable “filter + rank” experience.
+
+⸻
+
+Minimal UI change
+
+If you adopt SearchResult, your panel can display:
+	•	primary line: person name (look up via recordIndex)
+	•	secondary: score or reasons (while debugging)
+
+But you can also keep returning [RecordKey] by sorting keys by computed score and discarding the score. I’d keep SearchResult at least during development because it’s incredibly helpful.
+
+⸻
+
+If you want, I can adapt the scoring helpers to your exact Person APIs in your uploaded files (e.g., if you already have person.birthEvent?.dateVal or an extractor that returns a year).
+
+Here is my current version of Database.year
+
+private func year(of person: Person, kind: EventKind, in range: ClosedRange<Year>) -> Bool {
+        let key = person.key
+        for year in range {
+            let dateIndexKey = DateIndexKey(year: year, event: kind)
+            let recordKeys = dateIndex.recordKeys(for: dateIndexKey)
+            if recordKeys?.contains(key) { return true }
+        }
+        return false
+    }
+
+Compiler tells me I should replace the line with contains to:
+
+Replace 'recordKeys?.contains(key)' with '((recordKeys?.contains(key)) != nil)'
+
+Can you explain?
+
+Yep — this is one of those Swift moments where the compiler is technically right but the suggested fix is… not what you actually want.
+
+Let’s unpack exactly what’s going on.
+
+⸻
+
+What the compiler is complaining about
+
+This line:
+
+if recordKeys?.contains(key) { return true }
+
+looks reasonable, but:
+	•	recordKeys is optional
+	•	contains(_:) returns a Bool
+	•	so recordKeys?.contains(key) has type Bool?, not Bool
+
+And Swift does not allow an optional Bool in an if condition.
+
+So the compiler says:
+
+“You can’t use Bool? here.”
+
+⸻
+
+Why the suggested fix is nonsense (for humans)
+
+The compiler suggests:
+
+if ((recordKeys?.contains(key)) != nil) { return true }
+
+But that means:
+
+“If the result exists, regardless of whether it’s true or false”
+
+That condition is true whenever recordKeys is non-nil — even if contains(key) is false.
+
+So this would be logically wrong.
+
+The compiler is only fixing the type error, not the intent.
+
+⸻
+
+The correct, idiomatic fix (what you actually want)
+
+You want:
+	•	only return true if recordKeys exists and
+	•	it actually contains key
+
+Best version (clear and idiomatic)
+
+if recordKeys?.contains(key) == true {
+    return true
+}
+
+This works because:
+	•	Bool? == true is only true when the optional exists and is true
+	•	nil == true → false
+	•	false == true → false
+
+This is the standard Swift pattern for this situation.
+
+⸻
+
+Even clearer (my preferred version)
+
+Unwrap explicitly:
+
+if let recordKeys, recordKeys.contains(key) {
+    return true
+}
+
+This reads exactly like the logic you intend:
+
+“If there are record keys, and they contain this key…”
+
+This is what I’d recommend in DeadEnds code — it’s explicit and avoids cleverness.
+
+⸻
+
+Your function, cleaned up
+
+private func year(of person: Person, kind: EventKind, in range: ClosedRange<Year>) -> Bool {
+    let key = person.key
+    for year in range {
+        let dateIndexKey = DateIndexKey(year: year, event: kind)
+        if let recordKeys = dateIndex.recordKeys(for: dateIndexKey),
+           recordKeys.contains(key)
+        {
+            return true
+        }
+    }
+    return false
+}
+
+That’s 100% correct and idiomatic Swift.
+
+⸻
+
+Mental model to keep in your head
+
+Any time you see:
+
+optional?.someBoolReturningMethod()
+
+you are holding a Bool?, and you must decide:
+	•	unwrap it (if let)
+	•	or compare it (== true)
+
+Swift forces you to make that decision, which is annoying at first but saves you from subtle bugs later.
+
+You’re doing exactly the right kind of thinking here — this is good, careful model-layer work.
+
+I know this must look naive, but I've never used a Range before so I just assumed I'd best make a loop. It there is a better idiom  I'd love to see it.
+
+Not naive at all — looping a ClosedRange is perfectly valid Swift, and for small ranges it’s totally fine.
+
+That said, there is a better idiom here, and it comes in two flavors:
+	1.	Pure Swift idiom (same underlying work, cleaner)
+	2.	Better algorithm (avoid scanning every year by letting the index do the work)
+
+1) Cleaner Swift idiom (still loops, but reads better)
+
+If your DateIndex can return the set for a given DateIndexKey, you can write:
+
+private func matchesYearRange(_ key: RecordKey,
+                              kind: EventKind,
+                              range: ClosedRange<Year>) -> Bool {
+    range.contains { year in
+        let k = DateIndexKey(year: year, event: kind)
+        return dateIndex.recordKeys(for: k)?.contains(key) == true
+    }
+}
+
+That uses ClosedRange.contains(where:) (really it’s the Sequence.contains(where:) because ClosedRange<Int> is a sequence). Same loop, nicer expression.
+
+Or equivalently:
+
+private func matchesYearRange(_ key: RecordKey,
+                              kind: EventKind,
+                              range: ClosedRange<Year>) -> Bool {
+    for year in range {
+        let k = DateIndexKey(year: year, event: kind)
+        if dateIndex.recordKeys(for: k)?.contains(key) == true { return true }
+    }
+    return false
+}
+
+Your original is already basically this — just fix the optional-bool issue.
+
+2) Better algorithm: flip the question (index → keys), not (key → years)
+
+Your current function asks: “For this person key, do any years in the range contain it?” That forces you to check every year.  But your DateIndex is designed to answer the opposite question efficiently: “For these years, what keys exist?”
+
+So you usually want to compute the union of keys over the range once, then check membership (or use it in scoring).
+
+Idiomatic helper on DateIndex: recordKeys(in:event:)
+Add this to DateIndex:
+
+extension DateIndex {
+    func recordKeys(in range: ClosedRange<Year>, event: EventKind) -> Set<RecordKey> {
+        var out = Set<RecordKey>()
+        for year in range {
+            let k = DateIndexKey(year: year, event: event)
+            if let s = recordKeys(for: k) {
+                out.formUnion(s)
+            }
+        }
+        return out
+    }
+}
+
+Then your check becomes:
+
+private func year(of person: Person, kind: EventKind, in range: ClosedRange<Year>) -> Bool {
+    dateIndex.recordKeys(in: range, event: kind).contains(person.key)
+}
+
+That still loops internally, but it:
+	•	centralizes the “loop over years” logic in the index (where it belongs)
+	•	is reusable for your candidate generation
+	•	lets you compute the set once and reuse it for many candidates
+
+Why this is a big win in scoring search -- If you’re scoring 500 candidates and you do your per-person-per-year loop, you’ve got: 500 candidates × 100 years = 50,000 lookups
+
+Whereas if you compute the union once: 100 years = 100 lookups → then 500 O(1) contains checks.
+That’s a huge difference, and it reads cleaner.
+
+Best practice for your search engine:
+When you implement ranked search, do this:
+• precompute sets once per criterion (year range set, place set, etc.)
+• then score candidates using quick set membership checks
+
+Example:
+let birthKeys = criteria.birthYearRange.map { dateIndex.recordKeys(in: $0, event: .birth) } ?? []
+// later: if birthKeys.contains(person.key) { score += 40 }
+
+Bottom line: 1. Your loop over a ClosedRange is totally fine and idiomatic. 2.The better idiom for your problem is: teach DateIndex to answer range queries, then do membership checks.

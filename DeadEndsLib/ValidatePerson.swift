@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 14 July 2025.
+//  Last changed on 7 February 2026.
 //
 
 import Foundation
@@ -11,10 +11,10 @@ import Foundation
 typealias StringSet = Set<String>
 
 // validatePersons validates the persons in a RootList.
-func validatePersons(persons: RecordList, context: ValidationContext, errlog: inout ErrorLog) {
+func validatePersons(persons: RecordList, context: ValidationContext, errlog: ErrorLog) {
 	var numPersonsValidated = 0 // Debugging.
 	for person in persons {
-		person.validatePerson(context: context, errlog: &errlog)
+		person.validatePerson(context: context, errlog: errlog)
 		numPersonsValidated += 1
 	}
 }
@@ -24,7 +24,7 @@ extension GedcomNode {
 
 	// validatePerson is a method that validates a Person. index is a record index; source is the the Gedcom source;
 	// keymap maps record keys to lines in the source; and errlog is the error log.
-	func validatePerson(context: ValidationContext, errlog: inout ErrorLog) {
+	func validatePerson(context: ValidationContext, errlog: ErrorLog) {
 		let person = self
 		var hasName = false
 		var hasSex = false
@@ -41,7 +41,7 @@ extension GedcomNode {
 				if let value = node.val, !value.isEmpty {
 					hasName = true
 				} else {
-					errlog.append(Error(type: .validate, severity: .severe, line: line + node.offset(),
+					errlog.append(Error(type: .validate, severity: .severe, line: line + node.offset,
 										message: "Person \(pkey) has an empty NAME line."))
 				}
 			case "SEX":
@@ -49,7 +49,7 @@ extension GedcomNode {
 				if let value = node.val, ["M", "F", "U"].contains(value) {
 					hasSex = true
 				} else {
-					errlog.append(Error(type: .validate, severity: .severe, line: line + node.offset(),
+					errlog.append(Error(type: .validate, severity: .severe, line: line + node.offset,
 										  message: "Person \(pkey) has an invalid SEX line."))
 				}
 			default:
@@ -74,10 +74,10 @@ extension GedcomNode {
 			switch node.tag {
 			case "FAMC":
 				node.validateFamilyLink(person: person, role: .child, seenkeys: &famKeys,
-										context: context, line: line, errlog: &errlog)
+										context: context, line: line, errlog: errlog)
 			case "FAMS":
 				node.validateFamilyLink(person: person, role: .spouse, seenkeys: &famKeys,
-										context: context, line: line, errlog: &errlog)
+										context: context, line: line, errlog: errlog)
 			default:
 				break
 			}
@@ -95,31 +95,31 @@ extension GedcomNode { // Extension for internal Nodes.
 	// seen for the person; index is the full record index; source is the record source; line is the location of the
 	// person in the source; and errlog is the error log.
 	private func validateFamilyLink(person: GedcomNode, role: FamilyRole, seenkeys: inout StringSet,
-									context: ValidationContext, line: Int, errlog: inout ErrorLog) {
+									context: ValidationContext, line: Int, errlog: ErrorLog) {
 		let pkey = person.key! // Must succeed
 		guard let fkey = self.val else { // The node must have a value.
-			appendError(errlog: &errlog, type: .linkage, source: context.source, line: line + self.offset(),
+            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.offset,
 						message: "Person \(pkey) has an illegal \(role.rawValue) value")
 			return
 		}
 		guard !seenkeys.contains(fkey) else { // The value of the node must not have been seen before.
-			appendError(errlog: &errlog, type: .linkage, source: context.source, line: line + self.offset(),
+            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.offset,
 						message: "Person \(pkey) has duplicate \(role.rawValue) value")
 			return
 		}
 		seenkeys.insert(fkey)
 		guard let family = context.index[fkey] else { // The family referred to by the node must exist.
-			appendError(errlog: &errlog, type: .linkage, source: context.source, line: line + self.offset(),
+            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.offset,
 						message: "Person \(pkey) has an illegal \(role.rawValue) link")
 			return
 		}
-		if !family.validateReciprocalLink(to: pkey, for: role, source: context.source, errlog: &errlog) {
+		if !family.validateReciprocalLink(to: pkey, for: role, source: context.source, errlog: errlog) {
 			return
 		}
 	}
 }
 
-private func appendError(errlog: inout ErrorLog, type: ErrorType, source: String, line: Int = 0, message: String) {
+private func appendError(errlog: ErrorLog, type: ErrorType, source: String, line: Int = 0, message: String) {
 	errlog.append(Error(type: type, severity: .severe, source: source, line: line, message: message))
 }
 
@@ -161,18 +161,18 @@ extension GedcomNode {
 extension GedcomNode {
 
 	func validateReciprocalLink(to personKey: String, for type: FamilyRole, source: String,
-								errlog: inout ErrorLog) -> Bool {
+								errlog: ErrorLog) -> Bool {
 		switch type {
 		case .child: // Family should have a CHIL link to person with personKey.
 			if !self.hasChildLink(to: personKey) {
 				let message = "Family \(self.key ?? "unknown") has no CHIL link back to person \(personKey)."
-				appendError(errlog: &errlog, type: .linkage, source: source, message: message)
+				appendError(errlog: errlog, type: .linkage, source: source, message: message)
 				return false
 			}
 		case .spouse: // Family should have a HUSB or WIFE link to person with personKey.
 			if !self.hasSpouseLink(to: personKey) {
 				let message = "Family \(self.key ?? "unknown") has no spouse link back to person \(personKey)."
-				appendError(errlog: &errlog, type: .linkage, source: source, message: message)
+				appendError(errlog: errlog, type: .linkage, source: source, message: message)
 				return false
 			}
 		}

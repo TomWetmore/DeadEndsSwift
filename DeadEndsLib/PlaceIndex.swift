@@ -3,42 +3,64 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 4 February 2026.
+//  Last changed on 13 February 2026.
 //
 
 import Foundation
 
-typealias PlaceKey = String
+/// Place index key; combines event kind with canonical name part.
+struct PlaceIndexKey: Hashable {
+    let part: String  // Canonical part name.
+    let event: EventKind  // Event kind.
+}
 
-/// Place index feature on a database.
+/// Place index for DeadEnds database.
 final public class PlaceIndex {
 
-    private(set) var index: [PlaceKey : Set<RecordKey>] = [:]
+    private(set) var index: [PlaceIndexKey : Set<RecordKey>] = [:]  // Representation.
 
-    /// Add entry to the place index; the place argument is separated into parts.
-    func add(place: String, recordKey: RecordKey) {
+    /// Add entries to the place index; canonicalize place to parts.
+    public func add(place: String, event: EventKind, recordKey: RecordKey) {
         let parts = placeParts(place)
         guard !parts.isEmpty else { return }
-
         for part in parts {
-            index[part, default: Set()].insert(recordKey)
+            add(part: part, event: event, recordKey: recordKey)
         }
     }
 
-    /// Remove entry from the place index; the place argument is separated into parts.
-    func remove(place: String, recordKey: RecordKey) {
+    /// Add entry to the place index.
+    func add(part: String, event: EventKind, recordKey: RecordKey) {
+        index[PlaceIndexKey(part: part, event: event), default: Set()].insert(recordKey)
+    }
+
+    /// Remove entries from the place index; canonicalize place into parts.
+    func remove(place: String, event: EventKind, recordKey: RecordKey) {
         let parts = placeParts(place)
         for part in parts {
-            guard var keys = index[part] else { continue }
+            let placeIndexKey = PlaceIndexKey(part: part, event: event)
+            guard var keys = index[placeIndexKey] else { continue }
             keys.remove(recordKey)
-            if keys.isEmpty { index.removeValue(forKey: part) }
-            else { index[part] = keys }
+            if keys.isEmpty { index.removeValue(forKey: placeIndexKey) }
+            else { index[placeIndexKey] = keys }
         }
     }
 
-    /// Get the set of record keys for a place component, aka place key.
-    func keys(placeKey: PlaceKey) -> Set<RecordKey>? {
-        return index[placeKey]
+    /// Return dictionary mapping parts to record sets.
+    func recordKeys(place: String, event: EventKind) -> [String : Set<RecordKey>] {
+        var partMap: [String : Set<RecordKey>] = [:]
+        let parts = placeParts(place)
+        for part in parts {
+            let recordSet = index[PlaceIndexKey(part: part, event: event)] ?? []
+            if recordSet.count > 0 {
+                partMap[part] = recordSet
+            }
+        }
+        return partMap
+    }
+
+    /// Return set of record keys that match an event place part.
+    func recordKeys(part: String, event: EventKind) -> Set<RecordKey> {
+        return index[PlaceIndexKey(part: part, event: event)] ?? []
     }
 }
 
@@ -59,13 +81,13 @@ func collectAllPlaceStrings(from recordIndex: RecordIndex) -> [String] {
     return results
 }
 
-/// Finds the canonical parts of a Gedcom PLAC value.
+/// Find the canonical parts of a Gedcom PLAC value.
 func placeParts(_ raw: String) -> [String] {
 
     var string = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
     let noiseWords = [ // Words and phrases to strip.
-        "prob ", "probable ", "probably ",
+        "prob ", "probable ", "probably ", "maybe ",
         "poss ", "possible ", "possibly ",
         "near ", "about ", "abt ", "circa ",
         "city of ", "county of "
@@ -121,17 +143,16 @@ func placeParts(_ raw: String) -> [String] {
 }
 
 /// Builds a PlaceIndex from a RecordList.
-func buildPlaceIndex(from records: RecordList) -> PlaceIndex {
+public func buildPlaceIndex(from recordIndex: RecordIndex) -> PlaceIndex {
     let placeIndex = PlaceIndex()
 
-    for root in records {
-        guard let key = root.key else { continue }
-
-        // Scan all descendants for PLAC line
-        for node in root.descendants() {
-            if node.tag == "PLAC", let value = node.val {
-                placeIndex.add(place: value, recordKey: key)
-            }
+    for (_, root) in recordIndex {
+        switch root.tag {
+        case GedcomTag.indi.rawValue:
+            if let person = Person(root) { placeIndex.indexPlaces(from: person) }
+        case GedcomTag.fam.rawValue:
+            if let family = Family(root) { placeIndex.indexPlaces(from: family) }
+        default: break
         }
     }
     return placeIndex
@@ -139,27 +160,65 @@ func buildPlaceIndex(from records: RecordList) -> PlaceIndex {
 
 extension PlaceIndex {
 
-    /// Debug method that prints the contents of a PlaceIndex.
-    func showContents(using recordIndex: RecordIndex) {
-           let sortedEntries = index.sorted { $0.key < $1.key }
+    /// Index the place nodes in an event tree.
+    private func indexPlaces(in eventNode: GedcomNode, kind: EventKind, recordKey: RecordKey) {
+        for placeNode in eventNode.kids(withTag: GedcomTag.plac.rawValue) {
+            guard let place = placeNode.val else { continue }
+            add(place: place, event: kind, recordKey: recordKey)
+        }
+    }
 
-           for (part, recordKeys) in sortedEntries {
-               for key in recordKeys.sorted() {
-                   if let person = recordIndex.person(for: key) {
-                       print("\(part): \(person.displayName()) [\(key)]")
-                   }
-                   else if recordIndex.family(for: key) != nil {
-                       print("\(part): Family \(key)")
-                   }
-                   else {
-                       print("\(part): ??? (\(key))")
-                   }
-               }
-           }
-       }
+    /// Index the birth and death places of a person.
+    func indexPlaces(from person: Person) {
+        guard let key = person.root.key else { return }
+        for eventNode in person.root.kids where eventNode.hasTag(.birt) || eventNode.hasTag(.deat) {
+            let kind: EventKind = eventNode.hasTag(.birt) ? .birth : .death
+            indexPlaces(in: eventNode, kind: kind, recordKey: key)
+        }
+    }
+
+    /// Index the marriage places of a family.
+    func indexPlaces(from family: Family) {
+        guard let key = family.root.key else { return }
+        for eventNode in family.root.kids where eventNode.hasTag(.marr) {
+            indexPlaces(in: eventNode, kind: .marriage, recordKey: key)
+        }
+    }
 }
 
-// Move to more central location.
+extension PlaceIndex {
+    
+    /// Debug method that prints the contents of a PlaceIndex.
+    func showContents(using recordIndex: RecordIndex) {
+        let sortedEntries = index.sorted { $0.key.part < $1.key.part }
+        
+        for (placeKey, recordKeys) in sortedEntries {
+            for key in recordKeys.sorted() {
+                if let person = recordIndex.person(for: key) {
+                    print("\(placeKey.part): \(person.displayName()) [\(key)]")
+                }
+                else if recordIndex.family(for: key) != nil {
+                    print("\(placeKey.part): Family \(key)")
+                }
+                else {
+                    print("\(placeKey.part): ??? (\(key))")
+                }
+            }
+        }
+    }
+
+    /// Show the frequency table of a place index.
+    public func showPlaceFrequencyTable() {
+        var total: Int = 0
+        let sorted = index.sortedByValueCount()
+        for (part, keys) in sorted {
+            print("\(part): \(keys.count)")
+            total += keys.count
+        }
+        print("total: \(total)")
+    }
+}
+
 extension Dictionary where Value: Collection {
 
     func sortedByValueCount(descending: Bool = true) -> [(Key, Value)] {
@@ -171,13 +230,3 @@ extension Dictionary where Value: Collection {
     }
 }
 
-/// Debug function that shows the frequency table for a PlaceIndex.
-func showPlaceFrequencyTable(_ index: PlaceIndex) {
-    var total: Int = 0
-    let sorted = index.index.sortedByValueCount()
-    for (part, keys) in sorted {
-        print("\(part): \(keys.count)")
-        total += keys.count
-    }
-    print("total: \(total)")
-}

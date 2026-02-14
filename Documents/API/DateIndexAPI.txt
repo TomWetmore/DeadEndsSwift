@@ -1,0 +1,26 @@
+API to DateIndex
+
+public struct DateIndexKey: Hashable {
+    let year: Year
+    let event: EventKind
+}
+
+final public class DateIndex {
+    private(set) var index: [DateIndexKey : Set<RecordKey>] = [:] -- Representation.
+    func add(year: Year, event: EventKind, recordKey: RecordKey) -- Add entry to date index.
+    func remove(year: Year, event: EventKind, recordKey: RecordKey) -- Remove entry from date index.
+    public func recordKeys(year: Year, event: EventKind) -> Set<RecordKey>? -- Get record keys from index.
+    public func recordKeys(for dateIndexKey: DateIndexKey) -> Set<RecordKey>? -- get record keys from index.
+    public func recordKeys(in range: ClosedRange<Year>, event:) -> Set<RecordKey> -- get record keys for range and event 
+}
+
+public func buildDateIndex(from recordIndex: RecordIndex) -> DateIndex -- Build date index of a record index.
+
+extension DateIndex {
+    private func indexDates(in eventNode: GedcomNode, kind: EventKind, recordKey: RecordKey) -- Index the date nodes in an event.
+    func indexDates(from person: Person) -- Index the birth and death events of a person.
+    func indexDates(from family: Family) -- Index the marriage events of a family.
+
+extension DateIndex {
+    public func showContents(using recordIndex: RecordIndex) -- Show contents of a date index.
+}

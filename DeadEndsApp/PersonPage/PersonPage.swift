@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 1 February 2026.
+//  Last changed on 9 February 2026.
 //
 
 import SwiftUI
@@ -14,6 +14,8 @@ struct PersonPage: View {
 
     @EnvironmentObject private var model: AppModel
     let person: Person
+    @State private var showingSearch = false
+    @State private var searchCriteria = SearchCriteria()
 
     private var index: RecordIndex? { model.database?.recordIndex }
 
@@ -28,6 +30,40 @@ struct PersonPage: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .navigationTitle("Person")
+        //.onAppear { showingSearch = true }
+
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingSearch = true
+                } label: {
+                    Label("Search", systemImage: "magnifyingglass")
+                }
+                .help("Search persons")
+            }
+        }
+        .sheet(isPresented: $showingSearch) {
+            SearchPanel(
+                criteria: $searchCriteria,
+                onSearch: { crit in
+                    // Temporary stub so the panel runs.
+                    // Replace with model.database.search(crit) or model.search(crit).
+                    return []
+                },
+                onSelect: { key in
+                    // Temporary: hook this to your navigation.
+                    // Example possibilities:
+                    // model.path.append(.person(key))
+                    // model.currentPersonKey = key
+                }
+            )
+            .environmentObject(model) // only if SearchPanel needs it (it currently doesn’t)
+        }
+        .contextMenu {
+            Button("Search…") { showingSearch = true }
+            Divider()
+            Button("Clear Search Criteria") { searchCriteria = SearchCriteria() }
+        }
     }
 }
 

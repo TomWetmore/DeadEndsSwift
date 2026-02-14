@@ -128,7 +128,7 @@ extension PersonEditSheet {
         
         let source = StringGedcomSource(name: "edit view", content: text)
         var errlog = ErrorLog()
-        var tagmap = model.database!.tagmap  // Reference copy.
+        var tagmap = model.database!.tagMap  // Reference copy.
 
         guard let nodes = loadRecords(from: source, tagMap: &tagmap, errlog: &errlog) else {
             return (nil, ["Error parsing record"])

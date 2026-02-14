@@ -1,0 +1,37 @@
+Place Index API
+
+struct PlaceIndexKey: Hashable {
+    let part: String
+    let event: EventKind
+}
+
+final public class PlaceIndex {
+    private(set) var index: [PlaceIndexKey : Set<RecordKey>] = [:] -- Representation.
+
+    func add(place: String, event: EventKind, recordKey: RecordKey) -- Add entries to the place index; canonicalize to parts.
+    func remove(place: String, event: EventKind, recordKey: RecordKey) -- Remove entries from the place index; canonicalize to parts.
+    func keys(place: String, event: EventKind) -> [Set<RecordKey>] -- Return sets of records that match the parts.
+    func recordKeys(place: String, event: EventKind) -> [PlaceIndexKey : Set<RecordKey>] -- Return map of parts to record sets
+    func recordKeys(part: String, event: EventKind) -> Set<RecordKey> -- Return set of record keys that match event place part.
+}
+
+func collectAllPlaceStrings(from recordIndex: RecordIndex) -> [String] -- Collect all place values, any level, and return string array.
+
+func placeParts(_ raw: String) -> [String] -- Canonicalize a Gedcom place value.
+
+public func buildPlaceIndex(from recordIndex: RecordIndex) -> PlaceIndex -- Build a place index from a record list.
+
+extension PlaceIndex {
+
+    private func indexPlaces(in eventNode:, kind: EventKind, recordKey:) -- Index the place nodes in an event tree.
+    func indexPlaces(from person: Person) -- Index the birth and death places of a person.
+    func indexPlaces(from family: Family) -- Index the marriage places of a family.
+
+extension PlaceIndex {
+    func showContents(using recordIndex: RecordIndex) { -- Show contents of place index.
+    public func showPlaceFrequencyTable() -- Show the frequency table of a place index.
+}
+
+extension Dictionary where Value: Collection {
+    func sortedByValueCount(descending: Bool = true) -> [(Key, Value)] -- Sort dictionary by collection count.
+}

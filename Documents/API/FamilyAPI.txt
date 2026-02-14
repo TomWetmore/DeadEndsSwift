@@ -1,4 +1,4 @@
-Proposed Public API for Families
+API for Families
 
 extension FamilyRoleTag {
     static let HUSB = FamilyRoleTag.husband.rawValue
@@ -6,16 +6,13 @@ extension FamilyRoleTag {
     static let CHIL = FamilyRoleTag.child.rawValue
 }
 ===============
-DEFN OF FAMILY
-===============
+DEFN OF FAMILY:
 struct Family: Record { public let root: GedcomNode }
 ===============
-INITIALIZER
+INITIALIZER:
+init?(_: GedcomNode)
 ===============
-init?(_: GedcomNode) -- 
-===============
-ROLE PLAYERS
-===============
+ROLE PLAYERS:
 func people(in:, role:) -> [Person] -- all persons with role.
 func people(in:, roles:) -> [Person] -- all persons with roles.
 func husband(in:) -> Person? -- first HUSB in family.

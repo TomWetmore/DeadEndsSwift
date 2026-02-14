@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 3 February 2026.
+//  Last changed on 7 February 2026.
 //
 
 import Foundation
@@ -47,29 +47,29 @@ public struct StringGedcomSource: GedcomSource {
     }
 }
 
-/// Reduces the parameters used by the validation functions.
+/// Reduce the parameters used by the validation functions.
 struct ValidationContext {
     let index: RecordIndex
     let keymap: KeyMap
     let source: String
 }
 
-/// Loads and validates the Records from a GedcomSource into containers.
+/// Load and validate records from a Gedcom source into containers.
 ///
 /// Parameters
 /// - source: Name of the source.
 /// - tagmap: TagMap ([String: String]) holding unique Strings for all keys in the Database.
 /// - keymap: KeyMap ([String: Int]]) that maps Record keys to their starting line numbers.
 /// - errorlog: ErrorLog ([Error]) that holds Error's found.
-func loadValidRecords(from source: GedcomSource, tagMap: inout TagMap, keyMap: inout KeyMap, errlog: inout ErrorLog)
+func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog)
 -> (index: RecordIndex, persons: RecordList, families: RecordList, header: GedcomNode?)? {
 
     // Parse source into list of records.
-    guard let recordList = loadRecords(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog)
+    guard let recordList = loadRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
 	else { return nil }
 
     // Check record closure.
-    checkKeysAndReferences(records: recordList, path: source.name, keymap: keyMap, errlog: &errlog)
+    checkKeysAndReferences(records: recordList, path: source.name, keymap: keyMap, errlog: errlog)
 
     // Create internal structures.
     var index = RecordIndex()
@@ -78,36 +78,36 @@ func loadValidRecords(from source: GedcomSource, tagMap: inout TagMap, keyMap: i
     var header: GedcomNode?
     for root in recordList {
         if let key = root.key { index[key] = root }
-        if root.tag == "INDI" { persons.append(root) }
-        else if root.tag == "FAM" { families.append(root) }
-        else if root.tag == "HEAD" { header = root }
+        if root.tag == GedcomTag.indi.rawValue { persons.append(root) }
+        else if root.tag == GedcomTag.fam.rawValue { families.append(root) }
+        else if root.tag == GedcomTag.head.rawValue { header = root }
     }
 
     // Validate records.
     let context = ValidationContext(index: index, keymap: keyMap, source: source.name)
-    validatePersons(persons: persons, context: context, errlog: &errlog)
+    validatePersons(persons: persons, context: context, errlog: errlog)
     //validateFamilies(records: rootList, keymap: keymap, errlog: &errlog) {
 
     return (index, persons, families, header)
 }
 
 /// Load Gedcom records from a source; convert lines to data nodes and data nodes to records.
-public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, keyMap: inout KeyMap,
-                                 errlog: inout ErrorLog) -> RecordList? {
-    guard let dataNodes = loadDataNodes(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog)
+public func loadRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
+                                 errlog: ErrorLog) -> RecordList? {
+    guard let dataNodes = loadDataNodes(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
     else { return nil }
-    return buildRecords(from: dataNodes, keymap: keyMap, errlog: &errlog)
+    return buildRecords(from: dataNodes, keymap: keyMap, errlog: errlog)
 }
 
 /// Load Gedcom records from a source; differs from previous by creating a key map.
 public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, errlog: inout ErrorLog) -> RecordList? {
     var keyMap = KeyMap()
-    return loadRecords(from: source, tagMap: &tagMap, keyMap: &keyMap, errlog: &errlog)
+    return loadRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
 }
 
 /// Load array of Gedcom nodes from a source; levels are not checked.
-func loadDataNodes(from source: GedcomSource, tagMap: inout TagMap, keyMap: inout KeyMap,
-                   errlog: inout ErrorLog) -> DataNodes<Int>? {
+func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
+                   errlog: ErrorLog) -> DataNodes<Int>? {
     var nodes = DataNodes<Int>()
     var lineno = 0
     let lines = source.makeLineIterator()
@@ -128,7 +128,7 @@ func loadDataNodes(from source: GedcomSource, tagMap: inout TagMap, keyMap: inou
 }
 
 /// Process array of (node, level) pairs to build record array; use levels to guide record building.
-func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout ErrorLog) -> RecordList {
+func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RecordList {
 
     enum State { case initial, main, error } // Record building states.
     var state: State = .initial

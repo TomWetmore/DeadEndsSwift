@@ -24,7 +24,7 @@ public protocol Record {
     var key: String { get }  // Key of Record.
 }
 
-/// Basic properties that forward to the record root.
+/// Basic properties forwarded to the record root.
 public extension Record {
 
     // Base properties.
@@ -47,7 +47,7 @@ public extension Record {
 
 }
 
-/// Dictionary extension for record retrieval from indexes.
+/// Extension for record retrieval from indexes.
 extension Dictionary where Key == String, Value == GedcomNode {
     public func person(for key: String) -> Person? { self[key].flatMap(Person.init) }
     public func family(for key: String) -> Family? { self[key].flatMap(Family.init) }

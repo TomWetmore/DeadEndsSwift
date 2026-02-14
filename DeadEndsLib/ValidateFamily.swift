@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 2 January 2025.
-//  Last changed 24 January 2026.
+//  Last changed 7 February 2026.
 //
 
 import Foundation
@@ -34,14 +34,14 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal husband link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			guard !husbKeys.contains(pkey) else {
 				let errmsg = "Family \(pkey) has duplicate husband link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
@@ -49,7 +49,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 			guard let person = index[pkey] else {
 				let errmsg = "Family \(fkey) has an illegal husband link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
@@ -63,14 +63,14 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal wife link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			guard !wifeKeys.contains(pkey) else {
 				let errmsg = "Family \(pkey) has duplicate wife link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
@@ -78,7 +78,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 			guard let person = index[pkey] else {
 				let errmsg = "Family \(fkey) has an illegal wife link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
@@ -93,14 +93,14 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal child link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			guard !husbKeys.contains(pkey) else {
 				let errmsg = "Family \(pkey) has duplicate child link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
@@ -108,7 +108,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 			guard let person = index[pkey] else {
 				let errmsg = "Family \(fkey) has an illegal child link"
 				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-									line: line + node.offset(), message: errmsg))
+									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
