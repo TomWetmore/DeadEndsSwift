@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 1 February 2026.
+//  Last changed on 16 February 2026.
 //
 
 import Foundation
@@ -45,7 +45,7 @@ public struct Person: Record {
 
 extension Person {
 
-    /// Return self's name from the first 1 NAME node.
+    /// Return display name from the first 1 NAME node.
     public var name: String? {
         guard let nameNode = root.kid(withTag: "NAME"),
               let gedcomName = GedcomName(from: nameNode)
@@ -57,10 +57,12 @@ extension Person {
 /// Person event API.
 extension Person {
 
+    /// Return first birth event.
     public var birthEvent: Event? {
         root.eventOfKind(.birth)
     }
 
+    /// Return first death event.
     public var deathEvent: Event? {
         root.eventOfKind(.death)
     }
@@ -69,9 +71,12 @@ extension Person {
 /// Persons are Equatable and Hashable.
 extension Person: Equatable, Hashable {
 
+    /// Equate two persons.
     public static func == (lhs: Person, rhs: Person) -> Bool {
         lhs.root.key == rhs.root.key
     }
+
+    /// Return hash of person.
     public func hash(into hasher: inout Hasher) {
         hasher.combine(root.key)
     }
@@ -79,7 +84,7 @@ extension Person: Equatable, Hashable {
 
 public extension Person {
 
-    /// Return sex type of self.
+    /// Return sex type person.
     var sex: SexType {
         guard let value = kidVal(forTag: "SEX")?.uppercased()
         else { return .unknown }
@@ -90,7 +95,7 @@ public extension Person {
         }
     }
 
-    // Return sex symbol (Mars or Venus) of self.
+    /// Return sex symbol of person.
     var sexSymbol: String {
         switch sex {
         case .male: return "♂️"
@@ -99,7 +104,7 @@ public extension Person {
         }
     }
 
-    // Return self's GedcomName from the value of the first 1 NAME node.
+    /// Return Gedcom name of person from its first 1 NAME node.
     var gedcomName: GedcomName? {
         GedcomName(from: self.root)
     }

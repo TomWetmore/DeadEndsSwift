@@ -1,0 +1,60 @@
+Person.swift API
+15 February 2026
+
+public enum FamilyRoleTag: String { case husband = "HUSB" case wife    = "WIFE" case child   = "CHIL" }
+public enum ParentRoleTag: String { case husband = "HUSB" case wife    = "WIFE" }
+public enum FamilyLinkTag: String { case fams = "FAMS" case famc = "FAMC" }
+public enum SexType: String { case male = "M" case female = "F" case unknown = "U" }
+
+public struct Person: Record {
+    public let root: GedcomNode  // Protocol requirement.
+    public init?(_ root: GedcomNode) -- Create person. Fail if root is not INDI or has no key.
+
+    public var name: String? -- Return display name of first 1 NAME node.
+    var gedcomName: GedcomName? -- Return Gedcom name of person from its first 1 NAME node.
+
+    public var birthEvent: Event? -- Return first birth event.
+    public var deathEvent: Event? -- Return first death event.
+
+    public static func == (lhs: Person, rhs: Person) -> Bool -- Person is equatable.
+    public func hash(into hasher: inout Hasher) -- Person is hashable.
+
+    var sex: SexType -- Return sex type of person.
+    var sexSymbol: String -- Return sex symbol of person.
+    var isFemale: Bool -- Return true self is female.
+    var isMale: Bool -- Return true if self is male.
+
+    func father(in index: RecordIndex) -> Person? -- Return person's father.
+    func mother(in index: RecordIndex) -> Person? -- Return person's mother.
+    func fathers(in index: RecordIndex) -> [Person] -- Return all person's father.
+    func mothers(in index: RecordIndex) -> [Person] -- Return all person's mothers.
+
+    func spouseFamilies(in index: RecordIndex) -> [Family] -- Return families person is a spouse in.
+    func childFamilies(in index: RecordIndex) -> [Family] -- Return families person is a child in.
+
+    func spouse(in index: RecordIndex, roles: [FamilyRoleTag]) -> Person? -- Return first spouse of person.
+    func spouses(in index: RecordIndex, roles: [FamilyRoleTag] = [.husband, .wife]) -> [Person] -- Return all spouses of person.
+    func husband(in index: RecordIndex) -> Person? -- Return first husband of person.
+    func wife(in index: RecordIndex) -> Person? -- Return first wife of person.
+    func husbands(in index: RecordIndex) -> [Person] -- Return all husbands of person.
+    func wives(in index: RecordIndex) -> [Person] -- Return all wives of person.
+
+    public func siblings(in index: RecordIndex) -> [Person] -- Return all persons's siblings.
+    public func previousSibling(in index: RecordIndex) -> Person? -- Return prev sib in first family as child.
+    public func nextSibling(in index: RecordIndex) -> Person? -- Return next sib in first family as child.
+
+    func children(in index: RecordIndex) -> [Person] -- Return all children of person
+}
+
+extension Database {
+    enum PersonUpdateError: Swift.Error {
+        case missingName
+        case inconsistentSex
+        case invalidLinks
+        // ... add others as you refine rules
+    }
+
+    public func updatePerson(_ person: Person) -- Update person in database.
+}
+
+public func showPersons(_ persons: [Person]) -- Show names of all persons in array.

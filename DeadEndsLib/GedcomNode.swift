@@ -3,13 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 7 January 2026.
+//  Last changed on 16 February 2026.
 //
 
 import Foundation
 
-/// Dictionary to ensure that only one copy of each tag is used in a Database.
-
+/// Ensure only one copy of each tag string is used in a database.
 public class TagMap {
 
     private var map: [String: String] = [:]
@@ -21,27 +20,20 @@ public class TagMap {
     }
 }
 
-/// A GedcomNode represents a line in a Gedcom file. The key, tag and val fields are the key
-/// (cross reference identifier), tag, and value fields of the Gedcom line. The line's level is
-/// computed when needed.
-
+/// Represent a line in a Gedcom source; key, tag and val are from the Gedcom line; lev is computed.
 final public class GedcomNode: Identifiable, CustomStringConvertible {
 
-    // For id requirements.
     public let id = UUID()
 
-    // Gedcom fields (lev defined below).
-    public var key: RecordKey?  // Key found on root lines only
-    public var tag: String  // Tag found on all lines.
-    public var val: String? // Optional value.
+    public var key: RecordKey?  // Key -- only root lines.
+    public var tag: String  // Tag -- on all lines.
+    public var val: String? // Value -- optional.
 
-    // Tree structure fields. Using sib, kid and dad as field names is regrettable but
-    // disambiguates from genealogical relationships like parent, father, sibling, child.
-    public var sib: GedcomNode?  // Next sibling, the next line on the same level.
+    public var sib: GedcomNode?  // Next line on the same level.
     public var kid: GedcomNode?  // First child, the first line one level deeper.
-    public weak var dad: GedcomNode? // Optional parent found on all non-roots.
+    public weak var dad: GedcomNode? // Parent -- on all non-roots.
 
-    /// Returns the kids of a dad node.
+    /// Return the kids of node.
     public var kids: [GedcomNode] {
         var results: [GedcomNode] = []
         var node = kid
@@ -52,7 +44,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return results
     }
 
-    /// Returns String description a node; does not recurse.
+    /// Return description of node; does not recurse.
     public var description: String {
         var description = "\(lev) "
         if let key { description += "\(key) " }
@@ -61,7 +53,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return description
     }
 
-    /// Creates a GedcomNode with key, tag and value.
+    /// Create Gedcom node with key, tag and val.
     public init(key: RecordKey? = nil, tag: String, val: String? = nil) {
         self.key = key
         self.tag = tag
@@ -93,7 +85,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 // Methods that return child (kid) nodes or their values.
 public extension GedcomNode {
 
-    /// Returns .self's first child with given tag, if any.
+    /// Return first kid with given tag.
     func kid(withTag tag: String) -> GedcomNode? {
         var node = kid
         while let current = node {
@@ -105,7 +97,7 @@ public extension GedcomNode {
         return nil
     }
 
-    /// Returns .self's first child with tag from list of tags, if any.
+    /// Return first kid with tag from list of tags.
     func kid(withTags tags: [String]) -> GedcomNode? {
         let tagSet = Set(tags)
         var node = kid
@@ -118,7 +110,7 @@ public extension GedcomNode {
         return nil
     }
 
-    /// Returns .self's kids with a given tag, if any.
+    /// Return all kids with given tag.
     func kids(withTag tag: String) -> [GedcomNode] {
         var results: [GedcomNode] = []
         var node = kid
@@ -131,7 +123,7 @@ public extension GedcomNode {
         return results
     }
 
-    /// Returns .self's kids with tags from a list of tags.
+    /// Return all kids with tags from a tag list.
     func kids(withTags tags: [String]) -> [GedcomNode] {
         let tagSet = Set(tags)
         var results: [GedcomNode] = []
@@ -145,20 +137,17 @@ public extension GedcomNode {
         return results
     }
 
-    /// Returns the value of .self's first kid with the given tag.
-    /// A return of nil is ambiguous -- there may be no kids with the tag, or all all kids
-    /// with the tag have nil vals.
+    /// Return val of first kid with given tag.
     func kidVal(forTag tag: String) -> String? {
         return kid(withTag: tag)?.val
     }
 
-    /// Returns the value of .self's first child with tag from a list of tags.
-    /// The method suffers from the same ambiguity of the last.
+    /// Return val of first child with tag from list.
     func kidVal(forTags tags: [String]) -> String? {
         return kid(withTags: tags)?.val
     }
 
-    /// Returns the list of all non-nil values from .self's children with the given tag.
+    /// Return list of all vals from .self's children with the given tag.
     func kidVals(forTag tag: String) -> [String] {
         kids(withTag: tag).compactMap { $0.val }
     }
@@ -168,7 +157,7 @@ public extension GedcomNode {
         kids(withTags: tags).compactMap { $0.val }
     }
 
-    /// Traverses the first sequence of specific tags to find a descendant node.
+    /// Traverse first sequence of specific tags to find a descendant node.
     func kid(atPath path: [String]) -> GedcomNode? {
         guard !path.isEmpty else { return nil }
         return path.reduce(into: Optional(self)) { node, tag in
@@ -176,7 +165,7 @@ public extension GedcomNode {
         }
     }
 
-    /// Traverses the first sequence of specific tags to find a descendant node's value.
+    /// Traverse first sequence of specific tags to find a descendant node's value.
     func kidVal(atPath path: [String]) -> String? {
         path.reduce(self) { node, tag in node?.kid(withTag: tag) }?.val
     }
@@ -184,8 +173,8 @@ public extension GedcomNode {
 
 public extension GedcomNode {
 
-    /// Converts a GedcomNode tree to Gedcom text. It is recursive and normally called on a Record root
-    /// with level defaulted to 0 and indent to false. Sibs of the root are not included in the output.
+    /// Convert Gedcom node tree to Gedcom text; normally called on a root with lev default at 0 and
+    /// indent to false; sibs of the root are not included.
     func gedcomText(level: Int = 0, indent: Bool = false) -> String {
 
         var lines: [String] = []
@@ -208,7 +197,7 @@ public extension GedcomNode {
 
 extension GedcomNode {
 
-    /// Returns all GedcomNodes in a tree.
+    /// Return all Gedcom nodes in a tree.
     public func descendants() -> [GedcomNode] {
 
         var result: [GedcomNode] = []
@@ -225,9 +214,8 @@ extension GedcomNode {
 
 public extension GedcomNode {
 
-    /// Returns whether .self has kids.
+    /// Return whether node has kids.
     func hasKids() -> Bool {
-
         return self.kid != nil
     }
 

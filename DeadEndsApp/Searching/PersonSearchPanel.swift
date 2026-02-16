@@ -1,31 +1,25 @@
 //
-//  SearchPersonPanel.swift
+//  PersonSearchPanel.swift
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 9 February 2026.
-//  Last changed on 9 February 2026.
+//  Last changed on 14 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-//struct SearchCriteria: Equatable {
-//    var name: String? = nil
-//    var birthYearRange: ClosedRange<Year>? = nil
-//    var deathYearRange: ClosedRange<Year>? = nil
-//    var placeComponents: [String]? = nil   // canonical parts (optional; can be built from UI later)
-//}
-
 // MARK: - SearchPanel
 
-struct SearchPanel: View {
+
+struct PersonSearchPanel: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    // The caller owns criteria if you want persistence between openings.
+    // Caller owns criteria for persistence between openings.
     @Binding var criteria: SearchCriteria
 
-    /// Execute a search. Caller returns keys (likely INDI record keys).
+    /// Run search and return person record keys.
     let onSearch: (SearchCriteria) -> [RecordKey]
 
     /// Called when user taps a result.
@@ -82,7 +76,6 @@ struct SearchPanel: View {
                 get: { draft.name ?? "" },
                 set: { draft.name = $0.isEmpty ? nil : $0 }
             ))
-            //.textInputAutocapitalization(.words)  // Not MacOS
             .autocorrectionDisabled()
         }
     }
@@ -93,11 +86,9 @@ struct SearchPanel: View {
                 Text("Birth year range").font(.subheadline)
                 HStack {
                     TextField("From", text: $birthFromText)
-                        //.keyboardType(.numberPad)  // Not MacOS
                         .frame(maxWidth: 90)
                     Text("to")
                     TextField("To", text: $birthToText)
-                        //.keyboardType(.numberPad)  // Not MacOS
                         .frame(maxWidth: 90)
                     Spacer()
                     Button("Clear") {
@@ -111,11 +102,9 @@ struct SearchPanel: View {
                 Text("Death year range").font(.subheadline)
                 HStack {
                     TextField("From", text: $deathFromText)
-                        //.keyboardType(.numberPad)  // Not MacOS
                         .frame(maxWidth: 90)
                     Text("to")
                     TextField("To", text: $deathToText)
-                        //.keyboardType(.numberPad)  // Not MacOS
                         .frame(maxWidth: 90)
                     Spacer()
                     Button("Clear") {
@@ -141,7 +130,6 @@ struct SearchPanel: View {
     private var placeSection: some View {
         Section("Place") {
             TextField("Place contains…", text: $placeText)
-                //.textInputAutocapitalization(.words) // Not MacOS.
                 .autocorrectionDisabled()
 
             // For now we *don’t* canonicalize; we just stash something simple.

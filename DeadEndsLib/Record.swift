@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 4 February 2026.
+//  Last changed on 16 February 2026.
 //
 
 import Foundation
@@ -49,7 +49,11 @@ public extension Record {
 
 /// Extension for record retrieval from indexes.
 extension Dictionary where Key == String, Value == GedcomNode {
+
+    /// Create person from its root.
     public func person(for key: String) -> Person? { self[key].flatMap(Person.init) }
+
+    /// Create family from its root.
     public func family(for key: String) -> Family? { self[key].flatMap(Family.init) }
 }
 

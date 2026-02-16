@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 June 2025.
-//  Last changed on 4 February 2026.
+//  Last changed on 16 February 2026.
 //
 
 import Foundation
@@ -87,28 +87,14 @@ public extension GedcomNode {
     /// Create event from node; failable.
     var asEvent: Event? { Event(node: self) }
 
+    /// Create single event of a kind from a (root) node.
     func eventOfKind(_ kind: EventKind) -> Event? {
         self.eventsOfKind(kind).first
     }
 
+    /// Create events of a kind from a (root) node.
     func eventsOfKind(_ kind: EventKind) -> [Event] {
         self.kids(withTag: kind.rawValue).compactMap { Event(node: $0) }
     }
 }
 
-// Option B, protocol-based like Record.
-
-protocol NodeView {
-    var node: GedcomNode { get }
-}
-protocol EventView: NodeView { }
-extension EventView {
-    var date: String?  { node.kidVal(forTag: "DATE") }
-    var place: String? { node.kidVal(forTag: "PLAC") }
-}
-
-//struct Event: EventView {  // Part of Option B, but Event is a name clash.
-//    let node: GedcomNode
-//}
-
-// This scales nicely if you later add NameView, AddressView, SourceCitationView, etc.

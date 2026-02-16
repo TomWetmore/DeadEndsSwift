@@ -1,0 +1,52 @@
+Event.swift API
+16 February 2026
+
+public enum EventKind: String { case birth = "BIRT" case death = "DEAT" case marriage = "MARR"
+    case divorce = "DIV" case burial = "BUR" }
+
+public extension GedcomNode {
+    var dateNode: GedcomNode? { self.kid(withTag: "DATE") }
+    var placeNode: GedcomNode? { self.kid(withTag: "PLAC") }
+    var dateVal: String? { self.kidVal(forTag: "DATE") }
+    var placeVal: String? { self.kidVal(forTag: "PLAC") }
+}
+
+extension GedcomNode {
+    public func eventSummary(kind: EventKind) -> String? -- Return event summary; self is event node
+
+public struct Event {
+    let node: GedcomNode   // Parent of DATE/PLAC nodes.
+    let kind: EventKind
+    public var dateNode: GedcomNode?  { node.dateNode }
+    public var placeNode: GedcomNode? { node.placeNode }
+    public var dateVal: String?  { node.dateVal }
+    public var placeVal: String? { node.placeVal }
+
+    public init?(node: GedcomNode, kind: EventKind) -- Create an event.
+    public init?(node: GedcomNode) -- Create an event (figures out kind).
+    static func eventKind(fromNode node: GedcomNode) -> EventKind? -- Determine event kind from node.
+    static func eventKind(fromTag tag: String) -> EventKind? -- Determine event kind from tag.
+
+public extension GedcomNode {
+    var asEvent: Event? -- Create event from node.
+    func eventOfKind(_ kind: EventKind) -> Event? -- Create first event of kind from a gedcom root node.
+    func eventsOfKind(_ kind: EventKind) -> [Event] -- Create all events of kind from a gedcom root node.
+}
+
+// Option B, protocol-based like Record.
+
+protocol NodeView {
+    var node: GedcomNode { get }
+}
+protocol EventView: NodeView { }
+extension EventView {
+    var date: String?  { node.kidVal(forTag: "DATE") }
+    var place: String? { node.kidVal(forTag: "PLAC") }
+}
+
+//struct Event: EventView {  // Part of Option B, but Event is a name clash.
+//    let node: GedcomNode
+//}
+
+// This scales nicely if you later add NameView, AddressView, SourceCitationView, etc.
+

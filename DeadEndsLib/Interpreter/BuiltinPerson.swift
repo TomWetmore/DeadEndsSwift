@@ -42,7 +42,7 @@ extension Program {
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
-        return .string(gedcomName.nameParts.joined(separator: " "))
+        return .string(gedcomName.parts.joined(separator: " "))
     }
 
     func builtinTrimName(_ args: [ProgramNode]) throws -> ProgramValue {

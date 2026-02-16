@@ -3,7 +3,7 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 12 February 2026.
+//  Last changed on 16 February 2026.
 //
 
 import Foundation
@@ -24,7 +24,7 @@ final public class NameIndex {
 
 	private(set) var index = [NameKey: Set<RecordKey>]()  // Representation.
 
-	/// Add entry to name index; convert value to a name key.
+	/// Add entry to name index; convert value to name key.
 	public func add(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value) else { return }
 		self.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
@@ -56,7 +56,7 @@ final public class NameIndex {
 		return index[nameKey(value: value)] ?? []
 	}
 
-	/// Debug to show content of the name index.
+	/// Show contents of name index.
 	func showContents() {
 		for (nameKey, recordKeys) in index {
 			print("\(nameKey) => \(Array(recordKeys))")
@@ -72,8 +72,9 @@ func nameKey(value: String) -> String {
     return gedcomName.nameKey
 }
 
-/// Build the name index from a record list.
+/// Build name index from record list.
 func buildNameIndex(from persons: RecordList) -> NameIndex {
+	
     let index = NameIndex()
     for person in persons {
         guard let recordKey = person.key
@@ -88,7 +89,7 @@ func buildNameIndex(from persons: RecordList) -> NameIndex {
     return index
 }
 
-// Find the Soundex code of a surname.
+// Find Soundex code of string.
 func soundex(for surname: String) -> String {
 	var result = ""
 	var previousCode: String? = nil
@@ -106,7 +107,7 @@ func soundex(for surname: String) -> String {
 	return result
 }
 
-// Extension of GedcomNode where self is a Person root.
+// Extension of Gedcom node where self is a person root.
 extension Person {
 
 	/// Return the array of non-nil values of the 1 NAME lines in a Person.
@@ -115,7 +116,7 @@ extension Person {
     }
 }
 
-// Squeeze a string into an array of uppercase words.
+// Squeeze string into array of uppercase words.
 func squeeze(_ input: String) -> [String] {
 	input
 		.split { !$0.isLetter }
@@ -153,7 +154,7 @@ func pieceMatch(_ partial: String, _ complete: String) -> Bool {
 
 extension GedcomName {
     
-    /// Return DeadEnds name key of this GedcomName.
+    /// Return name key of Gedcom name.
     var nameKey: String {
         let firstInitial = firstInitial ?? "$"
         let surname = surname ?? ""
@@ -163,8 +164,9 @@ extension GedcomName {
 
 extension Database {
 
-    /// Returns the Array of RecordKeys of all Persons with names that match a pattern.
+    /// Return array of record keys of all persons with names that match a pattern.
     public func personKeys(forName pattern: String) -> [RecordKey] {
+		
         var matchingKeys: [String] = []
         let nameKey = nameKey(value: pattern) // Name key of name pattern.
         guard let recordKeys = nameIndex.index[nameKey] else { return [] }  // Persons keys that match nameKey.
@@ -184,7 +186,7 @@ extension Database {
         return matchingKeys
     }
 
-    /// Returns the Array of all Persons with names that match a name pattern.
+    /// Return array of all persons with names that match a pattern.
     public func persons(withName pattern: String) -> [Person] {
         personKeys(forName: pattern).compactMap { recordIndex.person(for: $0) }
     }

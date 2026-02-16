@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 9 February 2026.
+//  Last changed on 15 February 2026.
 //
 
 import SwiftUI
@@ -30,7 +30,6 @@ struct PersonPage: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .navigationTitle("Person")
-        //.onAppear { showingSearch = true }
 
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -42,12 +41,16 @@ struct PersonPage: View {
                 .help("Search persons")
             }
         }
+
         .sheet(isPresented: $showingSearch) {
-            SearchPanel(
+            PersonSearchPanel(
                 criteria: $searchCriteria,
                 onSearch: { crit in
-                    // Temporary stub so the panel runs.
-                    // Replace with model.database.search(crit) or model.search(crit).
+                    print("search button pressed with \(crit)")
+                    let results = model.database?.searchPersons(crit)
+                    for result in results! {
+                        print(result.debugDescription(in: model.database!.recordIndex))
+                    }
                     return []
                 },
                 onSelect: { key in

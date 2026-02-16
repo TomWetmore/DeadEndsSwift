@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 26 November 2025.
-//  Last changed on 13 February 2026.
+//  Last changed on 16 February 2026.
 //
 
 import Foundation
@@ -16,7 +16,7 @@ public struct SearchCriteria {
     public var birthPlace: String?
     public var deathPlace: String?
 
-    public var placeParts: [String]?  // Deprecated so I don't have to change the panel yet.
+    public var placeParts: [String]?  // Deprecated -- so I don't have to change the panel yet.
 
     /// Create a search criteria struct.
     public init(name: String? = nil, birthYearRange: ClosedRange<Year>? = nil,
@@ -30,7 +30,7 @@ public struct SearchCriteria {
     }
 }
 
-/// Reasons for a score.
+/// Reasons for score.
 public enum ScoreReason: String {
     case name
     case birthDate
@@ -40,17 +40,52 @@ public enum ScoreReason: String {
 }
 
 /// Person search result.
-public struct SearchResult: Identifiable {
+public struct SearchResult: Identifiable, CustomStringConvertible {
     public let key: RecordKey
     public var score: Int
     public var reasons: Set<ScoreReason>
     public var id: RecordKey { key }
+
+    public var description: String {
+            let reasonList = reasons
+                .map { $0.rawValue }.sorted().joined(separator: ", ")
+            return "SearchResult(key: \(key), score: \(score), reasons: [\(reasonList)])"
+        }
 
     mutating func add(_ points: Int, reason: ScoreReason) {
         score += points
         reasons.insert(reason)
     }
 
+    /// Compare two Gedcom names by surname, initial, and given name order
+    func compare(to other: SearchResult, in index: RecordIndex) -> ComparisonResult {
+        if score < other.score { return .orderedDescending }  // First use score.
+        if score > other.score { return .orderedAscending }
+
+        let personOne = index.person(for: key)  // Second use name.
+        let personTwo = index.person(for: other.key)
+        if let one = personOne, let two = personTwo,
+           let nameOne = GedcomName(from: one.root), let nameTwo = GedcomName(from: two.root) {
+            return nameOne.compare(to: nameTwo)
+        }
+        return key < other.key ? .orderedAscending : .orderedDescending // Third use key.
+    }
+
+    public func debugDescription(in index: RecordIndex) -> String {
+        let name: String
+        if let person = index.person(for: key) {
+            name = person.displayName(upSurname: true)
+        } else {
+            name = "<unknown>"
+        }
+
+        let reasonList = reasons
+            .map { $0.rawValue }
+            .sorted()
+            .joined(separator: ", ")
+
+        return "\(name) [\(key)]  score=\(score)  reasons={\(reasonList)}"
+    }
 }
 
 public typealias SearchResults = [RecordKey : SearchResult]
@@ -63,6 +98,7 @@ struct CandidateSets {
     let deathPartSets: [String : Set<RecordKey>]
 }
 
+/// Update search result with score increment and reason.
 fileprivate func updateResult(_ results: inout SearchResults, _ key: RecordKey,
                               score: Int, reason: ScoreReason) {
     if var result = results[key] {
@@ -73,10 +109,10 @@ fileprivate func updateResult(_ results: inout SearchResults, _ key: RecordKey,
 
 extension Database {
 
-   /// Search the database for persons based on search criteria.
-    public func searchPersons(_ criteria: SearchCriteria) -> SearchResults {
+   /// Search database for persons based on search criteria.
+    public func searchPersons(_ criteria: SearchCriteria) -> [SearchResult] {
 
-        // Gather all the record sets.
+        // Gather all the matching record key sets.
         var nameSet: Set<RecordKey> = []
         var birthDateSet: Set<RecordKey> = []
         var deathDateSet: Set<RecordKey> = []
@@ -84,7 +120,7 @@ extension Database {
         var deathPartSets: [String : Set<RecordKey>] = [:]
 
         if let name = criteria.name {
-            nameSet = nameIndex.recordKeys(forName: name)
+            nameSet = Set(personKeys(forName: name))
         }
         if let range = criteria.birthYearRange {
             birthDateSet = dateIndex.recordKeys(in: range, event: .birth)
@@ -102,21 +138,101 @@ extension Database {
         let candidateSets = CandidateSets(nameSet: nameSet, birthDateSet: birthDateSet,
                                           deathDateSet: deathDateSet, birthPartSets: birthPartSets,
                                           deathPartSets: deathPartSets)
-
-        // If there are any names do a name-centric search.
-        if !nameSet.isEmpty {
-            return nameBasedSearch(candidateSets)
+        var results: SearchResults = [:]
+        if !nameSet.isEmpty {  // If there are names do name-centric search.
+            results = nameBasedSearch(candidateSets)
+        } else {
+            results = datePlaceBasedSearch(candidateSets)
         }
-
-        // There are no persons so do more complex search.
-        // WRITE ME!!!
-        return [:]
+        return results.values.sorted {  // Convert from SearchResults to ordered [SearchResult] array.
+            $0.compare(to: $1, in: recordIndex) == .orderedAscending
+        }
     }
 
+//    private func ordered(_ results: SearchResults) -> [SearchResult] {
+//        results.values.sorted {
+//            $0.compare(to: $1, in: recordIndex) == .orderedAscending
+//        }
+//    }
 
-        // Score the candidates
-        //var results: [SearchResult] = []
-        //results.reserveCapacity(candidates.count)
+    /// Get person search results if search criteria includes a name.
+    private func nameBasedSearch(_ candidateSets: CandidateSets) -> SearchResults {
+
+        var results: SearchResults = [:]
+        let personSet = candidateSets.nameSet
+        guard !personSet.isEmpty else { return [:] } // Should not happen.
+        results.reserveCapacity(personSet.count)
+
+        for key in personSet {  // Create search result for each person.
+            results[key] = SearchResult(key: key, score: 0, reasons: [.name])
+        }
+        for key in personSet.intersection(candidateSets.birthDateSet) {
+            updateResult(&results, key, score: 40, reason: .birthDate)
+        }
+        for key in personSet.intersection(candidateSets.deathDateSet) {
+            updateResult(&results, key, score: 40, reason: .deathDate)
+        }
+        for (_, keySet) in candidateSets.birthPartSets {
+            for key in personSet.intersection(keySet) {
+                updateResult(&results, key, score: 20, reason: .birthPlace)
+            }
+        }
+        for (_, keySet) in candidateSets.deathPartSets {
+            for key in personSet.intersection(keySet) {
+                updateResult(&results, key, score: 20, reason: .deathPlace)
+            }
+        }
+        return results
+    }
+
+    /// Get person search results if search criteria do not include a name.
+    private func datePlaceBasedSearch(_ candidateSets: CandidateSets) -> SearchResults {
+
+        var results: SearchResults = [:]
+        results.reserveCapacity(250)  // Do better job with capacity.
+
+        // Get buckets for places.
+        let birthPlaceBuckets: [Set<RecordKey>] =
+            bucketsByMatchCount(candidateSets.birthPartSets.values)
+        let deathPlaceBuckets: [Set<RecordKey>] =
+            bucketsByMatchCount(candidateSets.deathPartSets.values)
+
+        return results
+    }
+}
+
+/// Place keys in an array of record key sets based on the number of their occurrences.
+func bucketsByMatchCount<C: Collection>(_ sets: C) -> [Set<RecordKey>]
+    where C.Element == Set<RecordKey> {
+
+    var counts: [RecordKey: Int] = [:]
+
+    for set in sets {
+        for key in set {
+            counts[key, default: 0] += 1
+        }
+    }
+    let n = sets.count
+    var buckets = Array(repeating: Set<RecordKey>(), count: n + 1)
+    for (key, count) in counts {
+        buckets[count].insert(key)
+    }
+    return buckets   // buckets[1], buckets[2], ... buckets[n]
+}
+
+
+/// TO KEEP COMPILER HAPPY FOR NOW.
+extension Person {
+
+    func year(kind: EventKind) -> Year? {
+        return 1949
+    }
+    func place(kind: EventKind) -> String? {
+        return "New London"
+    }
+}
+
+
 //
 //        for key in candidates {
 //            guard let person = recordIndex.person(for: key) else { continue }
@@ -174,106 +290,52 @@ extension Database {
 //        return [:]  // Until we get to it.
 //    }
 
-    /// Compute person search results when search criteria includes a name.
-    private func nameBasedSearch(_ candidateSets: CandidateSets) -> SearchResults {
 
-        var results: SearchResults = [:]
-        let personSet = candidateSets.nameSet
-        guard !personSet.isEmpty else { return results } // Should not happen.
-        results.reserveCapacity(personSet.count)
 
-        for key in personSet {  // Create search result for each person.
-            results[key] = SearchResult(key: key, score: 0, reasons: [.name])
-        }
-        for key in personSet.intersection(candidateSets.birthDateSet) {
-            updateResult(&results, key, score: 40, reason: .birthDate)
-        }
-        for key in personSet.intersection(candidateSets.deathDateSet) {
-            updateResult(&results, key, score: 40, reason: .deathDate)
-        }
-        for (_, keySet) in candidateSets.deathPartSets {
-            for key in personSet.intersection(keySet) {
-                updateResult(&results, key, score: 20, reason: .birthPlace)
-            }
-        }
-        for (_, keySet) in candidateSets.deathPartSets {
-            for key in personSet.intersection(keySet) {
-                updateResult(&results, key, score: 20, reason: .deathPlace)
-            }
-        }
-        return results
-    }
+// MARK: - Candidate helpers (reuse your indexes)
 
-    // MARK: - Candidate helpers (reuse your indexes)
+//    private func keysForYears(_ range: ClosedRange<Year>, event: EventKind) -> Set<RecordKey> {
+//        var out = Set<RecordKey>()
+//        for y in range {
+//            if let s = dateIndex.recordKeys(year: y, event: event) {
+//                out.formUnion(s)
+//            }
+//        }
+//        return out
+//    }
 
-    private func keysForYears(_ range: ClosedRange<Year>, event: EventKind) -> Set<RecordKey> {
-        var out = Set<RecordKey>()
-        for y in range {
-            if let s = dateIndex.recordKeys(year: y, event: event) {
-                out.formUnion(s)
-            }
-        }
-        return out
-    }
+//    private func keysForPlaceParts(_ parts: [String], events: [EventKind]) -> Set<RecordKey> {
+//        var out = Set<RecordKey>()
+//        for p in parts {
+//            for ev in events {
+//                let k = PlaceIndexKey(part: p, event: ev)
+//                out.formUnion(placeIndex.index[k] ?? [])
+//            }
+//        }
+//        return out
+//    }
 
-    private func keysForPlaceParts(_ parts: [String], events: [EventKind]) -> Set<RecordKey> {
-        var out = Set<RecordKey>()
-        for p in parts {
-            for ev in events {
-                let k = PlaceIndexKey(part: p, event: ev)
-                out.formUnion(placeIndex.index[k] ?? [])
-            }
-        }
-        return out
-    }
+//    private func scoreName(_ query: String, person: Person) -> Int {
+//        let q = query.lowercased()
+//        let name = person.displayName(upSurname: true).lowercased()
+//
+//        if name == q { return 80 }
+//        if name.contains(q) { return 40 }
+//
+//        // Token bonus (very crude, but useful)
+//        let tokens = q.split(whereSeparator: { $0 == " " || $0 == "," }).map(String.init)
+//        var s = 0
+//        for tok in tokens where !tok.isEmpty {
+//            if name.contains(tok) { s += 15 }
+//        }
+//        return s
+//    }
 
-    private func scoreName(_ query: String, person: Person) -> Int {
-        let q = query.lowercased()
-        let name = person.displayName(upSurname: true).lowercased()
-
-        if name == q { return 80 }
-        if name.contains(q) { return 40 }
-
-        // Token bonus (very crude, but useful)
-        let tokens = q.split(whereSeparator: { $0 == " " || $0 == "," }).map(String.init)
-        var s = 0
-        for tok in tokens where !tok.isEmpty {
-            if name.contains(tok) { s += 15 }
-        }
-        return s
-    }
-
-    private func year(of person: Person, kind: EventKind, in range: ClosedRange<Year>) -> Bool {
-        // Use whatever you have; if you can only access eventSummary, you may need a year extractor.
-        // Ideally: person.birthEvent?.year, person.deathEvent?.year etc.
-        // Placeholder: return false if unknown.
-        guard let y = person.year(kind: kind) else { return false } // implement or adapt
-        return range.contains(y)
-    }
-
-    private func scorePlaces(_ parts: [String], person: Person) -> Int {
-        // Start crude: check if the person’s birth/death place strings contain each part
-        // Better later: canonicalize person places into parts and compare sets.
-        var s = 0
-        let birth = (person.place(kind: .birth) ?? "").lowercased()
-        let death = (person.place(kind: .death) ?? "").lowercased()
-
-        for p in parts {
-            if birth.contains(p) || death.contains(p) { s += 12 }
-        }
-        return s
-    }
-}
-
-/// TO KEEP COMPILER HAPPY FOR NOW.
-extension Person {
-
-    func year(kind: EventKind) -> Year? {
-        return 1949
-    }
-    func place(kind: EventKind) -> String? {
-        return "New London"
-    }
-}
-
+//    private func year(of person: Person, kind: EventKind, in range: ClosedRange<Year>) -> Bool {
+//        // Use whatever you have; if you can only access eventSummary, you may need a year extractor.
+//        // Ideally: person.birthEvent?.year, person.deathEvent?.year etc.
+//        // Placeholder: return false if unknown.
+//        guard let y = person.year(kind: kind) else { return false } // implement or adapt
+//        return range.contains(y)
+//    }
 

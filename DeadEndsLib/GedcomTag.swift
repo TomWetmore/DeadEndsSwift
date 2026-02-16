@@ -32,8 +32,9 @@ enum GedcomTag: String {
     case chr  = "CHR"
     case refn = "REFN"
 }
+
 extension GedcomNode {
     
-    /// Check if Gedcom node has specific tag.
+    /// Check if node has specific tag.
     func hasTag(_ tag: GedcomTag) -> Bool { self.tag == tag.rawValue }
 }

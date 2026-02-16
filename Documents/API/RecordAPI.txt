@@ -1,0 +1,45 @@
+Record.swift API
+16 February 2026
+
+enum RecordKind: String { case header = "HEAD" case trailer = "TRLR" case person = "INDI"
+    case family = "FAM" case source = "SOUR" case other =  "OTHR" }
+
+public protocol Record {
+    var root: GedcomNode { get }  // Root of Record.
+    var key: String { get }  // Key of Record.
+}
+
+public extension Record {
+    var key: String -- Forward to root
+    var tag: String -- Forward to root
+    var val: String? -- Forward to root
+    var kid: GedcomNode? -- Forward to root
+    var sib: GedcomNode? -- Forward to root
+
+    func kid(withTag tag: String) -> GedcomNode? -- Forward to root
+    func kid(atPath path: [String]) -> GedcomNode? -- Forward to root
+
+    func kidVal(forTag tag: String) -> String? -- Forward to root
+    func kidVal(atPath path: [String]) -> String? -- Forward to root
+
+    func kids(withTag tag: String) -> [GedcomNode] -- Forward to root
+    func kidVals(forTag tag: String) -> [String] -- Forward to root
+    func kidVals(forTags tags: [String]) -> [String] -- Forward to root
+
+    func gedcomText(level: Int = 0, indent: Bool = false) -- Forward to root.
+    func eventSummary(kind: EventKind) -> String? -- Forward to root.
+    func descendants() -> [GedcomNode] -- Forward to root.
+    func count() -> Int -- Forward to root
+}
+
+extension Dictionary where Key == String, Value == GedcomNode {
+    public func person(for key: String) -> Person? -- Create person from key.
+    public func family(for key: String) -> Family? -- Create family from key.
+}
+
+public extension Record {
+    func eventOfKind(_ kind: EventKind) -> Event? -- Return first event of kind.
+    func eventsOfKind(_ kind: EventKind) -> [Event] -- Return all events of kind
+}
+
+

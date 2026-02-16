@@ -99,7 +99,7 @@ public extension Family {
     }
 
     /// Return true if person is a spouse in self.
-    func containsSpouse(_ person: Person, in index: RecordIndex) -> Bool {
+    func hasSpouse(_ person: Person, in index: RecordIndex) -> Bool {
         spouses(in: index).contains(where: { $0.key == person.key })
     }
 }

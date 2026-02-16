@@ -1,27 +1,75 @@
-API for Families
+Family.swift API
+16 February 2026
 
 extension FamilyRoleTag {
     static let HUSB = FamilyRoleTag.husband.rawValue
     static let WIFE = FamilyRoleTag.wife.rawValue
     static let CHIL = FamilyRoleTag.child.rawValue
 }
-===============
-DEFN OF FAMILY:
-struct Family: Record { public let root: GedcomNode }
-===============
-INITIALIZER:
-init?(_: GedcomNode)
-===============
-ROLE PLAYERS:
-func people(in:, role:) -> [Person] -- all persons with role.
-func people(in:, roles:) -> [Person] -- all persons with roles.
-func husband(in:) -> Person? -- first HUSB in family.
-func wife(in:) -> Person? -- first WIFE in family.
-func children(in:) -> [Person] -- all children in family.
-func spouses(in:) -> [Person] -- all spouses/parents in family (same as next).
-func parents(in:) -> [Person] -- all spouses/parents in family (same as prev).
-func husbands(in:) -> [Person] -- all husbands in family.
-func wives(in:) -> [Person] -- all wives in family.
-func spouses(excluding:, in:) -> [Person] -- all spouses in family excluding one.
-func spouse(of: Person, in:) -> Person? -- first spouse other than given person
-func containsSpouse(_: Person, in: RecordIndex) -> Bool -- true if family has spouse.
+
+struct Family: Record {
+
+    public let root: GedcomNode }
+    init?(_: GedcomNode) -- Create a family from a family root node.
+
+    public func husband(in index: RecordIndex) -> Person? -- Return first husband in family.
+    public func husbands(in index: RecordIndex) -> [Person] -- Return all husbands in family.
+    public func wife(in index: RecordIndex) -> Person? -- Return first wife in family.
+    public func wives(in index: RecordIndex) -> [Person] -- Return all spouses in family.
+    public func children(in index: RecordIndex) -> [Person] -- Return all children in family.
+
+    public func parents(in index: RecordIndex) -> [Person] -- Return all spouses/parents in family.
+    public func spouses(in index: RecordIndex) -> [Person] -- Return all spouses/parents in family.
+    func spouses(excluding person: Person, in index: RecordIndex) -> [Person] -- Return all excluding one.
+    func spouse(of person: Person, in index: RecordIndex) -> Person? -- First spouse of person in family.{
+
+    func hasSpouse(_ person: Person, in index: RecordIndex) -> Bool -- Return if family has spouse.
+
+NEW STARTED HERE
+
+extension Family: Equatable, Hashable, Identifiable {
+
+    public static func == (lhs: Family, rhs: Family) -> Bool {
+        lhs.root.key == rhs.root.key
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(root.key)
+    }
+
+    public var id: String { key }
+}
+
+extension Family {
+
+    public var marriageEvent: Event? {
+        root.eventOfKind(.marriage)
+    }
+
+    public var divorceEvent: Event? {
+        root.eventOfKind(.divorce)
+    }
+}
+
+    private func people(in index: RecordIndex, role: FamilyRoleTag) -> [Person] {
+
+ private func people(in index: RecordIndex, role: FamilyRoleTag) -> [Person] {
+        root.kids(withTag: role.rawValue).compactMap { node in
+            node.val.flatMap { index.person(for: $0) }
+        }
+    }
+
+    /// Return array of all persons with a set of roles with self in gedcom order.
+    private func people(in index: RecordIndex, roles: Set<FamilyRoleTag>) -> [Person] {
+
+        var out: [Person] = []
+        var seen = Set<RecordKey>()
+
+        for node in root.kids {
+            guard roles.contains(where: { $0.rawValue == node.tag }) else { continue }
+            guard let key = node.val else { continue }
+            guard seen.insert(key).inserted else { continue }
+            if let person = index.person(for: key) { out.append(person) }
+        }
+        return out
+    }

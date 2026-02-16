@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 22 June 2025.
-//  Last changed on 11 February 2026.
+//  Last changed on 15 February 2026.
 //
 
 import SwiftUI
@@ -24,8 +24,8 @@ class AppModel: ObservableObject {
 extension AppModel {
 
     /// Search persons. Pass along to the database.
-    func searchPersons(_ criteria: SearchCriteria) -> SearchResults {
-        guard let db = database else { return [:] }
+    func searchPersons(_ criteria: SearchCriteria) -> [SearchResult] {
+        guard let db = database else { return [] }
         return db.searchPersons(criteria)
     }
 }
