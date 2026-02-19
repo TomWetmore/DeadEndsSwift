@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 16 February 2026.
+//  Last changed on 18 February 2026.
 //
 
 import Foundation
@@ -30,10 +30,10 @@ public enum SexType: String {
     case unknown = "U"
 }
 
-/// Type of  Person Record.
+/// Person structure.
 public struct Person: Record {
 
-    public let root: GedcomNode  // Protocol requirement.
+    public let root: GedcomNode
 
     /// Create person. Fail if root is not INDI or has no key.
     public init?(_ root: GedcomNode) {
@@ -54,7 +54,7 @@ extension Person {
     }
 }
 
-/// Person event API.
+/// Event API.
 extension Person {
 
     /// Return first birth event.
@@ -68,7 +68,7 @@ extension Person {
     }
 }
 
-/// Persons are Equatable and Hashable.
+/// Person is Equatable and Hashable.
 extension Person: Equatable, Hashable {
 
     /// Equate two persons.
@@ -177,7 +177,7 @@ public extension Person {
 /// Extension for Spouses, Husbands, and Wives
 public extension Person {
 
-    /// Return first spouse of self by role. There is no restriction on the sex of spouse.
+    /// Return first spouse of self by role. There is no restriction on sex of spouse.
     func spouse(in index: RecordIndex, roles: [FamilyRoleTag]) -> Person? {
         for family in spouseFamilies(in: index) {
             for role in roles {
@@ -298,5 +298,41 @@ public func showPersons(_ persons: [Person]) {
     for person in persons {
         guard let name = person.name else { print("no name"); continue }
         print(name)
+    }
+}
+
+extension Person {
+
+    /// Compare persons.
+    func compare(to other: Person, in index: RecordIndex) -> ComparisonResult {
+
+        if let nameOne = GedcomName(from: self.root), let nameTwo = GedcomName(from: other.root) {
+            let relation = nameOne.compare(to: nameTwo)
+            if relation != .orderedSame { return relation }
+        }
+        let birthOne = self.birthEvent?.year
+        let birthTwo = other.birthEvent?.year
+        if let relation = compareOptionalInts(birthOne, birthTwo), relation != .orderedSame { return relation }
+
+        let deathOne = self.deathEvent?.year
+        let deathTwo = other.deathEvent?.year
+        if let relation = compareOptionalInts(deathOne, deathTwo), relation != .orderedSame { return relation }
+
+        if self.key == other.key { return .orderedSame }
+        return self.key < other.key ? .orderedAscending : .orderedDescending
+    }
+}
+
+/// Compare optional integers.
+private func compareOptionalInts(_ a: Int?, _ b: Int?) -> ComparisonResult? {
+    switch (a, b) {
+    case let (x?, y?) where x != y:
+        return x < y ? .orderedAscending : .orderedDescending
+    case (.some, .none):
+        return .orderedAscending
+    case (.none, .some):
+        return .orderedDescending
+    default:
+        return .orderedSame
     }
 }

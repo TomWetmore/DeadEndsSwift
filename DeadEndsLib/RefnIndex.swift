@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 8 February 2026.
+//  Last changed on 18 February 2026.
 //
 
 import Foundation
@@ -20,6 +20,11 @@ public struct RefnIndex {
         else {  // Add new entry to index.
             index[refn] = key
             return
+        }
+        if let errLog = errLog, existingKey != key {
+            errLog.append(Error(type: .gedcom, severity: .fatal, source: nil, line: nil,
+                                message: "RefnError"))
+
         }
     }
 

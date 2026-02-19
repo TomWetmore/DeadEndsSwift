@@ -3,13 +3,13 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 15 February 2026.
+//  Last changed on 18 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Show a person on a person page. Uses a person action bar, person rows and message area.
+/// Show person on a person page. Uses a person action bar, person rows and message area.
 struct PersonPage: View {
 
     @EnvironmentObject private var model: AppModel
@@ -21,6 +21,7 @@ struct PersonPage: View {
 
     /// Render person page.
     var body: some View {
+        
         VStack(alignment: .leading, spacing: 10) {
             header
             vitals
@@ -48,8 +49,8 @@ struct PersonPage: View {
                 onSearch: { crit in
                     print("search button pressed with \(crit)")
                     let results = model.database?.searchPersons(crit)
-                    for result in results! {
-                        print(result.debugDescription(in: model.database!.recordIndex))
+                    for result in results! {  // Debugging.
+                        print(result.fullDescription(in: model.database!.recordIndex))
                     }
                     return []
                 },
@@ -60,7 +61,7 @@ struct PersonPage: View {
                     // model.currentPersonKey = key
                 }
             )
-            .environmentObject(model) // only if SearchPanel needs it (it currently doesn’t)
+            .environmentObject(model) // If SearchPanel needs it (currently doesn’t).
         }
         .contextMenu {
             Button("Search…") { showingSearch = true }
@@ -74,6 +75,7 @@ private extension PersonPage {
     
     /// Render person name.
     var header: some View {
+        
         Text(person.displayName(upSurname: true))
             .font(.title3)
             .fontWeight(.semibold)
@@ -89,8 +91,8 @@ private extension PersonPage {
     /// Render person vitals.
     var vitals: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Born: \(person.eventSummary(kind: .birth) ?? "")")
-            Text("Death: \(person.eventSummary(kind: .death) ?? "")")
+            Text("Born: \(person.birthEvent?.summary ?? "")")
+            Text("Death: \(person.deathEvent?.summary ?? "")")
         }
         .padding(.horizontal)
     }

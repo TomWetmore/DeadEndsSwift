@@ -3,13 +3,13 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 25 October 2025.
-//  Last changed on 1 February 2026.
+//  Last changed on 18 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Views that are manipulated on a Desktop. Each View represents a Person in the DeadEnds 
+/// Person card view used on Desktop view. 
 struct PersonCard: View {
 
     let model: DesktopModel
@@ -20,10 +20,10 @@ struct PersonCard: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(person.name ?? "Unknown Person")
                 .font(.headline)
-            if let birth = person.eventSummary(kind: .birth) {
+            if let birth = person.birthEvent?.summary {
                 Text("b. \(birth)").foregroundColor(.secondary)
             }
-            if let death = person.eventSummary(kind: .death) {
+            if let death = person.deathEvent?.summary {
                 Text("d. \(death)").foregroundColor(.secondary)
             }
        }

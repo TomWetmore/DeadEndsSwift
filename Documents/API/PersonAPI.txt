@@ -1,17 +1,17 @@
 Person.swift API
-15 February 2026
+18 February 2026
 
 public enum FamilyRoleTag: String { case husband = "HUSB" case wife    = "WIFE" case child   = "CHIL" }
 public enum ParentRoleTag: String { case husband = "HUSB" case wife    = "WIFE" }
 public enum FamilyLinkTag: String { case fams = "FAMS" case famc = "FAMC" }
 public enum SexType: String { case male = "M" case female = "F" case unknown = "U" }
 
-public struct Person: Record {
-    public let root: GedcomNode  // Protocol requirement.
-    public init?(_ root: GedcomNode) -- Create person. Fail if root is not INDI or has no key.
+public struct Person: Record
+    public let root: GedcomNode -- Root of node tree.
+    public init?(_ root: GedcomNode) -- Create person; fail if root is not INDI or has no key.
 
     public var name: String? -- Return display name of first 1 NAME node.
-    var gedcomName: GedcomName? -- Return Gedcom name of person from its first 1 NAME node.
+    var gedcomName: GedcomName? -- Return Gedcom name of person from first 1 NAME node.
 
     public var birthEvent: Event? -- Return first birth event.
     public var deathEvent: Event? -- Return first death event.
@@ -44,7 +44,8 @@ public struct Person: Record {
     public func nextSibling(in index: RecordIndex) -> Person? -- Return next sib in first family as child.
 
     func children(in index: RecordIndex) -> [Person] -- Return all children of person
-}
+
+    func compare(to other: Person, in index: RecordIndex) -> ComparisonResult -- Compare persons.
 
 extension Database {
     enum PersonUpdateError: Swift.Error {
@@ -52,9 +53,7 @@ extension Database {
         case inconsistentSex
         case invalidLinks
         // ... add others as you refine rules
-    }
 
     public func updatePerson(_ person: Person) -- Update person in database.
-}
 
 public func showPersons(_ persons: [Person]) -- Show names of all persons in array.

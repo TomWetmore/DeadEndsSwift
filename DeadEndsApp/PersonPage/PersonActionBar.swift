@@ -49,10 +49,6 @@ struct PersonActionBar: View {
                 }
             }
             Button("Family Tree") { model.path.append(Route.familyTree(person)) }
-//            Button("Tidy Test") {
-//                guard let index = model.database?.recordIndex else { return }
-//                tidyTest(person: person, index: index);
-//            }
             Button("Descendancy List") { model.path.append(Route.descendancy(person)) }
             Button("New Person") {
                 guard let index,
@@ -61,21 +57,12 @@ struct PersonActionBar: View {
                 model.path.append(Route.personEditor(newPerson))
             }
             Button("Tree Editor") { model.path.append(Route.gedcomTreeEditor(person)) }
-//            Button("New Edit") {
-//                model.path.append(Route.personEditor(person))
-//            }
-//            Button("Newer Edit") {
-//                model.path.append(Route.personEditorNew(person))
-//            }
-
             Button("Open Desktop") {
                 print("Button tapped")
                 model.path.append(Route.desktop(person))
                 print("Appended .desktop route")
             }
-            Button("Edit") {
-                showEditSheet = true
-            }
+            Button("Edit") { showEditSheet = true }
             .sheet(isPresented: $showEditSheet) {
                 PersonEditSheet(person: person)
                     .environmentObject(model)

@@ -79,8 +79,7 @@ extension DateIndex {
     /// Index the date nodes in an event tree.
     private func indexDates(in eventNode: GedcomNode, kind: EventKind, recordKey: RecordKey) {
         for dateNode in eventNode.kids(withTag: GedcomTag.date.rawValue) {
-            guard let string = year(from: dateNode), let year: Year = Int(string)
-            else { continue }
+            guard let year = year(from: dateNode) else { continue }
             add(year: year, event: kind, recordKey: recordKey)
         }
     }
