@@ -31,7 +31,9 @@ struct PersonSearchPanel: View {
     @State private var birthToText: String = ""
     @State private var deathFromText: String = ""
     @State private var deathToText: String = ""
-    @State private var placeText: String = ""   // Canonicalize later.
+    @State private var birthPlaceText: String = ""
+    @State private var deathPlaceText: String = ""
+    //@State private var placeText: String = ""   // Canonicalize later.
 
     @State private var results: [RecordKey] = []
     @State private var lastError: String? = nil
@@ -127,31 +129,49 @@ struct PersonSearchPanel: View {
         }
     }
 
+//    private var placeSection: some View {
+//        Section("Place") {
+//            TextField("Place contains…", text: $placeText)
+//                .autocorrectionDisabled()
+//
+//            // For now we *don’t* canonicalize; we just stash something simple.
+//            // Later: split into canonical parts with your existing placeParts(place) logic.
+//            Button("Use this place text") {
+//                let parts = placeText
+//                    .split(separator: ",")
+//                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+//                    .filter { !$0.isEmpty }
+//                draft.placeParts = parts.isEmpty ? nil : parts
+//            }
+//            .buttonStyle(.borderless)
+//
+//            if let comps = draft.placeParts, !comps.isEmpty {
+//                Text("Parts: " + comps.joined(separator: " • "))
+//                    .font(.footnote)
+//                    .foregroundStyle(.secondary)
+//            }
+//
+//            Button("Clear Place Filter") {
+//                placeText = ""
+//                draft.placeParts = nil
+//            }
+//            .buttonStyle(.borderless)
+//        }
+//    }
+
     private var placeSection: some View {
-        Section("Place") {
-            TextField("Place contains…", text: $placeText)
+        Section("Places") {
+            TextField("Birth place…", text: $birthPlaceText)
                 .autocorrectionDisabled()
 
-            // For now we *don’t* canonicalize; we just stash something simple.
-            // Later: split into canonical parts with your existing placeParts(place) logic.
-            Button("Use this place text") {
-                let parts = placeText
-                    .split(separator: ",")
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .filter { !$0.isEmpty }
-                draft.placeParts = parts.isEmpty ? nil : parts
-            }
-            .buttonStyle(.borderless)
+            TextField("Death place…", text: $deathPlaceText)
+                .autocorrectionDisabled()
 
-            if let comps = draft.placeParts, !comps.isEmpty {
-                Text("Parts: " + comps.joined(separator: " • "))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button("Clear Place Filter") {
-                placeText = ""
-                draft.placeParts = nil
+            Button("Clear Place Filters") {
+                birthPlaceText = ""
+                deathPlaceText = ""
+                draft.birthPlace = nil
+                draft.deathPlace = nil
             }
             .buttonStyle(.borderless)
         }
@@ -203,9 +223,8 @@ struct PersonSearchPanel: View {
             deathFromText = String(r.lowerBound)
             deathToText = String(r.upperBound)
         }
-        if let comps = criteria.placeParts {
-            placeText = comps.joined(separator: ", ")
-        }
+        birthPlaceText = criteria.birthPlace ?? ""
+        deathPlaceText = criteria.deathPlace ?? ""
     }
 
     private func runSearch() {
@@ -231,18 +250,16 @@ struct PersonSearchPanel: View {
         }
 
         // If user typed place text but didn’t hit “Use this place text”, do a simple default.
-        if draft.placeParts == nil, !placeText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let parts = placeText
-                .split(separator: ",")
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-            draft.placeParts = parts.isEmpty ? nil : parts
-        }
+        let bp = birthPlaceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        draft.birthPlace = bp.isEmpty ? nil : bp
 
+        let dp = deathPlaceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        draft.deathPlace = dp.isEmpty ? nil : dp
         criteria = draft
         results = onSearch(criteria)
     }
 
+    /// Parse two strings that should be years and return the closed range of those years.
     private func parseRange(from: String, to: String) -> ClosedRange<Year>? {
         guard let lo = Int(from.trimmingCharacters(in: .whitespacesAndNewlines)),
               let hi = Int(to.trimmingCharacters(in: .whitespacesAndNewlines)) else {
@@ -259,7 +276,8 @@ struct PersonSearchPanel: View {
         birthToText = ""
         deathFromText = ""
         deathToText = ""
-        placeText = ""
+        birthPlaceText = ""
+        deathPlaceText = ""
         results = []
         lastError = nil
     }

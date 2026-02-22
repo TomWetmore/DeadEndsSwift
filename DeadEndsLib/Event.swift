@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 June 2025.
-//  Last changed on 17 February 2026.
+//  Last changed on 18 February 2026.
 //
 
 import Foundation
@@ -16,23 +16,6 @@ public enum EventKind: String {
     case divorce = "DIV"
     case burial = "BUR"
 }
-
-//extension GedcomNode {
-//
-//    /// Return summary of an event. Assumes node is the parent of DATE and PLAC nodes.
-//    public func eeventSummary(kind: EventKind) -> String? {
-//        guard let event = self.eventOfKind(kind) else { return nil }
-//        let date = year(from: event.dateVal)
-//        let place = abbreviatedPlace(event.placeVal)
-//
-//        switch (date, place) {
-//        case let (d?, p?): return "\(d), \(p)"
-//        case let (d?, nil): return "\(d)"
-//        case let (nil, p?): return p
-//        default: return nil
-//        }
-//    }
-//}
 
 /// Event structure.
 public struct Event: CustomStringConvertible {
@@ -105,15 +88,15 @@ public struct Event: CustomStringConvertible {
 
 public extension GedcomNode {
 
-    /// Create event from node; failable.
+    /// Create event from root node; failable.
     var asEvent: Event? { Event(node: self) }
 
-    /// Create single event of a kind from a (root) node.
+    /// Create single event of a kind from a root node.
     func eventOfKind(_ kind: EventKind) -> Event? {
         self.eventsOfKind(kind).first
     }
 
-    /// Create events of a kind from a (root) node.
+    /// Create events of a kind from a root node.
     func eventsOfKind(_ kind: EventKind) -> [Event] {
         self.kids(withTag: kind.rawValue).compactMap { Event(node: $0) }
     }

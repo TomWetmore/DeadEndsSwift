@@ -4,7 +4,7 @@
 //  This is the test  program that checks the C-PNode to S-Expression to Swift-ProgramNode process.
 //
 //  Created by Thomas Wetmore on 7 March 2025.
-//  Last changed on 11 July 2025.
+//  Last changed on 19 February 2026.
 //
 
 import Foundation
@@ -25,7 +25,7 @@ do {
 func runPipeline() throws {
     print("Begin pipeline execution")
 
-    // MARK: Phase one -- read a DeadEnds program as an SExpression from a text file.
+    // Read a DeadEnds program as an s-expression from a text file.
     let fileURL = URL(fileURLWithPath: "/Users/ttw4/xfer")
     let sexprString: String
     do {
@@ -35,7 +35,7 @@ func runPipeline() throws {
         throw RuntimeError.io("Could not read S-expression file: \(error)")
     }
 
-    // MARK: Phase two -- tokenize the String.
+    // Tokenize the string.
     var parser = SExpressionParser(sexprString)
     print("Tokenizing input")
     let tokens = parser.tokenArray()
@@ -44,19 +44,19 @@ func runPipeline() throws {
         print("\(i + 1): \(token)")
     }
 
-    // MARK: Phase three -- parse the tokens into the top level programSExpression.
+    // Parse the tokens into the top level program s-expression.
     let programSExpression: SExpression
     do {
         print("Parsing the program SExpressionr")
         programSExpression = try parser.parseProgramSExpression()
     } catch {
-        throw RuntimeError.syntax("Failed to parse program SExpression: \(error)")
+        throw RuntimeError.syntax("Failed to parse program s-expression: \(error)")
     }
 
-    // MARK: Phase four -- create the PNodes making up the AST of the DeadEnds program from the SExpression.
-    print("Building the DeadEnds ProgramNode AST from the program SExpression")
+    // Create the program nodes making up the AST of the DeadEnds program.
+    print("Building the DeadEnds program node AST from the s-expression")
     guard case .list(_) = programSExpression else {
-        throw RuntimeError.syntax("Top-level S-expression must be a list")
+        throw RuntimeError.syntax("Top-level s-expression must be a list")
     }
     let procedures: [String : ProgramNode]
     let functions: [String : ProgramNode]
@@ -70,16 +70,16 @@ func runPipeline() throws {
     if !functions.isEmpty  { print("Functions:");  functions.forEach  { print($0) } } // DEBUG
     if !globals.isEmpty    { print("Globals:");    globals.forEach    { print($0) } } // DEBUG
 
-    // MARK: Phase five -- load a Database from a Gedcom file.
-    print("Reading GEDCOM file into database")
+    // Load a database from a Gedcom file.
+    print("Reading Gedcom file into database")
     var errLog: [Error] = []
     let database = loadDatabase("/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged", errlog: &errLog)
     guard let db = database else {
-        throw RuntimeError.missingDatabase("Could not load GEDCOM file")
+        throw RuntimeError.missingDatabase("Could not load Gedcom file into database.")
     }
     print("Database loaded successfully")
 
-    // MARK: Phase six -- create a Program and run it.
+    // Create a Program and run it.
     print("Creating and running program")
     let program = Program(procTable: procedures, funcTable: functions, globalTable: globals)
     do {

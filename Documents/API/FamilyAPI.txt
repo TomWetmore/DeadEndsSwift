@@ -25,51 +25,13 @@ struct Family: Record {
 
     func hasSpouse(_ person: Person, in index: RecordIndex) -> Bool -- Return if family has spouse.
 
-NEW STARTED HERE
-
 extension Family: Equatable, Hashable, Identifiable {
-
     public static func == (lhs: Family, rhs: Family) -> Bool {
-        lhs.root.key == rhs.root.key
-    }
-
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(root.key)
-    }
-
     public var id: String { key }
-}
 
-extension Family {
-
-    public var marriageEvent: Event? {
-        root.eventOfKind(.marriage)
-    }
-
-    public var divorceEvent: Event? {
-        root.eventOfKind(.divorce)
-    }
-}
-
+extension Family
+    public var marriageEvent: Event? -- Return first marriage event of family.
+    public var divorceEvent: Event? -- Return first divorce event of family.
     private func people(in index: RecordIndex, role: FamilyRoleTag) -> [Person] {
-
- private func people(in index: RecordIndex, role: FamilyRoleTag) -> [Person] {
-        root.kids(withTag: role.rawValue).compactMap { node in
-            node.val.flatMap { index.person(for: $0) }
-        }
-    }
-
-    /// Return array of all persons with a set of roles with self in gedcom order.
-    private func people(in index: RecordIndex, roles: Set<FamilyRoleTag>) -> [Person] {
-
-        var out: [Person] = []
-        var seen = Set<RecordKey>()
-
-        for node in root.kids {
-            guard roles.contains(where: { $0.rawValue == node.tag }) else { continue }
-            guard let key = node.val else { continue }
-            guard seen.insert(key).inserted else { continue }
-            if let person = index.person(for: key) { out.append(person) }
-        }
-        return out
-    }
+    private func people(in index: RecordIndex, roles: Set<FamilyRoleTag>) -> [Person] -- Return array of all persons with roles from a set from the family

@@ -1,0 +1,36 @@
+ImportStack.swift API
+19 February 2026
+
+public protocol GedcomSource -- Source of Gedcom lines.
+    var name: String { get }
+    func makeLineIterator() -> AnyIterator<String>
+
+public struct FileGedcomSource: GedcomSource -- Gedcom source for files.
+    public let path: String -- File path.
+    public var name: String -- Name (also file path).
+    public func makeLineIterator() -> AnyIterator<String> -- Make iterator to return lines from a file.
+
+public struct StringGedcomSource: GedcomSource -- Gedcom source for strings.
+    public let name: String
+    public let content: String
+    public init(name: String, content: String) {
+    public func makeLineIterator() -> AnyIterator<String> -- Make iterator to return lines from a string.
+
+struct ValidationContext -- Convienced to reduce number of arguments to function.
+    let index: RecordIndex
+    let keymap: KeyMap
+    let source: String
+
+func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog) -> (index: RecordIndex, persons: RecordList, families: RecordList, header: GedcomNode?)? -- Load and validate records from a Gedcom source into containers.
+
+public func loadRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog) -> RecordList? -- Load Gedcom records from a source; convert lines to data nodes and data nodes to records.
+public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, errlog: inout ErrorLog) -> RecordList? --- Load Gedcom records from a source; differs from previous by creating a key map.
+func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog) -> DataNodes<Int>? -- Load array of Gedcom nodes from a source; levels not checked.
+func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RecordList -- Process array of (node, level) pairs to build record array; use levels to guide record building.
+
+enum ReadResult -- Result enum returned by parseLine; on success holds Gedcom fields; on failure holds error message.
+    case success(level: Int, key: String?, tag: String, value: String?)
+    case failure(errmsg: String)
+
+func parseLine(from line: String) -> ReadResult -- Lexer for Gedcom lines; extract level, key, tag and value; return them in a read result.
+

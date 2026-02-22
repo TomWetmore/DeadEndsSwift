@@ -4,9 +4,6 @@ Event.swift API
 public enum EventKind: String { case birth = "BIRT" case death = "DEAT" case marriage = "MARR"
     case divorce = "DIV" case burial = "BUR" }
 
-extension GedcomNode
-    public func eventSummary(kind: EventKind) -> String? -- Deprecated -- Return event summary; self is event node
-
 public struct Event
     let node: GedcomNode -- Dad of DATE and/or PLAC nodes.
     let kind: EventKind -- Event kind.

@@ -1,0 +1,29 @@
+Database.swift API
+19 February 2026
+
+public typealias RecordKey = String
+public typealias RecordIndex = [RecordKey: GedcomNode]
+public typealias KeyMap = [RecordKey : Int]  // Map keys to source line numbers.
+public typealias RecordList = [GedcomNode]
+
+final public class Database -- DeadEnds in-RAM database.
+    public internal(set) var recordIndex: RecordIndex -- Index of all records.
+    public private(set) var header: GedcomNode? -- Header record.
+    public private(set) var persons: RecordList = [] -- List of persons.
+    public private(set) var families: RecordList = [] -- List of families.
+    public var nameIndex: NameIndex -- Name index.
+    public var dateIndex: DateIndex -- Date index.
+    public var placeIndex: PlaceIndex -- Place index.
+    public var refnIndex: RefnIndex -- Refn index.
+    public var tagMap: TagMap -- Single copies of tag Strings.
+    var dirty: Bool -- Changed since last write.
+    var personCount: Int -- Number of persons in database.
+    var familyCount: Int -- Number of families in database.
+
+    init(recordIndex: RecordIndex, persons: RecordList, families: RecordList,
+         header: GedcomNode?, nameIndex: NameIndex, dateIndex: DateIndex, placeIndex: PlaceIndex,
+         refnIndex: RefnIndex, tagMap: TagMap, dirty: Bool = false) -- Create a DeadEnds database.
+
+public func loadDatabases(from paths: [String], errlog: inout ErrorLog) -> [Database] -- Load array of databases.
+public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? -- Load database from Gedcom file.
+private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> Database? -- Load database from a source.

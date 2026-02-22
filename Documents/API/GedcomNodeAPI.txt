@@ -1,0 +1,63 @@
+GedcomNode.swift API
+18 February 2026
+
+public class TagMap -- One string per tag.
+    func intern(tag: String) -> String -- Intern tag in map
+
+final public class GedcomNode: Identifiable, CustomStringConvertible -- Internal Gedcom line structure.
+    public let id -- Unique id
+    public var key: RecordKey?  -- Key on root lines.
+    public var tag: String  -- Tag on all lines.
+    public var val: String? -- Optional value.
+
+    public var sib: GedcomNode?  -- Next node on the same level.
+    public var kid: GedcomNode?  -- First node one level below.
+    public weak var dad: GedcomNode? -- Parent node one level above (nil on roots).
+
+    public var kids: [GedcomNode] -- Return all kids of node.
+    public var description: String -- Return string description of node (does not recurse).
+
+    public init(key: RecordKey? = nil, tag: String, val: String? = nil) -- Create node with three fields.
+    public var lev: Int -- Return level of this node (computed).
+
+    public func printTree(level: Int = 0, indent: String = "") -- Print full tree to stdout, recurse to kids and sibs.
+
+public extension GedcomNode
+    func kid(withTag tag: String) -> GedcomNode? -- Return first kid with given tag.
+    func kid(withTags tags: [String]) -> GedcomNode? -- Return first kid with tag from list of tags.
+    func kids(withTag tag: String) -> [GedcomNode] -- Return all kids with given tag.
+    func kids(withTags tags: [String]) -> [GedcomNode] -- Return all kids with tags from a tag list.
+    func kidVal(forTag tag: String) -> String? // Return val of first kid with given tag.
+    func kidVal(forTags tags: [String]) -> String? -- Return val of first child with tag from list.
+    func kidVals(forTag tag: String) -> [String] -- Return list of all vals from node's children with the tag.
+    func kidVals(forTags tags: [String]) -> [String] -- Return list of all non-nil values from node's kids with tags in the given list of tags.
+    func kid(atPath path: [String]) -> GedcomNode? -- Traverse first sequence of tags to a descendant node.
+    func kidVal(atPath path: [String]) -> String? -- Traverse first sequence of tags to find descendant node's value.
+
+public extension GedcomNode
+    func gedcomText(level: Int = 0, indent: Bool = false) -> String -- Convert node tree to Gedcom text
+
+extension GedcomNode
+    public func descendants() -> [GedcomNode] -- Return all nodes in a tree.
+
+public extension GedcomNode
+    func hasKids() -> Bool -- Return whether node has kids.
+    func addKid(tag: String, val: String? = nil) -> GedcomNode -- Create and add new first kid for this node.
+    func addKid(_ kid: GedcomNode) -> GedcomNode -- Adds existing node as this node's new first kid.
+    func addBareKid(_ kid: GedcomNode) -> GedcomNode -- Add newly created, unlinked kid (defensive).
+    func addSubtree(_ kid: GedcomNode) -> GedcomNode -- Add an existing subtree, preserving internal structure.
+    func addKidAfter(_ kid: GedcomNode, sib: GedcomNode?) -- Add kid as a new kid of node, after the given sib.
+    func lastKid() -> GedcomNode? -- Return node's last kid.
+    func removeKid() -- Remove kid from its dad.
+    var prevSib: GedcomNode? -- Return previous sib of node.
+    func replaceKid(old oldNode: GedcomNode, with newNode: GedcomNode) -> Bool -- Replace a child of this node with another.
+    func addSib(_ sib: GedcomNode) -- Add sib immediately after this node in the sibling chain.
+    func removeSib() -> GedcomNode? -- Remove (detach) and return node's next sibling.
+    func moveUp() -> Bool -- Move node one position earlier in its dad's kid list.
+    func moveDown() -> Bool -- Move node one position down in its dad's kid list.
+
+extension GedcomNode 
+    public func deepCopy(sibs: Bool = true) -> GedcomNode -- Build deep copy of node forest or tree.
+    func deepTreeCopy() -> GedcomNode -- Return deep tree copy (no sibs of root).
+    func deepForestCopy() -> GedcomNode -- Return deep forest copy (include sibs of root).
+

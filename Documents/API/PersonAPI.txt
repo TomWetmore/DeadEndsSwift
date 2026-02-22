@@ -47,13 +47,11 @@ public struct Person: Record
 
     func compare(to other: Person, in index: RecordIndex) -> ComparisonResult -- Compare persons.
 
-extension Database {
-    enum PersonUpdateError: Swift.Error {
+extension Database
+    enum PersonUpdateError: Swift.Error
         case missingName
         case inconsistentSex
         case invalidLinks
         // ... add others as you refine rules
 
     public func updatePerson(_ person: Person) -- Update person in database.
-
-public func showPersons(_ persons: [Person]) -- Show names of all persons in array.

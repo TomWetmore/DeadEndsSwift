@@ -3,40 +3,38 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 13 February 2026.
+//  Last changed on 22 February 2026.
 //
 
 import Foundation
 
-/// Place index key; combines event kind with canonical name part.
+/// Place index key; combines an event kind with a name part.
 struct PlaceIndexKey: Hashable {
-    let part: String  // Canonical part name.
+    let part: String  // Part name.
     let event: EventKind  // Event kind.
 }
 
 /// Place index for DeadEnds database.
 final public class PlaceIndex {
 
+    /// Index is a map from place index keys (part x event kind) to sets of record keys.
     private(set) var index: [PlaceIndexKey : Set<RecordKey>] = [:]  // Representation.
 
-    /// Add entries to the place index; canonicalize place to parts.
+    /// Add entries to the index; place is expanded into its parts.
     public func add(place: String, event: EventKind, recordKey: RecordKey) {
-        let parts = placeParts(place)
-        guard !parts.isEmpty else { return }
-        for part in parts {
+        for part in placeParts(place) {
             add(part: part, event: event, recordKey: recordKey)
         }
     }
 
-    /// Add entry to the place index.
-    func add(part: String, event: EventKind, recordKey: RecordKey) {
+    /// Add entry to the index; part is a component of a place value.
+    fileprivate func add(part: String, event: EventKind, recordKey: RecordKey) {
         index[PlaceIndexKey(part: part, event: event), default: Set()].insert(recordKey)
     }
 
-    /// Remove entries from the place index; canonicalize place into parts.
+    /// Remove entries from the index; place is expanded into its parts.
     func remove(place: String, event: EventKind, recordKey: RecordKey) {
-        let parts = placeParts(place)
-        for part in parts {
+        for part in placeParts(place) {
             let placeIndexKey = PlaceIndexKey(part: part, event: event)
             guard var keys = index[placeIndexKey] else { continue }
             keys.remove(recordKey)
@@ -48,8 +46,7 @@ final public class PlaceIndex {
     /// Return dictionary mapping parts to record sets.
     func recordKeys(place: String, event: EventKind) -> [String : Set<RecordKey>] {
         var partMap: [String : Set<RecordKey>] = [:]
-        let parts = placeParts(place)
-        for part in parts {
+        for part in placeParts(place) {
             let recordSet = index[PlaceIndexKey(part: part, event: event)] ?? []
             if recordSet.count > 0 {
                 partMap[part] = recordSet
@@ -58,88 +55,121 @@ final public class PlaceIndex {
         return partMap
     }
 
-    /// Return set of record keys that match an event place part.
+    /// Return set of record keys that match an event kind and place part.
     func recordKeys(part: String, event: EventKind) -> Set<RecordKey> {
         return index[PlaceIndexKey(part: part, event: event)] ?? []
     }
 }
 
 /// Collect all PLAC values, at any level, and return them as a string array.
-func collectAllPlaceStrings(from recordIndex: RecordIndex) -> [String] {
-    var results: [String] = []
-    var records = 0
+//func collectAllPlaceStrings(from recordIndex: RecordIndex) -> [String] {
+//    var results: [String] = []
+//    var records = 0
+//
+//    for (_, root) in recordIndex {
+//        records += 1
+//        for node in root.descendants() {
+//            if node.tag == "PLAC", let value = node.val {
+//                results.append(value)
+//            }
+//        }
+//    }
+//    print("collected \(results.count) PLAC values across \(records) records")
+//    return results
+//}
 
-    for (_, root) in recordIndex {
-        records += 1
-        for node in root.descendants() {
-            if node.tag == "PLAC", let value = node.val {
-                results.append(value)
-            }
+/// Break a place value string into components; further processing
+/// is done in _______.
+private func placeComponents(_ raw: String) -> [String] {
+
+    // Start with the value of a place node; lowercase it and clean whitespace.
+    var string = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+    while string.contains("  ") { string = string.replacingOccurrences(of: "  ", with: " ") }
+
+    // Split the string around commas and or's.
+    let commaParts = string
+        .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        .filter { !$0.isEmpty }
+    var orParts: [String] = []
+    for part in commaParts {
+        if part.contains(" or ") {
+            orParts.append(contentsOf:
+                part.split(separator: " or ").map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            )
+        } else {
+            orParts.append(part)
         }
     }
-    print("collected \(results.count) PLAC values across \(records) records")
-    return results
-}
-
-/// Find the canonical parts of a Gedcom PLAC value.
-func placeParts(_ raw: String) -> [String] {
-
-    var string = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-
-    let noiseWords = [ // Words and phrases to strip.
+    // orParts is an array of components from the original value. Remove any leading 'noise' words
+    // from each component.
+    let noisePrefixes: [String] = [
         "prob ", "probable ", "probably ", "maybe ",
         "poss ", "possible ", "possibly ",
-        "near ", "about ", "abt ", "circa ",
-        "city of ", "county of "
+        "near ", "about ", "abt ", "circa "
     ]
-    for word in noiseWords {
-        string = string.replacingOccurrences(of: word, with: " ")
-    }
-
-    while string.contains("  ") {  // Collapse duplicate spaces.
-        string = string.replacingOccurrences(of: "  ", with: " ")
-    }
-
-    let commaParts = string  // Split into comma-separated components.
-        .split(separator: ",")
-        .map { $0.trimmingCharacters(in: .whitespaces) }
-
-    var allParts: [String] = []
-    for part in commaParts {  // Check for " or " separators.
-        if part.contains(" or ") {
-            let ors = part.split(separator: " or ").map {
-                $0.trimmingCharacters(in: .whitespaces)
+    for var part in orParts {
+        var changed = true
+        while changed {
+            changed = false
+            for prefix in noisePrefixes where part.hasPrefix(prefix) {
+                part = part.dropFirst(prefix.count).trimmingCharacters(in: .whitespaces)
+                changed = true
             }
-            allParts.append(contentsOf: ors)
-        } else {
-            allParts.append(part)
         }
+        if part.isEmpty { /* How do I remove a part? */ print("How do I remove a part") }
     }
 
-    let dropCountries: Set<String> = [  // Drop some country name parts.
-        "united states", "united states of america", "usa",
-        "u.s.", "u.s.a", "us", "canada"
+    // Drop certain country words.
+    let dropCountries: Set<String> = [
+        "united states", "united states of america",
+        "usa", "u.s.", "u.s.a", "us",
+        "canada"
     ]
-    var cleaned: [String] = []
+    for part in orParts {
+        if dropCountries.contains(part) { print("How do I remove a part") }
+    }
+    return orParts
+}
 
-    for var part in allParts {  // Per component cleanup.
-        if part.isEmpty { continue }
-        if dropCountries.contains(part) { continue }
+/// Get the place keys, one or more, for a place component.
+private func placeKeys(forComponent part: String) -> [String] {
 
-        if part.hasSuffix(" city") {  // Remove " city" and " county" suffixes.
-            part = String(part.dropLast(" city".count))
-        }
-        if part.hasSuffix(" county") {
-            part = String(part.dropLast(" county".count))
-        }
+    let jurisdiction: Set<String> = ["county","city", "commonwealth", "borough", "district", "municipality", "province", "nation", "state", "parish", "colony", "village", "town"]
+    let glue: Set<String> = ["of","the"]
 
-        part = part.trimmingCharacters(in: .whitespaces)
-        if !part.isEmpty {
-            cleaned.append(part)
+    let full = part.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !full.isEmpty else { return [] }
+
+    let tokens = full.split(whereSeparator: { $0.isWhitespace }).map(String.init)
+    guard !tokens.isEmpty else { return [full] }
+
+    var out: [String] = [full]  // Keep full phrase.
+
+    if let first = tokens.first, jurisdiction.contains(first), tokens.count > 1 {  // Handle prefixes.
+        var core = Array(tokens.dropFirst())
+        while let t = core.first, glue.contains(t) { core.removeFirst() }
+        if !core.isEmpty {
+            out.append(core.joined(separator: " "))
+            out.append(contentsOf: core.filter { !glue.contains($0) && !jurisdiction.contains($0) })
         }
     }
+    else if let last = tokens.last, jurisdiction.contains(last), tokens.count > 1 {  // Handle suffixes.
+        let core = Array(tokens.dropLast())
+        out.append(core.joined(separator: " "))
+        out.append(contentsOf: core.filter { !glue.contains($0) && !jurisdiction.contains($0) })
+    }
+    else {  // Normal, no prefix, no suffix case.
+        out.append(contentsOf: tokens.filter { !glue.contains($0) && !jurisdiction.contains($0) })
+    }
 
-    return cleaned
+    var seen = Set<String>()  // Dedupe.
+    return out.filter { seen.insert($0).inserted }
+}
+
+/// Get the canonical parts of a Gedcom PLAC value.
+func oldplaceParts(_ raw: String) -> [String] {
+    placeComponents(raw).flatMap(placeKeys(forComponent:))
 }
 
 /// Builds a PlaceIndex from a RecordList.
@@ -230,3 +260,134 @@ extension Dictionary where Value: Collection {
     }
 }
 
+/// Find canonical search keys for a Gedcom PLAC value.
+/// Returns expanded keys suitable for indexing/search.
+func placeParts(_ raw: String) -> [String] {
+
+    var s = raw.lowercased()
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    while s.contains("  ") {
+        s = s.replacingOccurrences(of: "  ", with: " ")
+    }
+
+    // -------------------------------
+    // Stage 2: Strip leading noise qualifiers
+    // -------------------------------
+
+    let noisePrefixes: [String] = [
+        "prob ", "probable ", "probably ", "maybe ",
+        "poss ", "possible ", "possibly ",
+        "near ", "about ", "abt ", "circa "
+    ]
+
+    var changed = true
+    while changed {
+        changed = false
+        for prefix in noisePrefixes where s.hasPrefix(prefix) {
+            s = s.dropFirst(prefix.count)
+                .trimmingCharacters(in: .whitespaces)
+            changed = true
+        }
+    }
+
+    // -------------------------------
+    // Stage 3: Split on commas
+    // -------------------------------
+
+    let commaParts = s
+        .split(separator: ",")
+        .map { $0.trimmingCharacters(in: .whitespaces) }
+        .filter { !$0.isEmpty }
+
+    // Expand " or " alternatives
+    var components: [String] = []
+    for part in commaParts {
+        if part.contains(" or ") {
+            components.append(contentsOf:
+                part.split(separator: " or ")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+            )
+        } else {
+            components.append(part)
+        }
+    }
+
+    // -------------------------------
+    // Stage 4: Drop countries
+    // -------------------------------
+
+    let dropCountries: Set<String> = [
+        "united states", "united states of america",
+        "usa", "u.s.", "u.s.a", "us",
+        "canada"
+    ]
+
+    // -------------------------------
+    // Stage 5: Expand jurisdiction variants
+    // -------------------------------
+
+    func expandedKeys(from part: String) -> [String] {
+
+        let p = part.trimmingCharacters(in: .whitespaces)
+        guard !p.isEmpty else { return [] }
+        if dropCountries.contains(p) { return [] }
+
+        var out: [String] = [p]  // Always keep original phrase
+
+        func wordCount(_ s: String) -> Int {
+            s.split(separator: " ").count
+        }
+
+        func maybeAddVariant(_ s: String) {
+            let v = s.trimmingCharacters(in: .whitespaces)
+            guard !v.isEmpty else { return }
+            // Prevent overly lossy variants like "iron city" → "iron"
+            guard wordCount(v) >= 2 else { return }
+            out.append(v)
+        }
+
+        // Jurisdiction prefixes
+        let prefixRules = [
+            "city of ",
+            "county of ",
+            "state of ",
+            "province of ",
+            "commonwealth of "
+        ]
+
+        for pref in prefixRules where p.hasPrefix(pref) {
+            maybeAddVariant(String(p.dropFirst(pref.count)))
+        }
+
+        // Jurisdiction suffixes
+        let suffixRules = [
+            " city",
+            " county",
+            " province",
+            " state",
+            " commonwealth",
+            " colony"
+        ]
+
+        for suf in suffixRules where p.hasSuffix(suf) {
+            maybeAddVariant(String(p.dropLast(suf.count)))
+        }
+
+        return out
+    }
+
+    // -------------------------------
+    // Stage 6: Build final key list
+    // -------------------------------
+
+    var allKeys: [String] = []
+
+    for comp in components {
+        allKeys.append(contentsOf: expandedKeys(from: comp))
+    }
+
+    // Deduplicate while preserving order
+    var seen = Set<String>()
+    return allKeys.filter { seen.insert($0).inserted }
+}

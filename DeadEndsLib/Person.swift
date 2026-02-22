@@ -76,7 +76,7 @@ extension Person: Equatable, Hashable {
         lhs.root.key == rhs.root.key
     }
 
-    /// Return hash of person.
+    /// Return person hash.
     public func hash(into hasher: inout Hasher) {
         hasher.combine(root.key)
     }
@@ -109,17 +109,17 @@ public extension Person {
         GedcomName(from: self.root)
     }
 
-    /// Return true self is female.
+    /// Return true if person is female.
     var isFemale: Bool { sex == .female }
 
-    /// Return true if self is male.
+    /// Return true if person is male.
     var isMale: Bool { return sex == .male }
 }
 
 /// Extension for Parents, Mothers, and Fathers.
 public extension Person {
 
-    /// Return self's parents.
+    /// Return person's parents.
     private func parents(in index: RecordIndex, role: ParentRoleTag) -> [Person] {
         var result: [Person] = []
         var seen: Set<RecordKey> = []
@@ -135,23 +135,23 @@ public extension Person {
         return result
     }
 
-    /// Return self's father by finding the first husband in self's first FAMC with one.
+    /// Return person's father from first husband in person's first FAMC with a husband.
     func father(in index: RecordIndex) -> Person? { parents(in: index, role: .husband).first }
 
-    /// Return self's mother by finding the first wife in self's first FAMC with one.
+    /// Return person's mother by finding first wife in person's first FAMC with a wife.
     func mother(in index: RecordIndex) -> Person? { parents(in: index, role: .wife).first }
 
-    /// Return all self's fathers by finding all husbands in all self's FAMC families.
+    /// Return all person's fathers by finding all husbands in all person's FAMC families.
     func fathers(in index: RecordIndex) -> [Person] { parents(in: index, role: .husband) }
 
-    /// Return all self's mothers by finding all wives in all self's FAMC families.
+    /// Return all person's mothers by finding all wives in all person's FAMC families.
     func mothers(in index: RecordIndex) -> [Person] { parents(in: index, role: .wife) }
 }
 
 /// Extension for Families.
 public extension Person {
 
-    /// Return families self is a spouse in.
+    /// Return families person is a spouse in.
     func spouseFamilies(in index: RecordIndex) -> [Family] {
         var families: [Family] = []
         for famsKey in kidVals(forTag: FamilyLinkTag.fams.rawValue) {
@@ -162,7 +162,7 @@ public extension Person {
         return families
     }
 
-    /// Return families self is a child in.
+    /// Return families person is a child in.
     func childFamilies(in index: RecordIndex) -> [Family] {
         var families: [Family] = []
         for famcKey in kidVals(forTag: FamilyLinkTag.famc.rawValue) {
@@ -177,7 +177,7 @@ public extension Person {
 /// Extension for Spouses, Husbands, and Wives
 public extension Person {
 
-    /// Return first spouse of self by role. There is no restriction on sex of spouse.
+    /// Return first spouse of self by role; is no restriction on sex of spouse.
     func spouse(in index: RecordIndex, roles: [FamilyRoleTag]) -> Person? {
         for family in spouseFamilies(in: index) {
             for role in roles {
@@ -189,18 +189,19 @@ public extension Person {
         return nil
     }
 
-    /// Return the first husband of self. Self can be male or female.
+    /// Return first husband of person; person can be male or female.
     func husband(in index: RecordIndex) -> Person? {
         spouse(in: index, roles: [.husband])
     }
 
-    /// Return the first wife of self. Self can be male or femaile.
+    /// Return first wife of person; person can be male or female.
     func wife(in index: RecordIndex) -> Person? {
         spouse(in: index, roles: [.wife])
     }
 
-    /// Return all spouses of self, filtered by roles, deduped, in gedcom order.
+    /// Return all spouses of person, filtered by roles, deduped, in Gedcom order.
     func spouses(in index: RecordIndex, roles: [FamilyRoleTag] = [.husband, .wife]) -> [Person] {
+
         var seen = Set<RecordKey>()
         var out: [Person] = []
 
@@ -215,12 +216,12 @@ public extension Person {
         return out
     }
 
-    /// Return all husbands of self, deduped and in order; self can be male or female.
+    /// Return all husbands of person, deduped and in order; person can be male or female.
     func husbands(in index: RecordIndex) -> [Person] {
         spouses(in: index, roles: [.husband])
     }
 
-    /// Return all wives of self, deduped and in order; self can be male or female.
+    /// Return all wives of person, deduped and in order; person can be male or female.
     func wives(in index: RecordIndex) -> [Person] {
         spouses(in: index, roles: [.wife])
     }
@@ -229,8 +230,9 @@ public extension Person {
 /// Extension for Siblings.
 extension Person {
 
-    /// Return self's siblings from all self's FAMC families, deduped and in gedcom order.
+    /// Return person's siblings from all FAMC families, deduped and in gedcom order.
     public func siblings(in index: RecordIndex) -> [Person] {
+
         var seen: Set<RecordKey> = []
         var result: [Person] = []
 
@@ -242,7 +244,7 @@ extension Person {
         return result
     }
 
-    /// Return self's previous sibling in self's first FAMC.
+    /// Return person's previous sibling in person's first FAMC.
     public func previousSibling(in index: RecordIndex) -> Person? {
 
         guard let family = self.childFamilies(in: index).first else { return nil }
@@ -252,7 +254,7 @@ extension Person {
         return children[indexOfSelf + 1]
     }
 
-    // Return self's next sibling in self's first FAMC.
+    // Return person's next sibling in person's first FAMC.
     public func nextSibling(in index: RecordIndex) -> Person? {
 
         guard let family = self.childFamilies(in: index).first else { return nil }
@@ -265,7 +267,7 @@ extension Person {
 
 public extension Person {
 
-    /// Return children of self, deduped in Gedcom order.
+    /// Return children of self, in all FAMS families, deduped in Gedcom order.
     func children(in index: RecordIndex) -> [Person] {
         var seen: Set<RecordKey> = []
         var result: [Person] = []
@@ -294,16 +296,9 @@ extension Database {
     }
 }
 
-public func showPersons(_ persons: [Person]) {
-    for person in persons {
-        guard let name = person.name else { print("no name"); continue }
-        print(name)
-    }
-}
-
 extension Person {
 
-    /// Compare persons.
+    /// Compare persons by name, birth year, death year, and record key.
     func compare(to other: Person, in index: RecordIndex) -> ComparisonResult {
 
         if let nameOne = GedcomName(from: self.root), let nameTwo = GedcomName(from: other.root) {

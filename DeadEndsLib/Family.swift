@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 1 February 2026.
+//  Last changed on 19 February 2026.
 //
 
 import Foundation
@@ -14,12 +14,12 @@ extension FamilyRoleTag {
     static let CHIL = FamilyRoleTag.child.rawValue
 }
 
-/// Structure holding a family.
+/// Family structure.
 public struct Family: Record {
 
     public let root: GedcomNode
 
-    /// Init a new family from a 0 FAM node.
+    /// Create family from a 0 FAM node; fail if tag not FAM or no key.
     public init?(_ root: GedcomNode) {
         guard root.tag == "FAM", root.key != nil  else { return nil }
         self.root = root
@@ -29,14 +29,14 @@ public struct Family: Record {
 /// Extension for husbands, wives and children.
 extension Family {
 
-    /// Return array of all persons in a role with self in gedcom order.
+    /// Return all persons with a specific role in the family in Gedcom order.
     private func people(in index: RecordIndex, role: FamilyRoleTag) -> [Person] {
         root.kids(withTag: role.rawValue).compactMap { node in
             node.val.flatMap { index.person(for: $0) }
         }
     }
 
-    /// Return array of all persons with a set of roles with self in gedcom order.
+    /// Return all persons with a set of roles in the family in Gedcom order.
     private func people(in index: RecordIndex, roles: Set<FamilyRoleTag>) -> [Person] {
 
         var out: [Person] = []
@@ -51,54 +51,52 @@ extension Family {
         return out
     }
 
-    /// Return first husband of self in gedcom order.
+    /// Return first husband in the family in Gedcom order.
     public func husband(in index: RecordIndex) -> Person? {
         people(in: index, role: .husband).first
     }
 
-    /// Return first wife of self in gedcom order.
+    /// Return first wife of the family in Gedcom order.
     public func wife(in index: RecordIndex) -> Person? {
         people(in: index, role: .wife).first
     }
 
-    /// Return all children of self in gedcom order.
+    /// Return all children of the family in Gedcom order.
     public func children(in index: RecordIndex) -> [Person] {
         people(in: index, role: .child)
     }
 
+    /// Return all spouses in the family; same as parents.
     public func parents(in index: RecordIndex) -> [Person] {
         spouses(in: index)
     }
     
-    /// Return all husbands of self in gedcom order.
+    /// Return all husbands of the family in Gedcom order.
     public func husbands(in index: RecordIndex) -> [Person] {
         people(in: index, role: .husband)
     }
 
-    /// Return all wives of self in gedcom order.
+    /// Return all wives of the family in Gedcom order.
     public func wives(in index: RecordIndex) -> [Person] {
         people(in: index, role: .wife)
     }
-}
 
-public extension Family {
-
-    /// Return all spouses in self in gedcom order.
+    /// Return all spouses in the family in Gedcom order.
     func spouses(in index: RecordIndex) -> [Person] {
         people(in: index, roles: [.husband, .wife])
     }
 
-    /// Return all spouses except given person in self in gedcom order.
+    /// Return all spouses except given person in the family in Gedcom order.
     func spouses(excluding person: Person, in index: RecordIndex) -> [Person] {
         spouses(in: index).filter { $0.key != person.key }
     }
 
-    /// Return first spouse other than given person in self.
-    func spouse(of person: Person, in index: RecordIndex) -> Person? {
+    /// Return first spouse other than given person in the family.
+    public func spouse(of person: Person, in index: RecordIndex) -> Person? {
         spouses(excluding: person, in: index).first
     }
 
-    /// Return true if person is a spouse in self.
+    /// Return true if person is a spouse in the family.
     func hasSpouse(_ person: Person, in index: RecordIndex) -> Bool {
         spouses(in: index).contains(where: { $0.key == person.key })
     }
@@ -120,6 +118,7 @@ extension Family: Equatable, Hashable, Identifiable {
 
 extension Family {
 
+	/// Return first marriage event in the family.
     public var marriageEvent: Event? {
         root.eventOfKind(.marriage)
     }
