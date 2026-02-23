@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 7 February 2026.
+//  Last changed on 23 February 2026.
 //
 
 import Foundation
@@ -55,18 +55,12 @@ struct ValidationContext {
 }
 
 /// Load and validate records from a Gedcom source into containers.
-///
-/// Parameters
-/// - source: Name of the source.
-/// - tagmap: TagMap ([String: String]) holding unique Strings for all keys in the Database.
-/// - keymap: KeyMap ([String: Int]]) that maps Record keys to their starting line numbers.
-/// - errorlog: ErrorLog ([Error]) that holds Error's found.
 func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog)
 -> (index: RecordIndex, persons: RecordList, families: RecordList, header: GedcomNode?)? {
 
     // Parse source into list of records.
     guard let recordList = loadRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
-	else { return nil }
+    else { return nil }
 
     // Check record closure.
     checkKeysAndReferences(records: recordList, path: source.name, keymap: keyMap, errlog: errlog)
@@ -86,14 +80,14 @@ func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout K
     // Validate records.
     let context = ValidationContext(index: index, keymap: keyMap, source: source.name)
     validatePersons(persons: persons, context: context, errlog: errlog)
-    //validateFamilies(records: rootList, keymap: keymap, errlog: &errlog) {
+    //validateFamilies(families: families, context: context, errlog: &errlog) {
 
     return (index, persons, families, header)
 }
 
 /// Load Gedcom records from a source; convert lines to data nodes and data nodes to records.
 public func loadRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
-                                 errlog: ErrorLog) -> RecordList? {
+                        errlog: ErrorLog) -> RecordList? {
     guard let dataNodes = loadDataNodes(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
     else { return nil }
     return buildRecords(from: dataNodes, keymap: keyMap, errlog: errlog)
@@ -115,7 +109,7 @@ func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyM
         lineno += 1
         if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
         switch parseLine(from: line) {
-        case .success(level: let level, key: let key, tag: let tag, value: let value):
+        case .success(lev: let level, key: let key, tag: let tag, val: let value):
             let node = GedcomNode(key: key, tag: tagMap.intern(tag: tag), val: value)
             nodes.add(node: node, data: level)
             if level == 0, let key = key { keyMap[key] = lineno }
@@ -127,41 +121,41 @@ func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyM
     return nodes
 }
 
-/// Process array of (node, level) pairs to build record array; use levels to guide record building.
+/// Process array of (node, lev) pairs to build a record list; uses lev-based state machine.
 func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RecordList {
 
-    enum State { case initial, main, error } // Record building states.
+    enum State { case initial, main, error } // States.
     var state: State = .initial
 
-    var recordList = RecordList()  // Array of records.
-    var prevNode: GedcomNode? = nil  // Previous node.
-    var prevLevel = 0  // Previous level.
-    var curRoot: GedcomNode? = nil  // Current root.
+    var recordList = RecordList()  // Returned records.
+    var prevNode: GedcomNode? = nil
+    var prevLev = 0
+    var curRoot: GedcomNode? = nil
 
-    for (curNode, curLevel) in dataNodes {  // State machine.
+    for (curNode, curLev) in dataNodes {  // Run state machine.
         switch state {
-        case .initial: // Handle first pair.
-            if (curLevel == 0) {
-                curRoot = curNode; // Set curRoot and goto .main.
+        case .initial:  // Handle first pair.
+            if (curLev == 0) {
+                curRoot = curNode;  // Set curRoot and goto .main.
                 state = .main;
-            } else { // Add error and goto .error.
+            } else {  // Add error and goto .error.
                 let error = Error(type: .syntax, severity: .fatal, message: "First line must have level 0")
                 errlog.append(error)
                 state = .error
             }
-        case .main: // Build records from (curNode, curLevel)'s.
-            if (curLevel == 0) { // Found next root.
-                recordList.append(curRoot!) // Save just built Record.
-                curRoot = curNode; // Set curRoot of the next Record.
-            } else if (curLevel == prevLevel) { // Found sib of prevNode.
+        case .main: // Building records.
+            if (curLev == 0) { // Next root.
+                recordList.append(curRoot!) // Save record.
+                curRoot = curNode; // Root of next record.
+            } else if (curLev == prevLev) { // Found sib.
                 curNode.dad = prevNode!.dad;
                 prevNode!.sib = curNode
-            } else if (curLevel == prevLevel + 1) { // Found kid of prevNode.
+            } else if (curLev == prevLev + 1) { // Found kid.
                 curNode.dad = prevNode
                 prevNode!.kid = curNode
-            } else if (curLevel < prevLevel) { // Found 'uncle' of prevNode.
+            } else if (curLev < prevLev) { // Found 'uncle'.
                 var count = 0;
-                while (curLevel < prevLevel) {
+                while (curLev < prevLev) {
                     count += 1
                     if (count > 100 || prevNode == nil) { // Error in tree structure.
                         let error = Error(type: .syntax, severity: .fatal,
@@ -171,62 +165,65 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorL
                         break
                     }
                     prevNode = prevNode!.dad
-                    prevLevel -= 1;
+                    prevLev -= 1;
                 }
                 curNode.dad = prevNode!.dad
                 prevNode!.sib = curNode
-            } else { // curLevel > prevLevel + 1 is illegal.
+            } else { // curLevel > prevLevel + 1.
                 let error = Error(type: .syntax, severity: .fatal, message: "Invalid level")
                 errlog.append(error)
                 state = .error
             }
-        case .error: // Skip nodes til next 0 level.
-            if curLevel == 0 {
-                curRoot = curNode  // Root of the next Record.
+        case .error: // Skip nodes til next 0 lev.
+            if curLev == 0 {
+                curRoot = curNode  // Root of the next record.
                 state = .main
             }
         }
-        prevLevel = curLevel
+        prevLev = curLev
         prevNode = curNode
     }
-    if (state == .main) { // If in .main append last record.
+    if (state == .main) { // Aappend last record.
         recordList.append(curRoot!)
     }
     return recordList;
 }
 
-/// Result enum returned by parseLine; on success holds Gedcom fields; on failure holds error message.
-enum ReadResult {
-    case success(level: Int, key: String?, tag: String, value: String?)
+/// Result returned by parseLine; on success holds Gedcom fields; on failure holds error message.
+enum ParseResult {
+    case success(lev: Int, key: String?, tag: String, val: String?)
     case failure(errmsg: String)
 }
 
-/// Lexer for Gedcom lines; extract level, key, tag and value; return them in a read result.
-func parseLine(from line: String) -> ReadResult {
+/// Lexer for Gedcom lines; extracts lev, key, tag and val; returns them in a parse result.
+func parseLine(from line: String) -> ParseResult {
     let trim = line.trimmingCharacters(in: .whitespacesAndNewlines)
 
     guard !trim.isEmpty else { return .failure(errmsg: "Empty string") }
     guard trim.count <= 255 else { return .failure(errmsg: "Gedcom line is too long") }
     var index = trim.startIndex
 
-    // Get level.
-    while index < trim.endIndex, trim[index].isWhitespace {  // Skip whitespace.
-    		index = trim.index(after: index)
+    /// Local function to skip white space.
+    func skipWhiteSpace() {
+        while index < trim.endIndex, trim[index].isWhitespace {
+            index = trim.index(after: index)
+        }
     }
+
+    // Lev.
+    skipWhiteSpace()
     guard index < trim.endIndex, trim[index].isNumber
     else { return .failure(errmsg: "Line does not begin with level") }
-    var levelString = ""
+    var levString = ""
     while index < trim.endIndex, trim[index].isNumber {
-        levelString.append(trim[index])
+        levString.append(trim[index])
         index = trim.index(after: index)
     }
-    guard let level = Int(levelString)
+    guard let lev = Int(levString)
     else { return .failure(errmsg: "Invalid level") }
 
     // Key if present.
-    while index < trim.endIndex, trim[index].isWhitespace {
-    		index = trim.index(after: index)
-    }
+    skipWhiteSpace()
     if index >= trim.endIndex {
         return .failure(errmsg: "Gedcom line is incomplete")
     }
@@ -247,23 +244,20 @@ func parseLine(from line: String) -> ReadResult {
         key = String(trim[keyStart..<index])
         index = trim.index(after: index) // Skip the space
     }
-    while index < trim.endIndex, trim[index].isWhitespace {
-    		index = trim.index(after: index)
-    }
+    skipWhiteSpace()
     guard index < trim.endIndex
     else { return .failure(errmsg: "The line is incomplete") }
 
     // Tag.
     let tagStart = index
     while index < trim.endIndex, !trim[index].isWhitespace {
-    		index = trim.index(after: index)
+        index = trim.index(after: index)
     }
     let tag = String(trim[tagStart..<index])
-    while index < trim.endIndex, trim[index].isWhitespace {
-    		index = trim.index(after: index)
-    }
-    // Value.
-    let value = index < trim.endIndex ? String(trim[index...]) : nil
 
-    return .success(level: level, key: key, tag: tag, value: value)
+    // Val.
+    skipWhiteSpace()
+    let val = index < trim.endIndex ? String(trim[index...]) : nil
+
+    return .success(lev: lev, key: key, tag: tag, val: val)
 }

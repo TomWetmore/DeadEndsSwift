@@ -49,8 +49,6 @@
 		263408DA2E216A7200F4E6DE /* RunScript */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RunScript; sourceTree = BUILT_PRODUCTS_DIR; };
 		2673AD292E22A6B10078C61B /* libWarehouse.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWarehouse.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2682068B2D1337930051544B /* libDeadEndsLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDeadEndsLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		2686ABAA2D94F1E300FE56DC /* SExprPNode.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SExprPNode.md; sourceTree = "<group>"; };
-		268F3D732D9D91FC00304D51 /* ImportStack.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ImportStack.md; sourceTree = "<group>"; };
 		26B50D792E79C4C5006A978A /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Chat.swift; path = Warehouse/Chat.swift; sourceTree = "<group>"; };
 		26DF07562E69E7E6000D08EE /* DeadEndsTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DeadEndsTest; sourceTree = BUILT_PRODUCTS_DIR; };
 		26EABDC32F2ACDAF001406E5 /* DeadEnds.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeadEnds.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -141,6 +139,11 @@
 		263408DB2E216A7200F4E6DE /* RunScript */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = RunScript;
+			sourceTree = "<group>";
+		};
+		263C00902F4CD5DD0061F086 /* Documents */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Documents;
 			sourceTree = "<group>";
 		};
 		2673AD2D2E22A7000078C61B /* Warehouse */ = {
@@ -240,8 +243,8 @@
 				26DF07572E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC42F2ACDAF001406E5 /* DeadEndsIPad */,
 				26106FAE2D7BC96400994B2C /* Frameworks */,
+				263C00902F4CD5DD0061F086 /* Documents */,
 				268206632D13370F0051544B /* Products */,
-				2686ABA92D94F1BC00FE56DC /* Documents */,
 			);
 			sourceTree = "<group>";
 		};
@@ -256,15 +259,6 @@
 				26EABDC32F2ACDAF001406E5 /* DeadEnds.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		2686ABA92D94F1BC00FE56DC /* Documents */ = {
-			isa = PBXGroup;
-			children = (
-				2686ABAA2D94F1E300FE56DC /* SExprPNode.md */,
-				268F3D732D9D91FC00304D51 /* ImportStack.md */,
-			);
-			path = Documents;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

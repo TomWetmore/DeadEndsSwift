@@ -78,15 +78,19 @@ final public class PlaceIndex {
 //    return results
 //}
 
-/// Break a place value string into components; further processing
-/// is done in _______.
+/// Get the canonical parts of a Gedcom PLAC value.
+func placeParts(_ raw: String) -> [String] {
+    placeComponents(raw).flatMap(placeKeys(phrase:))
+}
+
+/// Break a place value string into components; further processing done in placeKeys.
 private func placeComponents(_ raw: String) -> [String] {
 
-    // Start with the value of a place node; lowercase it and clean whitespace.
+    // Lowercase and clean whitespace.
     var string = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
     while string.contains("  ") { string = string.replacingOccurrences(of: "  ", with: " ") }
 
-    // Split the string around commas and or's.
+    // Split value around commas and or's.
     let commaParts = string
         .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         .filter { !$0.isEmpty }
@@ -94,21 +98,27 @@ private func placeComponents(_ raw: String) -> [String] {
     for part in commaParts {
         if part.contains(" or ") {
             orParts.append(contentsOf:
-                part.split(separator: " or ").map { $0.trimmingCharacters(in: .whitespaces) }
+                            part.split(separator: " or ").map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty }
             )
         } else {
             orParts.append(part)
         }
     }
-    // orParts is an array of components from the original value. Remove any leading 'noise' words
-    // from each component.
+    // orParts is an array of components from the original value. Remove leading 'noise' words
+    // and certain country parts from the components .
     let noisePrefixes: [String] = [
-        "prob ", "probable ", "probably ", "maybe ",
-        "poss ", "possible ", "possibly ",
+        "probable ", "probably ", "prob ", "maybe ",
+        "possible ", "possibly ", "poss ",
         "near ", "about ", "abt ", "circa "
     ]
-    for var part in orParts {
+    let dropCountries: Set<String> = [
+        "united states", "united states of america",
+        "usa", "u.s.", "u.s.a", "us",
+        "canada"
+    ]
+    let stripped = orParts.compactMap { original -> String? in
+        var part = original
         var changed = true
         while changed {
             changed = false
@@ -117,59 +127,51 @@ private func placeComponents(_ raw: String) -> [String] {
                 changed = true
             }
         }
-        if part.isEmpty { /* How do I remove a part? */ print("How do I remove a part") }
+        return part.isEmpty ? nil : part
     }
 
-    // Drop certain country words.
-    let dropCountries: Set<String> = [
-        "united states", "united states of america",
-        "usa", "u.s.", "u.s.a", "us",
-        "canada"
-    ]
-    for part in orParts {
-        if dropCountries.contains(part) { print("How do I remove a part") }
-    }
+    let withoutCountries = stripped.filter { !dropCountries.contains($0) }
+
+    // Keep countries only if they were the only remaining parts.
+    orParts = withoutCountries.isEmpty ? stripped : withoutCountries
     return orParts
 }
 
-/// Get the place keys, one or more, for a place component.
-private func placeKeys(forComponent part: String) -> [String] {
+/// Convert place phrases to final form.
+private func placeKeys(phrase: String) -> [String] {
 
-    let jurisdiction: Set<String> = ["county","city", "commonwealth", "borough", "district", "municipality", "province", "nation", "state", "parish", "colony", "village", "town"]
-    let glue: Set<String> = ["of","the"]
+    var results: [String] = [phrase]  // Keep original phrase.
 
-    let full = part.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !full.isEmpty else { return [] }
+    /// Helper functions.
+    func wordCount(_ phrase: String) -> Int { phrase.split(separator: " ").count }
 
-    let tokens = full.split(whereSeparator: { $0.isWhitespace }).map(String.init)
-    guard !tokens.isEmpty else { return [full] }
-
-    var out: [String] = [full]  // Keep full phrase.
-
-    if let first = tokens.first, jurisdiction.contains(first), tokens.count > 1 {  // Handle prefixes.
-        var core = Array(tokens.dropFirst())
-        while let t = core.first, glue.contains(t) { core.removeFirst() }
-        if !core.isEmpty {
-            out.append(core.joined(separator: " "))
-            out.append(contentsOf: core.filter { !glue.contains($0) && !jurisdiction.contains($0) })
-        }
+    func maybeAddVariant(_ phrase: String) {
+        if phrase.isEmpty { return }
+        if wordCount(phrase) < 1 { return }
+        results.append(phrase)
     }
-    else if let last = tokens.last, jurisdiction.contains(last), tokens.count > 1 {  // Handle suffixes.
-        let core = Array(tokens.dropLast())
-        out.append(core.joined(separator: " "))
-        out.append(contentsOf: core.filter { !glue.contains($0) && !jurisdiction.contains($0) })
+    let prefixes = [
+        "city of ",
+        "county of ",
+        "state of ",
+        "province of ",
+        "commonwealth of "
+    ]
+    for prefix in prefixes where phrase.hasPrefix(prefix) {
+        maybeAddVariant(String(phrase.dropFirst(prefix.count)))
     }
-    else {  // Normal, no prefix, no suffix case.
-        out.append(contentsOf: tokens.filter { !glue.contains($0) && !jurisdiction.contains($0) })
+    let suffixes = [
+        " city",
+        " county",
+        " province",
+        " state",
+        " commonwealth",
+        " colony"
+    ]
+    for suffix in suffixes where phrase.hasSuffix(suffix) {
+        maybeAddVariant(String(phrase.dropLast(suffix.count)))
     }
-
-    var seen = Set<String>()  // Dedupe.
-    return out.filter { seen.insert($0).inserted }
-}
-
-/// Get the canonical parts of a Gedcom PLAC value.
-func oldplaceParts(_ raw: String) -> [String] {
-    placeComponents(raw).flatMap(placeKeys(forComponent:))
+    return Array(Set(results)) // Dedupe.
 }
 
 /// Builds a PlaceIndex from a RecordList.
@@ -217,11 +219,11 @@ extension PlaceIndex {
 }
 
 extension PlaceIndex {
-    
-    /// Debug method that prints the contents of a PlaceIndex.
+
+    /// Print contents of a PlaceIndex; for testing and debug.
     func showContents(using recordIndex: RecordIndex) {
         let sortedEntries = index.sorted { $0.key.part < $1.key.part }
-        
+
         for (placeKey, recordKeys) in sortedEntries {
             for key in recordKeys.sorted() {
                 if let person = recordIndex.person(for: key) {
@@ -237,7 +239,7 @@ extension PlaceIndex {
         }
     }
 
-    /// Show the frequency table of a place index.
+    /// Show the frequency table of a place index; for testing and debug.
     public func showPlaceFrequencyTable() {
         var total: Int = 0
         let sorted = index.sortedByValueCount()
@@ -254,140 +256,21 @@ extension Dictionary where Value: Collection {
     func sortedByValueCount(descending: Bool = true) -> [(Key, Value)] {
         self.sorted {
             descending
-                ? $0.value.count > $1.value.count
-                : $0.value.count < $1.value.count
+            ? $0.value.count > $1.value.count
+            : $0.value.count < $1.value.count
         }
     }
 }
 
-/// Find canonical search keys for a Gedcom PLAC value.
-/// Returns expanded keys suitable for indexing/search.
-func placeParts(_ raw: String) -> [String] {
+public func testPlaceIndexing() {
+    let values = ["New London, New London County, State of Connecticut, United States",
+                  "near Pittsburgh, Pennsylvania, USA",
+                  "New London, Connecticut Colony",
+                  "St. Mary's Bay, Digby County, Nova Scotia, Canada"
+                  ]
 
-    var s = raw.lowercased()
-        .trimmingCharacters(in: .whitespacesAndNewlines)
-    while s.contains("  ") {
-        s = s.replacingOccurrences(of: "  ", with: " ")
+    for value in values {
+        let parts = placeParts(value)
+        print("\(value): {\(parts)}")
     }
-
-    // -------------------------------
-    // Stage 2: Strip leading noise qualifiers
-    // -------------------------------
-
-    let noisePrefixes: [String] = [
-        "prob ", "probable ", "probably ", "maybe ",
-        "poss ", "possible ", "possibly ",
-        "near ", "about ", "abt ", "circa "
-    ]
-
-    var changed = true
-    while changed {
-        changed = false
-        for prefix in noisePrefixes where s.hasPrefix(prefix) {
-            s = s.dropFirst(prefix.count)
-                .trimmingCharacters(in: .whitespaces)
-            changed = true
-        }
-    }
-
-    // -------------------------------
-    // Stage 3: Split on commas
-    // -------------------------------
-
-    let commaParts = s
-        .split(separator: ",")
-        .map { $0.trimmingCharacters(in: .whitespaces) }
-        .filter { !$0.isEmpty }
-
-    // Expand " or " alternatives
-    var components: [String] = []
-    for part in commaParts {
-        if part.contains(" or ") {
-            components.append(contentsOf:
-                part.split(separator: " or ")
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
-                    .filter { !$0.isEmpty }
-            )
-        } else {
-            components.append(part)
-        }
-    }
-
-    // -------------------------------
-    // Stage 4: Drop countries
-    // -------------------------------
-
-    let dropCountries: Set<String> = [
-        "united states", "united states of america",
-        "usa", "u.s.", "u.s.a", "us",
-        "canada"
-    ]
-
-    // -------------------------------
-    // Stage 5: Expand jurisdiction variants
-    // -------------------------------
-
-    func expandedKeys(from part: String) -> [String] {
-
-        let p = part.trimmingCharacters(in: .whitespaces)
-        guard !p.isEmpty else { return [] }
-        if dropCountries.contains(p) { return [] }
-
-        var out: [String] = [p]  // Always keep original phrase
-
-        func wordCount(_ s: String) -> Int {
-            s.split(separator: " ").count
-        }
-
-        func maybeAddVariant(_ s: String) {
-            let v = s.trimmingCharacters(in: .whitespaces)
-            guard !v.isEmpty else { return }
-            // Prevent overly lossy variants like "iron city" → "iron"
-            guard wordCount(v) >= 2 else { return }
-            out.append(v)
-        }
-
-        // Jurisdiction prefixes
-        let prefixRules = [
-            "city of ",
-            "county of ",
-            "state of ",
-            "province of ",
-            "commonwealth of "
-        ]
-
-        for pref in prefixRules where p.hasPrefix(pref) {
-            maybeAddVariant(String(p.dropFirst(pref.count)))
-        }
-
-        // Jurisdiction suffixes
-        let suffixRules = [
-            " city",
-            " county",
-            " province",
-            " state",
-            " commonwealth",
-            " colony"
-        ]
-
-        for suf in suffixRules where p.hasSuffix(suf) {
-            maybeAddVariant(String(p.dropLast(suf.count)))
-        }
-
-        return out
-    }
-
-    // -------------------------------
-    // Stage 6: Build final key list
-    // -------------------------------
-
-    var allKeys: [String] = []
-
-    for comp in components {
-        allKeys.append(contentsOf: expandedKeys(from: comp))
-    }
-
-    // Deduplicate while preserving order
-    var seen = Set<String>()
-    return allKeys.filter { seen.insert($0).inserted }
 }

@@ -48,6 +48,7 @@ struct PersonPage: View {
                 criteria: $searchCriteria,
                 onSearch: { crit in
                     print("search button pressed with \(crit)")
+                    testPlaceIndexing()  // Debugging.
                     let results = model.database?.searchPersons(crit)
                     for result in results! {  // Debugging.
                         print(result.fullDescription(in: model.database!.recordIndex))
