@@ -52,7 +52,8 @@ struct PersonActionBar: View {
             Button("Descendancy List") { model.path.append(Route.descendancy(person)) }
             Button("New Person") {
                 guard let index,
-                      let newPerson = Person(GedcomNode(key: generateRandomKey(index: index), tag: "INDI"))
+                      let newPerson = Person(GedcomNode(key: generateRandomKey(index: index),
+                                                        tag: GedcomTag.INDI))
                 else { return }
                 model.path.append(Route.personEditor(newPerson))
             }

@@ -174,7 +174,7 @@ extension Program {
 //InterpType interpSpouses(ProgramNode* pnode, Context* context, PValue *pval) {
 //    bool eflg = false;
 //    GNode *indi = evaluatePerson(pnode->personExpr, context, &eflg);
-//    if (eflg || !indi || nestr(indi->tag, "INDI")) {
+//    if (eflg || !indi || nestr(indi->tag, GedcomTag.INDI)) {
 //        scriptError(pnode, "the first argument to spouses must be a person");
 //        return InterpError;
 //    }
@@ -202,7 +202,7 @@ extension Program {
 //InterpType interpFamilies(ProgramNode* node, Context* context, PValue *pval) {
 //    bool eflg = false;
 //    GNode *indi = evaluatePerson(node->personExpr, context, &eflg);
-//    if (eflg || !indi || nestr(indi->tag, "INDI")) {
+//    if (eflg || !indi || nestr(indi->tag, GedcomTag.INDI)) {
 //        scriptError(node, "the first argument to families must be a person");
 //        return InterpError;
 //    }
@@ -236,7 +236,7 @@ extension Program {
 //InterpType interpFathers(ProgramNode* node, Context* context, PValue *pval) {
 //    bool eflg = false;
 //    GNode *indi = evaluatePerson(node->personExpr, context, &eflg);
-//    if (eflg || !indi || nestr(indi->tag, "INDI")) {
+//    if (eflg || !indi || nestr(indi->tag, GedcomTag.INDI)) {
 //        scriptError(node, "the first argument to fathers must be a person");
 //        return InterpError;
 //    }
@@ -264,7 +264,7 @@ extension Program {
 //InterpType interpMothers (PNode* node, Context* context, PValue *pval) {
 //    bool eflg = false;
 //    GNode *indi = evaluatePerson(node->personExpr, context, &eflg);
-//    if (eflg || !indi || nestr(indi->tag, "INDI")) {
+//    if (eflg || !indi || nestr(indi->tag, GedcomTag.INDI)) {
 //        scriptError(node, "the first argument to mothers must be a person");
 //        return InterpError;;
 //    }
@@ -296,7 +296,7 @@ extension Program {
 //    bool eflg = false;
 //    InterpType irc;
 //    GNode *indi = evaluatePerson(node->personExpr, context, &eflg);
-//    if (eflg || !indi || nestr(indi->tag, "INDI")) {
+//    if (eflg || !indi || nestr(indi->tag, GedcomTag.INDI)) {
 //        scriptError(node, "the first argument to parents must be a person");
 //        return InterpError;
 //    }

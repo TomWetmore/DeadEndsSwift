@@ -253,7 +253,7 @@ extension Program {
         let pvalue = try evaluate(pnode)
         let line = pnode.line ?? 0
         // PValue must be a .gnode with a person root as associated value.
-        guard case let .person(person) = pvalue, person.tag == "INDI" else {
+        guard case let .person(person) = pvalue, person.tag == GedcomTag.INDI else {
             throw RuntimeError.typeError("\(line): \(errorMessage)")
         }
         return person

@@ -311,7 +311,7 @@ extension RecordSequence {
 func makeSequence(keys: [String]) -> RecordSequence {
     let sequence = RecordSequence()
     for key in keys {
-        let node = GedcomNode(key: key, tag: "INDI", val: nil) // dummy node
+        let node = GedcomNode(key: key, tag: GedcomTag.INDI, val: nil) // dummy node
         sequence.append(root: node, key: key)
     }
     sequence.keySort()

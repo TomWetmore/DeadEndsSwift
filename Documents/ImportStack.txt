@@ -91,7 +91,7 @@ func getValidRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout K
 	var	families = RootList()
 	for root in rootlist! {
 		if let key = root.key { index[key] = root }
-		if root.tag == "INDI" { persons.append(root) }
+		if root.tag == GedcomTag.INDI { persons.append(root) }
 		if root.tag == "FAM" { families.append(root) }
 	}
 	let context = ValidationContext(index: index, keymap: keymap, source: path)

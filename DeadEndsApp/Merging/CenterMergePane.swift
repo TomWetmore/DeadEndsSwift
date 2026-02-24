@@ -14,7 +14,7 @@ import DeadEndsLib
 
 struct CenterMergePane: View {
 
-    @State private var mergedRoot: GedcomNode = GedcomNode(tag: "INDI")
+    @State private var mergedRoot: GedcomNode = GedcomNode(tag: GedcomTag.INDI)
     @State private var viewModel: GedcomTreeEditorModel
     @State private var manager: GedcomTreeManager
     @EnvironmentObject private var session: MergeSession

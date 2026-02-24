@@ -10,7 +10,7 @@ import Foundation
 
 // Splits a person GNode tree into its components.
 public func splitPerson(indi: GedcomNode) -> (name: GedcomNode?, refn: GedcomNode?, sex: GedcomNode?, body: GedcomNode?, famc: GedcomNode?, fams: GedcomNode?) {
-	guard indi.tag == "INDI" else {
+	guard indi.tag == GedcomTag.INDI else {
 		fatalError("splitPerson called on non-person node")
 	}
 
@@ -61,7 +61,7 @@ public func splitPerson(indi: GedcomNode) -> (name: GedcomNode?, refn: GedcomNod
 
 // Joins a person GNode tree from its components.
 public func joinPerson(indi: GedcomNode, name: GedcomNode?, refn: GedcomNode?, sex: GedcomNode?, body: GedcomNode?, famc: GedcomNode?, fams: GedcomNode?) {
-	guard indi.tag == "INDI" else {
+	guard indi.tag == GedcomTag.INDI else {
 		fatalError("joinPerson called on non-person node")
 	}
 

@@ -3,16 +3,10 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 19 February 2026.
+//  Last changed on 24 February 2026.
 //
 
 import Foundation
-
-extension FamilyRoleTag {
-    static let HUSB = FamilyRoleTag.husband.rawValue
-    static let WIFE = FamilyRoleTag.wife.rawValue
-    static let CHIL = FamilyRoleTag.child.rawValue
-}
 
 /// Family structure.
 public struct Family: Record {
@@ -21,7 +15,7 @@ public struct Family: Record {
 
     /// Create family from a 0 FAM node; fail if tag not FAM or no key.
     public init?(_ root: GedcomNode) {
-        guard root.tag == "FAM", root.key != nil  else { return nil }
+        guard root.tag == GedcomTag.FAM, root.key != nil  else { return nil }
         self.root = root
     }
 }

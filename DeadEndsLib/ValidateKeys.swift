@@ -126,7 +126,7 @@ public func isKey(_ value: String) -> Bool {
 extension GedcomNode {
     func recordKind() -> RecordKind {
         switch self.tag {
-        case "INDI":
+        case GedcomTag.INDI:
             return .person
         case "FAM":
             return .family

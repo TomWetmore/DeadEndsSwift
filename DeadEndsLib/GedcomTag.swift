@@ -3,13 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 4 February 2026.
-//  Last changed on 12 February 2026.
+//  Last changed on 24 February 2026.
 //
 
 import Foundation
 
 /// Gedcom tags referred to in code.
-enum GedcomTag: String {
+public enum GedcomTag: String {
     case indi = "INDI"
     case fam  = "FAM"
     case sour = "SOUR"
@@ -37,4 +37,22 @@ extension GedcomNode {
     
     /// Check if node has specific tag.
     func hasTag(_ tag: GedcomTag) -> Bool { self.tag == tag.rawValue }
+}
+
+/// See if this works out.
+public extension GedcomTag {
+    static let INDI = GedcomTag.indi.rawValue
+    static let FAM  = GedcomTag.fam.rawValue
+    static let NAME = GedcomTag.name.rawValue
+    static let SEX  = GedcomTag.sex.rawValue
+    static let BIRT = GedcomTag.birt.rawValue
+    static let DEAT = GedcomTag.deat.rawValue
+    static let FAMS = GedcomTag.fams.rawValue
+    static let FAMC = GedcomTag.famc.rawValue
+    static let HUSB = GedcomTag.husb.rawValue
+    static let WIFE = GedcomTag.wife.rawValue
+    static let CHIL = GedcomTag.chil.rawValue
+    static let DATE = GedcomTag.date.rawValue
+    static let PLAC = GedcomTag.plac.rawValue
+    static let MARR = GedcomTag.marr.rawValue
 }

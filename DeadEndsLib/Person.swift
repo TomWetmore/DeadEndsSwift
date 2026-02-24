@@ -37,7 +37,7 @@ public struct Person: Record {
 
     /// Create person. Fail if root is not INDI or has no key.
     public init?(_ root: GedcomNode) {
-        guard root.tag == "INDI", root.key != nil
+        guard root.tag == GedcomTag.INDI, root.key != nil
         else { return nil }
         self.root = root
     }
@@ -47,7 +47,7 @@ extension Person {
 
     /// Return display name from the first 1 NAME node.
     public var name: String? {
-        guard let nameNode = root.kid(withTag: "NAME"),
+        guard let nameNode = root.kid(withTag: GedcomTag.NAME),
               let gedcomName = GedcomName(from: nameNode)
         else { return nil }
         return gedcomName.displayName()
@@ -86,7 +86,7 @@ public extension Person {
 
     /// Return sex type person.
     var sex: SexType {
-        guard let value = kidVal(forTag: "SEX")?.uppercased()
+        guard let value = kidVal(forTag: GedcomTag.SEX)?.uppercased()
         else { return .unknown }
         switch value {
         case "M": return .male

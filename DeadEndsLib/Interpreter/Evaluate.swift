@@ -174,7 +174,7 @@ extension Program {
 
     func evaluatePerson(_ pnode: ProgramNode) throws -> GedcomNode? {
         let pvalue = try evaluate(pnode)
-        guard case .gnode(let gnode) = pvalue, gnode.tag == "INDI" else { return nil }
+        guard case .gnode(let gnode) = pvalue, gnode.tag == GedcomTag.INDI else { return nil }
         return gnode
     }
 

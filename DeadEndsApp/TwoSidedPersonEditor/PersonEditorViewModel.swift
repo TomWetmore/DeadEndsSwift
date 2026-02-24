@@ -52,14 +52,14 @@ final class PersonEditorViewModel: ObservableObject {
         self.showDeath = !(deathDateVal.isEmpty && deathPlaceVal.isEmpty)
 
         // Build the initial tree
-        self.root = GedcomNode(key: person.key, tag: "INDI")
+        self.root = GedcomNode(key: person.key, tag: GedcomTag.INDI)
         rebuildGedcomTree()
     }
 
     /// Rebuilds the Gedcom tree.
     func rebuildGedcomTree() {
         let previousExpanded = expanded
-        let root = GedcomNode(key: person.key, tag: "INDI")
+        let root = GedcomNode(key: person.key, tag: GedcomTag.INDI)
 
         if !name.isEmpty {
             root.addKid(tag: "NAME", val: name)
@@ -69,8 +69,8 @@ final class PersonEditorViewModel: ObservableObject {
         }
         if !birthDate.isEmpty || !birthPlace.isEmpty {
             let birt = root.addKid(tag: "BIRT", val: nil)
-            if !birthDate.isEmpty { birt.addKid(tag: "DATE", val: birthDate) }
-            if !birthPlace.isEmpty { birt.addKid(tag: "PLAC", val: birthPlace) }
+            if !birthDate.isEmpty { birt.addKid(tag: GedcomTag.DATE, val: birthDate) }
+            if !birthPlace.isEmpty { birt.addKid(tag: GedcomTag.PLAC, val: birthPlace) }
             // Auto-expand BIRT when it’s created/has children
 
             // Schedule expansion after tree updates
