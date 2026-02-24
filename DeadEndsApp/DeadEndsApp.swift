@@ -3,7 +3,7 @@
 //  DeadEndsApp.swift
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 17 January 2026.
+//  Last changed on 24 February 2026.
 //
 
 import SwiftUI
@@ -13,20 +13,16 @@ import DeadEndsLib
 @main
 struct DeadEndsApp: App {
 
-    // System wide application model injected into the environment.
-    @StateObject private var model = AppModel()
+    @StateObject private var model = AppModel()  // System wide application model.
 
     /// Application scene.
     var body: some Scene {
-
         WindowGroup {
             RootView()
                 .environmentObject(model)
-                .onAppear {
-                    print("RootView appearing — PID:", getpid()) // Debug.
-                }
+                .onAppear { print("RootView appear — PID:", getpid()) }
                 .onDisappear {
-                    print("RootView disappearing, terminating app.") // Debug.
+                    print("RootView disappear, app terminate.")
                     NSApplication.shared.terminate(nil)
                 }
         }

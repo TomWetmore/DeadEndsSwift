@@ -3,17 +3,16 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 7 January 2026.
+//  Last changed on 24 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Prompts user to select a Gedcom file and then loads it into a DeadEnds Database.
-
+/// View that prompts user to select a Gedcom file which is then loaded into a DeadEnds Database.
 struct LoaderView: View {
 
-    @EnvironmentObject var model: AppModel  // Holds the Database.
+    @EnvironmentObject var model: AppModel  // Includes database.
 
     /// Body property for LoaderView.
     var body: some View {
@@ -33,10 +32,8 @@ struct LoaderView: View {
         }.padding()
     }
 
-    /// Presents an open file dialog for choosing a Gedcom file. Returns the path to Gedcom file or nil if
-    /// user cancels.
+    /// Open file dialog for choosing a Gedcom file.
     func openGedcomPanel() -> String? {
-        
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.init(filenameExtension: "ged")!]
         panel.allowsMultipleSelection = false

@@ -1,4 +1,4 @@
-Whow a family on the desktop, two parents above and children in a row centered below. This would also be the best time to start drawing connecting lines.
+Show a family on the desktop, two parents above and children in a row centered below. This would also be the best time to start drawing connecting lines.
 
 That’s a very natural next experiment, and it fits perfectly with what you’ve already built:
 you already have cards; you already have positions (center points); you already have cardFrames (so you can compute connection endpoints); you already have selection (so later you can select a whole family cluster, etc.).
