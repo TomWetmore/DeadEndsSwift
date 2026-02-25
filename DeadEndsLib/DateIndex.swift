@@ -3,15 +3,15 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 November 2025.
-//  Last changed on 12 February 2026.
+//  Last changed on 24 February 2026.
 //
 
 import Foundation
 
-/// Date index key. Combine year with event type.
+/// Date index key; combines year with event kind.
 public struct DateIndexKey: Hashable {
     let year: Year
-    let event: EventKind   // .birth, .death, .marriage, ...
+    let event: EventKind
 }
 
 /// Date index for DeadEnds database.
@@ -64,9 +64,9 @@ public func buildDateIndex(from recordIndex: RecordIndex) -> DateIndex {
 
     for (_, root) in recordIndex {
         switch root.tag {
-        case GedcomTag.indi.rawValue:
+        case GedcomTag.INDI:
             if let person = Person(root) { dateIndex.indexDates(from: person) }
-        case GedcomTag.fam.rawValue:
+        case GedcomTag.FAM:
             if let family = Family(root) { dateIndex.indexDates(from: family) }
         default: break
         }
@@ -78,7 +78,7 @@ extension DateIndex {
 
     /// Index the date nodes in an event tree.
     private func indexDates(in eventNode: GedcomNode, kind: EventKind, recordKey: RecordKey) {
-        for dateNode in eventNode.kids(withTag: GedcomTag.date.rawValue) {
+        for dateNode in eventNode.kids(withTag: GedcomTag.DATE) {
             guard let year = year(from: dateNode) else { continue }
             add(year: year, event: kind, recordKey: recordKey)
         }

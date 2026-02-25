@@ -3,24 +3,24 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 22 February 2026.
+//  Last changed on 24 February 2026.
 //
 
 import Foundation
 
-/// Place index key; combines an event kind with a name part.
+/// Place index key; combines a place part with an event kind.
 struct PlaceIndexKey: Hashable {
-    let part: String  // Part name.
-    let event: EventKind  // Event kind.
+    let part: String
+    let event: EventKind
 }
 
 /// Place index for DeadEnds database.
 final public class PlaceIndex {
 
-    /// Index is a map from place index keys (part x event kind) to sets of record keys.
+    /// Map place index keys to sets of record keys.
     private(set) var index: [PlaceIndexKey : Set<RecordKey>] = [:]  // Representation.
 
-    /// Add entries to the index; place is expanded into its parts.
+    /// Add entries to the index; place is expanded into parts.
     public func add(place: String, event: EventKind, recordKey: RecordKey) {
         for part in placeParts(place) {
             add(part: part, event: event, recordKey: recordKey)
@@ -180,9 +180,9 @@ public func buildPlaceIndex(from recordIndex: RecordIndex) -> PlaceIndex {
 
     for (_, root) in recordIndex {
         switch root.tag {
-        case GedcomTag.indi.rawValue:
+        case GedcomTag.INDI:
             if let person = Person(root) { placeIndex.indexPlaces(from: person) }
-        case GedcomTag.fam.rawValue:
+        case GedcomTag.FAM:
             if let family = Family(root) { placeIndex.indexPlaces(from: family) }
         default: break
         }

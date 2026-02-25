@@ -3,7 +3,7 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 16 February 2026.
+//  Last changed on 24 February 2026.
 //
 
 import Foundation
@@ -30,24 +30,24 @@ final public class NameIndex {
 		self.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
 	}
 
-	/// Add entry to the name index.
+	/// Add entry to name index.
 	func add(nameKey: NameKey, recordKey: RecordKey) {
 		index[nameKey, default: Set()].insert(recordKey)
 	}
 
-    /// Remove entry from name index; convert value to a name key.
+    /// Remove entry from name index; convert value name key.
     public func remove(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value)
 		else { return }
         remove(nameKey: gedcomName.nameKey, recordKey: recordKey)
     }
 
-    /// Remove entry from the name index.
+    /// Remove entry from name index.
     func remove(nameKey: NameKey, recordKey: RecordKey) {
         if var records = index[nameKey] {
             records.remove(recordKey)
             if records.isEmpty { index.removeValue(forKey: nameKey) }
-            else { index[nameKey] = records } // Update the record set.
+            else { index[nameKey] = records } // Update record set.
         }
     }
 
@@ -112,7 +112,7 @@ extension Person {
 
 	/// Return the array of non-nil values of the 1 NAME lines in a Person.
     var nameValues: [String] {
-        self.root.kidVals(forTag: "NAME")
+        self.root.kidVals(forTag: GedcomTag.NAME)
     }
 }
 

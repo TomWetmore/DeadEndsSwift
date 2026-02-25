@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 12 February 2026..
+//  Last changed on 24 February 2026.
 //
 
 import Foundation
@@ -12,40 +12,42 @@ import Foundation
 struct DataNodes<Type> {
 	var nodes: [(GedcomNode, Type)] // Representation.
 
-    /// Create a data nodes object with empty array.
+    /// Create data nodes object with empty array.
 	init() { self.nodes = [] }
 
-    /// Creates a DataNodes object from a [(GedcomNode, Type)] array.
+    /// Create data nodes object from a tuple array.
     init(from tuples: [(GedcomNode, Type)]) { self.nodes = tuples }
 
-	/// Add a (Gedcom node, type) pair to the array.
+	/// Add tuple to data nodes.
 	mutating func add(node: GedcomNode, data: Type) { nodes.append((node, data)) }
 
-	/// Return the associated value of a Gedcom node.
+	/// Return the associated value of a node.
 	func getInfo(for node: GedcomNode) -> Type? {
 		return nodes.first { $0.0 === node }?.1
 	}
 
-    /// Return the array of all Gedcom nodes.
+    /// Return array of all Gedcom nodes.
 	func allNodes() -> [GedcomNode] {
 		return nodes.map { $0.0 }
 	}
 
-    /// Return the array of all associated values.
+    /// Return array of all associated values.
 	func allInfo() -> [Type] {
 		return nodes.map { $0.1 }
 	}
 }
 
-/// Implement sequence protocol.
+/// Implement sequence.
 extension DataNodes: Sequence {
+
     func makeIterator() -> IndexingIterator<Array<(GedcomNode, Type)>> {
         return nodes.makeIterator()
     }
 }
 
-/// Implement collection protocol.
+/// Implement collection.
 extension DataNodes: Collection {
+
     typealias Index = Int
     typealias Element = (GedcomNode, Type)
 

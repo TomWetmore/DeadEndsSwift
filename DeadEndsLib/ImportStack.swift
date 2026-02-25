@@ -55,14 +55,14 @@ struct ValidationContext {
 }
 
 /// Load and validate records from a Gedcom source into containers.
-func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog)
--> (index: RecordIndex, persons: RecordList, families: RecordList, header: GedcomNode?)? {
-
-    // Parse source into list of records.
+func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
+                      errlog: ErrorLog) -> (index: RecordIndex, persons: RecordList,
+                                            families: RecordList, header: GedcomNode?)? {
+    // Parse source into records.
     guard let recordList = loadRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
     else { return nil }
 
-    // Check record closure.
+    // Check closure.
     checkKeysAndReferences(records: recordList, path: source.name, keymap: keyMap, errlog: errlog)
 
     // Create internal structures.
@@ -77,7 +77,7 @@ func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout K
         else if root.tag == GedcomTag.head.rawValue { header = root }
     }
 
-    // Validate records.
+    // Validate.
     let context = ValidationContext(index: index, keymap: keyMap, source: source.name)
     validatePersons(persons: persons, context: context, errlog: errlog)
     //validateFamilies(families: families, context: context, errlog: &errlog) {
@@ -85,7 +85,7 @@ func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout K
     return (index, persons, families, header)
 }
 
-/// Load Gedcom records from a source; convert lines to data nodes and data nodes to records.
+/// Load records from source; convert lines to data nodes and data nodes to records.
 public func loadRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
                         errlog: ErrorLog) -> RecordList? {
     guard let dataNodes = loadDataNodes(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
@@ -93,13 +93,13 @@ public func loadRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout
     return buildRecords(from: dataNodes, keymap: keyMap, errlog: errlog)
 }
 
-/// Load Gedcom records from a source; differs from previous by creating a key map.
+/// Load records from source; differs from previous by creating a key map.
 public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, errlog: inout ErrorLog) -> RecordList? {
     var keyMap = KeyMap()
     return loadRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
 }
 
-/// Load array of Gedcom nodes from a source; levels are not checked.
+/// Load data nodes from source; levels are not checked.
 func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
                    errlog: ErrorLog) -> DataNodes<Int>? {
     var nodes = DataNodes<Int>()
@@ -121,7 +121,7 @@ func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyM
     return nodes
 }
 
-/// Process array of (node, lev) pairs to build a record list; uses lev-based state machine.
+/// Process data nodes to build record list; uses lev-based state machine.
 func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RecordList {
 
     enum State { case initial, main, error } // States.
