@@ -3,45 +3,37 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 9 February 2026.
-//  Last changed on 14 February 2026.
+//  Last changed on 25 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-// MARK: - SearchPanel
-
-
+/// Person search panel using names and vitals dates and places.
 struct PersonSearchPanel: View {
 
     @Environment(\.dismiss) private var dismiss
+    @Binding var criteria: SearchCriteria  // Caller owns search criteria.
+    let onSearch: (SearchCriteria) -> [RecordKey]  // Run search and return record keys.
+    let onSelect: (RecordKey) -> Void  // Run when user taps a result.
 
-    // Caller owns criteria for persistence between openings.
-    @Binding var criteria: SearchCriteria
-
-    /// Run search and return person record keys.
-    let onSearch: (SearchCriteria) -> [RecordKey]
-
-    /// Called when user taps a result.
-    let onSelect: (RecordKey) -> Void
-
-    // Local draft fields (UI-friendly)
-    @State private var draft: SearchCriteria = .init()
+    @State private var draft: SearchCriteria = .init()  // Search criteria fields.
     @State private var birthFromText: String = ""
     @State private var birthToText: String = ""
     @State private var deathFromText: String = ""
     @State private var deathToText: String = ""
     @State private var birthPlaceText: String = ""
     @State private var deathPlaceText: String = ""
-    //@State private var placeText: String = ""   // Canonicalize later.
 
     @State private var results: [RecordKey] = []
     @State private var lastError: String? = nil
 
+    /// Render person search panel.
     var body: some View {
         NavigationStack {
             Form {
-                criteriaSection
+                //criteriaSection
+                nameSection  // Drop in from ChatGPT.
                 yearsSection
                 placeSection
 
@@ -82,82 +74,35 @@ struct PersonSearchPanel: View {
         }
     }
 
+    private var nameSection: some View {
+            Section("Name") {
+                TextField("", text: Binding(
+                    get: { draft.name ?? "" },
+                    set: { draft.name = $0.isEmpty ? nil : $0 }
+                ),
+                          prompt: Text("Givens/Surname"))
+                .autocorrectionDisabled()
+            }
+        }
+
+
+
     private var yearsSection: some View {
         Section("Years") {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Birth year range").font(.subheadline)
-                HStack {
-                    TextField("From", text: $birthFromText)
-                        .frame(maxWidth: 90)
-                    Text("to")
-                    TextField("To", text: $birthToText)
-                        .frame(maxWidth: 90)
-                    Spacer()
-                    Button("Clear") {
-                        birthFromText = ""
-                        birthToText = ""
-                        draft.birthYearRange = nil
-                    }
-                    .buttonStyle(.borderless)
+            LabeledContent("Birth") {
+                HStack(spacing: 12) {
+                    TextField("From", text: $birthFromText).frame(width: 80)
+                    TextField("To", text: $birthToText).frame(width: 80)
                 }
-
-                Text("Death year range").font(.subheadline)
-                HStack {
-                    TextField("From", text: $deathFromText)
-                        .frame(maxWidth: 90)
-                    Text("to")
-                    TextField("To", text: $deathToText)
-                        .frame(maxWidth: 90)
-                    Spacer()
-                    Button("Clear") {
-                        deathFromText = ""
-                        deathToText = ""
-                        draft.deathYearRange = nil
-                    }
-                    .buttonStyle(.borderless)
-                }
-
-                Button("Clear All Year Filters") {
-                    birthFromText = ""
-                    birthToText = ""
-                    deathFromText = ""
-                    deathToText = ""
-                    draft.birthYearRange = nil
-                    draft.deathYearRange = nil
+            }
+            LabeledContent("Death") {
+                HStack(spacing: 12) {
+                    TextField("From", text: $deathFromText).frame(width: 80)
+                    TextField("To", text: $deathToText).frame(width: 80)
                 }
             }
         }
     }
-
-//    private var placeSection: some View {
-//        Section("Place") {
-//            TextField("Place contains…", text: $placeText)
-//                .autocorrectionDisabled()
-//
-//            // For now we *don’t* canonicalize; we just stash something simple.
-//            // Later: split into canonical parts with your existing placeParts(place) logic.
-//            Button("Use this place text") {
-//                let parts = placeText
-//                    .split(separator: ",")
-//                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-//                    .filter { !$0.isEmpty }
-//                draft.placeParts = parts.isEmpty ? nil : parts
-//            }
-//            .buttonStyle(.borderless)
-//
-//            if let comps = draft.placeParts, !comps.isEmpty {
-//                Text("Parts: " + comps.joined(separator: " • "))
-//                    .font(.footnote)
-//                    .foregroundStyle(.secondary)
-//            }
-//
-//            Button("Clear Place Filter") {
-//                placeText = ""
-//                draft.placeParts = nil
-//            }
-//            .buttonStyle(.borderless)
-//        }
-//    }
 
     private var placeSection: some View {
         Section("Places") {
@@ -194,19 +139,19 @@ struct PersonSearchPanel: View {
                 .frame(minHeight: 200)
             }
 
-            HStack {
-                Button("Clear Results") {
-                    results = []
-                }
-                .buttonStyle(.borderless)
-
-                Spacer()
-
-                Button("Clear All") {
-                    clearAll()
-                }
-                .buttonStyle(.borderless)
-            }
+//            HStack {
+//                Button("Clear Results") {
+//                    results = []
+//                }
+//                .buttonStyle(.borderless)
+//
+//                Spacer()
+//
+//                Button("Clear All") {
+//                    clearAll()
+//                }
+//                .buttonStyle(.borderless)
+//            }
         }
     }
 

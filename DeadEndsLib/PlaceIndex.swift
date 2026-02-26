@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 24 February 2026.
+//  Last changed on 25 February 2026.
 //
 
 import Foundation
@@ -266,7 +266,8 @@ public func testPlaceIndexing() {
     let values = ["New London, New London County, State of Connecticut, United States",
                   "near Pittsburgh, Pennsylvania, USA",
                   "New London, Connecticut Colony",
-                  "St. Mary's Bay, Digby County, Nova Scotia, Canada"
+                  "St. Mary's Bay, Digby County, Nova Scotia, Canada",
+                  "Saint John, Kings County, New Brunswick"
                   ]
 
     for value in values {

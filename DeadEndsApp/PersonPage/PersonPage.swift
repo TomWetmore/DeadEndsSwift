@@ -3,31 +3,30 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 18 February 2026.
+//  Last changed on 25 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Show person on a person page. Uses a person action bar, person rows and message area.
+/// Show person on a person page. Uses person tiles and a person action bar.
 struct PersonPage: View {
 
     @EnvironmentObject private var model: AppModel
     let person: Person
     @State private var showingSearch = false
     @State private var searchCriteria = SearchCriteria()
-
     private var index: RecordIndex? { model.database?.recordIndex }
 
     /// Render person page.
     var body: some View {
         
         VStack(alignment: .leading, spacing: 10) {
-            header
-            vitals
+            header  // Name.
+            vitals  // Birth and death.
             Divider()
-            relativesScroll
-            footer
+            relativesScroll  // Parents, spouses, children.
+            footer  // Status message and action bar.
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .navigationTitle("Person")
@@ -72,11 +71,11 @@ struct PersonPage: View {
     }
 }
 
+/// Subviews implemented as computed properties.
 private extension PersonPage {
     
-    /// Render person name.
+    /// Render name.
     var header: some View {
-        
         Text(person.displayName(upSurname: true))
             .font(.title3)
             .fontWeight(.semibold)
@@ -89,7 +88,7 @@ private extension PersonPage {
             )
     }
     
-    /// Render person vitals.
+    /// Render vitals.
     var vitals: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Born: \(person.birthEvent?.summary ?? "")")
@@ -98,7 +97,7 @@ private extension PersonPage {
         .padding(.horizontal)
     }
     
-    /// Render person's parents, spouses, and children.
+    /// Render relatives in scroll view.
     var relativesScroll: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
@@ -111,7 +110,7 @@ private extension PersonPage {
         .padding(.horizontal, 8)
     }
     
-    /// Render person's parents.
+    /// Render parents.
     @ViewBuilder
     var parentsSection: some View {
         if let index {
@@ -128,7 +127,7 @@ private extension PersonPage {
         }
     }
     
-    /// Render person's spouses and children.
+    /// Render spouses and children.
     @ViewBuilder
     var familiesSection: some View {
         if let index {
@@ -147,7 +146,7 @@ private extension PersonPage {
         }
     }
 
-    /// Render footer
+    /// Render status message and action bar.
     @ViewBuilder
     var footer: some View {
         VStack(alignment: .leading, spacing: 4) {
