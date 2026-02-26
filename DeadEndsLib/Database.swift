@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 19 February 2026.
+//  Last changed on 26 February 2026.
 //
 
 import Foundation
@@ -65,13 +65,13 @@ public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database?
     return loadDatabase(from: source, errLog: &errlog)
 }
 
-/// Load a database from a source; keyMap is used for error messages and does not persist.
+/// Load database from source; keyMap is used for error messages and does not persist.
 private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> Database? {
 
-    var keyMap = KeyMap()  // Map record keys to lines.
+    var keyMap = KeyMap()  // Map record keys to lines in source.
     let tagMap = TagMap()  // Single copies of tags.
 
-    guard let (index, persons, families, header) =  // Read and validate the records.
+    guard let (index, persons, families, header) =  // Read and validate records.
             loadValidRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errLog)
     else { return nil }  // errlog holds the errors.
     print("Loaded \(persons.count) persons, \(families.count) families.")
@@ -79,7 +79,8 @@ private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> 
     let nameIndex = buildNameIndex(from: persons)  // Create indexes.
     let dateIndex = buildDateIndex(from: index)
     let placeIndex = buildPlaceIndex(from: index)
-    let refnIndex = validateRefns(from: index, keyMap: keyMap, errLog: errLog)
+    let refnIndex = RefnIndex()  // Awaiting change to the index.
+    //let refnIndex = validateRefns(from: index, keyMap: keyMap, errLog: errLog)
 
     //placeIndex.showContents(using: index)  // DEBUG
     //placeIndex.showPlaceFrequencyTable()  // DEBUG
