@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 11 July 2025.
-//  Last changed on 3 February 2026.
+//  Last changed on 26 February 2026.
 //
 
 import SwiftUI
@@ -17,25 +17,30 @@ struct FamilyPage: View {
 
     private var index: RecordIndex? { model.database?.recordIndex }
 
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Display Husband.
             if let husband = resolveRole("HUSB") {
-                PersonTile(person: husband, label: "Husband")
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                PersonTile(person: husband, label: "Husband") { person in
+                    model.path.append(Route.person(person))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             // Display Wife.
             if let wife = resolveRole("WIFE") {
-                PersonTile(person: wife, label: "Wife")
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                PersonTile(person: wife, label: "Wife") { person in
+                    model.path.append(Route.person(person))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             // Display Children.
             ScrollView {
                 if let index = model.database?.recordIndex {
                     ForEach(family.children(in: index), id: \.self) { child in
-                        PersonTile(person: child, label: "Child")
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        PersonTile(person: child, label: "Child") { person in
+                            model.path.append(Route.person(person))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 Spacer()

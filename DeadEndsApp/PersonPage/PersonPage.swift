@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 25 February 2026.
+//  Last changed on 26 February 2026.
 //
 
 import SwiftUI
@@ -115,12 +115,12 @@ private extension PersonPage {
     var parentsSection: some View {
         if let index {
             if let father = person.father(in: index) {
-                PersonTile(person: father, label: "Father", tint: .blue) { person in
+                PersonTile(person: father, label: "Father") { person in
                     model.path.append(Route.person(person))
                 }
             }
             if let mother = person.mother(in: index) {
-                PersonTile(person: mother, label: "Mother", tint: .pink) { person in
+                PersonTile(person: mother, label: "Mother") { person in
                     model.path.append(Route.person(person))
                 }
             }
@@ -133,12 +133,12 @@ private extension PersonPage {
         if let index {
             ForEach(person.spouseFamilies(in: index), id: \.key) { family in
                 if let spouse = family.spouse(of: person, in: index) {
-                    PersonTile(person: spouse, label: "Spouse", tint: spouse.sexTint) { person in
+                    PersonTile(person: spouse, label: "Spouse") { person in
                         model.path.append(Route.person(person))
                     }
                 }
                 ForEach(family.children(in: index), id: \.key) { child in
-                    PersonTile(person: child, label: "Child", tint: child.sexTint) { person in
+                    PersonTile(person: child, label: "Child") { person in
                         model.path.append(Route.person(person))
                     }
                 }

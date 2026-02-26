@@ -3,22 +3,22 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 4 July 2025.
-//  Last changed on 18 February 2026.
+//  Last changed on 26 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Flexible view to show a person on a page views.
+/// Flexible view that shows a person on a page view.
 struct PersonTile: View {
 
     @EnvironmentObject var model: AppModel
     let person: Person
     var label: String? = nil
     var showSummary: Bool = true
-    var tint: Color? = nil
     var onActivate: ((Person) -> Void)? = nil  // Button action.
 
+    /// Render a person in a tile.
     var body: some View {
 
         let content = VStack(alignment: .leading) {

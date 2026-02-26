@@ -32,5 +32,54 @@ The DeadEnds project consists of  targets. Here is an introduction to the main o
 
 Currently under active development. All versions found at GitHub should compile completely and work.
 
+## Using the DeadEnds App
+
+### Starting
+
+Double click the app icon. The loading screen appears. Push the Open Gedcom File button and choose a Gedcom file from the open file panel. The Gedcom file is read, validated, and its contents stored in an in-RAM database. A person search screen then appears. Enter a person's name in 'Gedcom name' format (surname set off by slashes). DeadEnds will show a list of everyone in the database who matches the name. Click the person you want, and the Person Page for that person appears.
+
+### Person Page
+
+The app is still in development, so the user interface flow may seem a little strange in places. Okay, the person page shows a person and the person's parents, spouses, and children. Birth and death information is given for each person. If you click any person, except for the main person, the person page changes, now showing the selected person as the main person.
+
+Across the bottom of that page are the buttons making up the 'person action bar'. The Father, Mother, Older Sibling, and Younger Sibling buttons make those persons the main person in the person page. The Pedigree and Family buttons move to the Pedigree Page and the Family Page.
+
+### Pedigree Page
+
+The Pedigree Page shows a person and three generations of ancestors. If you select one of the persons in the pedigree you switch back to the Person Page. However, you can navigate on the Pedigree Page by using the four button on the bottom of the page. With them you can navigate to the main person's father, mother, spouses or children.
+
+### Family Page
+
+The Family Page shows a family with the two parents at the top followed by the children. When you click a person on tne page the app navigates to the person's Person Page. The Family Page has an action bar on the bottom. The button labeled Open Desktop navigates to the Desktop Page with cards prearranged for the parents and children. The Tree Editor button is CURRENTLY A NO-OP.
+
+### The Database
+
+The DeadEnds database is a collection in-RAM, non persistent indexes and lists. The main component of the database is called the 'record index', a map from record keys (Gedcom cross-reference identifiers) to records. The records are tree structures composed of nodes, each node representing one line of Gedcom. There are other components in the database, including name, date and place indexes.
+
+The key point about a DeadEnds database is that it is not persistent. It exists only while the app is running. The 'backing store' of DeadEnds are Gedcom files. When the app starts up its first task is to interact with the user and identify the Gedcom file to read to become the initial state of the database.
+
+### Use of Gedcom
+
+Most genealogical programs use Gedcom as 'intended', as a file format for importing and exporting data. Early on I decided to also use Gedcom as the internal format for all records. Going back forty years now I have always represented records as node trees, where each node is a Gedcom line. Of historical interest, the records in LifeLines databases (persistent and B-tree based) are Gedcom strings. When read to RAM records are parsed to node trees; when written back out records the are flattened back to text.
+
+Using Gedcom as the internal record format may does not imply that DeadEnds is complient to some official Gedcom standard. Early on decided I would not enforce a standards; I wanted to be as loosey goosey as possible. I do have to enforce a minimalist set of rules but ignore everything else. The rules boil down to:
+
+- Person, Family and Source records must use INDI, FAM, and SOUR tags.
+- Persons must link to Families via FAMS and FAMC values.
+- Persons with name and sex values must use NAME and SEX lines; values of NAME lines must set off surnames with slashes.
+- Families must link to Persons via HUSB, WIFE, and CHIL nodes.
+- Birth, death, and marriage events must use BIRT, DEAT, and MARR tags.
+- Date and places of events must use DATE AND PLAC lines.
+- Records must be closed -- all records referred to must exist -- no wild pointers allowed.
+- I beleive these rules are consistent with every version of lineage-linked Gedcom standards.
+
+Using Gedcom for the internal representation of genealogical data was unconventional in the late 1980s, but no longer is so.
+
+
+
+
+
+
+
 ## License
 (TBD) I haven't decided, but the code is avalable on git hub at https://github.com/TomWetmore/DeadEndsSwift
