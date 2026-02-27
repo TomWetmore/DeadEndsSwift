@@ -10,7 +10,6 @@ import Foundation
 import DeadEndsLib
 
 
-
 /// Descendancy list model.
 @Observable
 final class DescendancyListModel {

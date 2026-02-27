@@ -9,7 +9,8 @@
 import SwiftUI
 import DeadEndsLib
 
-/// Flexible view that shows a person on a page view.
+/// Flexible view to show a person on page views. Intended as a general purpose person
+/// view for use in many contexts.
 struct PersonTile: View {
 
     @EnvironmentObject var model: AppModel
@@ -21,9 +22,10 @@ struct PersonTile: View {
     /// Render a person in a tile.
     var body: some View {
 
+        // Computed property for view content.
         let content = VStack(alignment: .leading) {
             HStack {
-                if let label = label {  // Optional label.
+                if let label = label {  // Label.
                     Text("\(label):")
                         .fontWeight(.medium)
                 }
@@ -47,7 +49,7 @@ struct PersonTile: View {
         .background(person.sexTint)
         .cornerRadius(6)
 
-        if let onActivate {
+        if let onActivate {  // Render content in a button if there is an activate closure.
             Button {
                 onActivate(person)
             } label: {
@@ -55,7 +57,7 @@ struct PersonTile: View {
             }
             .buttonStyle(.plain)
         } else {
-            content
+            content  // Otherwise render the content on its own.
         }
     }
 }

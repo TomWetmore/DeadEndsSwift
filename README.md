@@ -7,7 +7,7 @@ DeadEnds is the successor to my C-based DeadEnds project, which was the successo
 In the rest of this file DeadEnds always means DeadEnds Swift, unless DeadEnds C is used directly.
 
 ## Features
-- Reads Gedcom files into internal (in-RAM) databases. DeadEnds can read Gedcom files from any standard that uses the normal lineage-linking tags (FAMS, FAMC, HUSB, WIFE, CHIL), and a few other standard tags (NAME, SEX, BIRT, DEAT, MARR, DATE, PLAC, SOUR, ...). DeadEnds uses Gedcom files as backing store for its databases when the program is not running. DeadEnds does not think of Gedcom files as anything other than snoozing DeadEnds databases.
+- Reads Gedcom files into internal (in-RAM) databases. DeadEnds can read Gedcom files from any standard that uses the normal lineage-linking tags (FAMS, FAMC, HUSB, WIFE, CHIL), and a few other standard tags (NAME, SEX, BIRT, DEAT, MARR, DATE, PLAC, SOUR, ...). DeadEnds uses Gedcom files as backing store for its databases when the program is not running. DeadEnds thinks of Gedcom files as snoozing databases.
 - Displays Person, Family, Pedigree, and other views. The SwiftUI app features a number of views and screens. These are under active development.
 - One exciting screen is the Desktop view, in which persons show up in the form of index cards that can be moved and manipulated on the Desktop. I hope to continue developing this metaphor, as it represents ideas formulated more than 40 years ago when I had not the time to work on them.
 - Supports editing of genealogical data -- adding, deleting and modifying records, adding, removing and changing family relationships.
@@ -20,9 +20,9 @@ The DeadEnds project consists of  targets. Here is an introduction to the main o
 
 - DeadEndsLib -- the base genealogical library. It contains the database and its import stack; the Gedcom node, record, person, family datatypes; the interpreter; and other code.
 
-- DeadEndsApp -- the SwiftUI application; it has several standard genealogical screens (called pages in Deadends), includling person, family, pedigree, editing, merging, and desktop (see above).
+- DeadEndsApp -- the SwiftUI application; it has several standard genealogical screens (called pages), includling person, family, pedigree, editing, merging, and desktop (see above).
 
-- RunScript -- the Swift half of the script interpretation process. It reads a LifeLines script from an S-expression file, then loads a database using the regular database import stack, and then interprets the script
+- RunScript -- the Swift half of the script interpretation process. It reads a LifeLines script from an S-expression file, then loads a database using the import stack, and then interprets the script within the context of the database.
 
 - DeadEndsIPad -- place holder for an upcoming iPad version of the DeadEnds app.
 
@@ -34,15 +34,21 @@ Currently under active development. All versions found at GitHub should compile 
 
 ## Using the DeadEnds App
 
-### Starting
+### Building
 
-Double click the app icon. The loading screen appears. Push the Open Gedcom File button and choose a Gedcom file from the open file panel. The Gedcom file is read, validated, and its contents stored in an in-RAM database. A person search screen then appears. Enter a person's name in 'Gedcom name' format (surname set off by slashes). DeadEnds will show a list of everyone in the database who matches the name. Click the person you want, and the Person Page for that person appears.
+DeadEndsSwift is a found in the GitHub repository: TomWetmore/DeadEndsSwift. Though under development I try to keep the two 'important' targets buildable at all times.
+
+After you pull the repository, those two targets should be built. DeadEndsLib is the library, and DeadEndsApp is the SwiftUI app. I assume you will Xcode on a Mac to build them. There are other ways, but I don't know much about them. ChatGPT can guide you.
+
+### Starting the App
+
+Double click the app icon. The loading screen appears. Push the Open Gedcom File button and choose a Gedcom file from the panel. The app reads the Gedcom file, validates it, and store its contents in an in-RAM database. A person search screen appears. Enter a name in Gedcom format (surname set off by slashes). DeadEnds will display the list of persons who match that name. Click the person you want, and the Person Page for that person appears.
 
 ### Person Page
 
-The app is still in development, so the user interface flow may seem a little strange in places. Okay, the person page shows a person and the person's parents, spouses, and children. Birth and death information is given for each person. If you click any person, except for the main person, the person page changes, now showing the selected person as the main person.
+The app is in development, so user interface flow may seem a little strange in places and will likely change. The person page shows a person and the person's parents, spouses, and children. Birth and death information is given for each person. If you click any person, except for the main person, the person page changes to show the selected person as the new main person.
 
-Across the bottom of that page are the buttons making up the 'person action bar'. The Father, Mother, Older Sibling, and Younger Sibling buttons make those persons the main person in the person page. The Pedigree and Family buttons move to the Pedigree Page and the Family Page.
+Across the bottom of the Person Page are buttons that make up the person action bar. The Father, Mother, Older Sibling, and Younger Sibling buttons make those persons the main person in the person page. The Pedigree and Family buttons move to the Pedigree Page and the Family Page. The Descendancy and 
 
 ### Pedigree Page
 
@@ -51,6 +57,12 @@ The Pedigree Page shows a person and three generations of ancestors. If you sele
 ### Family Page
 
 The Family Page shows a family with the two parents at the top followed by the children. When you click a person on tne page the app navigates to the person's Person Page. The Family Page has an action bar on the bottom. The button labeled Open Desktop navigates to the Desktop Page with cards prearranged for the parents and children. The Tree Editor button is CURRENTLY A NO-OP.
+
+### Descendant Pages
+
+### Desktop Page
+
+### About Editing
 
 ### The Database
 

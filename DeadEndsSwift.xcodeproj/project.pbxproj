@@ -55,35 +55,21 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		263B5D1D2E22C0E400593B62 /* Exceptions for "Warehouse" folder in "Warehouse" target */ = {
+		263E61072F51273E00EAD723 /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				IntraInter.swift,
-			);
-			target = 2673AD282E22A6B10078C61B /* Warehouse */;
-		};
-		2644BEC42E63C62A00A073F1 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Desktop/Tools/MergePersonTool.swift,
-				Desktop/Tools/Tool.swift,
-				UnifiedPersonView.swift,
-			);
-			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
-		};
-		2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
+				Chat.swift,
 				FamilyTreeView.swift,
 				File.swift,
 				IntraInter.swift,
 				MoreTraversalCode.swift,
 				TidyTreeEtc.swift,
 				TraverseCode.swift,
+				UnifiedPersonView.swift,
 			);
 			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
 		};
-		26CA3E052DBFD1A9001DA273 /* Exceptions for "DeadEndsLib" folder in "DeadEndsLib" target */ = {
+		26DE63622F512BE600402B29 /* Exceptions for "DeadEndsLib" folder in "DeadEndsLib" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Database.swift,
@@ -130,9 +116,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		263408B12E21680900F4E6DE /* DeadEndsApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				2644BEC42E63C62A00A073F1 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */,
-			);
 			path = DeadEndsApp;
 			sourceTree = "<group>";
 		};
@@ -149,8 +132,7 @@
 		2673AD2D2E22A7000078C61B /* Warehouse */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				2673AD302E22A7660078C61B /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */,
-				263B5D1D2E22C0E400593B62 /* Exceptions for "Warehouse" folder in "Warehouse" target */,
+				263E61072F51273E00EAD723 /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */,
 			);
 			path = Warehouse;
 			sourceTree = "<group>";
@@ -158,7 +140,7 @@
 		26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				26CA3E052DBFD1A9001DA273 /* Exceptions for "DeadEndsLib" folder in "DeadEndsLib" target */,
+				26DE63622F512BE600402B29 /* Exceptions for "DeadEndsLib" folder in "DeadEndsLib" target */,
 			);
 			path = DeadEndsLib;
 			sourceTree = "<group>";
