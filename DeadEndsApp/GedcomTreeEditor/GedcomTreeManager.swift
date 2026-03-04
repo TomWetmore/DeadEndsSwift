@@ -41,13 +41,13 @@ final class GedcomTreeManager {
         self.recordIndex = recordIndex
     }
 
-    /// Return true if there is another undo action possible.
+    /// Return true if there is another undo.
     var canUndo: Bool { !undoStack.isEmpty }
 
-    /// Return true if there is anotehr redo action possible.
+    /// Return true if there is another redo.
     var canRedo: Bool { !redoStack.isEmpty }
 
-    /// Handle a delta from the user interface; apply the delta and add it to the undo stack.
+    /// Handle delta from the user interface; apply delta and add to the undo stack.
     func edit(delta: EditDelta) {
         apply(delta)
         undoStack.append(delta)
@@ -55,7 +55,7 @@ final class GedcomTreeManager {
         treeModel.undoCounter &+= 1
     }
 
-    /// Undo last delta and move it to the redo stack; invert delta before applying.
+    /// Undo last delta and move to the redo stack; invert delta before applying.
     func undo() {
         guard let delta = undoStack.popLast() else { return }
         applyInverse(delta)
@@ -87,7 +87,6 @@ final class GedcomTreeManager {
         case .editTag(node: let node, old: let old, new: let new):
             editTagCase(node: node, old: old, new: new)
         case .editVal(node: let node, old: let old, new: let new):
-            print("apply: .editVal case: node:\(node) old:\(pval(old)) new:\(pval(new))")  // DEBUG DEBUG DEBUG
             editValueCase(node: node, old: old, new: new)
         }
     }
@@ -113,8 +112,8 @@ final class GedcomTreeManager {
     }
 }
 
-/// User interface to the tree manager. Each method creates a delta that is run
-/// and added to the undo stack.
+/// User interface to tree manager; each method creates a delta that is run and stacked
+/// on the undo stack.
 extension GedcomTreeManager {
 
     /// Add a node as the first kid of a dad.
@@ -167,9 +166,7 @@ extension GedcomTreeManager {
 
     /// Change a value in the tree.
     func editVal(_ node: GedcomNode, from old: String?, to new: String?) {
-        print("editVal called for node \(node.tag), old=\(pval(old)), new=\(pval(new))")  // DEBUG DEBUG DEBUG
         guard canEditVal(node) else { return }
-        print("got past the canEditVal guard") // DEBUG DEBUG DEBUG
         let delta = EditDelta.editVal(node: node, old: old, new: new)
         edit(delta: delta)
     }
@@ -201,7 +198,7 @@ extension GedcomTreeManager {
         treeModel.selectedNode = sib;
     }
 
-    /// Remove a node and its descendants and update tree movel.
+    /// Remove a node and its descendants and update tree model.
     func removeKidCase(kid: GedcomNode, dad: GedcomNode, sib: GedcomNode?) {
         precondition(kid.dad === dad, "removeKidCase: kid's dad must be dad")
         precondition(kid.sib === sib, "removeKidCase: kid's sib must be sib")
@@ -243,9 +240,8 @@ extension GedcomTreeManager {
         treeModel.selectedNode = dad
     }
 
-    /// Reinsert ...
+    /// Reinsert a node in the tree.
     private func reinsertCase(node: GedcomNode, dad: GedcomNode, prev: GedcomNode?, sib: GedcomNode?) {
-
         node.dad = dad
         node.sib = sib
         if let prev = prev {
@@ -256,26 +252,26 @@ extension GedcomTreeManager {
         treeModel.selectedNode = node
     }
 
+    /// Move node back one step in its sib chain.
     private func moveUpCase(node: GedcomNode) {
-
         node.moveUp()
         treeModel.selectedNode = node
     }
 
-    /// Move down ...
+    /// Move node down one step in its sib chain.
     private func moveDownCase(node: GedcomNode) {
         node.moveDown()
         treeModel.selectedNode = node
     }
 
-    ///
+    /// Change tag.
     private func editTagCase(node: GedcomNode, old: String, new: String) {
         precondition(node.tag == old, "editTagCase: node.tag is not correct")
         node.tag = new
         treeModel.textCounter &+= 1
     }
 
-    ///
+    /// Change value.
     private func editValueCase(node: GedcomNode, old: String?, new: String?) {
         print("editValueCase: node: \(node) old: \(pval(old)) new: \(pval(new))")  // DEBUG DEBUG DEBUG
         precondition(node.val == old, "editValueCase: node.val is not correct")
@@ -284,8 +280,7 @@ extension GedcomTreeManager {
     }
 }
 
-// Determine tags and vals that cannot be edited in different contexts.
-// Note: These should be rewritten to take into account the type of record they are in.
+// Tags and vals that cannot be edited in different contexts; context should be used. // TODO
 extension GedcomTreeManager {
 
     /// Protected level one tags.
@@ -306,7 +301,6 @@ extension GedcomTreeManager {
 
     /// Return whether the tag field of a node can be edited.
     func canEditTag(_ node: GedcomNode) -> Bool {
-
         switch node.lev {
         case 0:  // Level 0 (root) node tags cannot be edited.
             return false

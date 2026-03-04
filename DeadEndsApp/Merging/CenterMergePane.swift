@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 9 November 2025.
-//  Last changed on 3 January 2026.
+//  Last changed on 4 March 2026.
 //
 
 import SwiftUI
@@ -38,14 +38,14 @@ struct CenterMergePane: View {
         }
         .frame(minWidth: 300)
         .background(Color(NSColor.textBackgroundColor))
-        .dropDestination(for: DraggedGedcomSubtree.self) { items, location in
+        .dropDestination(for: TransferGedcomTree.self) { items, location in
             handleDrop(items, location: location)
             return true
         }
     }
 
     /// Drop handler
-    func handleDrop(_ items: [DraggedGedcomSubtree], location: CGPoint) {
+    func handleDrop(_ items: [TransferGedcomTree], location: CGPoint) {
         // Root node is about to change.
         print("Drop mergedRoot:", ObjectIdentifier(mergedRoot))  // DEBUG
 

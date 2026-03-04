@@ -10,9 +10,7 @@ import SwiftUI
 import DeadEndsLib
 
 struct GedcomTreeEditorRow: View {
-
     @Bindable var viewModel: GedcomTreeEditorModel
-
     let treeManager: GedcomTreeManager
     var node: GedcomNode
 
@@ -21,30 +19,22 @@ struct GedcomTreeEditorRow: View {
         case tag(UUID)
         case val(UUID)
     }
-    // Holds the field (tag, val, nil) with focus.
     @FocusState private var focusedField: Field?
-
-    // Original tag/val values during editing
     @State private var originalTag: String = ""
     @State private var originalVal: String? = nil
-
     @State private var editTag: String = ""
     @State private var editVal: String = ""
 
-    /// Render a row of the Gedcom tree.
+    /// Render row of Gedcom tree.
     var body: some View {
-
-        let _ = viewModel.textCounter   // Force dependency.
-                                        //print("Render node:", node.tag, ObjectIdentifier(node))  // DEBUG DEBUG DEBUG.
+        let _ = viewModel.textCounter
 
         return VStack(spacing: 0) {
-
             rowContent
                 .onTapGesture {
                     focusedField = nil
                     viewModel.selectedNode = node
                 }
-
             if viewModel.expandedSet.contains(node.id) {
                 ForEach(node.kids) { kid in
                     GedcomTreeEditorRow(viewModel: viewModel, treeManager: treeManager, node:kid)
@@ -87,18 +77,15 @@ struct GedcomTreeEditorRow: View {
         )
     }
 
-    /// Indent.
-
+    /// Render indent at start of row.
     private var indentView: some View {
-
         ForEach(0..<node.lev, id: \.self) { _ in
             Spacer().frame(width: 32)
         }
     }
 
-    /// Chevron (visible or invisible).
+    /// Render expand chevron.
     private var chevronView: some View {
-
         Group {
             if node.hasKids {
                 Button {
@@ -111,24 +98,20 @@ struct GedcomTreeEditorRow: View {
                 .buttonStyle(.plain)
                 .frame(width: 16)
             } else {
-                Image(systemName: "chevron.right")  // Pretend it's there for spacing,
-                    .opacity(0)  // by making it invisible.
+                Image(systemName: "chevron.right")
+                    .opacity(0)  // Make invisible.
                     .frame(width: 16)
             }
         }
     }
 
-    /// Level.
-
+    /// Render level,
     private var levelView: some View {
-
         Text("\(node.lev)").frame(width: 20)
     }
 
-    /// Key (on root nodes).
-
+    /// Render key on root nodes.
     private var keyView: some View {
-
         Group {
             if let key = node.key {
                 Text(key)
@@ -140,33 +123,27 @@ struct GedcomTreeEditorRow: View {
 
     /// Render tag field.
     private var tagField: some View {
-
         TextField("", text: $editTag)
             .frame(width: 80)
             .textFieldStyle(.plain)
             .focused($focusedField, equals: .tag(node.id))
             .onSubmit {
-                focusedField = nil    // Clears focus.
+                focusedField = nil
             }
             .allowsHitTesting(viewModel.selectedNode === node)
             .onAppear {
-                // When the row appears, seed local edit buffer from the node.
                 editTag = node.tag
             }
             .onChange(of: focusedField) { oldFocus, newFocus in
                 if newFocus == .tag(node.id) {  // Focus gained.
-                    //print("Focus gained")  // Debug.
-                    originalTag = node.tag   // store model’s tag
-                    editTag     = node.tag   // sync UI to model
+                    originalTag = node.tag
+                    editTag     = node.tag
                     return
                 }
                 if oldFocus == .tag(node.id) {  // Focus lost.
-                                                //print("Focus lost")
                     if editTag != originalTag {
                         //print("Tag changed from \(originalTag) → \(editTag)")
                         treeManager.editTag(node, from: originalTag, to: editTag)
-                    } else {
-                        //print("Tag unchanged.")
                     }
                 }
             }
@@ -184,15 +161,14 @@ struct GedcomTreeEditorRow: View {
                     .foregroundColor(.secondary)
                     .padding(.leading, 4)
             }
-
             TextField("", text: $editVal)
                 .textFieldStyle(.plain)
                 .focused($focusedField, equals: .val(node.id))
                 .allowsHitTesting(viewModel.selectedNode === node)
                 .onChange(of: focusedField) { oldFocus, newFocus in
                     if newFocus == .val(node.id) {  // Focus gained.
-                        originalVal = node.val // Keep optional.
-                        editVal = node.val ?? ""  // Keep string.
+                        originalVal = node.val
+                        editVal = node.val ?? ""
                         return
                     }
                     if oldFocus == .val(node.id) {  // Focus lost.
@@ -201,8 +177,6 @@ struct GedcomTreeEditorRow: View {
                         if newVal != originalVal {
                             //print("Value changed from \(pval(originalVal)) to \(pval(newVal))")  // Debug.
                             treeManager.editVal(node, from: originalVal, to: newVal)
-                        } else {
-                            //print("Value unchanged.")  // Debug.
                         }
                     }
                 }
@@ -212,12 +186,9 @@ struct GedcomTreeEditorRow: View {
 
 /// Build event summary for a top-level event node.
 func eventSummary(for node: GedcomNode) -> String? {
-
-    //guard !expanded else { return nil }  // suppress if expanded
-    // Only event-style nodes with no value
     guard node.val == nil else { return nil }
     switch node.tag {
-    case GedcomTag.BIRT, "DEAT", "MARR", "CHR", "BAPM", "BCHL", "RESI", "LAND", "EDU", "OCCU": // add other events you like
+    case GedcomTag.BIRT, "DEAT", "MARR", "CHR", "BAPM", "BCHL", "RESI", "LAND", "EDU", "OCCU":
         let date = node.kid(withTag: "DATE")?.val
         let place = node.kid(withTag: "PLAC")?.val
         var parts: [String] = []
