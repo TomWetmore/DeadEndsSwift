@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 16 February 2026.
+//  Last changed on 28 February 2026.
 //
 
 import Foundation
@@ -60,20 +60,18 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         self.val = val
     }
 
-    /// Returns the Gedcom level of this node; infinite cycles are detected.
+    /// Return Gedcom level of this node; infinite cycles detected.
     public var lev: Int {
         var level = -1
         var node: GedcomNode? = self
-        var safety = 100   // larger than realistic Gedcom depth.
-        while let current = node, safety > 0 {
+        while let current = node, level < 100 {
             level += 1
             node = current.dad
-            safety -= 1
         }
         return level
     }
 
-    /// Prints a GedcomNode tree to stdout. Recurses to kids and sibs.
+    /// Print a Gedcom node tree to stdout; recurse to kids and sibs.
     public func printTree(level: Int = 0, indent: String = "") {
         let space = String(repeating: indent, count: level)
         print("\(space)\(level) \(self)")
@@ -198,8 +196,21 @@ public extension GedcomNode {
 extension GedcomNode {
 
     /// Return all Gedcom nodes in a tree.
-    public func descendants() -> [GedcomNode] {
+    //    public func adescendants() -> [GedcomNode] {
+    //
+    //        var result: [GedcomNode] = []
+    //        func visit(_ node: GedcomNode?) {
+    //            guard let node = node else { return }
+    //            result.append(node)
+    //            visit(node.kid)
+    //            visit(node.sib)
+    //        }
+    //        visit(self)
+    //        return result
+    //    }
 
+    /// Return all nodes below a node.
+    public var subnodes: [GedcomNode] {
         var result: [GedcomNode] = []
         func visit(_ node: GedcomNode?) {
             guard let node = node else { return }
@@ -207,7 +218,7 @@ extension GedcomNode {
             visit(node.kid)
             visit(node.sib)
         }
-        visit(self)
+        visit(self.kid)
         return result
     }
 }
@@ -215,39 +226,33 @@ extension GedcomNode {
 public extension GedcomNode {
 
     /// Return whether node has kids.
-    func hasKids() -> Bool {
-        return self.kid != nil
+    var hasKids: Bool {
+        self.kid != nil
     }
 
-    /// Creates and adds a new first kid to this node.
+    /// Create and add a new first kid to this node.
     @discardableResult
     func addKid(tag: String, val: String? = nil) -> GedcomNode {
-
         let child = GedcomNode(tag: tag, val: val)
         return addKid(child)
     }
 
-    /// Adds an existing node as this node's new first kid.
+    /// Add Gedcom node as this node's new first kid.
     @discardableResult
     func addKid(_ kid: GedcomNode) -> GedcomNode {
-        
-        let dad = self
-        kid.dad = dad // Set the kid's three links.
+        kid.dad = self
         kid.kid = nil
         kid.sib = nil
-        if dad.kid == nil {
-            dad.kid = kid
-        } else {
-            kid.sib = dad.kid
-            dad.kid = kid
+        if self.kid != nil {
+            kid.sib = self.kid
         }
+        self.kid = kid
         return kid
     }
 
-    /// Adds a newly created, unlinked child (defensive).
+    /// Adds a single node as a new kid of a node.
     @discardableResult
-    func addBareKid(_ kid: GedcomNode) -> GedcomNode {
-
+    func adddBareKid(_ kid: GedcomNode) -> GedcomNode {
         kid.dad = self
         kid.kid = nil
         kid.sib = nil
@@ -263,7 +268,7 @@ public extension GedcomNode {
     /// Adds an existing subtree, preserving its internal structure.
     @discardableResult
     func addSubtree(_ kid: GedcomNode) -> GedcomNode {
-        
+
         kid.dad = self
         if self.kid == nil {
             self.kid = kid
@@ -307,7 +312,7 @@ public extension GedcomNode {
         sib.sib = kid
     }
 
-    /// Find a node's last kid.
+    /// Return the last kid of the Gedcom nodes.
     func lastKid() -> GedcomNode? {
         var node = self.kid
         while let next = node?.sib {
@@ -346,14 +351,48 @@ public extension GedcomNode {
         return curr
     }
 
-    /// Replace one child of this node with another.
+
+
+    /// Insert a forest (one node or a sib chain) into this node's kid list.
     /// - Parameters:
-    ///   - oldNode: The existing child to replace.
-    ///   - newNode: The new child node (or subtree root).
-    /// - Returns: `true` if replacement succeeded, `false` if `oldNode` wasn’t found.
+    ///   - first: first root of the forest to insert (may be a single node).
+    ///   - after: existing child after which to insert; if nil, inserts at front.
+    ///
+    /// Preconditions:
+    /// - every root in the inserted forest has dad == nil
+    /// - if after != nil, then after.dad === self
+    func insertKidForest(_ first: GedcomNode, after: GedcomNode? = nil) {
+
+        if let after {
+            precondition(after.dad === self, "insertKidForest: 'after' is not a child of this node")
+        }
+
+        // Walk the forest: set each root's dad, and find the last root.
+        var last: GedcomNode = first
+        var cur: GedcomNode? = first
+        while let node = cur {
+            precondition(node.dad == nil, "insertKidForest: cannot insert a node that already has a parent")
+            node.dad = self
+            last = node
+            cur = node.sib
+        }
+
+        // Splice the forest into the kid list.
+        if let after {
+            last.sib = after.sib
+            after.sib = first
+        } else {
+            last.sib = self.kid
+            self.kid = first
+        }
+    }
+
+
+    /// Replace one child of this node with another; return true if successful.
+    /// New node cannot be a forest.
     @discardableResult
-    func replaceKid(old oldNode: GedcomNode, with newNode: GedcomNode) -> Bool {
-        // Ensure new node is detached
+    func replace(old oldNode: GedcomNode, with newNode: GedcomNode) -> Bool {
+        if newNode.sib != nil { fatalError("new node cannot be a forest") }
         newNode.dad = self
         newNode.sib = oldNode.sib
 
@@ -491,7 +530,7 @@ public extension GedcomNode {
 
 extension GedcomNode {
 
-    /// Builds a deep copy of a GedcomNode forest or tree.
+    /// Build deep copy of a Gedcom node tree or forest.
     public func deepCopy(sibs: Bool = true) -> GedcomNode {
         let node = GedcomNode(key: self.key, tag: self.tag, val: self.val)
         node.kid = self.kid?.deepCopy(sibs: true)
@@ -499,7 +538,9 @@ extension GedcomNode {
         return node
     }
 
-    func deepTreeCopy()  -> GedcomNode { deepCopy(sibs: false) }
-    func deepForestCopy() -> GedcomNode { deepCopy(sibs: true) }
+    /// Build deep copy of this root node ignoring its siblings.
+    public func deepTreeCopy()  -> GedcomNode { deepCopy(sibs: false) }
 
+    /// Build deep copy of this root node including its siblings.
+    public func deepForestCopy() -> GedcomNode { deepCopy(sibs: true) }
 }

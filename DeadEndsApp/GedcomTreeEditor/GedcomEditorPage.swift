@@ -1,17 +1,16 @@
 //
-//  GedcomEditorWindow.swift
+//  GedcomEditorPage.swift
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 November 2025.
-//  Last changed on 30 November 2025.
+//  Last changed on 2 March 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Composit Gedcom record editor window. Contains a header, an editable Gedcom Tree, and
-/// the editor buttons.
-struct GedcomEditorWindow: View {
+/// Gedcom record editor page, with header, editable Gedcom tree, and edit buttons.
+struct GedcomEditorPage: View {
 
     @Bindable var viewModel: GedcomTreeEditorModel
     let manager: GedcomTreeManager
@@ -39,7 +38,7 @@ struct GedcomEditorWindow: View {
 
             Divider()
 
-            // Tree editing buttons.
+            // Edit buttons.
             TreeEditorButtons(viewModel: viewModel, treeManager: manager)
         }
     }

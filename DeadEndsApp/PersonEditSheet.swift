@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 1 February 2026.
+//  Last changed on 28is February 2026.
 //
 
 import SwiftUI
@@ -13,7 +13,7 @@ import DeadEndsLib
 /// edited with a TextEditor. When editing is done the text is parsed into a Gedcom tree and validated.
 /// If the user selects to save the changes, the new Person replaces the original in the Database.
 ///
-/// The name should be changed as this does not to be a Sheet.
+/// The name should be changed as this does not need to be a Sheet.
 
 struct PersonEditSheet: View {
 
@@ -168,18 +168,18 @@ extension PersonEditSheet {
             problems.append("FAMS lines cannot be changed, only reordered")
         }
         // All cross-references in new record must refer to existing records
-        let allPointers = new.root.root.descendants()
+        let allPointers = new.root.root.subnodes
             .compactMap { $0.val }
-            .filter { $0.hasPrefix("@") && $0.hasSuffix("@") }
+            .filter { $0.isKey }
         for key in allPointers {
             if index[key] == nil {
-                problems.append("Pointer to nonexistent record: @\(key)@.")
+                problems.append("Pointer to nonexistent record: \(key).")
             }
         }
         return problems
     }
 
-    /// Updates the Database after successfully editing a Person.
+    /// Update the database after successfully editing a person.
     func applyPersonUpdates(old: PersonInfo, new: PersonInfo) {
 
         let db = model.database!

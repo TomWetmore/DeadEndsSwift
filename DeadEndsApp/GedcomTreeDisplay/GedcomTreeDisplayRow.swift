@@ -77,7 +77,7 @@ struct GedcomTreeDisplayRow: View {
     // Chevron subview shows the disclosure chevron on nodes with children.
     private var chevronView: some View {
         Group {
-            if node.hasKids() {
+            if node.hasKids {
                 Image(systemName: expanded.contains(node.id) ? "chevron.down" : "chevron.right")
                     .foregroundColor(.secondary)
                     .onTapGesture {

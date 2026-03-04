@@ -43,15 +43,14 @@ struct DraggedGedcomSubtree: Transferable, Codable {
         CodableRepresentation(contentType: .json)
     }
 
-    /// The values that are serialized.
+    /// Serialized values.
     var tag: String
     var val: String?
     var children: [DraggedGedcomSubtree]
 
-    /// Creates a DraggedGedcomSubtree from a GedcomNode and its descendents, a transferrable
+    /// Create a DraggedGedcomSubtree from a Gedcom node and its descendents, a transferrable
     /// representation of the node and its descendents.
     init(node: GedcomNode) {
-
         self.tag = node.tag
         self.val = node.val
         self.children = node.kids.map { DraggedGedcomSubtree(node: $0) }
@@ -59,23 +58,20 @@ struct DraggedGedcomSubtree: Transferable, Codable {
         debugPrintSubtree(indent: "  ")  // Debug.
     }
 
-    /// Creates a GedcomNode tree from a transferred version. The reverse operation of init.
+    /// Create a Gedcom node tree from a transferred version. The reverse operation of init.
     /// A method that takes a DraggedGedcomSubtree as its self argument.
     func toGedcomNode() -> GedcomNode {
-
         let newNode = GedcomNode(tag: tag, val: val)
         for child in children {
             newNode.addKid(child.toGedcomNode())
         }
         print("[DraggedGedcomSubtree.toGedcomNode] Reconstructed GedcomNode tree:") // Debug.
         newNode.debugPrintTree(prefix: "  ")  // Debug.
-
         return newNode
     }
 
     /// Debug method that prints a subtree.
     private func debugPrintSubtree(indent: String = "") {
-
         let valText = val ?? ""
         print("\(indent)\(tag) \(valText)")
         for child in children {

@@ -58,11 +58,22 @@ The Pedigree Page shows a person and three generations of ancestors. If you sele
 
 The Family Page shows a family with the two parents at the top followed by the children. When you click a person on tne page the app navigates to the person's Person Page. The Family Page has an action bar on the bottom. The button labeled Open Desktop navigates to the Desktop Page with cards prearranged for the parents and children. The Tree Editor button is CURRENTLY A NO-OP.
 
-### Descendant Pages
+### Descendants and Descendancy List
+
+There are two action buttons currently on the Person Page that takes you to pages showing descendancies. Click on the Descendants button the display shifts to the Dependancy Page for the main person. This list show an indented list of all descendants of the main person. No spouses are shown. The style of person display is that same style used on the Person and Family page. Each person with descendants is collapsible by clicking  a disclosure triangle. If you then click on a person on the Descendancy page you return to the Person Page of that person.
+
+Click on the Descendancy List button on the Person Page to move to the Descendancy List Page. This page shows the descendants of the main person also. Persons are shown as single lines, and spouses are also shown.  When you expand a person to see their descendants you will first see their spouse or spouses. After you expand a spouse line the children of that family are shown. This page distinguishes the children from different families by always interspersing a spouse/family level. The Descendants Page shows all the children of a person as a single list with no information about spouses.
 
 ### Desktop Page
 
-### About Editing
+The Desktop Page represents a desktop surface and "index cards" that can be moved around the desktop. There are two ways to get to the Desktop Page. First from the Person Page you can hit the Open Desktop button, which opens the Desktop with a card for the person. The Family Page also has an Open Desktop button. When you hit that button the Desktop opens along with index cards for the parents and the children laid out nicely on the Desktop. There's not a whole lot you can do on the page for now. But you can resize the cards, move the cards, group the cards and move groups together, and bring cards to the front if you overlap them. The cards have a context menu that allows you to open spouses if they are not  yet open. There is a context menu for the entire page that allows you to search for and add any person to the Desktop.
+
+### Gedcom Tree Editor
+
+I have experimented with a few ways to edit records and one of them is now available in the user interface. From the Person Page you can select the Tree Editor button, and this will open a new page where you will see the person's record rendered as a Gedcom tree.
+
+- Expand and Collapse  -- lines in the tree can be expanded or collapsed. If a line is expanded its children are also shown; if the line is collapsed its children are not shown. You control this state using the disclosure chevron at the left end of line. Leaves of the tree, of course, cannot be expanded so don't have chevrons.
+- Select -- one line is always selected (shown by the blue selection color)editing features, but little of them are now brought forward to the current set of pages. The issue of editing boils down, in my opinion, as to how far to implement Gedcom tree based editing. Bottom line is that I am very much in favor of that approach.
 
 ### The Database
 
@@ -72,18 +83,18 @@ The key point about a DeadEnds database is that it is not persistent. It exists 
 
 ### Use of Gedcom
 
-Most genealogical programs use Gedcom as 'intended', as a file format for importing and exporting data. Early on I decided to also use Gedcom as the internal format for all records. Going back forty years now I have always represented records as node trees, where each node is a Gedcom line. Of historical interest, the records in LifeLines databases (persistent and B-tree based) are Gedcom strings. When read to RAM records are parsed to node trees; when written back out records the are flattened back to text.
+Most genealogical programs use Gedcom as intended, as the file format for importing and exporting genealogical data. Early on (forty plus years ago) I decided to also use Gedcom as the format for all records in my generalogicsl software. I have always represented records as node trees, where each node is a Gedcom line.
 
-Using Gedcom as the internal record format may does not imply that DeadEnds is complient to some official Gedcom standard. Early on decided I would not enforce a standards; I wanted to be as loosey goosey as possible. I do have to enforce a minimalist set of rules but ignore everything else. The rules boil down to:
+Using Gedcom as the internal record format does not imply DeadEnds enforces any official Gedcom standard. My software has never worried about official Gedcom standards. However, I do have to enforce a minimalist set of rules. They boil down to:
 
 - Person, Family and Source records must use INDI, FAM, and SOUR tags.
 - Persons must link to Families via FAMS and FAMC values.
 - Persons with name and sex values must use NAME and SEX lines; values of NAME lines must set off surnames with slashes.
 - Families must link to Persons via HUSB, WIFE, and CHIL nodes.
 - Birth, death, and marriage events must use BIRT, DEAT, and MARR tags.
-- Date and places of events must use DATE AND PLAC lines.
-- Records must be closed -- all records referred to must exist -- no wild pointers allowed.
-- I beleive these rules are consistent with every version of lineage-linked Gedcom standards.
+- Date and places of events must use DATE and PLAC lines.
+- Records must be closed -- all records must have a unique key and all keys that are referred to must exist.
+- I hope these rules are consistent with every version of lineage-linked Gedcom standards.
 
 Using Gedcom for the internal representation of genealogical data was unconventional in the late 1980s, but no longer is so.
 

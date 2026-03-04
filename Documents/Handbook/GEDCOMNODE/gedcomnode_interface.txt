@@ -43,7 +43,7 @@ extension GedcomNode {
 
 public extension GedcomNode {
 
-    func hasKids() -> Bool -- Whether a Node has kid/s
+    var hasKids: Bool -- Whether a Node has kid/s
 
     @discardableResult func addKid(tag: String, val: String? = nil) -> GedcomNode -- Adds kid to this Node.
 

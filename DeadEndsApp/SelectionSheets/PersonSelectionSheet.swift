@@ -3,26 +3,25 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 14 January 2026.
-//  Last changed on 14 January 2026.
+//  Last changed on 27 February 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Structure holding list of persons.
+/// List of persons to select from.
 struct PersonList: Identifiable {
     let id = UUID()
     let title: String
     let persons: [Person]
 }
 
-/// Sheet view for selecting from a list of persons.
+/// Sheet for selecting a person from a list.
 struct PersonSelectionSheet: View {
 
     let title: String
     let persons: [Person]
     let onSelect: (Person) -> Void
-
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -34,7 +33,7 @@ struct PersonSelectionSheet: View {
 
             Divider()
 
-            List(persons, id: \.key) { person in
+            List(persons, id: \.key) { person in  // Render list of persons as buttons.
                 Button {
                     onSelect(person)
                     dismiss()
@@ -44,7 +43,7 @@ struct PersonSelectionSheet: View {
                         .padding(4)
                 }
             }
-            .frame(minHeight: 200)
+            .frame(minHeight: 400)
 
             Divider()
 

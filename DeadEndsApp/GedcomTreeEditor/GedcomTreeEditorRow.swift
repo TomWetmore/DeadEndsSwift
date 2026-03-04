@@ -3,14 +3,14 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 8 October 2025.
-//  Last changed on 4 January 2026.
+//  Last changed on 3 March 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
 struct GedcomTreeEditorRow: View {
-    
+
     @Bindable var viewModel: GedcomTreeEditorModel
 
     let treeManager: GedcomTreeManager
@@ -23,27 +23,28 @@ struct GedcomTreeEditorRow: View {
     }
     // Holds the field (tag, val, nil) with focus.
     @FocusState private var focusedField: Field?
-    
+
     // Original tag/val values during editing
     @State private var originalTag: String = ""
-    @State private var originalVal: String = ""
-    
+    @State private var originalVal: String? = nil
+
     @State private var editTag: String = ""
     @State private var editVal: String = ""
-    
+
+    /// Render a row of the Gedcom tree.
     var body: some View {
-        
+
         let _ = viewModel.textCounter   // Force dependency.
-        print("Render node:", node.tag, ObjectIdentifier(node))  // Debug.
-        
+                                        //print("Render node:", node.tag, ObjectIdentifier(node))  // DEBUG DEBUG DEBUG.
+
         return VStack(spacing: 0) {
-            
+
             rowContent
                 .onTapGesture {
                     focusedField = nil
                     viewModel.selectedNode = node
                 }
-            
+
             if viewModel.expandedSet.contains(node.id) {
                 ForEach(node.kids) { kid in
                     GedcomTreeEditorRow(viewModel: viewModel, treeManager: treeManager, node:kid)
@@ -62,10 +63,10 @@ struct GedcomTreeEditorRow: View {
             focusedField = nil
         }
     }
-    
+
     /// Computed property that returns the row content View.
     private var rowContent: some View {
-        
+
         HStack {
             indentView
             chevronView
@@ -85,21 +86,21 @@ struct GedcomTreeEditorRow: View {
             : Color.clear
         )
     }
-    
+
     /// Indent.
 
     private var indentView: some View {
-        
+
         ForEach(0..<node.lev, id: \.self) { _ in
             Spacer().frame(width: 32)
         }
     }
-    
+
     /// Chevron (visible or invisible).
     private var chevronView: some View {
 
         Group {
-            if node.hasKids() {
+            if node.hasKids {
                 Button {
                     viewModel.toggleExpansion(for: node)
                 } label: {
@@ -116,18 +117,18 @@ struct GedcomTreeEditorRow: View {
             }
         }
     }
-    
+
     /// Level.
 
     private var levelView: some View {
 
         Text("\(node.lev)").frame(width: 20)
     }
-    
+
     /// Key (on root nodes).
 
     private var keyView: some View {
-        
+
         Group {
             if let key = node.key {
                 Text(key)
@@ -136,11 +137,10 @@ struct GedcomTreeEditorRow: View {
             }
         }
     }
-    
-    /// Tag.
 
+    /// Render tag field.
     private var tagField: some View {
-        
+
         TextField("", text: $editTag)
             .frame(width: 80)
             .textFieldStyle(.plain)
@@ -155,30 +155,26 @@ struct GedcomTreeEditorRow: View {
             }
             .onChange(of: focusedField) { oldFocus, newFocus in
                 if newFocus == .tag(node.id) {  // Focus gained.
-                    print("Focus gained")  // Debug.
+                    //print("Focus gained")  // Debug.
                     originalTag = node.tag   // store model’s tag
                     editTag     = node.tag   // sync UI to model
                     return
                 }
                 if oldFocus == .tag(node.id) {  // Focus lost.
-                    print("Focus lost")
+                                                //print("Focus lost")
                     if editTag != originalTag {
-                        print("Tag changed from \(originalTag) → \(editTag)")
+                        //print("Tag changed from \(originalTag) → \(editTag)")
                         treeManager.editTag(node, from: originalTag, to: editTag)
                     } else {
-                        print("Tag unchanged.")
+                        //print("Tag unchanged.")
                     }
                 }
             }
-        
     }
 
-    /// Value.
-
+    /// Render value field.
     private var valueField: some View {
-        
         ZStack(alignment: .leading) {
-            
             // Summary text when no value and collapsed.
             if editVal.isEmpty,
                !viewModel.expandedSet.contains(node.id),
@@ -195,16 +191,18 @@ struct GedcomTreeEditorRow: View {
                 .allowsHitTesting(viewModel.selectedNode === node)
                 .onChange(of: focusedField) { oldFocus, newFocus in
                     if newFocus == .val(node.id) {  // Focus gained.
-                        originalVal = node.val ?? ""
-                        editVal = node.val ?? ""     // Sync UI with model.
+                        originalVal = node.val // Keep optional.
+                        editVal = node.val ?? ""  // Keep string.
                         return
                     }
                     if oldFocus == .val(node.id) {  // Focus lost.
-                        if editVal != originalVal {
-                            print("Value changed from \(originalVal) to \(editVal)")  // Debug.
-                            treeManager.editVal(node, from: originalVal, to: editVal)
+                        let trimmed = editVal.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let newVal: String? = trimmed.isEmpty ? nil : trimmed
+                        if newVal != originalVal {
+                            //print("Value changed from \(pval(originalVal)) to \(pval(newVal))")  // Debug.
+                            treeManager.editVal(node, from: originalVal, to: newVal)
                         } else {
-                            print("Value unchanged.")  // Debug.
+                            //print("Value unchanged.")  // Debug.
                         }
                     }
                 }
@@ -213,14 +211,13 @@ struct GedcomTreeEditorRow: View {
 }
 
 /// Build event summary for a top-level event node.
-
 func eventSummary(for node: GedcomNode) -> String? {
 
     //guard !expanded else { return nil }  // suppress if expanded
     // Only event-style nodes with no value
     guard node.val == nil else { return nil }
     switch node.tag {
-    case "BIRT", "DEAT", "MARR", "CHR", "BAPM", "BCHL", "RESI", "LAND", "EDU", "OCCU": // add other events you like
+    case GedcomTag.BIRT, "DEAT", "MARR", "CHR", "BAPM", "BCHL", "RESI", "LAND", "EDU", "OCCU": // add other events you like
         let date = node.kid(withTag: "DATE")?.val
         let place = node.kid(withTag: "PLAC")?.val
         var parts: [String] = []
@@ -232,3 +229,9 @@ func eventSummary(for node: GedcomNode) -> String? {
     }
 }
 
+/// Used in debug statements to show nil and empty strings as nil and "".
+public func pval(_ s: String?) -> String {
+    if s == nil { return "nil" }
+    else if s == "" { return "\"\"" }
+    else { return s! }
+}

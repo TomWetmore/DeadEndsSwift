@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 18 February 2026.
+//  Last changed on 28 February 2026.
 //
 
 import Foundation
@@ -60,7 +60,7 @@ extension Dictionary where Key == String, Value == GedcomNode {
 public extension Record {
 
     func gedcomText(level: Int = 0, indent: Bool = false) -> String { root.gedcomText(level: level, indent: indent) }
-    func descendants() -> [GedcomNode] { root.descendants() }
+    var subnodes: [GedcomNode] { root.subnodes }
     func count() -> Int { root.count() }
 }
 

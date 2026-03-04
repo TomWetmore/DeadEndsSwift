@@ -3,22 +3,21 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 4 October 2025.
-//  Last changed on 2 December 2025.
+//  Last changed on 3 March 3026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Atomic editing changes for the undo/redo stacks.
+/// Atomic edit changes for the undo/redo stacks.
 enum EditDelta {
-
     case addKid(kid: GedcomNode, dad: GedcomNode, sib: GedcomNode?)
     case addSib(sib: GedcomNode, prev: GedcomNode, dad: GedcomNode)
     case remove(node: GedcomNode, dad: GedcomNode, prev: GedcomNode?, sib: GedcomNode?)
     case moveUp(node: GedcomNode)
     case moveDown(node: GedcomNode)
     case editTag(node: GedcomNode, old: String, new: String)
-    case editVal(node: GedcomNode, old: String, new: String)
+    case editVal(node: GedcomNode, old: String?, new: String?)
 }
 
 /// Undo, Redo, and Edit manager for an editable Gedcom tree.
@@ -27,11 +26,10 @@ final class GedcomTreeManager {
 
     let treeModel: GedcomTreeEditorModel
     let recordIndex: RecordIndex
-
     private var undoStack: [EditDelta] = []
     private var redoStack: [EditDelta] = []
 
-
+    /// Create the Gedcom tree manager.
     init(database: Database) {
         self.recordIndex = database.recordIndex // Needed?
         self.treeModel = GedcomTreeEditorModel()
@@ -43,35 +41,37 @@ final class GedcomTreeManager {
         self.recordIndex = recordIndex
     }
 
+    /// Return true if there is another undo action possible.
     var canUndo: Bool { !undoStack.isEmpty }
+
+    /// Return true if there is anotehr redo action possible.
     var canRedo: Bool { !redoStack.isEmpty }
 
-    /// Handle a new delta from the user interface. Apply the delta and add it to the undo stack.
+    /// Handle a delta from the user interface; apply the delta and add it to the undo stack.
     func edit(delta: EditDelta) {
-
         apply(delta)
         undoStack.append(delta)
         redoStack.removeAll()
         treeModel.undoCounter &+= 1
     }
 
-    /// Undo one edit operation. Deltas on the undo stack are inverted before applying.
+    /// Undo last delta and move it to the redo stack; invert delta before applying.
     func undo() {
-        guard let delta = undoStack.popLast() else { return } // Stack may be empty.
-        applyInverse(delta)  // Apply the inverse.
-        redoStack.append(delta)  // Move the delta to the redo stack.
+        guard let delta = undoStack.popLast() else { return }
+        applyInverse(delta)
+        redoStack.append(delta)
         treeModel.undoCounter &+= 1
     }
 
-    /// Redo one edit operation. Deltas on the redo stack are applied directly.
+    /// Redo delta on redo stack and move it to the undo stack.
     func redo() {
-        guard let delta = redoStack.popLast() else { return }  // Stack may be empty.
-        apply(delta)  // Apply the delta directly.
-        undoStack.append(delta)  // Move the delta to the undo stack.
+        guard let delta = redoStack.popLast() else { return }
+        apply(delta)
+        undoStack.append(delta)
         treeModel.undoCounter &+= 1
     }
 
-    /// Applies an EditDelta to the Gedcom tree.
+    /// Apply delta to the Gedcom tree.
     private func apply(_ delta: EditDelta) {
         switch delta {
         case let .addKid(kid, dad, sib):
@@ -87,11 +87,12 @@ final class GedcomTreeManager {
         case .editTag(node: let node, old: let old, new: let new):
             editTagCase(node: node, old: old, new: new)
         case .editVal(node: let node, old: let old, new: let new):
+            print("apply: .editVal case: node:\(node) old:\(pval(old)) new:\(pval(new))")  // DEBUG DEBUG DEBUG
             editValueCase(node: node, old: old, new: new)
         }
     }
 
-    /// Applies the inverse of an EditDelta (undoes its effects) to the Gedcom tree.
+    /// Apply delta inverse to the Gedcom tree.
     private func applyInverse(_ delta: EditDelta) {
         switch delta {
         case let .addKid(kid: kid, dad: dad, sib: sib):
@@ -112,84 +113,73 @@ final class GedcomTreeManager {
     }
 }
 
-/// User command interface to the tree manager. These are edit commands used by the user interface. Each method
-/// creates an EditDelta that is run and added to the undo stack.
+/// User interface to the tree manager. Each method creates a delta that is run
+/// and added to the undo stack.
 extension GedcomTreeManager {
 
-    /// Adds a kid as the first child of a dad.
+    /// Add a node as the first kid of a dad.
     func addKid(_ kid: GedcomNode, to dad: GedcomNode) {
-
-        print("GTM: addKid(\(kid), \(dad))")  // Debug.
+        print("GTM: addKid(\(kid), \(dad))")  // DEBUG DEBUG DEBUG
         let delta = EditDelta.addKid(kid: kid, dad: dad, sib: dad.kid)
         edit(delta: delta)
     }
 
-    /// Adds a sib as a first sib to a node.
+    /// Add a node as the first sib of a node.
     func addSib(_ sib: GedcomNode, to prev: GedcomNode, dad: GedcomNode) {
-
-        print("GTM: addSib(\(sib), \(prev))")  // Debug.
+        print("GTM: addSib(\(sib), \(prev))")  // DEBUG DEBUG DEBUG
         let delta = EditDelta.addSib(sib: sib, prev: prev, dad: dad)
         edit(delta: delta)
     }
 
-    /// Removes a node (and its subtree intact) from a tree.
+    /// Remove a node and its descendants from a tree.
     func remove(node: GedcomNode) {
-
-        print("GTM: remove(\(node))")  // Debug.
+        print("GTM: remove(\(node))") // DEBUG DEBUG DEBUG
         precondition(node.dad != nil, "remove: dad cannot be nil")
         let delta = EditDelta.remove(node: node, dad: node.dad!, prev: node.prevSib, sib: node.sib)
         edit(delta: delta)
     }
 
+    /// Move a node back one space in its sib chain.
     func moveUp(node: GedcomNode) {
-
-        print("GTM: moveUp(\(node))")  // Debug.
+        print("GTM: moveUp(\(node))") // DEBUG DEBUG DEBUG
         let delta = EditDelta.moveUp(node: node)
         edit(delta: delta)
     }
 
+    /// Move a node ahead one space in its sib chain.
     func moveDown(node: GedcomNode) {
-
-        print("GTM: moveDown(\(node))")  // Debug.
+        print("GTM: moveDown(\(node))") // DEBUG DEBUG DEBUG
         let delta = EditDelta.moveDown(node: node)
         edit(delta: delta)
     }
 
-    ///
-//    func editTag(_ node: GedcomNode, from old: String, to new: String) {
-//
-//        guard canEditTag(node) else { return }
-//        let delta = EditDelta.editTag(node: node, old: old, new: new)
-//        edit(delta: delta)
-//    }
-
+    /// Change a tag in the tree.
     func editTag(_ node: GedcomNode, from old: String, to new: String) {
-        print("editTag called for node \(node.tag), old=\(old), new=\(new)")
-        print("canEditTag? \(canEditTag(node))")
+        print("editTag called for node \(node.tag), old=\(old), new=\(new)") // DEBUG DEBUG DEBUG
+        print("canEditTag? \(canEditTag(node))") // DEBUG DEBUG DEBUG
         guard canEditTag(node) else {
-            print("editTag aborted — canEditTag returned false")
+            print("editTag aborted — canEditTag returned false") // DEBUG DEBUG DEBUG
             return
         }
         let delta = EditDelta.editTag(node: node, old: old, new: new)
         edit(delta: delta)
     }
 
-    ///
-    func editVal(_ node: GedcomNode, from old: String, to new: String) {
-
+    /// Change a value in the tree.
+    func editVal(_ node: GedcomNode, from old: String?, to new: String?) {
+        print("editVal called for node \(node.tag), old=\(pval(old)), new=\(pval(new))")  // DEBUG DEBUG DEBUG
         guard canEditVal(node) else { return }
+        print("got past the canEditVal guard") // DEBUG DEBUG DEBUG
         let delta = EditDelta.editVal(node: node, old: old, new: new)
         edit(delta: delta)
     }
 }
 
-/// Methods in this extension run the EditDeltas and their inverses. The methods have many
-/// preconditions that check invariants that must hold between associated values. Some can
-/// be removed after testing.
+/// Methods that run the delta and their inverses; many assertions currenttly run;
 extension GedcomTreeManager {
 
+    /// Add a kid to the tree and update tree model.
     func addKidCase(kid: GedcomNode, dad: GedcomNode, sib: GedcomNode?) {
-
         precondition(dad.kid === sib, "addKidCase: dad's kid must be sib")
         precondition(kid.dad == nil, "addKidCase: kid must be disconnected")
         precondition(kid.sib == nil, "addKidCase: kid must be disconnected")
@@ -199,8 +189,8 @@ extension GedcomTreeManager {
         treeModel.selectedNode = kid
     }
 
+    /// Add a sib to a node and update tree model.
     func addSibCase(sib: GedcomNode, prev: GedcomNode, dad: GedcomNode) {
-
         precondition(prev.dad === dad, "addSibCase: prev does not have right dad")
         precondition(sib.dad === nil, "addSibCase: sib must be disconnected")
         precondition(sib.sib == nil, "addSibCase: sib must be disconnected")
@@ -211,19 +201,19 @@ extension GedcomTreeManager {
         treeModel.selectedNode = sib;
     }
 
-    ///
+    /// Remove a node and its descendants and update tree movel.
     func removeKidCase(kid: GedcomNode, dad: GedcomNode, sib: GedcomNode?) {
-
         precondition(kid.dad === dad, "removeKidCase: kid's dad must be dad")
         precondition(kid.sib === sib, "removeKidCase: kid's sib must be sib")
+
         treeModel.expandedSet.remove(kid.id)
         let dad = kid.dad   // capture BEFORE removing
         treeModel.selectedNode = dad
         kid.removeKid()
     }
 
+    /// Remove ...
     func removeSibCase(sib: GedcomNode, prev: GedcomNode, dad: GedcomNode) {
-
         precondition(sib.dad === dad, "removeSibCase: sib.dad === dad")
         precondition(prev.dad === dad, "removeSibCase: prev.dad === dad")
         precondition(prev.sib === sib, "removeSibCase: prev.sib === sib")
@@ -232,8 +222,8 @@ extension GedcomTreeManager {
         sib.sib = nil
     }
 
+    /// Remove ...
     func removeCase(node: GedcomNode, dad: GedcomNode, prev: GedcomNode?, sib: GedcomNode?) {
-
         precondition(node.dad === dad, "removeCase: node.dad !== dad")
         precondition(node.sib === sib, "removeCase: node.sib !== sib")
         if let prev = prev {
@@ -253,6 +243,7 @@ extension GedcomTreeManager {
         treeModel.selectedNode = dad
     }
 
+    /// Reinsert ...
     private func reinsertCase(node: GedcomNode, dad: GedcomNode, prev: GedcomNode?, sib: GedcomNode?) {
 
         node.dad = dad
@@ -271,21 +262,22 @@ extension GedcomTreeManager {
         treeModel.selectedNode = node
     }
 
+    /// Move down ...
     private func moveDownCase(node: GedcomNode) {
-
         node.moveDown()
         treeModel.selectedNode = node
     }
 
+    ///
     private func editTagCase(node: GedcomNode, old: String, new: String) {
-
         precondition(node.tag == old, "editTagCase: node.tag is not correct")
         node.tag = new
         treeModel.textCounter &+= 1
     }
 
-    private func editValueCase(node: GedcomNode, old: String, new: String) {
-
+    ///
+    private func editValueCase(node: GedcomNode, old: String?, new: String?) {
+        print("editValueCase: node: \(node) old: \(pval(old)) new: \(pval(new))")  // DEBUG DEBUG DEBUG
         precondition(node.val == old, "editValueCase: node.val is not correct")
         node.val = new
         treeModel.textCounter &+= 1

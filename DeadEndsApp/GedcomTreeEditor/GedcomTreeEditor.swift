@@ -32,11 +32,11 @@ import DeadEndsLib
 ///   - Dependency-injected model and controller
 ///
 /// This view should never create or own its own state; ownership of the
-/// editor model must remain in the container (e.g. `GedcomEditorWindow`).
+/// editor model must remain in the container (e.g. `GedcomEditorPage`).
 /// Displays an editable Gedcom record as a Gedcom tree. The View is composed of GedcomTreeEditorRows,
 /// one for each visible GedcomNode.
 /// This view is tree only; it has no buttons or framing. Currently it has two uses.
-/// 1. It is invoked by the GedcomEditorWindow which wires it up and provides the editor buttons.
+/// 1. It is invoked by the GedcomEditorPage which wires it up and provides the editor buttons.
 /// 2. It is invoked by the CentralMergePane of the MergeWindow.
 ///
 struct GedcomTreeEditor: View {

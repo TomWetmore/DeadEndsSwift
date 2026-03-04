@@ -74,7 +74,7 @@ struct RootView: View {
                 case .gedcomTreeEditor(let person):
                     if let db = model.database {
                         let manager = GedcomTreeManager(database: db)
-                        GedcomEditorWindow(
+                        GedcomEditorPage(
                             viewModel: manager.treeModel,
                             manager: manager,
                             root: person.root

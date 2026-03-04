@@ -41,7 +41,7 @@ extension GedcomNode
     public func descendants() -> [GedcomNode] -- Return all nodes in a tree.
 
 public extension GedcomNode
-    func hasKids() -> Bool -- Return whether node has kids.
+    var hasKids: Bool -- Return whether node has kids.
     func addKid(tag: String, val: String? = nil) -> GedcomNode -- Create and add new first kid for this node.
     func addKid(_ kid: GedcomNode) -> GedcomNode -- Adds existing node as this node's new first kid.
     func addBareKid(_ kid: GedcomNode) -> GedcomNode -- Add newly created, unlinked kid (defensive).

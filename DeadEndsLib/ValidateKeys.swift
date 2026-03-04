@@ -3,14 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 7 February 2026.
+//  Last changed on 28 February 2026.
 //
 
 import Foundation
 
 // Check that record keys are unique and closed.
 func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, errlog: ErrorLog) {
-    var keyset = Set<String>() // Encountered record keys.
+    var keyset = Set<String>() // Encountered keys.
 
     for root in records {  // Existance and uniqueness.
         let type = root.recordKind()
@@ -31,7 +31,7 @@ func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, e
     for root in records {  // Check all keys found as values have targets.
         let key = root.key
         root.traverse { node in
-            guard let value = node.val, isKey(value) else { return }
+            guard let value = node.val, value.isKey else { return }
             if !keyset.contains(value) {
                 var line = 0
                 if let key = key { line = keymap[key]! + node.offset }
@@ -67,25 +67,7 @@ extension GedcomNode {
         return count
     }
 
-    /// Return number of nodes before self in its tree.
-//    public func offset() -> Int {
-//        var count = 0
-//        var curNode: GedcomNode? = self
-//        var loops = 0
-//        while let node = curNode, let parent = node.dad {
-//            loops += 1
-//            if loops > 100 { fatalError("Cycle detected in tree.") }
-//            var sibling = parent.kid // Count previous sibs.
-//            while let cursibling = sibling, cursibling !== node {
-//                count += cursibling.count()
-//                sibling = cursibling.sib
-//            }
-//            curNode = parent  // Move up.
-//            count += 1  // Include parent.
-//        }
-//        return count
-//    }
-
+    /// Return number of nodes before node in its tree.
     public var offset: Int {
         var count = 0
         var curNode: GedcomNode? = self
@@ -104,11 +86,11 @@ extension GedcomNode {
         return count
     }
 
-    /// Return level of self in its tree.
+    /// Return level of node in its tree.
     public func level() -> Int {
         var level = -1
         var curr: GedcomNode? = self
-        while let node = curr {
+        while let node = curr {  // Count dads.
             curr = node.dad
             level += 1
             if level > 100 { fatalError("Cycle detected in tree.") }
@@ -117,9 +99,20 @@ extension GedcomNode {
     }
 }
 
-/// Return true if string has Gedcom key form.
-public func isKey(_ value: String) -> Bool {
-    return value.hasPrefix("@") && value.hasSuffix("@")
+extension String {
+
+    /// Check if a string is a record key.
+    public var isKey: Bool {
+        guard count >= 3, hasPrefix("@"), hasSuffix("@") else { return false }
+        let inner = dropFirst().dropLast()
+        guard !inner.isEmpty else { return false }
+        return inner.unicodeScalars.allSatisfy { scalar in
+            switch scalar.value {
+            case 48...57, 65...90, 97...122: return true // 0-9 A-Z a-z
+            default: return false
+            }
+        }
+    }
 }
 
 /// Get record kind from root tag.
