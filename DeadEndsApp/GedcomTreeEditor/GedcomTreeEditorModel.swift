@@ -3,8 +3,17 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 2 October 2025.
-//  Last changed on 3 December 2025.
-//
+//  Last changed on 4 March 2026.
+
+/// GedcomTreeEditorModel represents the state of the Gedcom tree editor as seen
+/// by the user interface. It contains the information needed to render the tree
+/// and track UI interaction state such as selection, expansion, and editing context.
+/// The model does not modify the underlying Gedcom records directly; it serves
+/// as the observable bridge between the database and the SwiftUI views.
+///
+/// Maintains the observable editor state used by the SwiftUI views (selection,
+/// expansion, etc.) and provides a view-oriented representation of the Gedcom tree.
+
 
 import SwiftUI
 import DeadEndsLib

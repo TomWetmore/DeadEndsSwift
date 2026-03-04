@@ -3,8 +3,20 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 4 October 2025.
-//  Last changed on 3 March 3026.
-//
+//  Last changed on 4 March 3026.
+
+/// GedcomTreeManager makes all the actual changes to the Gedcom tree being
+/// edited. It applies changes to the underlying Gedcom node structures while
+/// preserving the structural invariants of the tree and maintaining consistency
+/// with the database. The manager receives editing requests from the UI layer
+/// and converts them into safe operations on the Gedcom data.
+///
+/// It maintains an 'infinite' undo/redo stack.
+///
+/// Executes editing operations on the Gedcom tree, ensuring that all changes
+/// preserve the structural invariants of the node graph and remain consistent
+/// with the underlying database.
+
 
 import SwiftUI
 import DeadEndsLib
@@ -118,21 +130,18 @@ extension GedcomTreeManager {
 
     /// Add a node as the first kid of a dad.
     func addKid(_ kid: GedcomNode, to dad: GedcomNode) {
-        print("GTM: addKid(\(kid), \(dad))")  // DEBUG DEBUG DEBUG
         let delta = EditDelta.addKid(kid: kid, dad: dad, sib: dad.kid)
         edit(delta: delta)
     }
 
     /// Add a node as the first sib of a node.
     func addSib(_ sib: GedcomNode, to prev: GedcomNode, dad: GedcomNode) {
-        print("GTM: addSib(\(sib), \(prev))")  // DEBUG DEBUG DEBUG
         let delta = EditDelta.addSib(sib: sib, prev: prev, dad: dad)
         edit(delta: delta)
     }
 
     /// Remove a node and its descendants from a tree.
     func remove(node: GedcomNode) {
-        print("GTM: remove(\(node))") // DEBUG DEBUG DEBUG
         precondition(node.dad != nil, "remove: dad cannot be nil")
         let delta = EditDelta.remove(node: node, dad: node.dad!, prev: node.prevSib, sib: node.sib)
         edit(delta: delta)
@@ -140,26 +149,19 @@ extension GedcomTreeManager {
 
     /// Move a node back one space in its sib chain.
     func moveUp(node: GedcomNode) {
-        print("GTM: moveUp(\(node))") // DEBUG DEBUG DEBUG
         let delta = EditDelta.moveUp(node: node)
         edit(delta: delta)
     }
 
     /// Move a node ahead one space in its sib chain.
     func moveDown(node: GedcomNode) {
-        print("GTM: moveDown(\(node))") // DEBUG DEBUG DEBUG
         let delta = EditDelta.moveDown(node: node)
         edit(delta: delta)
     }
 
     /// Change a tag in the tree.
     func editTag(_ node: GedcomNode, from old: String, to new: String) {
-        print("editTag called for node \(node.tag), old=\(old), new=\(new)") // DEBUG DEBUG DEBUG
-        print("canEditTag? \(canEditTag(node))") // DEBUG DEBUG DEBUG
-        guard canEditTag(node) else {
-            print("editTag aborted — canEditTag returned false") // DEBUG DEBUG DEBUG
-            return
-        }
+        guard canEditTag(node) else { return }
         let delta = EditDelta.editTag(node: node, old: old, new: new)
         edit(delta: delta)
     }
@@ -273,7 +275,6 @@ extension GedcomTreeManager {
 
     /// Change value.
     private func editValueCase(node: GedcomNode, old: String?, new: String?) {
-        print("editValueCase: node: \(node) old: \(pval(old)) new: \(pval(new))")  // DEBUG DEBUG DEBUG
         precondition(node.val == old, "editValueCase: node.val is not correct")
         node.val = new
         treeModel.textCounter &+= 1
