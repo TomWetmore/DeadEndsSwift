@@ -4,12 +4,6 @@ The Gedcom tree editor is built from a number of SwiftUI views and other compone
 
 The Gedcom tree editor allows a user to edit a Gedcom record, a tree of Gedcom nodes. Nodes can be expanded (show the next level below) or then can be closed. Disclosure triangles indicate whether a node is expanded or not. Leaf nodes do not have disclosure triangles.
 
-
-
-
-
-
-
 The files that implement the editor include:
 
 - GedcomEditorPage.swift
@@ -27,7 +21,7 @@ func add (one: String, two:String) -> String
 
 ## GedcomTreeEditorModel
 
-The Gedcom tree editor model is the *model* object fo the Gedcom tree editor. Its task is to track the expanded nodes and the seleted node.
+The Gedcom tree editor model keeps track of the the visual state of the Gedcom tree. It tracks the set of expanded nodes and the  selected node. It tracks the locations of each row to support drag and drop operations. And it uses two counters to 
 
 The heading for the model is:
 
@@ -37,8 +31,8 @@ final class GedcomTreeEditorModel {
     var expandedSet: Set<UUID> = []
     var selectedNode: GedcomNode? = nil
     var rowFrames: [UUID: CGRect] = [:]
-    var textCounter: Int = 0 // Incremented when TextFields change.
-    var undoCounter: Int = 0 // Incremented when undo/redo stacks change.
+    var textCounter: Int = 0
+    var undoCounter: Int = 0
 ```
 
 **expandedSet** holds the UUID's of the currently expanded nodes. **selectedNode** holds the currently selected node. **rowFrames** holds the frames of the visible rows (a row on the editor view corresponds with a Gedcom node in the record tree). I'll explain **textCounter** and **undoCounter** when I better understand them.

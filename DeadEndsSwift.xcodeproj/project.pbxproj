@@ -56,6 +56,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		26193A952F59EA2B00086E59 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Merging/CenterMergePane.swift,
+			);
+			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
+		};
 		263E61072F51273E00EAD723 /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -117,6 +124,9 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		263408B12E21680900F4E6DE /* DeadEndsApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				26193A952F59EA2B00086E59 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */,
+			);
 			path = DeadEndsApp;
 			sourceTree = "<group>";
 		};

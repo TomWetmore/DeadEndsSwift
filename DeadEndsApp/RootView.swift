@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 24 February 2026.
+//  Last changed on 5 March 2026.
 //
 
 import SwiftUI
@@ -37,7 +37,6 @@ extension EnvironmentValues {
 
 /// Root View of the DeadEnds App.
 struct RootView: View {
-
     @EnvironmentObject var model: AppModel
 
     /// Root view body property.
@@ -72,13 +71,8 @@ struct RootView: View {
                         model.path.removeLast()  // Pop the editor view.
                     }
                 case .gedcomTreeEditor(let person):
-                    if let db = model.database {
-                        let manager = GedcomTreeManager(database: db)
-                        GedcomEditorPage(
-                            viewModel: manager.treeModel,
-                            manager: manager,
-                            root: person.root
-                        )
+                    if let database = model.database {
+                        GedcomEditorPage(database: database, root: person.root)
                     } else {
                         Text("No database loaded")
                     }

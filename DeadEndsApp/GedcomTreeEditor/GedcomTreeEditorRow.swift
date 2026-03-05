@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 8 October 2025.
-//  Last changed on 4 March 2026.
+//  Last changed on 5 March 2026.
 
 /// GedcomTreeEditorRow is the container view that renders each row in a
 /// Gedcom tree. It is one of complexer view in DeadEnds as it handles six
@@ -31,8 +31,7 @@ struct GedcomTreeEditorRow: View {
 
     /// Render row of Gedcom tree.
     var body: some View {
-        let _ = viewModel.textCounter
-        let _ = viewModel.undoCounter  // Force body render on undo/redo.
+        let _ = viewModel.changeCounter
 
         return VStack(spacing: 0) {
             rowContent
@@ -65,7 +64,7 @@ struct GedcomTreeEditorRow: View {
             if focusedField != .tag(node.id) { editTag = node.tag }
             if focusedField != .val(node.id) { editVal = node.val ?? "" }
         }
-        .onChange(of: viewModel.textCounter) { _, _ in
+        .onChange(of: viewModel.changeCounter) { _, _ in
             if focusedField != .tag(node.id) { editTag = node.tag }
             if focusedField != .val(node.id) { editVal = node.val ?? "" }
         }
@@ -155,6 +154,12 @@ struct GedcomTreeEditorRow: View {
                     }
                 }
             }
+            .onDisappear {
+                // Field can vanish without a focus transition (e.g. collapsing parent).
+                if focusedField == .tag(node.id) {
+                    commitTagIfNeeded()
+                }
+            }
     }
 
     /// Render value field.
@@ -186,7 +191,28 @@ struct GedcomTreeEditorRow: View {
                         }
                     }
                 }
+                .onDisappear {
+                    // Field can vanish without a focus transition (e.g. collapsing parent).
+                    if focusedField == .val(node.id) {
+                        commitValIfNeeded()
+                    }
+                }
         }
+    }
+
+    private func commitTagIfNeeded() {
+        let newTag = editTag.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard newTag != originalTag else { return }
+        treeManager.editTag(node, from: originalTag, to: newTag)
+        originalTag = newTag
+    }
+
+    private func commitValIfNeeded() {
+        let trimmed = editVal.trimmingCharacters(in: .whitespacesAndNewlines)
+        let newVal: String? = trimmed.isEmpty ? nil : trimmed
+        guard newVal != originalVal else { return }
+        treeManager.editVal(node, from: originalVal, to: newVal)
+        originalVal = newVal
     }
 }
 

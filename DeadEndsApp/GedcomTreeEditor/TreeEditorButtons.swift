@@ -3,85 +3,74 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 8 October 2025.
-//  Last changed on 26 November 2025.
+//  Last changed on 5 March 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Buttons used for TreeEditor actions; may be replaced or augmented with other ways to perform the actions.
+/// Buttons that initiate TreeEditor actions.
 struct TreeEditorButtons: View {
 
-    // Need both the tree model and tree manager to do the actions.
     @Bindable var viewModel: GedcomTreeEditorModel
     let treeManager: GedcomTreeManager
 
     var body: some View {
-
-        let _ = viewModel.undoCounter   // Depend on undo/redo changes
+        let _ = viewModel.changeCounter  // Render change when counter increments.
 
         HStack {
-            // Buttons that navigate and select nodes.
-            Button("Parent") {
+            Button("Parent") {  // Navigate to dad node.
                 viewModel.selectDad()
             }.disabled(viewModel.selectedNode?.dad == nil)
 
-            Button("First Child") {
+            Button("First Child") {  // Navigate to first kid node.
                 viewModel.selectFirstKid()
             }.disabled(viewModel.selectedNode?.kid == nil)
 
-            Button("Next Sib") {
+            Button("Next Sib") {  // Navigate to next sib node.
                 viewModel.selectNextSib()
             }.disabled(viewModel.selectedNode?.sib == nil)
 
-            Button("Prev Sib") {
+            Button("Prev Sib") {  // Navigate to previous sib node.
                 viewModel.selectPrevSib()
             }.disabled(viewModel.selectedNode?.prevSib == nil)
 
-            // Buttons that modify the tree.
             if let selected = viewModel.selectedNode {
                 Divider()
                     .frame(width: 1, height: 24)
                     .background(Color.gray)
                     .padding(.horizontal, 8)
-
-                Button("Add Child") {
+                Button("Add Child") {  // Add a first kid to selected.
                     treeManager.addKid(GedcomNode(tag: "NEW"), to: selected)
-                }.disabled(false) // All(?) nodes can have siblings added.
+                }.disabled(false)
 
-                Button("Add Sib") {
-                    treeManager.addSib(GedcomNode(tag: "NEW"), to: selected, dad: selected.dad!) // TODO: Remove forced unwrap.
-                }.disabled(selected.lev == 0) // Can't add siblings to root nodes.
+                Button("Add Sib") {  // Add a next sib to selected.
+                    treeManager.addSib(GedcomNode(tag: "NEW"), to: selected, dad: selected.dad!)
+                }.disabled(selected.lev == 0) // No sib for root nodes.
 
-                Button("Delete") {
+                Button("Delete") {  // Delete selected node tree.
                     treeManager.remove(node: selected)
-                }.disabled(!viewModel.canDeleteSelectedNode) // Several nodes can't be deleted.
-
-
-                // Buttons the move siblings relative to each other.
+                }.disabled(!viewModel.canDeleteSelectedNode)
                 Divider()
                     .frame(width: 1, height: 24)
                     .background(Color.gray)
                     .padding(.horizontal, 8)
-                Button("Move Down") {
+                Button("Move Down") {  // Swap selected node with next sib.
                     treeManager.moveDown(node: selected)
                 }.disabled(!viewModel.canMoveDownSelectedNode)
 
-                Button("Move Up") {
+                Button("Move Up") {  // Swap seleted node with previous sib.
                     treeManager.moveUp(node: selected)
                 }.disabled(!viewModel.canMoveUpSelectedNode)
             }
-
-            // Buttons that undo and redo changes.
             Divider()
                 .frame(width: 1, height: 24)
                 .background(Color.gray)
                 .padding(.horizontal, 8)
             Button("Undo") {
-                treeManager.undo()
+                treeManager.undo()  // Undo last edit action.
             }.disabled(!treeManager.canUndo)
-
-            Button("Redo") {
+            Button("Redo") {  // Redo last undone action.
                 treeManager.redo()
             }.disabled(!treeManager.canRedo)
         }

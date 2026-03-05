@@ -17,7 +17,6 @@
 /// preserve the structural invariants of the node graph and remain consistent
 /// with the underlying database.
 
-
 import SwiftUI
 import DeadEndsLib
 
@@ -41,16 +40,10 @@ final class GedcomTreeManager {
     private var undoStack: [EditDelta] = []
     private var redoStack: [EditDelta] = []
 
-    /// Create the Gedcom tree manager.
-    init(database: Database) {
-        self.recordIndex = database.recordIndex // Needed?
-        self.treeModel = GedcomTreeEditorModel()
-    }
-
-    // Convenience init for isolated use (like MergeEditorView).
-    init(treeModel: GedcomTreeEditorModel, recordIndex: RecordIndex) {
-        self.treeModel = treeModel
-        self.recordIndex = recordIndex
+    /// Create manager: the version that creates the model with record root.
+    init(database: Database, root: GedcomNode) {
+        self.recordIndex = database.recordIndex
+        self.treeModel = GedcomTreeEditorModel(root: root)
     }
 
     /// Return true if there is another undo.
@@ -64,7 +57,7 @@ final class GedcomTreeManager {
         apply(delta)
         undoStack.append(delta)
         redoStack.removeAll()
-        treeModel.undoCounter &+= 1
+        treeModel.changeCounter &+= 1
     }
 
     /// Undo last delta and move to the redo stack; invert delta before applying.
@@ -72,7 +65,7 @@ final class GedcomTreeManager {
         guard let delta = undoStack.popLast() else { return }
         applyInverse(delta)
         redoStack.append(delta)
-        treeModel.undoCounter &+= 1
+        treeModel.changeCounter &+= 1
     }
 
     /// Redo delta on redo stack and move it to the undo stack.
@@ -80,7 +73,7 @@ final class GedcomTreeManager {
         guard let delta = redoStack.popLast() else { return }
         apply(delta)
         undoStack.append(delta)
-        treeModel.undoCounter &+= 1
+        treeModel.changeCounter &+= 1
     }
 
     /// Apply delta to the Gedcom tree.
@@ -270,14 +263,14 @@ extension GedcomTreeManager {
     private func editTagCase(node: GedcomNode, old: String, new: String) {
         precondition(node.tag == old, "editTagCase: node.tag is not correct")
         node.tag = new
-        treeModel.textCounter &+= 1
+        treeModel.changeCounter &+= 1
     }
 
     /// Change value.
     private func editValueCase(node: GedcomNode, old: String?, new: String?) {
         precondition(node.val == old, "editValueCase: node.val is not correct")
         node.val = new
-        treeModel.textCounter &+= 1
+        treeModel.changeCounter &+= 1
     }
 }
 

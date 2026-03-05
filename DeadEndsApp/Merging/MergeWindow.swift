@@ -35,8 +35,8 @@ struct MergeWindow: View {
                 SideMergePane(person: left, tint: .blue)
                     .frame(minWidth: 250, idealWidth: 400, maxWidth: .infinity)
 
-                CenterMergePane()
-                    .frame(minWidth: 250, idealWidth: 400, maxWidth: .infinity)
+//                CenterMergePane()
+//                    .frame(minWidth: 250, idealWidth: 400, maxWidth: .infinity)
 
                 SideMergePane(person: right, tint: .orange)
                     .frame(minWidth: 250, idealWidth: 400, maxWidth: .infinity)

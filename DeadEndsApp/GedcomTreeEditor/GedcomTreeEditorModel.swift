@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 2 October 2025.
-//  Last changed on 4 March 2026.
+//  Last changed on 5 March 2026.
 
 /// GedcomTreeEditorModel represents the state of the Gedcom tree editor as seen
 /// by the user interface. It contains the information needed to render the tree
@@ -14,31 +14,33 @@
 /// Maintains the observable editor state used by the SwiftUI views (selection,
 /// expansion, etc.) and provides a view-oriented representation of the Gedcom tree.
 
-
 import SwiftUI
 import DeadEndsLib
 
-/// Model for a GedcomTreeEditor; tracks the selected and expanded nodes.
+/// Model for a GedcomTreeEditor -- tracks the selected and expanded nodes.
 @MainActor
 @Observable
 final class GedcomTreeEditorModel {
 
-    var expandedSet: Set<UUID> = []  // Set of expanded nodes.
-    var selectedNode: GedcomNode? = nil  // Selected node.
-    var rowFrames: [UUID: CGRect] = [:]  // Frames of the visible rows.
-    var textCounter: Int = 0  // Incremented when TextFields change.
-    var undoCounter: Int = 0  // Incremented when undo/redo stacks change.
+    var expandedSet: Set<UUID> = []
+    var selectedNode: GedcomNode? = nil
+    var rowFrames: [UUID: CGRect] = [:]
+    var changeCounter: Int = 0
 
-    /// Initializer that selects and expands a root node.
-    init(root: GedcomNode? = nil) {
-        
-        self.selectedNode = root
-        if let root = root { expandedSet.insert(root.id) }
+    /// Create model and with a selected node with kids.
+    convenience init(root: GedcomNode? = nil) {
+        self.init(root: root, showKids: true)
     }
 
-    /// Toggles the expanded state of a node and makes it the selected node.
+    /// Create model with selected node and kids if flag is true.
+    init(root: GedcomNode? = nil, showKids: Bool = true) {
+        self.selectedNode = root
+        guard let root else { return }
+        if showKids { expandedSet = [root.id] }
+    }
+
+    /// Toggle the expanded state of a node; make it the selected node.
     func toggleExpansion(for node: GedcomNode) {
-        
         if expandedSet.contains(node.id) {
             expandedSet.remove(node.id)
         } else {
@@ -47,59 +49,51 @@ final class GedcomTreeEditorModel {
         selectedNode = node
     }
 
-    /// Checks if the selected node can be removed from the tree.
+    /// Check if the selected node can be removed from the tree.
     var canDeleteSelectedNode: Bool {
-        
         guard let node = selectedNode else { return false }
         if node.lev == 0 { return false }
         if node.lev == 1 && GedcomTreeManager.lineageLinkedTags.contains(node.tag) { return false }
         return true
     }
 
-    /// Checks if the selected node can be moved after its next sibling.
+    /// Check if the selected node can be moved after its next sib.
     var canMoveDownSelectedNode: Bool {
-        
         guard let node = selectedNode else { return false }
         return node.sib != nil
     }
 
-    /// Checks if the selected node can be moved before its previous sibling.
+    /// Check if the selected node can be moved before its previous sib.
     var canMoveUpSelectedNode: Bool {
-        
         guard let node = selectedNode
         else { return false }
         return node.prevSib != nil
     }
 
-    /// Selects the dad of the selected node.
+    /// Select the dad of the selected node.
     func selectDad() {
-        
         guard let node = selectedNode, let parent = node.dad
         else { return }
         selectedNode = parent
     }
 
-    /// Selects the first kid of the selected node.
+    /// Select the first kid of the selected node.
     func selectFirstKid() {
-        
         guard let dad = selectedNode, let kid = dad.kid
         else { return }
-        // Be sure dad is expanded so kid is visible.
         expandedSet.insert(dad.id)
         selectedNode = kid
     }
 
-    /// Selects the next sib of the selected node.
+    /// Select the next sib of the selected node.
     func selectNextSib() {
-        
         guard let node = selectedNode, let next = node.sib
         else { return }
         selectedNode = next
     }
 
-    /// Selects the previous sib of the selected node.
+    /// Select the previous sib of the selected node.
     func selectPrevSib() {
-        
         guard let node = selectedNode else { return }
         guard let parent = node.dad,
               var current = parent.kid,
