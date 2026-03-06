@@ -3,16 +3,16 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 8 October 2025.
-//  Last changed on 5 March 2026.
+//  Last changed on 6 March 2026.
 
-/// GedcomTreeEditorRow is the container view that renders each row in a
-/// Gedcom tree. It is one of complexer view in DeadEnds as it handles six
-/// (indent, chevron, level, key, tag, value) subviews across the row.
+/// GedcomTreeEditorRow is the view that renders each row in a Gedcom
+/// tree editor. It handles the indent, chevron, level, key, tag, and
+/// value fields of the row
 
 import SwiftUI
 import DeadEndsLib
 
-/// View that renders a single row in a Gedcom tree view.
+/// View that renders a single row within a Gedcom tree view.
 struct GedcomTreeEditorRow: View {
     @Bindable var viewModel: GedcomTreeEditorModel
     let treeManager: GedcomTreeManager
@@ -29,7 +29,9 @@ struct GedcomTreeEditorRow: View {
     @State private var editTag: String = ""
     @State private var editVal: String = ""
 
-    /// Render row of Gedcom tree.
+    /// Render a row of the Gedcom edit tree. This view is recursive; it
+    /// first renders the row for the provided root argument and then renders
+    /// the children of the root.
     var body: some View {
         let _ = viewModel.changeCounter
 
@@ -40,7 +42,7 @@ struct GedcomTreeEditorRow: View {
                     viewModel.selectedNode = node
                 }
             if viewModel.expandedSet.contains(node.id) {
-                ForEach(node.kids) { kid in
+                ForEach(node.kids) { kid in  // Recurse to children.
                     GedcomTreeEditorRow(viewModel: viewModel, treeManager: treeManager, node:kid)
                 }
             }
@@ -83,7 +85,7 @@ struct GedcomTreeEditorRow: View {
             valueField
             Spacer()
         }
-        .padding(.leading, CGFloat(node.lev) * 32)  // Handle indent.
+        .padding(.leading, CGFloat(node.lev) * 32)  // Indent.
         .contentShape(Rectangle())
         .monospaced()
         .padding(.horizontal, 10)
@@ -95,7 +97,7 @@ struct GedcomTreeEditorRow: View {
         )
     }
 
-    /// Render expand chevron.
+    /// Render chevron.
     private var chevronView: some View {
         Group {
             if node.hasKids {
@@ -110,7 +112,7 @@ struct GedcomTreeEditorRow: View {
                 .frame(width: 16)
             } else {
                 Image(systemName: "chevron.right")
-                    .opacity(0)  // Make invisible.
+                    .opacity(0)  // Make chevron invisible.
                     .frame(width: 16)
             }
         }
@@ -154,8 +156,7 @@ struct GedcomTreeEditorRow: View {
                     }
                 }
             }
-            .onDisappear {
-                // Field can vanish without a focus transition (e.g. collapsing parent).
+            .onDisappear {  // Field can vanish with focus transition.
                 if focusedField == .tag(node.id) {
                     commitTagIfNeeded()
                 }
@@ -191,8 +192,7 @@ struct GedcomTreeEditorRow: View {
                         }
                     }
                 }
-                .onDisappear {
-                    // Field can vanish without a focus transition (e.g. collapsing parent).
+                .onDisappear {  // Field can vanish without focus transition.
                     if focusedField == .val(node.id) {
                         commitValIfNeeded()
                     }

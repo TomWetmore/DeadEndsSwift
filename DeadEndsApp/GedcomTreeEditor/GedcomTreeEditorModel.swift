@@ -3,16 +3,13 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 2 October 2025.
-//  Last changed on 5 March 2026.
+//  Last changed on 6 March 2026.
 
 /// GedcomTreeEditorModel represents the state of the Gedcom tree editor as seen
 /// by the user interface. It contains the information needed to render the tree
 /// and track UI interaction state such as selection, expansion, and editing context.
 /// The model does not modify the underlying Gedcom records directly; it serves
 /// as the observable bridge between the database and the SwiftUI views.
-///
-/// Maintains the observable editor state used by the SwiftUI views (selection,
-/// expansion, etc.) and provides a view-oriented representation of the Gedcom tree.
 
 import SwiftUI
 import DeadEndsLib
@@ -27,7 +24,7 @@ final class GedcomTreeEditorModel {
     var rowFrames: [UUID: CGRect] = [:]
     var changeCounter: Int = 0
 
-    /// Create model and with a selected node with kids.
+    /// Create model with a selected node with kids.
     convenience init(root: GedcomNode? = nil) {
         self.init(root: root, showKids: true)
     }
@@ -39,7 +36,7 @@ final class GedcomTreeEditorModel {
         if showKids { expandedSet = [root.id] }
     }
 
-    /// Toggle the expanded state of a node; make it the selected node.
+    /// Toggle the expanded state of a node and select it.
     func toggleExpansion(for node: GedcomNode) {
         if expandedSet.contains(node.id) {
             expandedSet.remove(node.id)
@@ -49,7 +46,7 @@ final class GedcomTreeEditorModel {
         selectedNode = node
     }
 
-    /// Check if the selected node can be removed from the tree.
+    /// Check if the selected node can be removed from its tree.
     var canDeleteSelectedNode: Bool {
         guard let node = selectedNode else { return false }
         if node.lev == 0 { return false }
@@ -98,7 +95,6 @@ final class GedcomTreeEditorModel {
         guard let parent = node.dad,
               var current = parent.kid,
               current !== node else { return }
-
         while let next = current.sib, next !== node {
             current = next
         }

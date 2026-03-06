@@ -3,48 +3,28 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 2 October 2025.
-//  Last changed on 4 January 2026.
-//
+//  Last changed on 6 March 2026.
+
+/// GedcomTreeEditor is a SwiftUI view that renders a Gedcom node tree. This
+/// view is a scrolling vertical stack of GedcomTreeEditorRows. The row view
+/// is recursive so this view renders only the root row; the others are
+/// rendered from within row view.
+///
+/// This view is stateless and does not use the manager or model, simply
+/// passing them down to the rows. This allows the tree editor to be embedded
+/// in different contexts with surrounding containers that provide the model
+/// and manager.
 
 import SwiftUI
 import DeadEndsLib
 
-/// GedcomTreeEditor
-///
-/// A stateless, dependency-injected SwiftUI view that renders a Gedcom node tree.
-/// This view owns no model and performs no mutation: all
-/// state, behavior, and editing actions are provided by the wrapper
-/// environment.
-///
-/// Requirements:
-///   - `GedcomTreeEditorModel` supplied via @Bindable
-///   - `GedcomTreeManager` supplied as a command handler
-///   - A root `GedcomNode` provided by the parent context
-///
-/// This design intentionally allows the tree editor to be embedded in
-/// multiple contexts (e.g. editing a Person, a Family, or a standalone
-/// GEDCOM viewer) as long as the surrounding container provides the
-/// model and manager it depends on.
-///
-/// Pattern:
-///   - Container/Presentational separation
-///   - Stateless rendering view (presentation layer)
-///   - Dependency-injected model and controller
-///
-/// This view should never create or own its own state; ownership of the
-/// editor model must remain in the container (e.g. `GedcomEditorPage`).
-/// Displays an editable Gedcom record as a Gedcom tree. The View is composed of GedcomTreeEditorRows,
-/// one for each visible GedcomNode.
-/// This view is tree only; it has no buttons or framing. Currently it has two uses.
-/// 1. It is invoked by the GedcomEditorPage which wires it up and provides the editor buttons.
-/// 2. It is invoked by the CentralMergePane of the MergeWindow.
-///
+/// Gedcom tree editor.
 struct GedcomTreeEditor: View {
-
     @Bindable var viewModel: GedcomTreeEditorModel
     let manager: GedcomTreeManager
     var root: GedcomNode
 
+    /// Render the Gedcom tree editor.
     var body: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 0) {
@@ -56,21 +36,3 @@ struct GedcomTreeEditor: View {
         .coordinateSpace(name: "gedcomTree")
     }
 }
-
-// Optional binding helper
-//extension Binding where Value == String? {
-//
-//    var bound: Binding<String> {
-//        Binding<String>(
-//            get: { self.wrappedValue ?? "" },
-//            set: { self.wrappedValue = $0.isEmpty ? nil : $0 }
-//        )
-//    }
-//}
-
-
-
-
-
-
-

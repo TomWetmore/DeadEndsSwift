@@ -1,8 +1,8 @@
 # Gedcom Tree Editor
 
-The Gedcom tree editor is built from a number of SwiftUI views and other components. The editor appears as one of the DeadEndsApp page views.
+The Gedcom tree editor is built from SwiftUI views and other components. The editor appears as one of the DeadEndsApp page views.
 
-The Gedcom tree editor allows a user to edit a Gedcom record, a tree of Gedcom nodes. Nodes can be expanded (show the next level below) or then can be closed. Disclosure triangles indicate whether a node is expanded or not. Leaf nodes do not have disclosure triangles.
+The Gedcom tree editor allows a user to edit a Gedcom record in its 'native' form as a tree of Gedcom nodes. Nodes can be expanded (show the next level below) or closed. Disclosure triangles indicate whether a node is expanded or not. Leaf nodes do not have disclosure triangles.
 
 The files that implement the editor include:
 
@@ -14,10 +14,6 @@ The files that implement the editor include:
 - DragDropStuff.swift
 - GedcomTreeValidator.swift
 - TreeEditorButtons.swift
-
-```c
-func add (one: String, two:String) -> String
-```
 
 ## GedcomTreeEditorModel
 
@@ -31,11 +27,10 @@ final class GedcomTreeEditorModel {
     var expandedSet: Set<UUID> = []
     var selectedNode: GedcomNode? = nil
     var rowFrames: [UUID: CGRect] = [:]
-    var textCounter: Int = 0
-    var undoCounter: Int = 0
+    var changeCounter: Int = 0
 ```
 
-**expandedSet** holds the UUID's of the currently expanded nodes. **selectedNode** holds the currently selected node. **rowFrames** holds the frames of the visible rows (a row on the editor view corresponds with a Gedcom node in the record tree). I'll explain **textCounter** and **undoCounter** when I better understand them.
+**expandedSet** holds the UUID's of the expanded nodes. **selectedNode** holds the selected node. **rowFrames** holds the frames of the visible rows (a row on the editor view corresponds with a Gedcom node in the record tree). I'll explain **changeCounter** when I better understand it.
 
 The **init(root: GedcomNode? = nil)** sets the first node to the selected node and adds the node to the expanded set.
 

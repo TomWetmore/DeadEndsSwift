@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 4 October 2025.
-//  Last changed on 4 March 3026.
+//  Last changed on 6 March 3026.
 
 /// GedcomTreeManager makes all the actual changes to the Gedcom tree being
 /// edited. It applies changes to the underlying Gedcom node structures while
@@ -11,11 +11,8 @@
 /// with the database. The manager receives editing requests from the UI layer
 /// and converts them into safe operations on the Gedcom data.
 ///
-/// It maintains an 'infinite' undo/redo stack.
-///
-/// Executes editing operations on the Gedcom tree, ensuring that all changes
-/// preserve the structural invariants of the node graph and remain consistent
-/// with the underlying database.
+/// The manager maintains 'infinite' undo/redo stacks of the actions the user
+/// performs.
 
 import SwiftUI
 import DeadEndsLib
@@ -40,7 +37,7 @@ final class GedcomTreeManager {
     private var undoStack: [EditDelta] = []
     private var redoStack: [EditDelta] = []
 
-    /// Create manager: the version that creates the model with record root.
+    /// Create manager by initializing the record index and tree model.
     init(database: Database, root: GedcomNode) {
         self.recordIndex = database.recordIndex
         self.treeModel = GedcomTreeEditorModel(root: root)
@@ -52,7 +49,7 @@ final class GedcomTreeManager {
     /// Return true if there is another redo.
     var canRedo: Bool { !redoStack.isEmpty }
 
-    /// Handle delta from the user interface; apply delta and add to the undo stack.
+    /// Handle delta from the user interface; apply delta and add to undo stack.
     func edit(delta: EditDelta) {
         apply(delta)
         undoStack.append(delta)
