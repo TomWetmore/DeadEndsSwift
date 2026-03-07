@@ -4,7 +4,11 @@
 //
 //  Created by Thomas Wetmore on 24 June 2025.
 //  Last changed on 5 March 2026.
-//
+
+/// RootView is the root view of the DeadEndsApp. If the database does
+/// not exist the Load Gedcom view is shown. If there is a database but
+/// the navigataion path is empty the person selection view is shown.
+/// Otherwise the page for the current navigation is route is shown.
 
 import SwiftUI
 import DeadEndsLib
@@ -24,9 +28,9 @@ enum Route: Hashable {
     case desktopFamily(Family)  // Ugly name.
 }
 
-/// Arrange for the record index to be in the SwiftUI environment.
+/// Put the record index into the SwiftUI environment.
 private struct RecordIndexKey: EnvironmentKey {
-    static let defaultValue: RecordIndex = [:] // In case nothing is injected.
+    static let defaultValue: RecordIndex = [:]
 }
 extension EnvironmentValues {
     var recordIndex: RecordIndex {
@@ -39,13 +43,13 @@ extension EnvironmentValues {
 struct RootView: View {
     @EnvironmentObject var model: AppModel
 
-    /// Root view body property.
+    /// Render the root view.
     var body: some View {
 
         NavigationStack(path: $model.path) {
             VStack {
                 if model.database == nil {
-                    LoaderView()
+                    LoadGedcomFileView()
                         .navigationTitle(Text("Loading..."))
                 } else if model.path.isEmpty {
                     PersonSelectionView()

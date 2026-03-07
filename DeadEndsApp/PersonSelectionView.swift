@@ -3,8 +3,13 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed on 18 February 2026.
-//
+//  Last changed on 7 March 2026.
+
+/// PersonSelectionView is used on the RootView to get a list of persons
+/// from a name pattern that the user selects an member of. The person chosen
+/// is then opened in the PersonPage view.
+///
+/// Currently only used on the RootView.
 
 import SwiftUI
 import DeadEndsLib
@@ -15,7 +20,7 @@ struct PersonMatch: Identifiable {
     let person: Person
 
     var displayLine: String {
-        let name = person.displayName() // Default formatting.
+        let name = person.displayName()
         let birth = person.birthEvent?.summary
         let death = person.deathEvent?.summary
         switch (birth, death) {
@@ -30,17 +35,16 @@ struct PersonMatch: Identifiable {
 /// A View that shows a list of Persons from a Database who have names that match
 /// a pattern and allows the user to select one.
 struct PersonSelectionView: View {
-
     @EnvironmentObject var model: AppModel
-    @State private var query: String = ""  // Name pattern user supplies.
-    @State private var results: [PersonMatch] = [] // PersonMatches that match the query pattern.
+    @State private var namePattern: String = ""
+    @State private var results: [PersonMatch] = []
 
     var body: some View {
         VStack(alignment: .leading) {
             Text("Enter a name to search for:")
                 .font(.body)
             HStack {
-                TextField("e.g. William/James", text: $query)
+                TextField("e.g. William/James", text: $namePattern)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .onSubmit {
                         doNameSearch()
@@ -50,16 +54,15 @@ struct PersonSelectionView: View {
                 }
             }
             .padding(.bottom)
-
             if results.isEmpty {
                 Text("No results yet.").italic()
             } else {
                 List(results) { match in
                     Button {
-                        model.path.append(Route.person(match.person))
+                        model.path.append(Route.person(match.person))  // Goto person page.
                     } label: {
                         Text(match.displayLine)
-                            .font(.title3) // EXPERIMENT
+                            .font(.title3)
                             .padding(4)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -70,17 +73,22 @@ struct PersonSelectionView: View {
         .padding()
     }
 
-    /// Builds the array of PersonMatch objects that have names that match the query; sorts them by name.
+    /// Build array of PersonMatch objects that match query; sort them by name, and
+    /// user event dates to improve the order.
     private func doNameSearch() {
         guard let database = model.database else { return }
-        results = database.persons(withName: query)
+        let index = database.recordIndex
+
+        results = database.persons(withName: namePattern)
             .map { PersonMatch(id: $0.key, person: $0) }
             .sorted { lhs, rhs in
-                switch (lhs.person.gedcomName, rhs.person.gedcomName) {
-                case let (l?, r?): return l < r                 // both present → use Comparable
-                case (nil, nil):   return lhs.id < rhs.id       // stable tiebreaker
-                case (nil, _):     return false                 // nils after non-nils
-                case (_, nil):     return true
+                switch lhs.person.compare(to: rhs.person, in: index) {
+                case .orderedAscending:
+                    return true
+                case .orderedDescending:
+                    return false
+                case .orderedSame:
+                    return lhs.id < rhs.id
                 }
             }
     }

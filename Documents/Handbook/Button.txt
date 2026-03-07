@@ -1,0 +1,6 @@
+1. Simple, text and action:
+
+    Button("Title", action: { ... })
+
+    for example:
+    Button("Delete") { deleteRecord() }

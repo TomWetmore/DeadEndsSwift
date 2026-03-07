@@ -299,7 +299,7 @@ extension Database {
 extension Person {
 
     /// Compare persons by name, birth year, death year, and record key.
-    func compare(to other: Person, in index: RecordIndex) -> ComparisonResult {
+    public func compare(to other: Person, in index: RecordIndex) -> ComparisonResult {
 
         if let nameOne = GedcomName(from: self.root), let nameTwo = GedcomName(from: other.root) {
             let relation = nameOne.compare(to: nameTwo)

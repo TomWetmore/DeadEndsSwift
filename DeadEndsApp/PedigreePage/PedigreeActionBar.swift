@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 14 January 2026.
-//  Last changed on 14 January 2026.
+//  Last changed on 7 March 2026.
 //
 
 import SwiftUI
@@ -13,8 +13,8 @@ import DeadEndsLib
 struct PedigreeActionBar: View {
 
     @EnvironmentObject var model: AppModel
-    @State private var childList: PersonList?
-    @State private var spouseList: PersonList?
+    @State private var childList: PersonSelectRequest?
+    @State private var spouseList: PersonSelectRequest?
 
     let person: Person
     private var indexOrNil: RecordIndex? { model.database?.recordIndex }
@@ -33,7 +33,6 @@ struct PedigreeActionBar: View {
             }
             .environmentObject(model)
         }
-
         .sheet(item: $spouseList) { list in
             PersonSelectionSheet(title: list.title, persons: list.persons) { selected in
                 spouseList = nil
@@ -76,26 +75,24 @@ struct PedigreeActionBar: View {
     }
 
     private func gotoChild() {
-
         guard let index = requireIndex() else { return }
         let children = person.children(in: index)
         if children.count == 1 {
             model.path.append(Route.pedigree(children[0]))
         } else if children.count > 1 {
-            childList = PersonList(title: "Select Child", persons: children)
+            childList = PersonSelectRequest(title: "Select Child", persons: children)
         } else {
             model.status = "\(person.displayName()) has no children in any family."
         }
     }
 
     private func gotoSpouse() {
-
         guard let index = requireIndex() else { return }
         let spouses = person.spouses(in: index)
         if spouses.count == 1 {
             model.path.append(Route.pedigree(spouses[0]))
         } else if spouses.count > 1 {
-            spouseList = PersonList(title: "Select Spouse", persons: spouses)
+            spouseList = PersonSelectRequest(title: "Select Spouse", persons: spouses)
         } else {
             model.status = "\(person.displayName()) is not a spouse in any family."
         }

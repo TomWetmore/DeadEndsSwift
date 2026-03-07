@@ -9,8 +9,8 @@
 import SwiftUI
 import DeadEndsLib
 
-/// List of persons to select from.
-struct PersonList: Identifiable {
+/// Person select request.
+struct PersonSelectRequest: Identifiable {
     let id = UUID()
     let title: String
     let persons: [Person]
