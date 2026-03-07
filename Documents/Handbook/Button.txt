@@ -1,6 +1,18 @@
 1. Simple, text and action:
 
     Button("Title", action: { ... })
-
     for example:
     Button("Delete") { deleteRecord() }
+
+2. Custon label view:
+    Button {
+        action
+    } label: {
+        anyView
+    }
+    for example:
+    Button(action: deleteRecord) {
+        Label("Delete", systemImage: "trash")
+    }
+
+3. Role-based:
