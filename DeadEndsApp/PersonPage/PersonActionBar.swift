@@ -58,11 +58,7 @@ struct PersonActionBar: View {
                 model.path.append(Route.personEditor(newPerson))
             }
             Button("Tree Editor") { model.path.append(Route.gedcomTreeEditor(person)) }
-            Button("Open Desktop") {
-                print("Button tapped")
-                model.path.append(Route.desktop(person))
-                print("Appended .desktop route")
-            }
+            Button("Open Desktop") { model.path.append(Route.desktop(person)) }
             Button("Edit") { showEditSheet = true }
             .sheet(isPresented: $showEditSheet) {
                 PersonEditSheet(person: person)
@@ -142,16 +138,13 @@ struct PersonActionBar: View {
 }
 
 private func tidyTest(person: Person, index: RecordIndex) {
-
     guard let uniontree = buildDescendantsTree(from: person, index: index, depth: 3)
             else { return }
     showDescendantsTree(uniontree, index: index)
-
 }
 
 /// Generate a random record key.
 func generateRandomKey(index: RecordIndex) -> RecordKey {
-
     let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
     for _ in 0..<10 {
@@ -162,4 +155,16 @@ func generateRandomKey(index: RecordIndex) -> RecordKey {
         }
     }
     fatalError("Unable to generate unique Record key.")
+}
+// VERSION FROM CHATGPT.
+func generateRandomKey(prefix: String, index: RecordIndex, length: Int = 8) -> RecordKey {
+    let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+    while true {
+        let suffix = String((0..<length).map { _ in alphabet.randomElement()! })
+        let key = "@\(prefix)\(suffix)@"
+        if index[key] == nil {
+            return key
+        }
+    }
 }

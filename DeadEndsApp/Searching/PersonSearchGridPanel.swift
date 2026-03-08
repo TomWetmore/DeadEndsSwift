@@ -2,7 +2,8 @@
 //  PersonSearchGridPanel.swift
 //  DeadEndsApp
 //
-//  Created by Thomas Wetmore on 2/25/26.
+//  Created by Thomas Wetmore on 25 February 2026.
+//  Last changed on 8 March 2026.
 //
 
 import SwiftUI
@@ -18,31 +19,31 @@ struct PersonSearchGridPanel: View {
     @State private var birthPlace = ""
     @State private var deathPlace = ""
 
+    private let labelWidth: CGFloat = 100
+
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
 
             GridRow {
                 Text("Name")
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(width: labelWidth, alignment: .trailing)
 
                 TextField("Givens/Surname", text: $name)
                     .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 320)
             }
-
             GridRow {
                 Text("Birth date")
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(width: labelWidth, alignment: .trailing)
 
                 yearRangeRow(from: $birthFrom, to: $birthTo)
             }
-
             GridRow {
                 Text("Death date")
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(width: labelWidth, alignment: .trailing)
 
                 yearRangeRow(from: $deathFrom, to: $deathTo)
             }
@@ -50,24 +51,24 @@ struct PersonSearchGridPanel: View {
             GridRow {
                 Text("Birth place")
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(width: labelWidth, alignment: .trailing)
 
-                TextField("e.g. Newburyport, MA", text: $birthPlace)
+                TextField("name parts with commas", text: $birthPlace)
                     .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 320)
             }
-
             GridRow {
                 Text("Death place")
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(width: labelWidth, alignment: .trailing)
 
-                TextField("e.g. Boston, MA", text: $deathPlace)
+                TextField("e.g. Boston, Essex, New Brunswick, Kings County", text: $deathPlace)
                     .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 320)
             }
         }
         .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func yearRangeRow(from: Binding<String>, to: Binding<String>) -> some View {
@@ -85,13 +86,11 @@ struct PersonSearchGridPanel: View {
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 70)
                 .multilineTextAlignment(.center)
-
-            Spacer(minLength: 0)
         }
     }
 }
 
 #Preview {
     PersonSearchGridPanel()
-        .frame(width: 520)
+        .frame(width: 600)
 }

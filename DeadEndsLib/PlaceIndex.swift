@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 25 February 2026.
+//  Last changed on 8 March 2026.
 //
 
 import Foundation
@@ -43,7 +43,7 @@ final public class PlaceIndex {
         }
     }
 
-    /// Return dictionary mapping parts to record sets.
+    /// Return array of dictionaries mapping name parts to record sets.
     func recordKeys(place: String, event: EventKind) -> [String : Set<RecordKey>] {
         var partMap: [String : Set<RecordKey>] = [:]
         for part in placeParts(place) {
