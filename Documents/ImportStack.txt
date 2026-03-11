@@ -22,7 +22,7 @@ var errLog: [Error] = []
 ----------------------------------------------------------------------------------------
 3. getValidRecordsFromPath -- reads a Gedcom file and load the main database containers.
 ImportStack.swift
-func getValidRecordsFromPath(path, tagmap, keymap, errlog) -> (index, persons, families)
+func getValidRecordsFromPath(path, keymap, errlog) -> (index, persons, families)
 	getRecordsFromPath [4.]
 	checkKeysAndReferences
 	validatePersons
@@ -31,14 +31,14 @@ func getValidRecordsFromPath(path, tagmap, keymap, errlog) -> (index, persons, f
 
 4. getRecordsFromPath -- reads a Gedcom file to a list of records.
 ImportStack.swift
-func getRecordsFromPath(path, tagmap, keymap, errorlog) -> RootList?
+func getRecordsFromPath(path, keymap, errorlog) -> RootList?
 	getDataNodesFromPath [5.]
 	getRecordsFromDataNodes [6.]
 
 
 5. getDataNodesFromPath -- reads a Gedcom file and returns the list of DataNodes
 importStack.swift
-func getDataNodesFromPath(path, tagmap, keymap, errlog) -> DataNodes<Int>? {
+func getDataNodesFromPath(path, keymap, errlog) -> DataNodes<Int>? {
 	getDataNodesFromLines [7.]
 
 
@@ -50,7 +50,7 @@ func getRecordsFromDataNodes(datanodes, keymap, errlog) -> RootList
 
 7. getDataNodesFromLines -- converts an array of lines to an array of data nodes
 ImportStack.swift
-func getDataNodesFromLines(lines, source, tagmap, keymap, errlog) -> DataNodes<Int>? {
+func getDataNodesFromLines(lines, source, keymap, errlog) -> DataNodes<Int>? {
 	extractFields [8.]
 
 8. extractFields -- 'lexer' that etracts the level, key, tag and value from a Gedcom line string.
@@ -61,7 +61,7 @@ func extractFields(from) -> ReadResult
 
 
 /// Gets Gedcom records from a String.
-n. getRecordsFromString(sourceText, tagmap, keymap, errorlog) -> RootList? 
+n. getRecordsFromString(sourceText, keymap, errorlog) -> RootList?
 	getDataNodesFromString
 	getRecordsFromDataNodes
 
@@ -79,10 +79,10 @@ supply the path to a Gedcom file, and an ErrorLog.
 getDatabaseFromPath calls getValidRecordsFromPath. 
 
 // getValidRecordsFromPath reads a Gedcom file into the main database containers. If keymap is nil one is created.
-func getValidRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap, errlog: inout ErrorLog)
+func getValidRecordsFromPath(path: String, keymap: inout KeyMap, errlog: inout ErrorLog)
 		-> (index: RecordIndex, persons: RootList, families: RootList)? {
 
-	let rootlist = getRecordsFromPath(path: path, tagmap: &tagmap, keymap: &keymap, errorlog: &errlog)
+	let rootlist = getRecordsFromPath(path: path, keymap: &keymap, errorlog: &errlog)
 	if errlog.count > 0 || rootlist == nil { return nil }
 	checkKeysAndReferences(records: rootlist!, path: path, keymap: keymap, errlog: &errlog)
 	if errlog.count > 0 { return nil }

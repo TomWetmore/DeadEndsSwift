@@ -1,8 +1,5 @@
 GedcomNode.swift API
-18 February 2026
-
-public class TagMap -- One string per tag.
-    func intern(tag: String) -> String -- Intern tag in map
+11 March 2026
 
 final public class GedcomNode: Identifiable, CustomStringConvertible -- Internal Gedcom line structure.
     public let id -- Unique id

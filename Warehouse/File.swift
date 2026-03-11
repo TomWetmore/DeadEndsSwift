@@ -2,13 +2,14 @@
 //  File.swift
 //  DeadEndsSwift
 //
-//  Created by Thomas Wetmore on 7/21/25.
+//  Created by Thomas Wetmore on 21 July 2025.
+//  Last changed on 11 March 2026
 //
 
-func getValidRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap, errlog: inout ErrorLog)
+func getValidRecordsFromPath(path: String, keymap: inout KeyMap, errlog: inout ErrorLog)
 -> (index: RecordIndex, persons: RootList, families: RootList)? {
 
-    let rootlist = getRecordsFromPath(path: path, tagmap: &tagmap, keymap: &keymap, errlog: &errlog)
+    let rootlist = getRecordsFromPath(path: path, keymap: &keymap, errlog: &errlog)
     if errlog.count > 0 || rootlist == nil { return nil }
     checkKeysAndReferences(records: rootlist!, path: path, keymap: keymap, errlog: &errlog)
     if errlog.count > 0 { return nil }
@@ -29,16 +30,15 @@ func getValidRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout K
 
 /// Returns the Gedcom records from a source. It uses getDataNodesFromPath and
 /// buildRecords to create a RootList of records.
-func oldgetRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
+func oldgetRecordsFromPath(path: String, keymap: inout KeyMap,
                         errorlog: inout ErrorLog) -> RootList? {
-    guard let dataNodes = getDataNodesFromPath(path: path, tagmap: &tagmap, keymap: &keymap, errlog: &errorlog)
+    guard let dataNodes = getDataNodesFromPath(path: path, keymap: &keymap, errlog: &errorlog)
     else { return nil }
     return getRecordsFromDataNodes(datanodes: dataNodes, keymap: keymap, errlog: &errorlog)
 }
 
 func getRecordsFromPath(
     path: String,
-    tagmap: inout TagMap,
     keymap: inout KeyMap,
     errlog: inout ErrorLog
 ) -> RootList? {
@@ -46,7 +46,6 @@ func getRecordsFromPath(
 
     guard let dataNodes = getDataNodesFromSource(
         source: source,
-        tagmap: &tagmap,
         keymap: &keymap,
         errlog: &errlog
     ) else {
@@ -57,37 +56,36 @@ func getRecordsFromPath(
 }
 
 /// Gets Gedcom records from a String.
-public func getRecordsFromString(sourceText: String, tagmap: inout TagMap, keymap: inout KeyMap,
+public func getRecordsFromString(sourceText: String, keymap: inout KeyMap,
                                  errorlog: inout ErrorLog) -> RootList? {
-    guard let dataNodes = getDataNodesFromString(sourceText: sourceText, tagmap: &tagmap, keymap: &keymap, errlog: &errorlog)
+    guard let dataNodes = getDataNodesFromString(sourceText: sourceText, keymap: &keymap, errlog: &errorlog)
     else { return nil }
     return getRecordsFromDataNodes(datanodes: dataNodes, keymap: keymap, errlog: &errorlog)
 }
 
-func getDataNodesFromString(sourceText: String, tagmap: inout TagMap, keymap: inout KeyMap,
+func getDataNodesFromString(sourceText: String, keymap: inout KeyMap,
                             errlog: inout ErrorLog) -> DataNodes<Int>? {
     let lines = sourceText.components(separatedBy: .newlines)
-    return getDataNodesFromLines(lines: lines, source: "<user-edit>", tagmap: &tagmap, keymap: &keymap, errlog: &errlog)
+    return getDataNodesFromLines(lines: lines, source: "<user-edit>", keymap: &keymap, errlog: &errlog)
 }
 
 public func getDatabaseFromPath(_ path: String, errlog: inout ErrorLog) -> Database? {
     var keymap = KeyMap() // Maps record keys to the lines where defined.
-    var tagmap = TagMap() // So there is only one copy of each tag.
-    guard let (index, persons, families) = getValidRecordsFromPath(path: path, tagmap: &tagmap, keymap: &keymap,
+    guard let (index, persons, families) = getValidRecordsFromPath(path: path, keymap: &keymap,
                                                                    errlog: &errlog)
     else { return nil } // errlog holds the errors.
     let nameIndex = getNameIndex(persons: persons)
     //var refnIndex = getRefnIndex(persons: persons) // GET THIS WRITTEN!!
     return Database(recordIndex: index,
-                    nameIndex: nameIndex, refnIndex: RefnIndex(), tagmap: tagmap)
+                    nameIndex: nameIndex, refnIndex: RefnIndex())
 }
 
-func getDataNodesFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
+func getDataNodesFromPath(path: String, keymap: inout KeyMap,
                           errlog: inout ErrorLog) -> DataNodes<Int>? {
     guard let fileContent = try? String(contentsOfFile: path, encoding: .utf8) else {
         errlog.append(Error(type: .system, severity: .fatal, message: "Failed to read file: \(path)"))
         return nil
     }
     let lines = fileContent.components(separatedBy: .newlines)
-    return getDataNodesFromLines(lines: lines, source: path, tagmap: &tagmap, keymap: &keymap, errlog: &errlog)
+    return getDataNodesFromLines(lines: lines, source: path, keymap: &keymap, errlog: &errlog)
 }

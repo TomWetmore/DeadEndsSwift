@@ -72,20 +72,6 @@ These accessor methods give access to the children of a
 
 \texttt{childrenWithTag} finds the array of children with a given tag.
 
-\subsection{TagMap}
-Gedcom files can be large; the same tags may occur thousands of times.
-The TagMap class provides a way for every GedcomNode with the same tag
-to share the same string.
-\begin{verbatim}
-class TagMap
-    private var map: [String:String] = [:]
-    func intern(tag: String) -> String
-\end{verbatim}
-
-\texttt{intern} returns the unique copy of a string.
-\subsection{Notes and ToDo's}
-How about a computed property for level?
-
 Contrast the DeadEnds way of encoding all information in trees of
 \texttt{GedcomNode}s, rather than as specialized records with specialized
 types for things like names, events, dates, places, relationships.

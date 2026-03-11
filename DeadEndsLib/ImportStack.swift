@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 23 February 2026.
+//  Last changed on 11 March 2026.
 //
 
 import Foundation
@@ -55,11 +55,11 @@ struct ValidationContext {
 }
 
 /// Load and validate records from a Gedcom source into containers.
-func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
+func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
                       errlog: ErrorLog) -> (index: RecordIndex, persons: RecordList,
                                             families: RecordList, header: GedcomNode?)? {
     // Parse source into records.
-    guard let recordList = loadRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
+    guard let recordList = loadRecords(from: source, keyMap: &keyMap, errlog: errlog)
     else { return nil }
 
     // Check closure.
@@ -86,21 +86,21 @@ func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout K
 }
 
 /// Load records from source; convert lines to data nodes and data nodes to records.
-public func loadRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
+public func loadRecords(from source: GedcomSource, keyMap: inout KeyMap,
                         errlog: ErrorLog) -> RecordList? {
-    guard let dataNodes = loadDataNodes(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
+    guard let dataNodes = loadDataNodes(from: source, keyMap: &keyMap, errlog: errlog)
     else { return nil }
     return buildRecords(from: dataNodes, keymap: keyMap, errlog: errlog)
 }
 
 /// Load records from source; differs from previous by creating a key map.
-public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, errlog: inout ErrorLog) -> RecordList? {
+public func loadRecords(from source: GedcomSource, errlog: inout ErrorLog) -> RecordList? {
     var keyMap = KeyMap()
-    return loadRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errlog)
+    return loadRecords(from: source, keyMap: &keyMap, errlog: errlog)
 }
 
 /// Load data nodes from source; levels are not checked.
-func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap,
+func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
                    errlog: ErrorLog) -> DataNodes<Int>? {
     var nodes = DataNodes<Int>()
     var lineno = 0
@@ -110,7 +110,7 @@ func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyM
         if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
         switch parseLine(from: line) {
         case .success(lev: let level, key: let key, tag: let tag, val: let value):
-            let node = GedcomNode(key: key, tag: tagMap.intern(tag: tag), val: value)
+            let node = GedcomNode(key: key, tag: tag, val: value)
             nodes.add(node: node, data: level)
             if level == 0, let key = key { keyMap[key] = lineno }
         case .failure(errmsg: let errmsg):

@@ -55,7 +55,7 @@ Errors accumulate so the user can be apprised of as many errors as possible.
 \begin{verbatim}
 struct DataNodes<Type> { var nodes: [(GedcomNode, Type)] ... }
  
-func getDataNodesFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
+func getDataNodesFromPath(path: String, keymap: inout KeyMap,
     errlog: inout ErrorLog) -> DataNodes<Int>?
 \end{verbatim}
 
@@ -72,8 +72,6 @@ the levels in order to build the trees.
 Input parameters:
 
 \texttt{path} -- path to a Gedcom file.
-
-\texttt{tagmap} -- \texttt{inout TagMap} of unique tag strings. See Section ????.
 
 \texttt{keyMap} -- \texttt{inout [String:Int]} dictionary that maps
 a record's key to its starting line number in the Gedcom file.
@@ -142,7 +140,7 @@ to be used when the array of nodes contains only roots.
 \subsection{\texttt{getRecordsFromPath}}
 
 \begin{verbatim}
-func getRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
+func getRecordsFromPath(path: String, keymap: inout KeyMap,
     errorlog: inout ErrorLog) -> RootList?
 \end{verbatim}
 \texttt{getRecordsFromPath} returns the Gedcom records from a source. It uses
@@ -167,7 +165,7 @@ have been included in the validation software.
 
 \subsection{\texttt{getValidRecordsFromPath}}
 \begin{verbatim}
-func getValidRecordsFromPath(path: String, tagmap: inout TagMap,
+func getValidRecordsFromPath(path: String,
     keymap: inout KeyMap, errlog: inout ErrorLog)
     -> (index: RecordIndex, persons: RootList, families: RootList)?
 \end{verbatim}

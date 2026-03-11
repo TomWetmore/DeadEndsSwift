@@ -1,5 +1,5 @@
 ImportStack.swift API
-19 February 2026
+11 March 2026
 
 public protocol GedcomSource -- Source of Gedcom lines.
     var name: String { get }
@@ -21,11 +21,11 @@ struct ValidationContext -- Convienced to reduce number of arguments to function
     let keymap: KeyMap
     let source: String
 
-func loadValidRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog) -> (index: RecordIndex, persons: RecordList, families: RecordList, header: GedcomNode?)? -- Load and validate records from a Gedcom source into containers.
+func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap, errlog: ErrorLog) -> (index: RecordIndex, persons: RecordList, families: RecordList, header: GedcomNode?)? -- Load and validate records from a Gedcom source into containers.
 
-public func loadRecords(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog) -> RecordList? -- Load Gedcom records from a source; convert lines to data nodes and data nodes to records.
-public func loadRecords(from source: GedcomSource, tagMap: inout TagMap, errlog: inout ErrorLog) -> RecordList? --- Load Gedcom records from a source; differs from previous by creating a key map.
-func loadDataNodes(from source: GedcomSource, tagMap: TagMap, keyMap: inout KeyMap, errlog: ErrorLog) -> DataNodes<Int>? -- Load array of Gedcom nodes from a source; levels not checked.
+public func loadRecords(from source: GedcomSource, keyMap: inout KeyMap, errlog: ErrorLog) -> RecordList? -- Load Gedcom records from a source; convert lines to data nodes and data nodes to records.
+public func loadRecords(from source: GedcomSource, errlog: inout ErrorLog) -> RecordList? --- Load Gedcom records from a source; differs from previous by creating a key map.
+func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap, errlog: ErrorLog) -> DataNodes<Int>? -- Load array of Gedcom nodes from a source; levels not checked.
 func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RecordList -- Process array of (node, level) pairs to build record array; use levels to guide record building.
 
 enum ReadResult -- Result enum returned by parseLine; on success holds Gedcom fields; on failure holds error message.

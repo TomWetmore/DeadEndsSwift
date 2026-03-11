@@ -423,7 +423,7 @@ Think of this as “the engine”: it knows GEDCOM, but it doesn’t know SwiftU
 • Serialization
 • Database → GEDCOM text
 • Indexes
-• NameIndex, RefnIndex, TagMap
+• NameIndex, RefnIndex
 • Algorithms
 • Traversal, ancestry, descendancy, connectedness
 • Business rules

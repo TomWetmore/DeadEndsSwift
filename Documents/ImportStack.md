@@ -2,13 +2,13 @@ GEDCOM IMPORT
 
 This document describes the "input stack" of DeadEnds when reading a Gedcom file.
 
-##### getDataNodesFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap, errlog: inout ErrorLog) -> DataNodes&lt;Int>?
+##### getDataNodesFromPath(path: String, keymap: inout KeyMap, errlog: inout ErrorLog) -> DataNodes&lt;Int>?
 
 This is the bottom of the stack. *getDataNodesFromPath* reads all the lines from a Gedcom file and returns them as a `DataNodes<Int>`, which is a list of `(GNode, Int)` tuples, where `Int` holds the levels of the nodes. It adds the location of each record to the keymap. Errors found are added to `errlog`. The source is fully processed regardless of errors. If there are errors `nil` is returned.
 
-`path` is the name of the file; `tagmap` maps tags to unique strings; `keymap` maps the record keys found to root `GNode`s; and `errlog` is the error log.
+`path` is the name of the file; `keymap` maps the record keys found to root `GNode`s; and `errlog` is the error log.
 
-func getDataNodesFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
+func getDataNodesFromPath(path: String, keymap: inout KeyMap,
 
 ​						 errlog: inout ErrorLog) -> DataNodes<Int>? {
 
@@ -40,7 +40,7 @@ func getDataNodesFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyM
 
 ​		case .success(level: let level, key: let key, tag: let tag, value: let value):
 
-​			let node = Node(key: key, tag: tagmap.intern(tag: tag), value: value)
+​			let node = Node(key: key, tag: tag, value: value)
 
 ​			nodes.add(node: node, data: level)
 
@@ -64,9 +64,9 @@ func getDataNodesFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyM
 
 **getRecordsFromPath** returns the Gedcom records from a path. It uses getDataNodesFromPath and
 // getRecordsFromDataNodes to create a RootList of records.
-func getRecordsFromPath(path: String, tagmap: inout TagMap, keymap: inout KeyMap,
+func getRecordsFromPath(path: String, keymap: inout KeyMap,
                         errorlog: inout ErrorLog) -> RootList? {
-    guard let dataNodes = getDataNodesFromPath(path: path, tagmap: &tagmap, keymap: &keymap, errlog: &errorlog)
+    guard let dataNodes = getDataNodesFromPath(path: path, keymap: &keymap, errlog: &errorlog)
     else { return nil }
     return getRecordsFromDataNodes(datanodes: dataNodes, keymap: keymap, errlog: &errorlog)
 }

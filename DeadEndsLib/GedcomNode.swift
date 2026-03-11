@@ -3,22 +3,10 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 10 March 2026.
+//  Last changed on 11 March 2026.
 //
 
 import Foundation
-
-/// Ensure only one copy of each tag string is used in a database.
-public class TagMap {
-
-    private var map: [String: String] = [:]
-
-    func intern(tag: String) -> String {
-        if let existing = map[tag] { return existing }
-        map[tag] = tag
-        return tag
-    }
-}
 
 public typealias Root = GedcomNode
 
@@ -27,13 +15,13 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 
     public let id = UUID()
 
-    public var key: RecordKey?  // Key -- only root lines.
-    public var tag: String  // Tag -- on all lines.
-    public var val: String? // Value -- optional.
+    public var key: RecordKey?
+    public var tag: String
+    public var val: String?
 
-    public var sib: GedcomNode?  // Next line on the same level.
-    public var kid: GedcomNode?  // First child, the first line one level deeper.
-    public weak var dad: GedcomNode? // Parent -- on all non-roots.
+    public var sib: GedcomNode?
+    public var kid: GedcomNode?
+    public weak var dad: GedcomNode?
 
     /// Return the kids of node.
     public var kids: [GedcomNode] {

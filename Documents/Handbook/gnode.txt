@@ -2,9 +2,6 @@ INTERFACE HANDBOOK
 
 GNODE.SWIFT -- Gedcom Nodes
 
-class TagMap -- map that ensures one copy of each tag
-        intern(String) -> String -- add tag
-
 class GNode: CustomStringConvertible -- Gedcom Node
         var key: String? -- only on root nodes.
         var tag: String --Gedcom tag; mandatory.

@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 28is February 2026.
+//  Last changed on 11 March 2026.
 //
 
 import SwiftUI
@@ -128,9 +128,8 @@ extension PersonEditSheet {
         
         let source = StringGedcomSource(name: "edit view", content: text)
         var errlog = ErrorLog()
-        var tagmap = model.database!.tagMap  // Reference copy.
 
-        guard let nodes = loadRecords(from: source, tagMap: &tagmap, errlog: &errlog) else {
+        guard let nodes = loadRecords(from: source, errlog: &errlog) else {
             return (nil, ["Error parsing record"])
         }
         if errlog.count > 0 { return (nil, ["Error parsing record"]) }

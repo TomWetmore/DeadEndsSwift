@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 10 March 2026.
+//  Last changed on 11 March 2026.
 //
 
 import Foundation
@@ -16,15 +16,14 @@ public typealias RecordList = [GedcomNode]
 /// DeadEnds in-RAM database.
 final public class Database {
 
-	public internal(set) var recordIndex: RecordIndex  // Index of all records.
-    public private(set) var header: GedcomNode?  // Header record.
-    public private(set) var persons: RecordList = []  // List of persons.
-    public private(set) var families: RecordList = []  // List of families.
+	public internal(set) var recordIndex: RecordIndex
+    public private(set) var header: GedcomNode?
+    public private(set) var persons: RecordList = []
+    public private(set) var families: RecordList = []
 	public var nameIndex: NameIndex
     public var dateIndex: DateIndex
     public var placeIndex: PlaceIndex
 	public var refnIndex: RefnIndex
-	public var tagMap: TagMap  // Single copies of tag Strings.
     var dirty: Bool = false
 
     var personCount: Int { persons.count }
@@ -33,7 +32,7 @@ final public class Database {
     /// Create a database.
     init(recordIndex: RecordIndex, persons: RecordList, families: RecordList,
          header: GedcomNode?, nameIndex: NameIndex, dateIndex: DateIndex, placeIndex: PlaceIndex,
-         refnIndex: RefnIndex, tagMap: TagMap, dirty: Bool = false) {
+         refnIndex: RefnIndex, dirty: Bool = false) {
 
         self.recordIndex = recordIndex
         self.persons = persons
@@ -43,7 +42,6 @@ final public class Database {
         self.dateIndex = dateIndex
         self.placeIndex = placeIndex
         self.refnIndex = refnIndex
-        self.tagMap = tagMap
         self.dirty = dirty
     }
 
@@ -73,10 +71,9 @@ public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database?
 private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> Database? {
 
     var keyMap = KeyMap()  // Map record keys to lines in source.
-    let tagMap = TagMap()  // Single copies of tags.
 
     guard let (index, persons, families, header) =  // Read and validate records.
-            loadValidRecords(from: source, tagMap: tagMap, keyMap: &keyMap, errlog: errLog)
+            loadValidRecords(from: source, keyMap: &keyMap, errlog: errLog)
     else { return nil }  // errlog holds the errors.
     print("Loaded \(persons.count) persons, \(families.count) families.")
 
@@ -92,8 +89,8 @@ private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> 
     //refnIndex.showContents()  // DEBUG
     if errLog.count > 0 { return nil }
     return Database(recordIndex: index, persons: persons, families: families, header: header,
-                    nameIndex: nameIndex, dateIndex: dateIndex, placeIndex: placeIndex, refnIndex: refnIndex,
-                    tagMap: tagMap, dirty: false)
+                    nameIndex: nameIndex, dateIndex: dateIndex, placeIndex: placeIndex,
+                    refnIndex: refnIndex, dirty: false)
 }
 
 extension Database {
