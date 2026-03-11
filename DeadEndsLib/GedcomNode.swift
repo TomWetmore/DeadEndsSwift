@@ -20,7 +20,7 @@ public class TagMap {
     }
 }
 
-typealias Root = GedcomNode
+public typealias Root = GedcomNode
 
 /// Represent a line in a Gedcom source; key, tag and val are from the Gedcom line; lev is computed.
 final public class GedcomNode: Identifiable, CustomStringConvertible {

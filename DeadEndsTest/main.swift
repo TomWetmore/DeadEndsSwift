@@ -3,7 +3,7 @@
 //  DeadEndsTest
 //
 //  Created by Thomas Wetmore on 4 September 2025.
-//  Last changed on 4 September 2025.
+//  Last changed on 10 March 2026.
 //
 
 import Foundation
@@ -38,20 +38,19 @@ func runTestOne() throws {
     print("There are \(count) nodes in the database")
 
     // Get an array of deep copies of all the nodes.
-    let deepCopies: [Root] = deepCopies(index: database.recordIndex)
-    let countDeep = deepCopies.reduce(0) { $0 + $1.count }
+    let copies: [Root] = deepCopies(index: database.recordIndex)
+    let countDeep = copies.reduce(0) { $0 + $1.count }
     print("After deep copy: \(countDeep)")
-    deepCopies.forEach(checkDads)
+    copies.forEach(checkDads)
+
+    // TIME TO TEST REGENERATING KEYS.
+    // Rekey the copied record index.
+    let rekeyed = database.rekeyRecordIndex()
+    print("rekeyed.count is \(rekeyed.count)")
+    // Show the keys in that new record index.
+    rekeyed.forEach { print($0) }
+    // WHERE IS THAT CODE LOCATED?
 }
-
-typealias Root = GedcomNode
-
-//func countNodes(index: RecordIndex) -> Int {
-//    index.reduce(0) { total, pair in
-//        let (_, root) = pair
-//        return total + root.count()
-//    }
-//}
 
 func countNodes(index: RecordIndex) -> Int {
     index.values
@@ -67,7 +66,7 @@ func deepCopies(index: RecordIndex) -> [Root] {
     index.values.map { $0.deepTreeCopy() }
 }
 
-
+// TODO: MOVE SOMEWHERE APPROPRIATE.
 func checkDads(_ node: GedcomNode?) {
     guard let node else { return }
 

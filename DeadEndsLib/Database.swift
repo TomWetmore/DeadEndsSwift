@@ -100,18 +100,35 @@ extension Database {
 
     /// Return new database with random record keys and key references.
     func rekeyedDatabase() -> Database? {
-        var keyTable: [RecordKey: RecordKey] = [:]  // Old key to new key map.
+        var rekeyMap: [RecordKey: RecordKey] = [:]  // Old key to new key map.
 
         for (key, root) in recordIndex {  // Create old to new key map.
-            keyTable[key] = generateRandomKey(prefix: typeLetter(root.tag), map: keyTable)
+            rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
         }
         var newRoots: [GedcomNode] = []
         newRoots.reserveCapacity(recordIndex.count)
         for (_, root) in recordIndex {  // Deep copy records, rewriting keys and references.
-            let newRoot = copyTreeRekeying(root, keyTable: keyTable)
+            let newRoot = copyTreeRekeying(root, keyTable: rekeyMap)
             newRoots.append(newRoot)
         }
         return Database(records: newRoots)  // Return new database.
+    }
+
+    /// Rekey a record index into a new index.
+    public func rekeyRecordIndex() -> RecordIndex {
+        var rekeyMap: [RecordKey : RecordKey] = [:]
+        for (key, root) in recordIndex {
+            rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
+        }
+        var newRoots: [Root] = []
+        newRoots.reserveCapacity(recordIndex.count)
+        for (_, root) in recordIndex {  // Deep copy records, rewriting keys and references.
+            let newRoot = copyTreeRekeying(root, keyTable: rekeyMap)
+            newRoots.append(newRoot)
+        }
+        var newIndex = RecordIndex()
+        newRoots.forEach() { newIndex[$0.key!] = $0 }
+        return newIndex
     }
 
     /// Deep copy Gedcom tree rewriting keys and key refs; recurse kids but iterate sibs.
