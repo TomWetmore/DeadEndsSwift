@@ -25,7 +25,7 @@ struct PersonSearchGridPanel: View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
 
             GridRow {
-                Text("Name")
+                Text("Person Name")
                     .foregroundStyle(.secondary)
                     .frame(width: labelWidth, alignment: .trailing)
 

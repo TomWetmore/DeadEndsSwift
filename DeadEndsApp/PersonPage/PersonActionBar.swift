@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 27 January 2026.
+//  Last changed on 9 March 2026.
 //
 
 import SwiftUI
@@ -50,13 +50,13 @@ struct PersonActionBar: View {
             }
             Button("Family Tree") { model.path.append(Route.familyTree(person)) }
             Button("Descendancy List") { model.path.append(Route.descendancy(person)) }
-            Button("New Person") {
-                guard let index,
-                      let newPerson = Person(GedcomNode(key: generateRandomKey(index: index),
-                                                        tag: GedcomTag.INDI))
-                else { return }
-                model.path.append(Route.personEditor(newPerson))
-            }
+//            Button("New Person") {
+//                guard let index,
+//                      let newPerson = Person(GedcomNode(key: generateRandomKey(prefix: "I", index: index),
+//                                                        tag: GedcomTag.INDI))
+//                else { return }
+//                model.path.append(Route.personEditor(newPerson))
+//            }
             Button("Tree Editor") { model.path.append(Route.gedcomTreeEditor(person)) }
             Button("Open Desktop") { model.path.append(Route.desktop(person)) }
             Button("Edit") { showEditSheet = true }
@@ -143,28 +143,3 @@ private func tidyTest(person: Person, index: RecordIndex) {
     showDescendantsTree(uniontree, index: index)
 }
 
-/// Generate a random record key.
-func generateRandomKey(index: RecordIndex) -> RecordKey {
-    let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-    for _ in 0..<10 {
-        let randomChars = (0..<6).map { _ in alphabet.randomElement()! }
-        let key = "@I" + String(randomChars) + "@"
-        if index[key] == nil {
-            return key
-        }
-    }
-    fatalError("Unable to generate unique Record key.")
-}
-// VERSION FROM CHATGPT.
-func generateRandomKey(prefix: String, index: RecordIndex, length: Int = 8) -> RecordKey {
-    let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-    while true {
-        let suffix = String((0..<length).map { _ in alphabet.randomElement()! })
-        let key = "@\(prefix)\(suffix)@"
-        if index[key] == nil {
-            return key
-        }
-    }
-}

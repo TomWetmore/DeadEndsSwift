@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 28 February 2026.
+//  Last changed on 10 March 2026.
 //
 
 import Foundation
@@ -19,6 +19,8 @@ public class TagMap {
         return tag
     }
 }
+
+typealias Root = GedcomNode
 
 /// Represent a line in a Gedcom source; key, tag and val are from the Gedcom line; lev is computed.
 final public class GedcomNode: Identifiable, CustomStringConvertible {
@@ -195,19 +197,38 @@ public extension GedcomNode {
 
 extension GedcomNode {
 
-    /// Return all Gedcom nodes in a tree.
-    //    public func adescendants() -> [GedcomNode] {
-    //
-    //        var result: [GedcomNode] = []
-    //        func visit(_ node: GedcomNode?) {
-    //            guard let node = node else { return }
-    //            result.append(node)
-    //            visit(node.kid)
-    //            visit(node.sib)
-    //        }
-    //        visit(self)
-    //        return result
-    //    }
+    /// Return number of nodes rooted at this node.
+    public var count: Int {
+        var count = 1
+        var child = self.kid
+        while let curchild = child {
+            count += curchild.count
+            child = curchild.sib
+        }
+        return count
+    }
+
+    /// Return number of nodes before node in its tree.
+    public var offset: Int {
+        var count = 0
+        var curNode: GedcomNode? = self
+        var loops = 0
+        while let node = curNode, let parent = node.dad {
+            loops += 1
+            if loops > 100 { fatalError("Cycle detected in tree.") }
+            var sibling = parent.kid // Count previous sibs.
+            while let cursibling = sibling, cursibling !== node {
+                count += cursibling.count
+                sibling = cursibling.sib
+            }
+            curNode = parent  // Move up.
+            count += 1  // Include parent.
+        }
+        return count
+    }
+}
+
+extension GedcomNode {
 
     /// Return all nodes below a node.
     public var subnodes: [GedcomNode] {
@@ -528,6 +549,7 @@ public extension GedcomNode {
     }
 }
 
+/// TODO: REMOVE THIS
 extension GedcomNode {
 
     /// Build deep copy of a Gedcom node tree or forest.
@@ -539,8 +561,104 @@ extension GedcomNode {
     }
 
     /// Build deep copy of this root node ignoring its siblings.
-    public func deepTreeCopy()  -> GedcomNode { deepCopy(sibs: false) }
+    //public func deepTreeCopy()  -> GedcomNode { deepCopy(sibs: false) }
 
     /// Build deep copy of this root node including its siblings.
-    public func deepForestCopy() -> GedcomNode { deepCopy(sibs: true) }
+    //public func deepForestCopy() -> GedcomNode { deepCopy(sibs: true) }
+}
+
+/// TODO: ADD MODIFIED VERSION OF THIS
+extension GedcomNode {
+
+    public func deepTreeCopy() -> GedcomNode {
+        let newNode = GedcomNode(key: key, tag: tag, val: val)
+        newNode.kid = copyChildList(from: kid, parent: newNode)
+        return newNode
+    }
+
+    public func deepForestCopy() -> GedcomNode {
+        let newRoot = deepTreeCopy()
+
+        var oldSibling = sib
+        var previousNewSibling = newRoot
+
+        while let sibling = oldSibling {
+            let newSibling = sibling.deepTreeCopy()
+            previousNewSibling.sib = newSibling
+            previousNewSibling = newSibling
+            oldSibling = sibling.sib
+        }
+
+        return newRoot
+    }
+
+    private func copyChildList(from firstChild: GedcomNode?, parent: GedcomNode) -> GedcomNode? {
+        var oldChild = firstChild
+        var firstNewChild: GedcomNode? = nil
+        var previousNewChild: GedcomNode? = nil
+
+        while let child = oldChild {
+            let newChild = child.deepTreeCopy()
+            newChild.dad = parent
+
+            if firstNewChild == nil {
+                firstNewChild = newChild
+            } else {
+                previousNewChild?.sib = newChild
+            }
+
+            previousNewChild = newChild
+            oldChild = child.sib
+        }
+
+        return firstNewChild
+    }
+}
+
+
+extension GedcomNode {
+
+    public func ddeepTreeCopy() -> GedcomNode {
+        let newNode = GedcomNode(key: key, tag: tag, val: val)
+        newNode.kid = copyChildList(from: kid, parent: newNode)
+        return newNode
+    }
+
+    public func ddeepForestCopy() -> GedcomNode {
+        let newRoot = deepTreeCopy()
+
+        var oldSibling = sib
+        var previousNewSibling = newRoot
+
+        while let sibling = oldSibling {
+            let newSibling = sibling.deepTreeCopy()
+            previousNewSibling.sib = newSibling
+            previousNewSibling = newSibling
+            oldSibling = sibling.sib
+        }
+
+        return newRoot
+    }
+
+    private func ccopyChildList(from firstChild: GedcomNode?, parent: GedcomNode) -> GedcomNode? {
+        var oldChild = firstChild
+        var firstNewChild: GedcomNode? = nil
+        var previousNewChild: GedcomNode? = nil
+
+        while let child = oldChild {
+            let newChild = child.deepTreeCopy()
+            newChild.dad = parent
+
+            if firstNewChild == nil {
+                firstNewChild = newChild
+            } else {
+                previousNewChild?.sib = newChild
+            }
+
+            previousNewChild = newChild
+            oldChild = child.sib
+        }
+
+        return firstNewChild
+    }
 }

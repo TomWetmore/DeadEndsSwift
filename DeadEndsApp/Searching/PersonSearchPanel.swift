@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 9 February 2026.
-//  Last changed on 25 February 2026.
+//  Last changed on 9 March 2026.
 //
 
 import SwiftUI
@@ -11,7 +11,6 @@ import DeadEndsLib
 
 /// Person search panel using names and vitals dates and places.
 struct PersonSearchPanel: View {
-
     @Environment(\.dismiss) private var dismiss
     @Binding var criteria: SearchCriteria  // Caller owns search criteria.
     let onSearch: (SearchCriteria) -> [RecordKey]  // Run search and return record keys.
@@ -32,8 +31,7 @@ struct PersonSearchPanel: View {
     var body: some View {
         NavigationStack {
             Form {
-                //criteriaSection
-                nameSection  // Drop in from ChatGPT.
+                nameSection
                 yearsSection
                 placeSection
 
@@ -62,31 +60,19 @@ struct PersonSearchPanel: View {
         }
     }
 
-    // MARK: - Sections
-
-    private var criteriaSection: some View {
+    /// Name section.
+    private var nameSection: some View {
         Section("Name") {
-            TextField("Name contains…", text: Binding(
+            TextField("", text: Binding(
                 get: { draft.name ?? "" },
                 set: { draft.name = $0.isEmpty ? nil : $0 }
-            ))
+            ),
+                      prompt: Text("Givens/Surname"))
             .autocorrectionDisabled()
         }
     }
 
-    private var nameSection: some View {
-            Section("Name") {
-                TextField("", text: Binding(
-                    get: { draft.name ?? "" },
-                    set: { draft.name = $0.isEmpty ? nil : $0 }
-                ),
-                          prompt: Text("Givens/Surname"))
-                .autocorrectionDisabled()
-            }
-        }
-
-
-
+    /// Years section.
     private var yearsSection: some View {
         Section("Years") {
             LabeledContent("Birth") {
@@ -104,14 +90,13 @@ struct PersonSearchPanel: View {
         }
     }
 
+    /// Place section.
     private var placeSection: some View {
         Section("Places") {
             TextField("Birth place…", text: $birthPlaceText)
                 .autocorrectionDisabled()
-
             TextField("Death place…", text: $deathPlaceText)
                 .autocorrectionDisabled()
-
             Button("Clear Place Filters") {
                 birthPlaceText = ""
                 deathPlaceText = ""
@@ -122,6 +107,7 @@ struct PersonSearchPanel: View {
         }
     }
 
+    /// Results section.
     private var resultsSection: some View {
         Section("Results") {
             if results.isEmpty {
@@ -139,24 +125,23 @@ struct PersonSearchPanel: View {
                 .frame(minHeight: 200)
             }
 
-//            HStack {
-//                Button("Clear Results") {
-//                    results = []
-//                }
-//                .buttonStyle(.borderless)
-//
-//                Spacer()
-//
-//                Button("Clear All") {
-//                    clearAll()
-//                }
-//                .buttonStyle(.borderless)
-//            }
+            //            HStack {
+            //                Button("Clear Results") {
+            //                    results = []
+            //                }
+            //                .buttonStyle(.borderless)
+            //
+            //                Spacer()
+            //
+            //                Button("Clear All") {
+            //                    clearAll()
+            //                }
+            //                .buttonStyle(.borderless)
+            //            }
         }
     }
 
-    // MARK: - Actions
-
+    /// Load from binding.
     private func loadFromBinding() {
         draft = criteria
 
@@ -172,6 +157,7 @@ struct PersonSearchPanel: View {
         deathPlaceText = criteria.deathPlace ?? ""
     }
 
+    /// Run search.
     private func runSearch() {
         lastError = nil
 
@@ -184,7 +170,6 @@ struct PersonSearchPanel: View {
         } else {
             draft.birthYearRange = nil
         }
-
         if let range = parseRange(from: deathFromText, to: deathToText) {
             draft.deathYearRange = range
         } else if !deathFromText.isEmpty || !deathToText.isEmpty {

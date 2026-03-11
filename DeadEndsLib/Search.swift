@@ -3,17 +3,11 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 26 November 2025.
-//  Last changed on 18 February 2026.
+//  Last changed on 9 March 2026.
 
-/// Search.swift has the code for searching the database for persons.
-/// Searching is done using names, years that events occurred, and
-/// parts of names mentioned in event places.
-/// Searching is done by scoring criteria the user provides. Criteria
-/// include names, years of events, and parts mentioned in event places.
-///
-/// The overall search process consists of a criteria being provided,
-/// the search occurring, and the results being returned, sorted by
-/// score.
+/// Search.swift has the code that searches database for persons.
+/// The criteria used include name, birth year range, death year
+/// range, birth place parts and death place parts.
 
 import Foundation
 
@@ -36,7 +30,7 @@ public struct SearchCriteria {
     }
 }
 
-/// Person search result, consisting of a record key, a score, and set of score reasons.
+/// Search result consists of record key, score, and array of reasons.
 public struct SearchResult: Identifiable, CustomStringConvertible {
     public let key: RecordKey
     public var score: Int
@@ -44,7 +38,7 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
 
     public var id: RecordKey { key }
 
-    /// Return description of search result.
+    /// Description of search result.
     public var description: String {
         let reasonList = reasons
             .map { $0 }.sorted().joined(separator: ", ")
@@ -66,16 +60,14 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
         return personOne!.compare(to: personTwo!, in: index)
     }
 
-    /// Return full description of result.
+    /// Full description of result.
     public func fullDescription(in index: RecordIndex) -> String {
         guard let person = index.person(for: key) else { return "<unknown>" }
         let name = person.displayName()
         let birth = person.birthEvent?.summary ?? "-"
         let death = person.deathEvent?.summary ?? "-"
         let reasonList = reasons
-            .map { $0 }
-            .sorted()
-            .joined(separator: ", ")
+            .map { $0 }.sorted().joined(separator: ", ")
         return "\(name) \(key)  \(score)  b. \(birth) d. \(death) {\(reasonList)}"
     }
 }
@@ -83,9 +75,7 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
 /// Map that collects the search results.
 public typealias SearchResults = [RecordKey : SearchResult]
 
-
-/// Candidate sets hold the record keys of persons who match
-/// the different search criteria.
+/// Candidate sets hold record keys of persons who match search criteria.
 private struct CandidateSets {
     let nameSet: Set<RecordKey>
     let birthDateSet: Set<RecordKey>
@@ -105,10 +95,11 @@ fileprivate func updateResult(_ results: inout SearchResults, _ key: RecordKey,
     }
 }
 
+/// Search person operation added to database.
 extension Database {
 
-    /// Search database for persons based on search criteria. The birthPartSets and deathPartSets are
-    /// arrays of [part:Set<Key>] maps, one for each part in the criteria.
+    /// Search database for persons based on five criteria: name, birth and death year,
+    /// birth and death place.
     public func searchPersons(_ criteria: SearchCriteria) -> [SearchResult] {
         var nameSet: Set<RecordKey> = []
         var birthDateSet: Set<RecordKey> = []
@@ -116,22 +107,21 @@ extension Database {
         var birthPartSets: [String : Set<RecordKey>] = [:]
         var deathPartSets: [String : Set<RecordKey>] = [:]
 
-        if let name = criteria.name {  // Get persons matching name.
+        if let name = criteria.name {  // Persons matching name.
             nameSet = Set(personKeys(forName: name))
         }
-        if let range = criteria.birthYearRange {  // Get persons matching birth year range.
+        if let range = criteria.birthYearRange {  // Persons matching birth year range.
             birthDateSet = dateIndex.recordKeys(in: range, event: .birth)
         }
-        if let range = criteria.deathYearRange {  // Get persons matching death year range.
+        if let range = criteria.deathYearRange {  // Persons matching death year range.
             deathDateSet = dateIndex.recordKeys(in: range, event: .death)
         }
-        if let place = criteria.birthPlace {  // Get persons matching birth place parts.
+        if let place = criteria.birthPlace {  // Ppersons matching birth place parts.
             birthPartSets = placeIndex.recordKeys(place: place, event: .birth)
         }
-        if let place = criteria.deathPlace {  // Get persons matching death place parts.
+        if let place = criteria.deathPlace {  // Persons matching death place parts.
             deathPartSets = placeIndex.recordKeys(place: place, event: .death)
         }
-        // Create candidates structure.
         let candidateSets = CandidateSets(nameSet: nameSet, birthDateSet: birthDateSet,
                                           deathDateSet: deathDateSet, birthPartSets: birthPartSets,
                                           deathPartSets: deathPartSets)
@@ -147,7 +137,7 @@ extension Database {
     }
 }
 
-/// Do name-based search. Only persons matching name are returned.
+/// Do name based search. Only persons matching name are returned.
 private func nameBasedSearch(_ candidateSets: CandidateSets) -> SearchResults {
 
     var results: SearchResults = [:]
@@ -177,12 +167,12 @@ private func nameBasedSearch(_ candidateSets: CandidateSets) -> SearchResults {
     return results
 }
 
-/// Get search results if criteria does not include name.
+/// Do non-name based search. All non-name criteria are used.
 private func datePlaceBasedSearch(_ candidateSets: CandidateSets) -> SearchResults {
-    var results: SearchResults = [:] // [RecordKey : SearchResult]
-    results.reserveCapacity(250)  // Do better job with capacity.
+    var results: SearchResults = [:]
+    results.reserveCapacity(250)
 
-    // Create search result for every person found in the indexes.
+    // Create and update search result for every person found in the indexes.
     candidateSets.birthDateSet.forEach { key in updateResult(&results, key, score: 20, reason: "birthDate") }
     candidateSets.deathDateSet.forEach { key in updateResult(&results, key, score: 20, reason: "deathDate") }
     for (_, keySet) in candidateSets.birthPartSets {

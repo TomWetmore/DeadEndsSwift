@@ -56,47 +56,7 @@ extension GedcomNode {
         }
     }
 
-    /// Return number of nodes rooted at this node.
-    func count() -> Int {
-        var count = 1
-        var child = self.kid
-        while let curchild = child {
-            count += curchild.count()
-            child = curchild.sib
-        }
-        return count
-    }
-
-    /// Return number of nodes before node in its tree.
-    public var offset: Int {
-        var count = 0
-        var curNode: GedcomNode? = self
-        var loops = 0
-        while let node = curNode, let parent = node.dad {
-            loops += 1
-            if loops > 100 { fatalError("Cycle detected in tree.") }
-            var sibling = parent.kid // Count previous sibs.
-            while let cursibling = sibling, cursibling !== node {
-                count += cursibling.count()
-                sibling = cursibling.sib
-            }
-            curNode = parent  // Move up.
-            count += 1  // Include parent.
-        }
-        return count
-    }
-
-    /// Return level of node in its tree.
-    public func level() -> Int {
-        var level = -1
-        var curr: GedcomNode? = self
-        while let node = curr {  // Count dads.
-            curr = node.dad
-            level += 1
-            if level > 100 { fatalError("Cycle detected in tree.") }
-        }
-        return level
-    }
+    
 }
 
 extension String {

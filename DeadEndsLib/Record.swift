@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 28 February 2026.
+//  Last changed on 9 March 2026.
 //
 
 import Foundation
@@ -61,7 +61,7 @@ public extension Record {
 
     func gedcomText(level: Int = 0, indent: Bool = false) -> String { root.gedcomText(level: level, indent: indent) }
     var subnodes: [GedcomNode] { root.subnodes }
-    func count() -> Int { root.count() }
+    func count() -> Int { root.count }
 }
 
 public extension Record {

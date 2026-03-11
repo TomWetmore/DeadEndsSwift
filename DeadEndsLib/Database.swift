@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 26 February 2026.
+//  Last changed on 10 March 2026.
 //
 
 import Foundation
@@ -45,6 +45,10 @@ final public class Database {
         self.refnIndex = refnIndex
         self.tagMap = tagMap
         self.dirty = dirty
+    }
+
+    init?(records: [GedcomNode]) {
+        return nil
     }
 }
 
@@ -92,5 +96,83 @@ private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> 
                     tagMap: tagMap, dirty: false)
 }
 
+extension Database {
 
+    /// Return new database with random record keys and key references.
+    func rekeyedDatabase() -> Database? {
+        var keyTable: [RecordKey: RecordKey] = [:]  // Old key to new key map.
 
+        for (key, root) in recordIndex {  // Create old to new key map.
+            keyTable[key] = generateRandomKey(prefix: typeLetter(root.tag), map: keyTable)
+        }
+        var newRoots: [GedcomNode] = []
+        newRoots.reserveCapacity(recordIndex.count)
+        for (_, root) in recordIndex {  // Deep copy records, rewriting keys and references.
+            let newRoot = copyTreeRekeying(root, keyTable: keyTable)
+            newRoots.append(newRoot)
+        }
+        return Database(records: newRoots)  // Return new database.
+    }
+
+    /// Deep copy Gedcom tree rewriting keys and key refs; recurse kids but iterate sibs.
+    private func copyTreeRekeying(_ node: GedcomNode, keyTable: [RecordKey: RecordKey]) -> GedcomNode {
+        let newNode = GedcomNode(key: rekeyKey(node.key, keyTable: keyTable), tag: node.tag,
+                                 val: rekeyVal(node.val, keyTable: keyTable))
+        var oldKid = node.kid
+        var prevNewKid: GedcomNode? = nil
+        while let child = oldKid {
+            let newKid = copyTreeRekeying(child, keyTable: keyTable)
+            newKid.dad = newNode
+            if prevNewKid == nil {
+                newNode.kid = newKid
+            } else {
+                prevNewKid?.sib = newKid
+            }
+            prevNewKid = newKid
+            oldKid = child.sib
+        }
+        return newNode
+    }
+
+    /// Rewrite root key if in key table.
+    private func rekeyKey(_ key: RecordKey?, keyTable: [RecordKey: RecordKey]) -> RecordKey? {
+        guard let key else { return nil }
+        return keyTable[key] ?? key
+    }
+
+    /// Rewrite node val if in key table.
+    private func rekeyVal(_ val: String?, keyTable: [RecordKey: RecordKey]) -> String? {
+        guard let val else { return nil }
+        return keyTable[val] ?? val
+    }
+}
+
+private func typeLetter(_ tag: String) -> String {
+    return String(tag.first?.uppercased() ?? "X")
+}
+
+// Generate a random record key.
+func generateRandomKey(index: RecordIndex) -> RecordKey {
+    let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+    for _ in 0..<10 {
+        let randomChars = (0..<6).map { _ in alphabet.randomElement()! }
+        let key = "@I" + String(randomChars) + "@"
+        if index[key] == nil {
+            return key
+        }
+    }
+    fatalError("Unable to generate unique Record key.")
+}
+// VERSION FROM CHATGPT.
+public func generateRandomKey(prefix: String, map: [String : String], length: Int = 8) -> RecordKey {
+    let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+    while true {
+        let suffix = String((0..<length).map { _ in alphabet.randomElement()! })
+        let key = "@\(prefix)\(suffix)@"
+        if map[key] == nil {
+            return key
+        }
+    }
+}

@@ -9,38 +9,76 @@
 import Foundation
 import DeadEndsLib
 
-// Example input
-let raw = "Thomas Trask Van Cott /Wetmore/ IV Ph.D. Great Guy"
+runTest()
 
-// Build a GedcomName from the string
-guard var base = GedcomName(string: raw) else {
-    fatalError("Could not parse GedcomName from: \(raw)")
+func runTest() {
+    print("hello world")
+    do {
+        try runTestOne()
+    } catch {
+        print("Top level catch")
+        exit(1)
+    }
 }
 
-// Settings for display
-let surnameFirst = true
-let uppercaseSurname = false
+// Count the nodes in the database.
+// Create a randomized recordinde.
+// Count the nodes in the randomized record index.
 
-// Print from wide to narrow
-for limit in stride(from: 60, through: 0, by: -1) {
-    print("\(limit): " + base.displayName(limit: limit))
+// Load a database from a Gedcom file.
+func runTestOne() throws {
+    print("Reading Gedcom file into database")
+    var errLog = ErrorLog()
+    let database = loadDatabase(from: "/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged", errlog: &errLog)
+    guard let database = database else {
+        throw RuntimeError.missingDatabase("Could not load Gedcom file into database.")
+    }
+    print("Database loaded successfully")
+    let count = countNodes(index: database.recordIndex)
+    print("There are \(count) nodes in the database")
+
+    // Get an array of deep copies of all the nodes.
+    let deepCopies: [Root] = deepCopies(index: database.recordIndex)
+    let countDeep = deepCopies.reduce(0) { $0 + $1.count }
+    print("After deep copy: \(countDeep)")
+    deepCopies.forEach(checkDads)
 }
 
-for limit in stride(from: 40, through: 0, by: -1) {
-    print("\(limit): " + base.displayName(upSurname: true, limit: limit))
+typealias Root = GedcomNode
+
+//func countNodes(index: RecordIndex) -> Int {
+//    index.reduce(0) { total, pair in
+//        let (_, root) = pair
+//        return total + root.count()
+//    }
+//}
+
+func countNodes(index: RecordIndex) -> Int {
+    index.values
+        .map { $0.count }
+        .reduce(0, +)
 }
 
-for limit in stride(from: 49, through: 0, by: -1) {
-    print("\(limit): " + base.displayName(surnameFirst: true, limit: limit))
+func countDeep(index: RecordIndex) -> Int {
+    deepCopies(index: index).reduce(0) { $0 + $1.count }
 }
 
-for limit in stride(from: 40, through: 0, by: -1) {
-    print("\(limit): " + base.displayName(upSurname: true, surnameFirst: true, limit: limit))
+func deepCopies(index: RecordIndex) -> [Root] {
+    index.values.map { $0.deepTreeCopy() }
 }
 
-for limit in stride(from: 40, through: 0, by: -1) {
-    print(DeadEndsLib.displayName(name: raw, limit: limit))
+
+func checkDads(_ node: GedcomNode?) {
+    guard let node else { return }
+
+    var child = node.kid
+    while let c = child {
+        assert(c.dad === node)
+        checkDads(c)
+        child = c.sib
+    }
 }
+
 
 
 
