@@ -43,19 +43,19 @@ func runTestOne() throws {
     print("After deep copy: \(countDeep)")
     copies.forEach(checkDads)
 
-    // TIME TO TEST REGENERATING KEYS.
     // Rekey the copied record index.
     let rekeyed = database.rekeyRecordIndex()
+    // Show number of records in rekeyed index.
     print("rekeyed.count is \(rekeyed.count)")
-    // Show the keys in that new record index.
+    // Print how many nodes are in all the records.
+    print("Number of nodes in rekeyed index is \(countNodes(index: rekeyed))")
+    // Show keys in new record index.
     rekeyed.forEach { print($0) }
-    // WHERE IS THAT CODE LOCATED?
 }
 
+/// Count all nodes in a record index.
 func countNodes(index: RecordIndex) -> Int {
-    index.values
-        .map { $0.count }
-        .reduce(0, +)
+    index.values.map { $0.count }.reduce(0, +)
 }
 
 func countDeep(index: RecordIndex) -> Int {
@@ -65,6 +65,11 @@ func countDeep(index: RecordIndex) -> Int {
 func deepCopies(index: RecordIndex) -> [Root] {
     index.values.map { $0.deepTreeCopy() }
 }
+
+/// Return deep copy of a record index.
+/// IS THERE A USE CASE FOR THIS?
+//func deepCopy(index: RecordIndex) -> RecordIndex {
+//}
 
 // TODO: MOVE SOMEWHERE APPROPRIATE.
 func checkDads(_ node: GedcomNode?) {

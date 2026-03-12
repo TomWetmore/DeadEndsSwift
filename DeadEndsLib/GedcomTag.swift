@@ -43,6 +43,8 @@ extension GedcomNode {
 public extension GedcomTag {
     static let INDI = GedcomTag.indi.rawValue
     static let FAM  = GedcomTag.fam.rawValue
+    static let SOUR = GedcomTag.sour.rawValue
+    static let HEAD = GedcomTag.head.rawValue
     static let NAME = GedcomTag.name.rawValue
     static let SEX  = GedcomTag.sex.rawValue
     static let BIRT = GedcomTag.birt.rawValue

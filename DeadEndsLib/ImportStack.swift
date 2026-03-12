@@ -16,7 +16,7 @@ public protocol GedcomSource {
 
 /// Gedcom source for files.
 public struct FileGedcomSource: GedcomSource {
-    public let path: String  // Path to Gedcom file.
+    public let path: String
     public var name: String { path }
 
     /// Make iterator to return lines from a file.
@@ -72,8 +72,8 @@ func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
     var header: GedcomNode?
     for root in recordList {
         if let key = root.key { index[key] = root }
-        if root.tag == GedcomTag.indi.rawValue { persons.append(root) }
-        else if root.tag == GedcomTag.fam.rawValue { families.append(root) }
+        if root.tag == GedcomTag.INDI { persons.append(root) }
+        else if root.tag == GedcomTag.FAM { families.append(root) }
         else if root.tag == GedcomTag.head.rawValue { header = root }
     }
 

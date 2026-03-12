@@ -1,0 +1,260 @@
+In this:
+let newRoots = recordIndex.values.map { copyTreeRekeying($0, keyTable: rekeyMap) }
+
+$0 means a value from the record index because of the .values. There is no "in" in the closure, so I think I've learned that the fact that there is $0 means that the this meets the compiler's definition of a closure with specific syntactic sugar.
+
+If there were no .value, then the $0 would refer to what, and how could I get hold of the key or value parts?
+
+You are reasoning about this exactly the right way. Let’s unpack it carefully.
+1. Why $0 is the value
+
+You wrote:
+recordIndex.values.map { copyTreeRekeying($0, keyTable: rekeyMap) }
+
+So recordIndex.values is a collection of the dictionary’s values, so the sequence being mapped over is:
+
+Root Root Root ...
+
+So $0 is inferred to be: Root.  That’s why it works.
+
+2. Why there is no in
+Swift allows closure shorthand syntax when the closure is a single expression.
+
+Instead of: map { root in copyTreeRekeying(root, keyTable: rekeyMap) }
+
+you can write: map { copyTreeRekeying($0, keyTable: rekeyMap) }
+
+Swift automatically: •supplies the parameter list; • names them $0, $1, $2, …
+This is the closure shorthand syntax you referred to.
+
+3. If you removed .values
+Now the type of the sequence changes.  Iterating a dictionary directly produces: (key: Key, value: Value)
+
+In your case: (key: RecordKey, value: Root). So $0 becomes a tuple: (RecordKey, Root)
+
+or more precisely: (key: RecordKey, value: Root)
+
+4. Accessing the pieces
+You would access them like this:
+    recordIndex.map { copyTreeRekeying($0.value, keyTable: rekeyMap) }
+because $0 is the tuple.
+
+You can also access by position: $0.0   // key $0.1   // value
+but the named version is clearer.
+
+5. The explicit closure form
+Sometimes it is clearer to write it explicitly:
+
+recordIndex.map { (key, root) in
+    copyTreeRekeying(root, keyTable: rekeyMap)
+}
+
+This works because Swift destructures the tuple.
+Here:
+key  = $0.key root = $0.value
+
+6. Example comparison
+Using .values; Element type: Root
+recordIndex.values.map { root in
+    copyTreeRekeying(root, keyTable: rekeyMap)
+}
+
+Using the dictionary itself; Element type: (key: RecordKey, value: Root)
+recordIndex.map { entry in
+    copyTreeRekeying(entry.value, keyTable: rekeyMap)
+}
+or
+recordIndex.map { (key, root) in
+    copyTreeRekeying(root, keyTable: rekeyMap)
+}
+
+.values are nice here because you don’t need key.  The code becomes simpler and clearer:
+
+recordIndex.values.map { copyTreeRekeying($0, keyTable: rekeyMap) }
+
+or
+
+recordIndex.values.map { root in copyTreeRekeying(root, keyTable: rekeyMap) }
+
+Note. When you write: recordIndex.values, you are not creating a new array.  Swift returns a lazy view of the dictionary values.  This is efficient; nothing is copied.
+
+There is an elegant approach by using reduce(into:) where dictionaries are built.  This gives code that reads naturally: •start with an empty dictionary •walk through the records •add one transformed thing at a time.
+
+I would use reduce(into:) in two places: 1.building the rekey map 2.building the new record index
+
+Version using reduce(into:)
+
+public func rekeyRecordIndex() -> RecordIndex {
+    let rekeyMap: [RecordKey: RecordKey] = recordIndex.reduce(into: [:]) { map, entry in
+        let (key, root) = entry
+        map[key] = generateRandomKey(prefix: typeLetter(root.tag), map: map)
+    }
+    return recordIndex.values.reduce(into: RecordIndex()) { newIndex, root in
+        let newRoot = copyTreeRekeying(root, keyTable: rekeyMap)
+        newIndex[newRoot.key!] = newRoot
+    }
+}
+
+I think that is probably the “elegant Swift” version I would show first. Why this is nice.
+
+First pass:
+let rekeyMap: [RecordKey: RecordKey] = recordIndex.reduce(into: [:]) { map, entry in
+    let (key, root) = entry
+    map[key] = generateRandomKey(prefix: typeLetter(root.tag), map: map)
+}
+This says: •begin with [:] •for each dictionary entry •mutate the accumulating dictionary map.
+This is exactly what reduce(into:) is for.
+
+It is better than plain reduce here because ordinary reduce would keep creating new dictionaries, whereas reduce(into:) mutates the accumulator efficiently.
+
+Second pass
+return recordIndex.values.reduce(into: RecordIndex()) { newIndex, root in
+    let newRoot = copyTreeRekeying(root, keyTable: rekeyMap)
+    newIndex[newRoot.key!] = newRoot
+}
+
+This says: •begin with an empty RecordIndex •for each old root •make a rewritten copy •insert it into the new index
+That reads very directly.
+
+A version with slightly more explicit names.  If you want something a bit less terse:
+
+public func rekeyRecordIndex() -> RecordIndex {
+    let rekeyMap: [RecordKey: RecordKey] = recordIndex.reduce(into: [:]) { partialMap, pair in
+        let (oldKey, root) = pair
+        partialMap[oldKey] = generateRandomKey(
+            prefix: typeLetter(root.tag),
+            map: partialMap
+        )
+    }
+    let newIndex = recordIndex.values.reduce(into: RecordIndex()) { partialIndex, oldRoot in
+        let newRoot = copyTreeRekeying(oldRoot, keyTable: rekeyMap)
+        partialIndex[newRoot.key!] = newRoot
+    }
+    return newIndex
+}
+This is a little wordier, but perhaps better for code you expect to revisit months from now.
+
+Why I like this better than trying to use map everywhere.
+map is best when each input becomes exactly one output and there is no stateful accumulation.
+But your first pass really is an accumulation: •previous random keys matter •the dictionary is being built over time
+That is not a natural map.  So reduce(into:) is a better fit.
+
+One important caution
+This part: map[key] = generateRandomKey(prefix: typeLetter(root.tag), map: map)
+depends on generateRandomKey seeing the map as built so far.
+
+That is okay, and reduce(into:) handles that nicely.
+But it does mean this is inherently sequential logic. So although this version is elegant, it is not more “functional” in some deep pure sense. It is just a neat accumulator pattern.
+
+If you want the most readable version, honestly, I might still prefer this hybrid:
+
+public func rekeyRecordIndex() -> RecordIndex {
+    var rekeyMap: [RecordKey: RecordKey] = [:]
+    for (key, root) in recordIndex {
+        rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
+    }
+    return recordIndex.values.reduce(into: RecordIndex()) { newIndex, root in
+        let newRoot = copyTreeRekeying(root, keyTable: rekeyMap)
+        newIndex[newRoot.key!] = newRoot
+    }
+}
+
+That keeps the first pass as an obvious loop and makes the second pass concise.
+So there are really three levels: •plain loops everywhere — clearest and perfectly fine •hybrid — probably my favorite •reduce(into:) twice — elegant and fully Swifty
+
+The closure parameters in reduce(into:)
+Since you were asking about closure syntax, here is the shape:
+someSequence.reduce(into: initialValue) { accumulator, element in ...  }
+So in:
+
+recordIndex.reduce(into: [:]) { map, entry in ...  }
+	•map is the accumulating dictionary
+	•entry is one dictionary element, i.e. (key: RecordKey, value: Root)
+
+And in:
+recordIndex.values.reduce(into: RecordIndex()) { newIndex, root in ...  }
+	•newIndex is the accumulating result
+	•root is one value from recordIndex.values
+
+Tiny bonus version.
+If you wanted to destructure the entry right in the closure, you might hope to write:
+recordIndex.reduce(into: [:]) { map, (key, root) in ... }
+
+Swift can be fussy about tuple destructuring directly in closure parameter lists, so I usually avoid it and just do:
+let (key, root) = entry
+
+inside the closure body. It is clearer anyway.
+
+I think the hybrid version is the one I would most likely ship in DeadEnds, but the double-reduce(into:) version is probably the elegant trick you were looking for.
+
+You do not need to abandon loops. You want to start recognizing: •when a loop is really a transform •when a loop is really an accumulation •when a loop is just a plain old loop
+
+For your example, I think the best “first step away from C-loops” is this:
+public func rekeyRecordIndex() -> RecordIndex {
+    var rekeyMap: [RecordKey : RecordKey] = [:]
+    for (key, root) in recordIndex {
+        rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
+    }
+    let newRoots = recordIndex.values.map {
+        copyTreeRekeying($0, keyTable: rekeyMap)
+    }
+    return RecordIndex(uniqueKeysWithValues: newRoots.map { ($0.key!, $0) })
+}
+
+I think this is a very good learning step because it introduces two important Swift ideas without becoming contorted:
+1. map for transformation
+
+let newRoots = recordIndex.values.map {
+    copyTreeRekeying($0, keyTable: rekeyMap)
+}
+says: •take each root •transform it into a new root •collect the results
+That is exactly what map is for.
+
+A C-style loop would say how to build the array; map says what transformation is happening.  That shift in viewpoint is one of the biggest Swift / functional-style mental steps.
+
+2. dictionary construction from tuples
+This:
+RecordIndex(uniqueKeysWithValues: newRoots.map { ($0.key!, $0) })
+says: •take each root •transform it into a (key, value) pair •build a dictionary from those pairs.  Again, that is a very Swifty pattern.
+
+The nuance to learn: When you look at a loop, ask: Is each input becoming exactly one output?  That suggests map.
+
+Am I filtering out some elements?  That suggests filter.
+
+Am I producing one summary value?  That suggests reduce or reduce(into:).
+
+Am I mutating state in a stepwise algorithm?  A plain for loop may still be the best tool.
+
+That is why I would keep your first loop for now.
+This loop:
+for (key, root) in recordIndex {
+    rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
+}
+is not just a transform. It is a sequential accumulation where the current map matters to the next step. So keeping it as a loop is not “less Swift.” It is actually good judgment.
+
+A good progression for learning
+I would suggest this progression:
+Stage 1: replace obvious output-building loops with map.  That is where you are now.
+Stage 2: learn filter, compactMap, and flatMap.  These are extremely useful in Swift.
+Especially compactMap, which means: •transform elements •discard nil results
+
+3: learn reduce(into:)
+This is the Swifty way to build dictionaries, arrays, sets, etc., when you are accumulating.  But I would not start there first. map is the friendliest entry point.
+
+So in your code I would say: •first loop: leave it alone •second loop: convert to map •final loop: replace with dictionary initializer.  That is enough of a step to be educational without becoming artificial.
+
+Why not force the first loop into reduce(into:) right now?  Because you are trying to learn nuance, not tricks.
+This version:
+let rekeyMap = recordIndex.reduce(into: [RecordKey: RecordKey]()) { map, entry in
+    let (key, root) = entry
+    map[key] = generateRandomKey(prefix: typeLetter(root.tag), map: map)
+}
+is perfectly good Swift, but it is a slightly more advanced accumulator pattern.  You can get there next.  For now, this version teaches more clearly:
+
+var rekeyMap: [RecordKey : RecordKey] = [:]
+for (key, root) in recordIndex {
+    rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
+}
+because the algorithmic intent is still obvious.
+
+Do not try to replace loops just because Swift can. Replace loops when a standard library operation expresses the idea more directly.

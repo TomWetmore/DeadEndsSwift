@@ -18,12 +18,11 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     public var key: RecordKey?
     public var tag: String
     public var val: String?
-
     public var sib: GedcomNode?
     public var kid: GedcomNode?
     public weak var dad: GedcomNode?
 
-    /// Return the kids of node.
+    /// Return kids of node.
     public var kids: [GedcomNode] {
         var results: [GedcomNode] = []
         var node = kid
@@ -43,14 +42,14 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return description
     }
 
-    /// Create Gedcom node with key, tag and val.
+    /// Create Gedcom node.
     public init(key: RecordKey? = nil, tag: String, val: String? = nil) {
         self.key = key
         self.tag = tag
         self.val = val
     }
 
-    /// Return Gedcom level of this node; infinite cycles detected.
+    /// Return level of node; infinite cycles detected.
     public var lev: Int {
         var level = -1
         var node: GedcomNode? = self
@@ -61,7 +60,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return level
     }
 
-    /// Print a Gedcom node tree to stdout; recurse to kids and sibs.
+    /// Print Gedcom node tree to stdout; recurse to kids and sibs.
     public func printTree(level: Int = 0, indent: String = "") {
         let space = String(repeating: indent, count: level)
         print("\(space)\(level) \(self)")
@@ -70,7 +69,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     }
 }
 
-// Methods that return child (kid) nodes or their values.
+/// Methods that return kid nodes or their values.
 public extension GedcomNode {
 
     /// Return first kid with given tag.
@@ -145,7 +144,7 @@ public extension GedcomNode {
         kids(withTags: tags).compactMap { $0.val }
     }
 
-    /// Traverse first sequence of specific tags to find a descendant node.
+    /// Traverse first sequence of specific tags to descendant node.
     func kid(atPath path: [String]) -> GedcomNode? {
         guard !path.isEmpty else { return nil }
         return path.reduce(into: Optional(self)) { node, tag in
@@ -153,7 +152,7 @@ public extension GedcomNode {
         }
     }
 
-    /// Traverse first sequence of specific tags to find a descendant node's value.
+    /// Traverse first sequence of specific tags to descendant node's value.
     func kidVal(atPath path: [String]) -> String? {
         path.reduce(self) { node, tag in node?.kid(withTag: tag) }?.val
     }
@@ -161,10 +160,8 @@ public extension GedcomNode {
 
 public extension GedcomNode {
 
-    /// Convert Gedcom node tree to Gedcom text; normally called on a root with lev default at 0 and
-    /// indent to false; sibs of the root are not included.
+    /// Convert Gedcom node tree to Gedcom text.
     func gedcomText(level: Int = 0, indent: Bool = false) -> String {
-
         var lines: [String] = []
 
         let space = indent ? String(repeating: "  ", count: level) : ""
@@ -201,15 +198,15 @@ extension GedcomNode {
         var count = 0
         var curNode: GedcomNode? = self
         var loops = 0
-        while let node = curNode, let parent = node.dad {
+        while let node = curNode, let dad = node.dad {
             loops += 1
             if loops > 100 { fatalError("Cycle detected in tree.") }
-            var sibling = parent.kid // Count previous sibs.
+            var sibling = dad.kid // Count previous sibs.
             while let cursibling = sibling, cursibling !== node {
                 count += cursibling.count
                 sibling = cursibling.sib
             }
-            curNode = parent  // Move up.
+            curNode = dad
             count += 1  // Include parent.
         }
         return count

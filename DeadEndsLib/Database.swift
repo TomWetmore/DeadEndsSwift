@@ -3,15 +3,15 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 11 March 2026.
+//  Last changed on 12 March 2026.
 //
 
 import Foundation
 
 public typealias RecordKey = String
-public typealias RecordIndex = [RecordKey: GedcomNode]
-public typealias KeyMap = [RecordKey : Int]  // Map keys to source line numbers.
-public typealias RecordList = [GedcomNode]
+public typealias RecordIndex = [RecordKey: Root]
+public typealias KeyMap = [RecordKey : Int]  // Keys to line numbers.
+public typealias RecordList = [Root]
 
 /// DeadEnds in-RAM database.
 final public class Database {
@@ -45,8 +45,23 @@ final public class Database {
         self.dirty = dirty
     }
 
-    init?(records: [GedcomNode]) {
-        return nil
+    /// Create database from a record list. Intended to be used by the rekey path.
+    /// The list of records are assumed to be wholly validated.
+    init(records: [Root]) {
+        recordIndex = [:]
+        persons = RecordList()
+        families = RecordList()
+        header = nil
+        for root in records {
+            if let key = root.key { recordIndex[key] = root }
+            if root.tag == GedcomTag.INDI { persons.append(root) }
+            else if root.tag == GedcomTag.FAM { families.append(root) }
+            else if root.tag == GedcomTag.HEAD { header = root }
+        }
+        nameIndex = buildNameIndex(from: persons)
+        dateIndex = buildDateIndex(from: recordIndex)
+        placeIndex = buildPlaceIndex(from: recordIndex)
+        refnIndex = RefnIndex()  // Awaiting change to the index.
     }
 }
 
@@ -114,18 +129,16 @@ extension Database {
     /// Rekey a record index into a new index.
     public func rekeyRecordIndex() -> RecordIndex {
         var rekeyMap: [RecordKey : RecordKey] = [:]
+
         for (key, root) in recordIndex {
             rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
         }
-        var newRoots: [Root] = []
-        newRoots.reserveCapacity(recordIndex.count)
-        for (_, root) in recordIndex {  // Deep copy records, rewriting keys and references.
-            let newRoot = copyTreeRekeying(root, keyTable: rekeyMap)
-            newRoots.append(newRoot)
+        let newRoots = recordIndex.values.map {
+            copyTreeRekeying($0, keyTable: rekeyMap)
         }
-        var newIndex = RecordIndex()
-        newRoots.forEach() { newIndex[$0.key!] = $0 }
-        return newIndex
+        return RecordIndex(
+            uniqueKeysWithValues: newRoots.map { ($0.key!, $0) }
+        )
     }
 
     /// Deep copy Gedcom tree rewriting keys and key refs; recurse kids but iterate sibs.
@@ -166,19 +179,6 @@ private func typeLetter(_ tag: String) -> String {
 }
 
 // Generate a random record key.
-func generateRandomKey(index: RecordIndex) -> RecordKey {
-    let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-    for _ in 0..<10 {
-        let randomChars = (0..<6).map { _ in alphabet.randomElement()! }
-        let key = "@I" + String(randomChars) + "@"
-        if index[key] == nil {
-            return key
-        }
-    }
-    fatalError("Unable to generate unique Record key.")
-}
-// VERSION FROM CHATGPT.
 public func generateRandomKey(prefix: String, map: [String : String], length: Int = 8) -> RecordKey {
     let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
