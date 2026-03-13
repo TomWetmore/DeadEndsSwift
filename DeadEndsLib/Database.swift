@@ -11,15 +11,15 @@ import Foundation
 public typealias RecordKey = String
 public typealias RecordIndex = [RecordKey: Root]
 public typealias KeyMap = [RecordKey : Int]  // Keys to line numbers.
-public typealias RecordList = [Root]
+public typealias RootList = [Root]
 
 /// DeadEnds in-RAM database.
 final public class Database {
 
 	public internal(set) var recordIndex: RecordIndex
     public private(set) var header: GedcomNode?
-    public private(set) var persons: RecordList = []
-    public private(set) var families: RecordList = []
+    public private(set) var persons: RootList = []
+    public private(set) var families: RootList = []
 	public var nameIndex: NameIndex
     public var dateIndex: DateIndex
     public var placeIndex: PlaceIndex
@@ -29,28 +29,11 @@ final public class Database {
     var personCount: Int { persons.count }
     var familyCount: Int { families.count }
 
-    /// Create a database.
-    init(recordIndex: RecordIndex, persons: RecordList, families: RecordList,
-         header: GedcomNode?, nameIndex: NameIndex, dateIndex: DateIndex, placeIndex: PlaceIndex,
-         refnIndex: RefnIndex, dirty: Bool = false) {
-
-        self.recordIndex = recordIndex
-        self.persons = persons
-        self.families = families
-        self.header = header
-        self.nameIndex = nameIndex
-        self.dateIndex = dateIndex
-        self.placeIndex = placeIndex
-        self.refnIndex = refnIndex
-        self.dirty = dirty
-    }
-
-    /// Create database from a record list. Intended to be used by the rekey path.
-    /// The list of records are assumed to be wholly validated.
-    init(records: [Root]) {
+    /// Create database from array of validated records.
+    init(records: RootList) {
         recordIndex = [:]
-        persons = RecordList()
-        families = RecordList()
+        persons = RootList()
+        families = RootList()
         header = nil
         for root in records {
             if let key = root.key { recordIndex[key] = root }
@@ -61,51 +44,21 @@ final public class Database {
         nameIndex = buildNameIndex(from: persons)
         dateIndex = buildDateIndex(from: recordIndex)
         placeIndex = buildPlaceIndex(from: recordIndex)
-        refnIndex = RefnIndex()  // Awaiting change to the index.
+        refnIndex = RefnIndex()  // TODO: Awaiting change to the index.
     }
 }
 
-/// Load an array of databasea from paths in a list. This function is not used.
-public func loadDatabases(from paths: [String], errlog: inout ErrorLog) -> [Database] {
-	var databases = [Database]()
-	for path in paths {
-        if let database = loadDatabase(from: path, errlog: &errlog) {
-			databases.append(database)
-		}
-	}
-	return databases
-}
-
-/// Load a database from a Gedcom filel if there are errors no database is created.
+/// Load database from Gedcom file; if errors no database is created.
 public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? {
-    let source = FileGedcomSource(path: path)
-    return loadDatabase(from: source, errLog: &errlog)
+    loadDatabase(from: FileGedcomSource(path: path), errLog: &errlog)
 }
 
-/// Load database from source; keyMap is used for error messages and does not persist.
+/// Load database from source; keyMap used for error messages.
 private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> Database? {
-
-    var keyMap = KeyMap()  // Map record keys to lines in source.
-
-    guard let (index, persons, families, header) =  // Read and validate records.
-            loadValidRecords(from: source, keyMap: &keyMap, errlog: errLog)
-    else { return nil }  // errlog holds the errors.
-    print("Loaded \(persons.count) persons, \(families.count) families.")
-
-    let nameIndex = buildNameIndex(from: persons)  // Create indexes.
-    let dateIndex = buildDateIndex(from: index)
-    let placeIndex = buildPlaceIndex(from: index)
-    let refnIndex = RefnIndex()  // Awaiting change to the index.
-    //let refnIndex = validateRefns(from: index, keyMap: keyMap, errLog: errLog)
-
-    //placeIndex.showContents(using: index)  // DEBUG
-    //placeIndex.showPlaceFrequencyTable()  // DEBUG
-    //dateIndex.showContents(using: index)  // DEBUG
-    //refnIndex.showContents()  // DEBUG
-    if errLog.count > 0 { return nil }
-    return Database(recordIndex: index, persons: persons, families: families, header: header,
-                    nameIndex: nameIndex, dateIndex: dateIndex, placeIndex: placeIndex,
-                    refnIndex: refnIndex, dirty: false)
+    var keyMap = KeyMap()  // Map keys to lines.
+    guard let roots = loadValidRecords(from: source, keyMap: &keyMap, errlog: &errLog)
+    else { return nil }
+    return Database(records: roots)
 }
 
 extension Database {

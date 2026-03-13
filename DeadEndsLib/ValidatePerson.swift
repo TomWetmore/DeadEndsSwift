@@ -3,20 +3,30 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 7 February 2026.
+//  Last changed on 12 March 2026.
 //
 
 import Foundation
 
 typealias StringSet = Set<String>
 
+/// Validate the records.
+func validateRecords(roots: RootList, context: ValidationContext, errlog: ErrorLog) {
+    for root in roots {
+        switch root.tag {
+        case "INDI": root.validatePerson(context: context, errlog: errlog)
+        //case "FAM": root.validateFamily(context: context, errlog: errlog)
+        default: break
+        }
+    }
+}
+
 // validatePersons validates the persons in a RootList.
-func validatePersons(persons: RecordList, context: ValidationContext, errlog: ErrorLog) {
-	var numPersonsValidated = 0 // Debugging.
-	for person in persons {
-		person.validatePerson(context: context, errlog: errlog)
-		numPersonsValidated += 1
-	}
+func validatePersons(roots: RootList, context: ValidationContext, errlog: ErrorLog) {
+    for root in roots {
+        if root.tag != "INDI" { continue }
+        root.validatePerson(context: context, errlog: errlog)
+    }
 }
 
 // Methods on Persons.

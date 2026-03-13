@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 11 March 2026.
+//  Last changed on 12 March 2026.
 //
 
 import Foundation
@@ -54,54 +54,44 @@ struct ValidationContext {
     let source: String
 }
 
-/// Load and validate records from a Gedcom source into containers.
+/// Load and validate records from a source.
 func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
-                      errlog: ErrorLog) -> (index: RecordIndex, persons: RecordList,
-                                            families: RecordList, header: GedcomNode?)? {
-    // Parse source into records.
-    guard let recordList = loadRecords(from: source, keyMap: &keyMap, errlog: errlog)
+                      errlog: inout ErrorLog) -> RootList? {
+    // Parse source into unvalidated records.
+    guard let roots = loadRecords(from: source, keyMap: &keyMap, errlog: &errlog)
     else { return nil }
 
-    // Check closure.
-    checkKeysAndReferences(records: recordList, path: source.name, keymap: keyMap, errlog: errlog)
+    // Check key closure.
+    checkKeysAndReferences(records: roots, path: source.name, keymap: keyMap, errlog: errlog)
 
-    // Create internal structures.
-    var index = RecordIndex()
-    var persons = RecordList()
-    var families = RecordList()
-    var header: GedcomNode?
-    for root in recordList {
+    // Need index for inter-record validation.
+    var index: RecordIndex = [:]
+    for root in roots {
         if let key = root.key { index[key] = root }
-        if root.tag == GedcomTag.INDI { persons.append(root) }
-        else if root.tag == GedcomTag.FAM { families.append(root) }
-        else if root.tag == GedcomTag.head.rawValue { header = root }
     }
-
     // Validate.
     let context = ValidationContext(index: index, keymap: keyMap, source: source.name)
-    validatePersons(persons: persons, context: context, errlog: errlog)
-    //validateFamilies(families: families, context: context, errlog: &errlog) {
-
-    return (index, persons, families, header)
+    validateRecords(roots: roots, context: context, errlog: errlog)
+    return errlog.count == 0 ? roots : nil
 }
 
-/// Load records from source; convert lines to data nodes and data nodes to records.
+/// Load records from source; convert lines to data nodes, and data nodes to records.
 public func loadRecords(from source: GedcomSource, keyMap: inout KeyMap,
-                        errlog: ErrorLog) -> RecordList? {
-    guard let dataNodes = loadDataNodes(from: source, keyMap: &keyMap, errlog: errlog)
+                        errlog: inout ErrorLog) -> RootList? {
+    guard let dataNodes = loadDataNodes(from: source, keyMap: &keyMap, errlog: &errlog)
     else { return nil }
     return buildRecords(from: dataNodes, keymap: keyMap, errlog: errlog)
 }
 
 /// Load records from source; differs from previous by creating a key map.
-public func loadRecords(from source: GedcomSource, errlog: inout ErrorLog) -> RecordList? {
+public func loadRecords(from source: GedcomSource, errlog: inout ErrorLog) -> RootList? {
     var keyMap = KeyMap()
-    return loadRecords(from: source, keyMap: &keyMap, errlog: errlog)
+    return loadRecords(from: source, keyMap: &keyMap, errlog: &errlog)
 }
 
-/// Load data nodes from source; levels are not checked.
+/// Load data nodes from source; levs not checked.
 func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
-                   errlog: ErrorLog) -> DataNodes<Int>? {
+                   errlog: inout ErrorLog) -> DataNodes<Int>? {
     var nodes = DataNodes<Int>()
     var lineno = 0
     let lines = source.makeLineIterator()
@@ -122,12 +112,11 @@ func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
 }
 
 /// Process data nodes to build record list; uses lev-based state machine.
-func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RecordList {
-
+func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RootList {
     enum State { case initial, main, error } // States.
     var state: State = .initial
 
-    var recordList = RecordList()  // Returned records.
+    var recordList = RootList()  // Returned records.
     var prevNode: GedcomNode? = nil
     var prevLev = 0
     var curRoot: GedcomNode? = nil

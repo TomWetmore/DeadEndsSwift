@@ -3,7 +3,7 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 24 February 2026.
+//  Last changed on 12 March 2026.
 //
 
 import Foundation
@@ -73,7 +73,7 @@ func nameKey(value: String) -> String {
 }
 
 /// Build name index from record list.
-func buildNameIndex(from persons: RecordList) -> NameIndex {
+func buildNameIndex(from persons: RootList) -> NameIndex {
 	
     let index = NameIndex()
     for person in persons {

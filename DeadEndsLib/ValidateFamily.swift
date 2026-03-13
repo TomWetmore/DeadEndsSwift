@@ -3,13 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 2 January 2025.
-//  Last changed 7 February 2026.
+//  Last changed 12 March 2026.
 //
 
 import Foundation
 
 // validateFamilies validates the families in a RootList.
-func validateFamilies(families: RecordList, index: RecordIndex, source: String, keymap: KeyMap,
+func validateFamilies(families: RootList, index: RecordIndex, source: String, keymap: KeyMap,
 					  errorlog: inout ErrorLog) {
 	var numFamiliesValidated = 0
 	for family in families {

@@ -3,13 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 28 February 2026.
+//  Last changed on 12 March 2026.
 //
 
 import Foundation
 
 // Check that record keys are unique and closed.
-func checkKeysAndReferences(records: RecordList, path: String, keymap: KeyMap, errlog: ErrorLog) {
+func checkKeysAndReferences(records: RootList, path: String, keymap: KeyMap, errlog: ErrorLog) {
     var keyset = Set<String>() // Encountered keys.
 
     for root in records {  // Existance and uniqueness.

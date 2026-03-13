@@ -3,7 +3,7 @@
 //  DeadEndsTest
 //
 //  Created by Thomas Wetmore on 4 September 2025.
-//  Last changed on 10 March 2026.
+//  Last changed on 12 March 2026.
 //
 
 import Foundation
@@ -38,7 +38,7 @@ func runTestOne() throws {
     print("There are \(count) nodes in the database")
 
     // Get an array of deep copies of all the nodes.
-    let copies: [Root] = deepCopies(index: database.recordIndex)
+    let copies: RootList = deepCopies(index: database.recordIndex)
     let countDeep = copies.reduce(0) { $0 + $1.count }
     print("After deep copy: \(countDeep)")
     copies.forEach(checkDads)
@@ -62,7 +62,7 @@ func countDeep(index: RecordIndex) -> Int {
     deepCopies(index: index).reduce(0) { $0 + $1.count }
 }
 
-func deepCopies(index: RecordIndex) -> [Root] {
+func deepCopies(index: RecordIndex) -> RootList {
     index.values.map { $0.deepTreeCopy() }
 }
 
