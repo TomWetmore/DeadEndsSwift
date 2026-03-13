@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 November 2025.
-//  Last changed on 24 February 2026.
+//  Last changed on 13 March 2026.
 //
 
 import Foundation
@@ -18,6 +18,8 @@ public struct DateIndexKey: Hashable {
 final public class DateIndex {
 
     private(set) var index: [DateIndexKey : Set<RecordKey>] = [:]  // Representation.
+
+    public var count: Int { index.count }
 
     /// Add entry to date index.
     func add(year: Year, event: EventKind, recordKey: RecordKey) {

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 8 March 2026.
+//  Last changed on 13 March 2026.
 //
 
 import Foundation
@@ -19,6 +19,8 @@ final public class PlaceIndex {
 
     /// Map place index keys to sets of record keys.
     private(set) var index: [PlaceIndexKey : Set<RecordKey>] = [:]  // Representation.
+
+    public var count: Int { index.count }
 
     /// Add entries to the index; place is expanded into parts.
     public func add(place: String, event: EventKind, recordKey: RecordKey) {

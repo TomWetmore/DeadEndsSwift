@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 12 March 2026.
+//  Last changed on 13 March 2026.
 //
 
 import Foundation
@@ -14,7 +14,7 @@ public typealias KeyMap = [RecordKey : Int]  // Keys to line numbers.
 public typealias RootList = [Root]
 
 /// DeadEnds in-RAM database.
-final public class Database {
+final public class Database: CustomStringConvertible {
 
 	public internal(set) var recordIndex: RecordIndex
     public private(set) var header: GedcomNode?
@@ -28,6 +28,33 @@ final public class Database {
 
     var personCount: Int { persons.count }
     var familyCount: Int { families.count }
+
+    /// Description of database.
+    public var description: String {
+        var summary = "Database Summary:"
+        summary += "\n    Length of index: \(recordIndex.count)"
+        summary += "\n    Number of persons: \(personCount)"
+        summary += "\n    Number of families: \(familyCount)"
+        summary += "\n    Header present: \(header != nil ? "Yes" : "No")"
+        summary += "\n    Size of name index: \(nameIndex.count)"
+        summary += "\n    Size of data index: \(dateIndex.count)"
+        summary += "\n    Size of place index: \(placeIndex.count)"
+        summary += "\n    Size of refn index: \(refnIndex.count)"
+        summary += "\n    Persons use \(size(of: persons)) nodes"
+        summary += "\n    Families use \(size(of: families)) nodes"
+        summary += "\n    Total size: \(size) nodes"
+        return summary
+    }
+
+    /// Size of database in nodes.
+    var size: Int {
+        recordIndex.values.reduce(0) { $0 + $1.count }
+    }
+
+    /// Size of a record list in nodes. Maybe should be elsewhere.
+    func size(of roots: RootList) -> Int {
+        roots.reduce(0) { $0 + $1.count }
+    }
 
     /// Create database from array of validated records.
     init(records: RootList) {
@@ -44,7 +71,7 @@ final public class Database {
         nameIndex = buildNameIndex(from: persons)
         dateIndex = buildDateIndex(from: recordIndex)
         placeIndex = buildPlaceIndex(from: recordIndex)
-        refnIndex = RefnIndex()  // TODO: Awaiting change to the index.
+        refnIndex = buildRefnIndex(from: recordIndex)
     }
 }
 
@@ -64,7 +91,7 @@ private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> 
 extension Database {
 
     /// Return new database with random record keys and key references.
-    func rekeyedDatabase() -> Database? {
+    public func rekeyDatabase() -> Database? {
         var rekeyMap: [RecordKey: RecordKey] = [:]  // Old key to new key map.
 
         for (key, root) in recordIndex {  // Create old to new key map.
@@ -77,21 +104,6 @@ extension Database {
             newRoots.append(newRoot)
         }
         return Database(records: newRoots)  // Return new database.
-    }
-
-    /// Rekey a record index into a new index.
-    public func rekeyRecordIndex() -> RecordIndex {
-        var rekeyMap: [RecordKey : RecordKey] = [:]
-
-        for (key, root) in recordIndex {
-            rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
-        }
-        let newRoots = recordIndex.values.map {
-            copyTreeRekeying($0, keyTable: rekeyMap)
-        }
-        return RecordIndex(
-            uniqueKeysWithValues: newRoots.map { ($0.key!, $0) }
-        )
     }
 
     /// Deep copy Gedcom tree rewriting keys and key refs; recurse kids but iterate sibs.

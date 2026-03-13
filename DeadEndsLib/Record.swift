@@ -27,14 +27,14 @@ public protocol Record {
 /// Properties forwarded to the record root.
 public extension Record {
 
-    // Base properties.
+    // Forwarded properties.
     var key: String { root.key! }
     var tag: String { root.tag }
     var val: String? { root.val }
     var kid: GedcomNode? { root.kid }
     var sib: GedcomNode? { root.sib }
 
-    // Retrieval methods.
+    // Forwarded methods.
     func kid(withTag tag: String) -> GedcomNode? { root.kid(withTag: tag) }
     func kid(atPath path: [String]) -> GedcomNode? { root.kid(atPath: path) }
 

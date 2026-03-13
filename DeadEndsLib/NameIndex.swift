@@ -3,7 +3,7 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 12 March 2026.
+//  Last changed on 13 March 2026.
 //
 
 import Foundation
@@ -23,6 +23,8 @@ final public class NameIndex {
 	]
 
 	private(set) var index = [NameKey: Set<RecordKey>]()  // Representation.
+
+    var count: Int { index.count }
 
 	/// Add entry to name index; convert value to name key.
 	public func add(value: String, recordKey: RecordKey) {
@@ -74,8 +76,8 @@ func nameKey(value: String) -> String {
 
 /// Build name index from record list.
 func buildNameIndex(from persons: RootList) -> NameIndex {
-	
     let index = NameIndex()
+
     for person in persons {
         guard let recordKey = person.key
 		else { continue }  // Will succeed.
