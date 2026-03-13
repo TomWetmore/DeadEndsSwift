@@ -190,10 +190,10 @@ extension PersonEditSheet {
         for name in addedNames { db.nameIndex.add(value: name, recordKey: old.key) }
 
         // Update RefnIndex (when implemented)
-        let addedRefns = new.refns.subtracting(old.refns)
-        let removedRefns = old.refns.subtracting(new.refns)
-        for refn in removedRefns { db.refnIndex.remove(refn: refn) }
-        for refn in addedRefns { db.refnIndex.add(refn: refn, key: old.key) }
+//        let addedRefns = new.refns.subtracting(old.refns)
+//        let removedRefns = old.refns.subtracting(new.refns)
+//        for refn in removedRefns { db.refnIndex.remove(refn: refn) }
+//        for refn in addedRefns { db.refnIndex.add(refn: refn, key: old.key) }
 
         // Update the database with the edited person keeping the same Person root.
         old.root.root.replaceChildren(with: new.root.kid)
