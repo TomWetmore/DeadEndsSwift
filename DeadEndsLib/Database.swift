@@ -3,13 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 13 March 2026.
+//  Last changed on 16 March 2026.
 //
 
 import Foundation
 
 public typealias RecordKey = String
-public typealias RecordIndex = [RecordKey: Root]
 public typealias KeyMap = [RecordKey : Int]  // Keys to line numbers.
 public typealias RootList = [Root]
 
@@ -20,10 +19,11 @@ final public class Database: CustomStringConvertible {
     public private(set) var header: GedcomNode?
     public private(set) var persons: RootList = []
     public private(set) var families: RootList = []
-	public var nameIndex: NameIndex
-    public var dateIndex: DateIndex
-    public var placeIndex: PlaceIndex
-	public var refnIndex: RefnIndex
+	public private(set) var nameIndex: NameIndex
+    public private(set) var dateIndex: DateIndex
+    public private(set) var placeIndex: PlaceIndex
+	public private(set) var refnIndex: RefnIndex
+    public private(set) var path: String?
     var dirty: Bool = false
 
     var personCount: Int { persons.count }
@@ -57,8 +57,9 @@ final public class Database: CustomStringConvertible {
     }
 
     /// Create database from array of validated records.
-    init(records: RootList) {
-        recordIndex = [:]
+    init(records: RootList, path: String? = nil) {
+        self.path = path
+        recordIndex = RecordIndex()
         persons = RootList()
         families = RootList()
         header = nil
@@ -77,15 +78,16 @@ final public class Database: CustomStringConvertible {
 
 /// Load database from Gedcom file; if errors no database is created.
 public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? {
-    loadDatabase(from: FileGedcomSource(path: path), errLog: &errlog)
+    loadDatabase(from: FileGedcomSource(path: path), path: path, errLog: &errlog)
 }
 
 /// Load database from source; keyMap used for error messages.
-private func loadDatabase(from source: GedcomSource, errLog: inout ErrorLog) -> Database? {
-    var keyMap = KeyMap()  // Map keys to lines.
+private func loadDatabase(from source: GedcomSource, path: String? = nil,
+                          errLog: inout ErrorLog) -> Database? {
+    var keyMap = KeyMap()
     guard let roots = loadValidRecords(from: source, keyMap: &keyMap, errlog: &errLog)
     else { return nil }
-    return Database(records: roots)
+    return Database(records: roots, path: path)
 }
 
 extension Database {
@@ -155,3 +157,15 @@ public func generateRandomKey(prefix: String, map: [String : String], length: In
         }
     }
 }
+
+extension Database {
+
+    func write(to path: String) {
+         //flatten the database into top-level records
+         //write HEAD if present or synthesize one
+         //write all keyed records in chosen order
+         //write TRLR
+         //atomically write the file
+    }
+}
+

@@ -1,0 +1,110 @@
+
+HEADER:=
+n HEAD {1:1}
++1 SOUR <APPROVED_SYSTEM_ID> {1:1} p.42
++2 VERS <VERSION_NUMBER> {0:1} p.64
++2 NAME <NAME_OF_PRODUCT> {0:1} p.54
++2 CORP <NAME_OF_BUSINESS> {0:1} p.54
++3 <<ADDRESS_STRUCTURE>> {0:1} p.31
+
+ADDRESS_STRUCTURE:=
+n ADDR <ADDRESS_LINE> {1:1} p.41
++1 CONT <ADDRESS_LINE> {0:3} p.41
++1 ADR1 <ADDRESS_LINE1> {0:1} p.41
++1 ADR2 <ADDRESS_LINE2> {0:1} p.41
++1 ADR3 <ADDRESS_LINE3> {0:1} p.41
++1 CITY <ADDRESS_CITY> {0:1} p.41
++1 STAE <ADDRESS_STATE> {0:1} p.42
++1 POST <ADDRESS_POSTAL_CODE> {0:1} p.41
++1 CTRY <ADDRESS_COUNTRY> {0:1} p.41
+n PHON <PHONE_NUMBER> {0:3} p.57
+n EMAIL <ADDRESS_EMAIL> {0:3} p.41
+n FAX <ADDRESS_FAX> {0:3} p.41
+n WWW <ADDRESS_WEB_PAGE> {0:3} p.42
+
+
++2 DATA <NAME_OF_SOURCE_DATA> {0:1} p.54
++3 DATE <PUBLICATION_DATE> {0:1) p.59
++3 COPR <COPYRIGHT_SOURCE_DATA> {0:1) p.44
++4 [CONT|CONC]<COPYRIGHT_SOURCE_DATA> {0:M} p.44
++1 DEST <RECEIVING_SYSTEM_NAME> {0:1* p.59
++1 DATE <TRANSMISSION_DATE> {0:1} p.63
++2 TIME <TIME_VALUE> {0:1} p.63
++1 SUBM @<XREF:SUBM>@ {1:1} p.28
+
+n @XREF:SUBN@ SUBN {1:1}
++1 SUBM @XREF:SUBM@ {0:1} p.28
++1 FAMF <NAME_OF_FAMILY_FILE> {0:1} p.54
++1 TEMP <TEMPLE_CODE> {0:1} p.63
++1 ANCE <GENERATIONS_OF_ANCESTORS> {0:1} p.50
++1 DESC <GENERATIONS_OF_DESCENDANTS> {0:1} p.50
++1 ORDI <ORDINANCE_PROCESS_FLAG> {0:1} p.57
++1 RIN <AUTOMATED_RECORD_ID> {0:1} p.43
++1 <<NOTE_STRUCTURE>> {0:M} p.37
++1 <<CHANGE_DATE>> {0:1} p.31
+
+
++1 SUBN @<XREF:SUBN>@ {0:1} p.28
+
+n @<XREF:SUBM>@ SUBM {1:1}
++1 NAME <SUBMITTER_NAME> {1:1} p.63
++1 <<ADDRESS_STRUCTURE>> {0:1}* p.31
++1 <<MULTIMEDIA_LINK>> {0:M} p.37, 26
++1 LANG <LANGUAGE_PREFERENCE> {0:3} p.51
++1 RFN <SUBMITTER_REGISTERED_RFN> {0:1} p.63
++1 RIN <AUTOMATED_RECORD_ID> {0:1} p.43
++1 <<NOTE_STRUCTURE>> {0:M} p.37
++1 <<CHANGE_DATE>> {0:1} p.31
+
+
++1 FILE <FILE_NAME> {0:1} p.50
++1 COPR <COPYRIGHT_GEDCOM_FILE> {0:1} p.44
++1 GEDC {1:1}
++2 VERS <VERSION_NUMBER> {1:1} p.64
++2 FORM <GEDCOM_FORM> {1:1} p.50
++1 CHAR <CHARACTER_SET> {1:1} p.44
++2 VERS <VERSION_NUMBER> {0:1} p.64
++1 LANG <LANGUAGE_OF_TEXT> {0:1} p.51
++1 PLAC {0:1}
++2 FORM <PLACE_HIERARCHY> {1:1} p.58
++1 NOTE <GEDCOM_CONTENT_DESCRIPTION> {0:1} p.50
+23
++2 [CONC|CONT] <GEDCOM_CONTENT_DESCRIPTION> {0:M}
+
+PLACE_HIERARCHY:= {Size=1:120}
+This shows the jurisdictional entities that are named in a sequence from the lowest to the highest
+jurisdiction. The jurisdictions are separated by commas, and any jurisdiction's name that is missing is
+still accounted for by a comma. When a PLAC.FORM structure is included in the HEADER of a
+GEDCOM transmission, it implies that all place names follow this jurisdictional format and each
+jurisdiction is accounted for by a comma, whether the name is known or not. When the PLAC.FORM
+is subordinate to an event, it temporarily overrides the implications made by the PLAC.FORM
+structure stated in the HEADER. This usage is not common and, therefore, not encouraged. It should
+only be used when a system has over-structured its place-names.
+
+0 HEAD
+  1 SOUR DeadEnds
+    2 VERS 0.0.1
+    2 NAME DeadEnds
+    2 CORP DeadEnds Software
+      3 <<ADDRESS_STRUCTURE>> {0:1} p.31
+    2 DATA <NAME_OF_SOURCE_DATA> {0:1} p.54
+      3 DATE <PUBLICATION_DATE> {0:1) p.59
+      3 COPR copyritght statement
+        4 [CONT|CONC]
+1 DEST receiving system name
+1 DATE transmmission date
+  2 TIME transmission time
+1 SUBM @I...@
+1 SUBN @<XREF:SUBN>@
+1 FILE file name
+1 COPR copyright of gedcom file
+1 GEDC
+  2 VERS Gedcom version
+  2 FORM LINEAGE-LINKED
+    1 CHAR UTF-8
+  2 VERS Gedcom version?
+1 LANG language of text
+1 PLAC {0:1}
+  2 FORM place hierarchy
+1 NOTE Gedcom content description
+  2 [CONC|CONT]

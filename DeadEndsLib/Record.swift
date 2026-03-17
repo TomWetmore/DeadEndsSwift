@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 9 March 2026.
+//  Last changed on 16 March 2026.
 //
 
 import Foundation
@@ -44,16 +44,6 @@ public extension Record {
     func kids(withTag tag: String) -> [GedcomNode] { root.kids(withTag: tag) }
     func kidVals(forTag tag: String) -> [String] { root.kidVals(forTag: tag) }
     func kidVals(forTags tags: [String]) -> [String] {root.kidVals(forTags: tags) }
-}
-
-/// Extension for record retrieval from indexes.
-extension Dictionary where Key == String, Value == GedcomNode {
-
-    /// Create person from root.
-    public func person(for key: String) -> Person? { self[key].flatMap(Person.init) }
-
-    /// Create family from root.
-    public func family(for key: String) -> Family? { self[key].flatMap(Family.init) }
 }
 
 /// Foward useful methods to the Gedcom node level.

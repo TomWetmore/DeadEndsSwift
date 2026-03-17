@@ -3,7 +3,7 @@
 //  DeadEndsTest
 //
 //  Created by Thomas Wetmore on 4 September 2025.
-//  Last changed on 13 March 2026.
+//  Last changed on 16 March 2026.
 //
 
 import Foundation
@@ -29,6 +29,16 @@ func runTestOne() throws {
         throw RuntimeError.missingDatabase("Could not load Gedcom file into database.")
     }
     print("Database loaded successfully\n\(database)")
+    print("Make partitions")
+    let partitions: [[Root]] = database.myRecordIndex.getPartitions(persons: database.persons)
+    let sortedPartitions = partitions.sorted { $0.count > $1.count }
+    print("There are \(partitions.count) partitions.\n")
+    var sum = 0
+    for partition in sortedPartitions {
+        print("\(partition.count) persons")
+        sum += partition.count
+    }
+    print("There are a total of \(sum) persons.")
 
     // Test deep copying: get an array of deep copies of all the nodes.
     let copies: RootList = deepCopies(index: database.recordIndex)

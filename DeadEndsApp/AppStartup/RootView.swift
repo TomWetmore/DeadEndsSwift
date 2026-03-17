@@ -30,7 +30,7 @@ enum Route: Hashable {
 
 /// Put the record index into the SwiftUI environment.
 private struct RecordIndexKey: EnvironmentKey {
-    static let defaultValue: RecordIndex = [:]
+    static let defaultValue: RecordIndex = RecordIndex()
 }
 extension EnvironmentValues {
     var recordIndex: RecordIndex {
@@ -97,6 +97,6 @@ struct RootView: View {
                 }
             }
         }
-        .environment(\.recordIndex, model.database?.recordIndex ?? [:])
+        .environment(\.recordIndex, model.database?.recordIndex ?? RecordIndex())
     }
 }

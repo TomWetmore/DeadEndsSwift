@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 12 March 2026.
+//  Last changed on 16 March 2026.
 //
 
 import Foundation
@@ -14,8 +14,8 @@ typealias StringSet = Set<String>
 func validateRecords(roots: RootList, context: ValidationContext, errlog: ErrorLog) {
     for root in roots {
         switch root.tag {
-        case "INDI": root.validatePerson(context: context, errlog: errlog)
-        //case "FAM": root.validateFamily(context: context, errlog: errlog)
+        case GedcomTag.INDI: root.validatePerson(context: context, errlog: errlog)
+        //case GedcomTag.FAM: root.validateFamily(context: context, errlog: errlog)
         default: break
         }
     }
@@ -24,7 +24,7 @@ func validateRecords(roots: RootList, context: ValidationContext, errlog: ErrorL
 // validatePersons validates the persons in a RootList.
 func validatePersons(roots: RootList, context: ValidationContext, errlog: ErrorLog) {
     for root in roots {
-        if root.tag != "INDI" { continue }
+        if root.tag != GedcomTag.INDI { continue }
         root.validatePerson(context: context, errlog: errlog)
     }
 }
@@ -221,137 +221,6 @@ extension GedcomNode {
 		return found
 	}
 }
-// END FROM CHAT
-
-// validatePerson validates a person. Persons must have at least one NAME and one SEX line with
-// valid values. All FAMC and FAMS links must link to families that link back to the person.
-//func oldValidatePerson(person: Node, index: RecordIndex, source: String, keymap: KeyMap,
-//					errlog: inout ErrorLog) {
-//	var errorCount = 0
-//	var hasValidName = false
-//	var hasValidSex = false
-//	var numsexlines = 0
-//	if (person.key == nil) { fatalError("Person with no key encountered.") }
-//	let pkey = person.key!
-//	let line = keymap[pkey]! // Location of person in its source.
-//
-//	// Pass one: validate NAME and SEX nodes.
-//	var curnode = person.firstChild
-//	while let node = curnode {
-//		switch node.tag {
-//		case "NAME":
-//			if let value = node.value, !value.isEmpty {
-//				hasValidName = true
-//			} else {
-//				let errorMessage = "INDI \(pkey) has an empty NAME line."
-//				let offset = line + node.offset()
-//				errlog.append(Error(type: .validate, severity: .severe, line: offset,
-//									  message: errorMessage))
-//				errorCount += 1
-//			}
-//		case "SEX":
-//			numsexlines += 1
-//			if let value = node.value, ["M", "F", "U"].contains(value) {
-//				hasValidSex = true
-//			} else {
-//				let errorMessage = "INDI \(pkey) has an invalid SEX line."
-//				let line = keymap[pkey]! + node.offset()
-//				errlog.append(Error(type: .validate, severity: .severe, line: line,
-//									  message: errorMessage))
-//				errorCount += 1
-//			}
-//		default:
-//			break
-//		}
-//		curnode = node.nextSibling
-//	}
-//	if !hasValidName {
-//		let errorMessage = "INDI \(pkey) is missing a NAME line."
-//		errlog.append(Error(type: .validate, severity: .severe, message: errorMessage))
-//		errorCount += 1
-//	}
-//	if !hasValidSex {
-//		let errorMessage = "INDI \(pkey) is missing a SEX line."
-//		errlog.append(Error(type: .validate, severity: .severe, message: errorMessage))
-//		errorCount += 1
-//	} else if numsexlines != 1 {
-//		let errmsg = "INDI \(pkey) has more than one SEX line."
-//		errlog.append(Error(type: .validate, severity: .severe, source: source, line: line, message: errmsg))
-//	}
-//
-//	// Pass two: validate FAMC and FAMS links
-//	var famcKeys: Set<String> = []
-//	var famsKeys: Set<String> = []
-//	curnode = person.firstChild
-//	while let node = curnode {
-//		switch node.tag {
-//		case "FAMC":
-//			guard let fkey = node.value else {
-//				let errmsg = "INDI \(pkey) has an illegal FAMC link"
-//				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-//									line: line + node.offset(), message: errmsg))
-//				errorCount += 1
-//				break
-//			}
-//			guard !famcKeys.contains(fkey) else {
-//				let errmsg = "INDI \(pkey) has duplicate FAMC link"
-//				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-//									line: line + node.offset(), message: errmsg))
-//				errorCount += 1
-//				break
-//			}
-//			famcKeys.insert(fkey)
-//			guard let family = index[fkey] else {
-//				let errmsg = "INDI \(pkey) has an illegal FAMC link"
-//				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-//									line: line + node.offset(), message: errmsg))
-//				errorCount += 1
-//				break
-//			}
-//			if !family.hasChildLink(to: person) {
-//				let errmsg = "INDI \(pkey) has FAMC link to \(fkey) that does not link back as child."
-//				errlog.append(Error(type: .linkage, severity: .severe, message: errmsg))
-//				errorCount += 1
-//				break
-//			}
-//		case "FAMS":
-//			guard let fkey = node.value else {
-//				let errmsg = "INDI \(pkey) has an illegal FAMS link"
-//				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-//									  line: line + node.offset(), message: errmsg))
-//				errorCount += 1
-//				break
-//			}
-//			guard !famsKeys.contains(fkey) else {
-//				let errmsg = "INDI \(pkey) has duplicate FAMS link"
-//				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-//									line: line + node.offset(), message: errmsg))
-//				errorCount += 1
-//				break
-//			}
-//			famsKeys.insert(fkey)
-//			guard let family = index[fkey] else {
-//				let errmsg = "INDI \(pkey) has an illegal FAMS link"
-//				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-//									line: line + node.offset(), message: errmsg))
-//				errorCount += 1
-//				break
-//			}
-//			if !family.hasSpouseLink(to: person) {
-//				let errmsg = "INDI \(pkey) has FAMS link to \(fkey) that does not link back as spouse."
-//				errlog.append(Error(type: .linkage, severity: .severe, source: source,
-//									line: line + node.offset(), message: errmsg))
-//				errorCount += 1
-//				break
-//			}
-//			break
-//		default:
-//			break
-//		}
-//		curnode = node.nextSibling
-//	}
-//	return
-//}
 
 // Extensions and Helpers
 extension GedcomNode {
@@ -367,7 +236,7 @@ extension GedcomNode {
 		return false
 	}
 
-	// hasSpouseLine checks whether the family (self) has a proper HUSB or WIFE link to the person.
+	/// Checks whether the family (self) has a proper HUSB or WIFE link to the person.
 	func hasSpouseLink(to person: GedcomNode) -> Bool {
 		let family = self // self is a family root.
 		let sex = person.getSex()

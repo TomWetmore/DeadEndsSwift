@@ -50,7 +50,7 @@ struct DescendantsPage: View {
 
     /// Build descendant tree and return root; guard against cycles.
     private func buildTree(from person: Person) -> DescendantNode {
-        let index = index ?? [:]
+        let index = index ?? RecordIndex()
 
         /// Recursive helper.
         func rec(_ person: Person, path: Set<RecordKey>) -> DescendantNode {

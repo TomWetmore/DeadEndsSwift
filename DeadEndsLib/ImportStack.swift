@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 12 March 2026.
+//  Last changed on 16 March 2026.
 //
 
 import Foundation
@@ -65,7 +65,7 @@ func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
     checkKeysAndReferences(records: roots, path: source.name, keymap: keyMap, errlog: errlog)
 
     // Need index for inter-record validation.
-    var index: RecordIndex = [:]
+    var index = RecordIndex()
     for root in roots {
         if let key = root.key { index[key] = root }
     }

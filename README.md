@@ -1,18 +1,16 @@
-# DeadEndsSwift
+# DeadEnds Swift
 
-DeadEndsSwift is a macOS genealogy software system written in Swift. It consists of a core genealogical library, a SwiftUI-based application, and some command line programs that use the library.
+DeadEndsSwift is a macOS genealogy software system written in Swift. It has a core genealogical library, a SwiftUI-based application for macOS and eventually iPad, and some command line programs.
 
-DeadEnds is the successor to my C-based DeadEnds project, which was the successor to my C-based LifeLines program written in the 1990's. DeadEnds Swift supports reading Gedcom files, building an in-memory genealogical database, and visualizing family relationships.
-
-In the rest of this file DeadEnds always means DeadEnds Swift, unless DeadEnds C is used directly.
+DeadEnds is the successor to the DeadEnds C project, which succeeded my LifeLines C program from the 1990's. DeadEnds supports reading Gedcom files, building an in-memory database, and visualizing family relationships.
 
 ## Features
-- Reads Gedcom files into internal (in-RAM) databases. DeadEnds can read Gedcom files from any standard that uses the normal lineage-linking tags (FAMS, FAMC, HUSB, WIFE, CHIL), and a few other standard tags (NAME, SEX, BIRT, DEAT, MARR, DATE, PLAC, SOUR, ...). DeadEnds uses Gedcom files as backing store for its databases when the program is not running. DeadEnds thinks of Gedcom files as snoozing databases.
-- Displays Person, Family, Pedigree, and other views. The SwiftUI app features a number of views and screens. These are under active development.
-- One exciting screen is the Desktop view, in which persons show up in the form of index cards that can be moved and manipulated on the Desktop. I hope to continue developing this metaphor, as it represents ideas formulated more than 40 years ago when I had not the time to work on them.
-- Supports editing of genealogical data -- adding, deleting and modifying records, adding, removing and changing family relationships.
-- Supports searching. LifeLines supports search by name only, as each index in LifeLines requires custom records in the database and custom data structures at run time. With DeadEnds there is no persistent database, and there is a rich set of container structures, so writing date and place indexes is easy, so DeadEnds search can use names, dates, and/or places.
-- Supports an internal scripting language. The scripting language is nearly identical to that of the LifeLines scripting language. Current access to this feature is a little awkward becuase I have not had the time to fashion a Swift parser for the scripting language (the C version used yacc). There is a patch for this however. I have written a yacc-based (same yacc file used by LifeLines) C program that parses LifeLines scripts and converts them to S-expressions (Lisp). DeadEnds Swift has a command line program that reads the S-expressions, converts them to an abstract syntax tree matching that of LifeLines, and then interprets the scripts. This is a proof of concept only, though it works.
+- Reads Gedcom files into in-RAM databases. DeadEnds can read Gedcom files from any standard that uses the normal lineage-linking tags (FAMS, FAMC, HUSB, WIFE, CHIL), and a few other standard tags (NAME, SEX, BIRT, DEAT, MARR, DATE, PLAC, SOUR). DeadEnds uses Gedcom files as its backing store when it is not running.
+- The SwiftUI app displays Person, Family, Pedigree, and other pages. The views making up the SwiftUI app are numerous though the UI is still being developed.
+- One exciting page is the Desktop, in which persons show up as index cards that are moved and manipulated. I continue developing this metaphor; it uses ideas formulated more than 40 years ago when I began writing genealogical software.
+- Supports editing of genealogical data -- adding, deleting and modifying records, adding, removing and changing family relationships. Because the records are Gedcom-based trees, I am experimenting with two editing metaphors -- edit the Gedcom record as pure text, or edit the Gedcom record as a tree. Examples of both styles are implemented.
+- Supports searching. LifeLines uses a name index to provide searching by name. DeadEnds extends this by adding date and place indexes. DeadEnds can search based on name and/or time and place of vital events.
+- Supports a builtin scripting language nearly identical to one in LifeLines. Current access to the feature is a bit awkward becuase I have not written Swift parser for the scripting language (LifeLines used yacc). There is a workaround. I wrote a yacc-based C program that parses LifeLines scripts that converts them to S-expressions ("Lisp"). DeadEnds Swift has a command program that reads the S-expressions, converts them to abstract syntax tre matching those of LifeLines, and then interprets the scripts with a database. Though really a proof of concept, it works.
 
 ## Targets
 
@@ -36,9 +34,9 @@ Currently under active development. All versions found at GitHub should compile 
 
 ### Building
 
-DeadEndsSwift is a found in the GitHub repository: TomWetmore/DeadEndsSwift. Though under development I try to keep the two 'important' targets buildable at all times.
+DeadEndsSwift is packaged in GitHub repository: TomWetmore/DeadEndsSwift. Though under development I keep the targets buildable and runnable at all times.
 
-After you pull the repository, those two targets should be built. DeadEndsLib is the library, and DeadEndsApp is the SwiftUI app. I assume you will Xcode on a Mac to build them. There are other ways, but I don't know much about them. ChatGPT can guide you.
+After you pull the repository, the main two targets to build are DeadEndsLib, the underlying genealogical library, and DeadEndsApp, the SwiftUI app. Swift is an open source language available on macOS, Linux and Windows; on the other hand SwiftUI is Apple propritary. I assume you will pull the repository into an Xcode project on a mac, where it will build immediately. If you wish to work on a non-Apple platform, the DeadEndsLib should build natively anywhere. You're then on your own for attaching a user interface.
 
 ### Starting the App
 
