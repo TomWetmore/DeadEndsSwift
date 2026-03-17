@@ -30,7 +30,7 @@ func runTestOne() throws {
     }
     print("Database loaded successfully\n\(database)")
     print("Make partitions")
-    let partitions: [[Root]] = database.myRecordIndex.getPartitions(persons: database.persons)
+    let partitions: [[Root]] = database.recordIndex.getPartitions(persons: database.persons)
     let sortedPartitions = partitions.sorted { $0.count > $1.count }
     print("There are \(partitions.count) partitions.\n")
     var sum = 0
