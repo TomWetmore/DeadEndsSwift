@@ -3,7 +3,7 @@
 //  DeadEndsTest
 //
 //  Created by Thomas Wetmore on 4 September 2025.
-//  Last changed on 16 March 2026.
+//  Last changed on 17 March 2026.
 //
 
 import Foundation
@@ -30,7 +30,7 @@ func runTestOne() throws {
     }
     print("Database loaded successfully\n\(database)")
     print("Make partitions")
-    let partitions: [[Root]] = database.recordIndex.getPartitions(persons: database.persons)
+    let partitions = database.partitions(includeFamilies: true)
     let sortedPartitions = partitions.sorted { $0.count > $1.count }
     print("There are \(partitions.count) partitions.\n")
     var sum = 0
@@ -39,6 +39,24 @@ func runTestOne() throws {
         sum += partition.count
     }
     print("There are a total of \(sum) persons.")
+    let mememe = database.recordIndex.person(for: "@I1@")
+    if let mememe = mememe {
+        print(mememe)
+        let ancestors = database.recordIndex.ancestors(of: mememe)
+        print("There are \(ancestors.count) ancestors")
+        for ancestor in ancestors {
+            print(ancestor.displayName())
+        }
+        print("numAncestors: \(database.recordIndex.numAncestors(of: mememe))")
+
+
+        let descendants = database.recordIndex.descendants(of: mememe)
+        print("There are \(descendants.count) descendants")
+        for descendant in descendants {
+            print(descendant.displayName())
+        }
+        print("numDescendants: \(database.recordIndex.numDescendants(of: mememe))")
+    }
 
     // Test deep copying: get an array of deep copies of all the nodes.
     let copies: RootList = deepCopies(index: database.recordIndex)

@@ -49,3 +49,20 @@ extension RecordIndex {
     /// Create family from root.
     public func family(for key: String) -> Family? { self[key].flatMap(Family.init) }
 }
+
+extension RecordIndex {
+
+    /// Return all persons with a set of roles in the family in Gedcom order.
+    private func people(in family: Family, roles: Set<FamilyRoleTag>) -> [Person] {
+        var out: [Person] = []
+        var seen = Set<RecordKey>()
+
+        for node in family.root.kids {
+            guard roles.contains(where: { $0.rawValue == node.tag }) else { continue }
+            guard let key = node.val else { continue }
+            guard seen.insert(key).inserted else { continue }
+            if let person = person(for: key) { out.append(person) }
+        }
+        return out
+    }
+}

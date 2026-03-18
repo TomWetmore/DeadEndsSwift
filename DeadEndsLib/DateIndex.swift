@@ -37,26 +37,25 @@ final public class DateIndex {
         }
     }
 
-    /// Get the set of record keys for a year and event.
+    /// Get the record keys for a year and event.
     public func recordKeys(year: Year, event: EventKind) -> Set<RecordKey>? {
-        let dateIndexKey = DateIndexKey(year: year, event: event)
-        return recordKeys(for: dateIndexKey)
+        recordKeys(for: DateIndexKey(year: year, event: event))
     }
 
-    /// Get the set of record keys for a date index key.
+    /// Get the record keys for a date index key.
     public func recordKeys(for dateIndexKey: DateIndexKey) -> Set<RecordKey>? {
-        return index[dateIndexKey]
+        index[dateIndexKey]
     }
 
-    /// Get the set of record keys for a year range and event.
+    /// Get the record keys for a year range and event.
     public func recordKeys(in range: ClosedRange<Year>, event: EventKind) -> Set<RecordKey> {
-        var out = Set<RecordKey>()
+        var keys = Set<RecordKey>()
         for year in range {
             if let keySet = recordKeys(year: year, event: event) {
-                out.formUnion(keySet)
+                keys.formUnion(keySet)
             }
         }
-        return out
+        return keys
     }
 }
 
