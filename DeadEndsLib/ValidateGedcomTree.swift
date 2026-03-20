@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 4 October 2025.
-//  Last changed on 4 October 2025.
+//  Last changed on 20 March 2026.
 //
 
 import Foundation
@@ -13,7 +13,7 @@ import Foundation
 ///   - root: The root node to validate.
 ///   - seen: Internal set to track visited nodes (for cycle detection).
 /// - Returns: An array of error messages. Empty = valid.
-public func validateTree(root: GedcomNode, seen: inout Set<ObjectIdentifier>) -> [String] {
+public func validateTree(root: Root, seen: inout Set<ObjectIdentifier>) -> [String] {
     var errors: [String] = []
     let id = ObjectIdentifier(root)
 
@@ -43,7 +43,7 @@ public func validateTree(root: GedcomNode, seen: inout Set<ObjectIdentifier>) ->
 }
 
 /// Convenience wrapper
-public func validateTree(root: GedcomNode) -> [String] {
+public func validateTree(root: Root) -> [String] {
     var seen = Set<ObjectIdentifier>()
     return validateTree(root: root, seen: &seen)
 }

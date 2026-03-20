@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 2 January 2025.
-//  Last changed 12 March 2026.
+//  Last changed 20 March 2026.
 //
 
 import Foundation
@@ -18,7 +18,7 @@ func validateFamilies(families: RootList, index: RecordIndex, source: String, ke
 	}
 }
 
-func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keymap: KeyMap, errlog: inout ErrorLog) {
+func validateFamily(family: Root, index: RecordIndex, source: String, keymap: KeyMap, errlog: inout ErrorLog) {
 
 	if (family.key == nil) { fatalError("Family with no key.") }
 	let fkey = family.key!
@@ -127,7 +127,7 @@ func validateFamily(family: GedcomNode, index: RecordIndex, source: String, keym
 }
 
 // Extensions
-extension GedcomNode {
+extension Root {
 
 	// 1. Self is the person who must have a FAMC or FAMS link to the family.
 	// 2. Iterate the children of the person looking for a FAMC or FAMC link to the family key.

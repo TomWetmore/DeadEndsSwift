@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 12 March 2026.
+//  Last changed on 20 March 2026.
 //
 
 import Foundation
@@ -76,7 +76,7 @@ extension String {
 }
 
 /// Get record kind from root tag.
-extension GedcomNode {
+extension Root {
     func recordKind() -> RecordKind {
         switch self.tag {
         case GedcomTag.INDI:

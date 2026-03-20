@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 8 November 2025.
-//  Last changed on 26 November 2025.
+//  Last changed on 20 March 2026.
 //
 
 import SwiftUI
@@ -12,7 +12,7 @@ import DeadEndsLib
 
 /// View that displays a Gedcom tree.
 struct GedcomTreeDisplay: View {
-    let root: GedcomNode
+    let root: Root
     var tint: Color = .primary
 
     @State private var expanded: Set<UUID> = []

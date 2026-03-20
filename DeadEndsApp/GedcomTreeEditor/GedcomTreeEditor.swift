@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 2 October 2025.
-//  Last changed on 6 March 2026.
+//  Last changed on 20 March 2026.
 
 /// GedcomTreeEditor is a SwiftUI view that renders a Gedcom node tree. This
 /// view is a scrolling vertical stack of GedcomTreeEditorRows. The row view
@@ -22,7 +22,7 @@ import DeadEndsLib
 struct GedcomTreeEditor: View {
     @Bindable var viewModel: GedcomTreeEditorModel
     let manager: GedcomTreeManager
-    var root: GedcomNode
+    var root: Root
 
     /// Render the Gedcom tree editor.
     var body: some View {

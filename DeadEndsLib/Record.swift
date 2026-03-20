@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 16 March 2026.
+//  Last changed on 20 March 2026.
 //
 
 import Foundation
@@ -20,7 +20,7 @@ enum RecordKind: String {
 
 /// Record protocol; allow person, family, etc, to be types.
 public protocol Record {
-    var root: GedcomNode { get }  // Record root.
+    var root: Root { get }  // Record root.
     var key: String { get }  // Record key.
 }
 

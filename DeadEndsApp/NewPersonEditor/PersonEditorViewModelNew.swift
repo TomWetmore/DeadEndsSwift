@@ -25,7 +25,7 @@ final class PersonEditorViewModelNew: ObservableObject {
 
     // Backing person record + root node
     private(set) var person: Person
-    @Published private(set) var root: GedcomNode
+    @Published private(set) var root: Root
 
     init(person: Person) {
         self.person = person
@@ -60,14 +60,14 @@ final class PersonEditorViewModelNew: ObservableObject {
         objectWillChange.send()
     }
 
-    func addSibling(to node: GedcomNode) {
-        let newSibling = GedcomNode(tag: "NEW")
+    func addSibling(to node: Root) {
+        let newSibling = Root(tag: "NEW")
         node.addSib(newSibling)
         expanded.insert(node.id)
         objectWillChange.send()
     }
 
-    func remove(_ node: GedcomNode) {
+    func remove(_ node: Root) {
         node.removeKid()
         objectWillChange.send()
     }

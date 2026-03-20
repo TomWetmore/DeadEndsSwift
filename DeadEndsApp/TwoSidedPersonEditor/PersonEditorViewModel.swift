@@ -35,7 +35,7 @@ final class PersonEditorViewModel: ObservableObject {
     private(set) var person: Person
 
     // The live root node is rebuilt on demand
-    @Published private(set) var root: GedcomNode
+    @Published private(set) var root: Root
 
     // MARK: - Initialization
     init(person: Person) {

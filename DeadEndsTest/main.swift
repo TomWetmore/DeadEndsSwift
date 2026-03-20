@@ -30,15 +30,15 @@ func runTestOne() throws {
     }
     print("Database loaded successfully\n\(database)")
     print("Make partitions")
-    let partitions = database.partitions(includeFamilies: true)
+    let partitions = database.partitions(includeFamilies: false)
     let sortedPartitions = partitions.sorted { $0.count > $1.count }
     print("There are \(partitions.count) partitions.\n")
     var sum = 0
     for partition in sortedPartitions {
-        print("\(partition.count) persons")
+        print("\(partition.count) records")
         sum += partition.count
     }
-    print("There are a total of \(sum) persons.")
+    print("There are a total of \(sum) records.")
     let mememe = database.recordIndex.person(for: "@I1@")
     if let mememe = mememe {
         print(mememe)
@@ -56,6 +56,13 @@ func runTestOne() throws {
             print(descendant.displayName())
         }
         print("numDescendants: \(database.recordIndex.numDescendants(of: mememe))")
+    }
+    // Show the connect data for the first (large) partition.
+    let partition = sortedPartitions.first!
+    let connectData = database.recordIndex.connections(partition: partition)
+    print("There are \(connectData.count) connections.")
+    for (key, data) in connectData {
+        print("\(key): \(data)")
     }
 
     // Test deep copying: get an array of deep copies of all the nodes.

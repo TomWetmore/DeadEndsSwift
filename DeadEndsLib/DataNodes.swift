@@ -3,26 +3,26 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 24 February 2026.
+//  Last changed on 20 March 2026.
 //
 
 import Foundation
 
 /// Struct that contains an array of pairs of Gedcom nodes and associated type.
 struct DataNodes<Type> {
-	var nodes: [(GedcomNode, Type)] // Representation.
+	var nodes: [(Root, Type)] // Representation.
 
     /// Create data nodes object with empty array.
 	init() { self.nodes = [] }
 
     /// Create data nodes object from a tuple array.
-    init(from tuples: [(GedcomNode, Type)]) { self.nodes = tuples }
+    init(from tuples: [(Root, Type)]) { self.nodes = tuples }
 
 	/// Add tuple to data nodes.
-	mutating func add(node: GedcomNode, data: Type) { nodes.append((node, data)) }
+	mutating func add(node: Root, data: Type) { nodes.append((node, data)) }
 
 	/// Return the associated value of a node.
-	func getInfo(for node: GedcomNode) -> Type? {
+	func getInfo(for node: Root) -> Type? {
 		return nodes.first { $0.0 === node }?.1
 	}
 
@@ -49,7 +49,7 @@ extension DataNodes: Sequence {
 extension DataNodes: Collection {
 
     typealias Index = Int
-    typealias Element = (GedcomNode, Type)
+    typealias Element = (Root, Type)
 
     var startIndex: Index { nodes.startIndex }
     var endIndex: Index { nodes.endIndex }

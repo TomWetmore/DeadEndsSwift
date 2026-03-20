@@ -16,7 +16,7 @@ public typealias RootList = [Root]
 final public class Database: CustomStringConvertible {
 
 	public internal(set) var recordIndex: RecordIndex
-    public private(set) var header: GedcomNode?
+    public private(set) var header: Root?
     public private(set) var persons: RootList = []
     public private(set) var families: RootList = []
 	public private(set) var nameIndex: NameIndex
@@ -99,7 +99,7 @@ extension Database {
         for (key, root) in recordIndex {  // Create old to new key map.
             rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
         }
-        var newRoots: [GedcomNode] = []
+        var newRoots: [Root] = []
         newRoots.reserveCapacity(recordIndex.count)
         for (_, root) in recordIndex {  // Deep copy records, rewriting keys and references.
             let newRoot = copyTreeRekeying(root, keyTable: rekeyMap)
@@ -113,7 +113,7 @@ extension Database {
         let newNode = GedcomNode(key: rekeyKey(node.key, keyTable: keyTable), tag: node.tag,
                                  val: rekeyVal(node.val, keyTable: keyTable))
         var oldKid = node.kid
-        var prevNewKid: GedcomNode? = nil
+        var prevNewKid: Root? = nil
         while let child = oldKid {
             let newKid = copyTreeRekeying(child, keyTable: keyTable)
             newKid.dad = newNode

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 24 February 2026.
+//  Last changed on 20 March 2026.
 //
 
 import Foundation
@@ -11,10 +11,10 @@ import Foundation
 /// Family structure.
 public struct Family: Record {
 
-    public let root: GedcomNode
+    public let root: Root
 
     /// Create family from a 0 FAM node; fail if tag not FAM or no key.
-    public init?(_ root: GedcomNode) {
+    public init?(_ root: Root) {
         guard root.tag == GedcomTag.FAM, root.key != nil  else { return nil }
         self.root = root
     }

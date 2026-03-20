@@ -20,7 +20,7 @@ struct GedcomEditorPage: View {
     var title: String = "Edit Gedcom Record"
 
     /// Create a Gedcom editor page, which also create the manager and model.
-    init(database: Database, root: GedcomNode) {
+    init(database: Database, root: Root) {
         self.root = root
         _manager = State(initialValue: GedcomTreeManager(database: database, root: root))
     }

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 18 February 2026.
+//  Last changed on 20 March 2026.
 //
 
 import Foundation
@@ -33,10 +33,10 @@ public enum SexType: String {
 /// Person structure.
 public struct Person: Record {
 
-    public let root: GedcomNode
+    public let root: Root
 
     /// Create person. Fail if root is not INDI or has no key.
-    public init?(_ root: GedcomNode) {
+    public init?(_ root: Root) {
         guard root.tag == GedcomTag.INDI, root.key != nil
         else { return nil }
         self.root = root

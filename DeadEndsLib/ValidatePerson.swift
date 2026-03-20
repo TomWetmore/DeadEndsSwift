@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 16 March 2026.
+//  Last changed on 20 March 2026.
 //
 
 import Foundation
@@ -30,7 +30,7 @@ func validatePersons(roots: RootList, context: ValidationContext, errlog: ErrorL
 }
 
 // Methods on Persons.
-extension GedcomNode {
+extension Root {
 
 	// validatePerson is a method that validates a Person. index is a record index; source is the the Gedcom source;
 	// keymap maps record keys to lines in the source; and errlog is the error log.
@@ -104,7 +104,7 @@ extension GedcomNode { // Extension for internal Nodes.
 	// seenkeys is the set of family keys that have been
 	// seen for the person; index is the full record index; source is the record source; line is the location of the
 	// person in the source; and errlog is the error log.
-	private func validateFamilyLink(person: GedcomNode, role: FamilyRole, seenkeys: inout StringSet,
+	private func validateFamilyLink(person: Root, role: FamilyRole, seenkeys: inout StringSet,
 									context: ValidationContext, line: Int, errlog: ErrorLog) {
 		let pkey = person.key! // Must succeed
 		guard let fkey = self.val else { // The node must have a value.
@@ -168,7 +168,7 @@ extension GedcomNode {
 }
 
 // Methods on families.
-extension GedcomNode {
+extension Root {
 
 	func validateReciprocalLink(to personKey: String, for type: FamilyRole, source: String,
 								errlog: ErrorLog) -> Bool {
@@ -226,7 +226,7 @@ extension GedcomNode {
 extension GedcomNode {
 
 	// hasChildLink checks whether the family (self) has a CHIL link to the person.
-	func orighasChildLink(to person: GedcomNode) -> Bool {
+	func orighasChildLink(to person: Root) -> Bool {
 		let family = self // self is a family root.
 		var curnode = family.kid
 		while let node = curnode {
@@ -237,7 +237,7 @@ extension GedcomNode {
 	}
 
 	/// Checks whether the family (self) has a proper HUSB or WIFE link to the person.
-	func hasSpouseLink(to person: GedcomNode) -> Bool {
+	func hasSpouseLink(to person: Root) -> Bool {
 		let family = self // self is a family root.
 		let sex = person.getSex()
 		guard sex != .unknown else {
@@ -252,22 +252,22 @@ extension GedcomNode {
 		return false
 	}
 
-	func famcLinks(recordIndex: RecordIndex) -> [(family: GedcomNode?, key: String, node: GedcomNode)] {
+	func famcLinks(recordIndex: RecordIndex) -> [(family: Root?, key: String, node: Root)] {
 		// Generate FAMC links
 		return [] // Implement based on GNode structure
 	}
 
-	func famsLinks(recordIndex: RecordIndex) -> [(family: GedcomNode?, key: String, node: GedcomNode)] {
+	func famsLinks(recordIndex: RecordIndex) -> [(family: Root?, key: String, node: Root)] {
 		// Generate FAMS links
 		return [] // Implement based on GNode structure
 	}
 
-	func children(recordIndex: RecordIndex) -> [GedcomNode] {
+	func children(recordIndex: RecordIndex) -> [Root] {
 		// Return children of a family node
 		return [] // Implement based on GNode structure
 	}
 
-    public func husband(recordIndex: RecordIndex) -> GedcomNode? {
+    public func husband(recordIndex: RecordIndex) -> Root? {
         // Find the child node tagged "HUSB"
         guard let key = self.kid(withTag: "HUSB")?.val else {
             return nil
@@ -275,7 +275,7 @@ extension GedcomNode {
         return recordIndex[key]
     }
 
-    public func wife(recordIndex: RecordIndex) -> GedcomNode? {
+    public func wife(recordIndex: RecordIndex) -> Root? {
         // Find the child node tagged "HUSB"
         guard let key = self.kid(withTag: "WIFE")?.val else {
             return nil

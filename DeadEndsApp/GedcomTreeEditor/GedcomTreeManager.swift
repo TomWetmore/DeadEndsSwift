@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 4 October 2025.
-//  Last changed on 6 March 3026.
+//  Last changed on 20 March 3026.
 
 /// GedcomTreeManager makes all the actual changes to the Gedcom tree being
 /// edited. It applies changes to the underlying Gedcom node structures while
@@ -38,7 +38,7 @@ final class GedcomTreeManager {
     private var redoStack: [EditDelta] = []
 
     /// Create manager by initializing the record index and tree model.
-    init(database: Database, root: GedcomNode) {
+    init(database: Database, root: Root) {
         self.recordIndex = database.recordIndex
         self.treeModel = GedcomTreeEditorModel(root: root)
     }

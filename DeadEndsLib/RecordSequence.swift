@@ -3,68 +3,92 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 21 January 2026.
+//  Last changed on 20 March 2026.
 //
 
 import Foundation
 
-// Specify how a sequence is sorted.
+/// A record squence is in one of three sorted states.
 enum SortType {
-	case notSorted
-	case keySorted
-	case nameSorted
+    case notSorted
+    case keySorted
+    case nameSorted
 }
 
-// Element in a record sequence.
+/// Element in a record sequence.
 struct SequenceElement: Hashable {
-	let node: GedcomNode
-	let key: String
-	let name: String?
+    let node: Root
+    let key: String
+    let name: String?
 
     /// Check if two sequence elements are equal.
-	static func == (lhs: SequenceElement, rhs: SequenceElement) -> Bool {
-		return lhs.key == rhs.key && lhs.name == rhs.name
-	}
+    static func == (lhs: SequenceElement, rhs: SequenceElement) -> Bool {
+        return lhs.key == rhs.key
+    }
 
-	/// Hash a sequence element.
-	func hash(into hasher: inout Hasher) {
-		hasher.combine(key)
-		hasher.combine(name)
-	}
+    /// Hash a sequence element. Key is enough.
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(key)
+    }
+
+    /// Compare two elements for name sorting.
+    func nameSortsBefore(_ other: SequenceElement) -> Bool {
+        let lhsName = GedcomName(from: node)
+        let rhsName = GedcomName(from: other.node)
+
+        switch (lhsName, rhsName) {
+        case let (lhs?, rhs?):
+            if lhs < rhs { return true }
+            if rhs < lhs { return false }
+            return key < other.key
+        case (_?, nil):
+            return true      // named before unnamed
+        case (nil, _?):
+            return false     // unnamed after named
+        case (nil, nil):
+            return key < other.key
+        }
+    }
 }
 
-/// Sequence of record elements.
-class RecordSequence: Collection {
+/// Sequence of record elements. The underlying representation is an array
+/// of sequence elements. What does Collection get:
+///   Element, Index, startIndex, endIndex, Iterator
+final class RecordSequence: Collection {
     typealias Index = Int
     typealias Element = SequenceElement
 
     private var elements: [SequenceElement] = []
     var sortType: SortType = .notSorted
-    var unique: Bool = false  // Remove dupes.
+    var unique: Bool = true
 
-    // Collection requirements.
     var startIndex: Int { elements.startIndex }
     var endIndex: Int { elements.endIndex }
 
-    func index(after i: Int) -> Int {
-        elements.index(after: i)
-    }
+    func index(after i: Int) -> Int { elements.index(after: i) }
 
-    subscript(position: Int) -> SequenceElement {
-        elements[position]
-    }
+    subscript(position: Int) -> SequenceElement { elements[position] }
 
-    /// Append existing element to sequence.
+    var count: Int { elements.count }
+    var isEmpty: Bool { elements.isEmpty }
+
+    /// Append existing sequence element to sequence.
     func append(_ element: SequenceElement) {
         elements.append(element)
     }
 
-	/// Append new element to sequence.
-    func append(root: GedcomNode, key: String, name: String? = nil) {
-        let element = SequenceElement(node: root, key: key, name: name)
-        append(element)
+    /// Append new sequence element to sequence.
+    func append(root: Root, key: String, name: String? = nil) {
+        append(SequenceElement(node: root, key: key, name: name))
     }
 
+    /// Return copy of a record sequence.
+    /// This method creates a distinct new RecordSequence object whose content
+    /// and state match the original. The elements array is copied by value,
+    /// but because Swift arrays use copy-on-write, the old and new sequences will
+    /// usually share underlying array storage until one of them is mutated.
+    /// The metadata fields sortType and unique are copied as-is, under the
+    /// assumption that they correctly describe the state of the original sequence.
     func copy() -> RecordSequence {
         let copy = RecordSequence()
         copy.elements = self.elements
@@ -73,10 +97,33 @@ class RecordSequence: Collection {
         return copy
     }
 
-    func isInSequence(key: String) -> Bool {
-        elements.contains { $0.key == key }
+    /// Check if a sequence contains an element with a specific key.
+    func isInSequence(key: RecordKey) -> Bool {
+        switch sortType {
+        case .keySorted:  // Binary search if sequence is key sorted.
+            var low = 0
+            var high = elements.count
+
+            while low < high {
+                let mid = (low + high) / 2
+                let midKey = elements[mid].key
+
+                if key == midKey {
+                    return true
+                } else if key < midKey {
+                    high = mid
+                } else {
+                    low = mid + 1
+                }
+            }
+            return false
+
+        default:
+            return elements.contains { $0.key == key }  // Otherwise linear search.
+        }
     }
 
+    /// Remove an element with a specific key from a sequence.
     func remove(key: String) -> Bool {
         if let index = elements.firstIndex(where: { $0.key == key }) {
             elements.remove(at: index)
@@ -85,36 +132,25 @@ class RecordSequence: Collection {
         return false
     }
 
+    /// Sort a record sequence by key.
     func keySort() {
         elements.sort { $0.key < $1.key }
         sortType = .keySorted
     }
 
-    func nameSort() {
-        elements.sort { ($0.name ?? "") < ($1.name ?? "") }
+    /// Sort a record sequence by name.
+    /// TODO: There is very likely a much better way to do this now. TODO.
+    //    func nameSort() {
+    //        elements.sort { ($0.name ?? "") < ($1.name ?? "") }
+    //        sortType = .nameSorted
+    //    }
+
+    func sortByName() {
+        elements.sort { $0.nameSortsBefore($1) }
         sortType = .nameSorted
     }
 
-    func union(_ other: RecordSequence) -> RecordSequence {
-        let combined = RecordSequence()
-        combined.elements = Array(Set(self.elements + other.elements))
-        return combined
-    }
-
-    func intersection(_ other: RecordSequence) -> RecordSequence {
-        let otherKeys = Set(other.elements.map { $0.key })
-        let result = RecordSequence()
-        result.elements = elements.filter { otherKeys.contains($0.key) }
-        return result
-    }
-
-    func difference(_ other: RecordSequence) -> RecordSequence {
-        let otherKeys = Set(other.elements.map { $0.key })
-        let result = RecordSequence()
-        result.elements = elements.filter { !otherKeys.contains($0.key) }
-        return result
-    }
-
+    /// Remove duplicates from a record sequence.
     func removeDuplicates() {
         var seenKeys = Set<String>()
         elements = elements.filter { element in
@@ -125,40 +161,36 @@ class RecordSequence: Collection {
                 return true
             }
         }
+        unique = true
     }
 }
 
 extension RecordSequence {
 
-    // MARK: - Normalization Helpers
-
+    /// Copy, key sort, and dedupe a record sequence.
     private func normalizedCopy() -> RecordSequence {
         let copy = self.copy()
-        if copy.sortType != .keySorted {
-            copy.keySort()
-        }
-        if !copy.unique {
-            copy.removeDuplicates()
-            copy.unique = true
-        }
+        if copy.sortType != .keySorted { copy.keySort() }
+        if !copy.unique { copy.removeDuplicates() }
         return copy
     }
 
-    // MARK: - Set Operations
-
-    func nunion(_ other: RecordSequence) -> RecordSequence {
+    /// Union of two sequences, not affecting the two sequences.
+    func union(_ other: RecordSequence) -> RecordSequence {
         let left = self.normalizedCopy()
         let right = other.normalizedCopy()
         return left.sortedUnion(with: right)
     }
 
-    func nintersection(_ other: RecordSequence) -> RecordSequence {
+    /// Intersection of two sequences, not affecting the two sequences.
+    func intersection(_ other: RecordSequence) -> RecordSequence {
         let left = self.normalizedCopy()
         let right = other.normalizedCopy()
         return left.sortedIntersection(with: right)
     }
 
-    func ndifference(_ other: RecordSequence) -> RecordSequence {
+    /// Difference of two sequences, not affecting the two sequences.
+    func difference(_ other: RecordSequence) -> RecordSequence {
         let left = self.normalizedCopy()
         let right = other.normalizedCopy()
         return left.sortedDifference(with: right)
