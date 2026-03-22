@@ -15,13 +15,13 @@ enum SortType {
     case nameSorted
 }
 
-/// Element in a record sequence.
-struct SequenceElement: Hashable {
+/// Element in a person set.
+struct PersonSetElement: Hashable {
     let node: Root
     let key: String
 
     /// Check if two sequence elements are equal.
-    static func == (lhs: SequenceElement, rhs: SequenceElement) -> Bool {
+    static func == (lhs: PersonSetElement, rhs: PersonSetElement) -> Bool {
         return lhs.key == rhs.key
     }
 
@@ -31,7 +31,7 @@ struct SequenceElement: Hashable {
     }
 
     /// Compare two elements for name sorting.
-    func nameSortsBefore(_ other: SequenceElement) -> Bool {
+    func nameSortsBefore(_ other: PersonSetElement) -> Bool {
         let lhsName = GedcomName(from: node)
         let rhsName = GedcomName(from: other.node)
 
@@ -54,7 +54,7 @@ struct SequenceElement: Hashable {
 /// of sequence elements.
 final class RecordSequence: Collection {
 
-    private var elements: [SequenceElement] = []
+    private var elements: [PersonSetElement] = []
     var sortType: SortType = .notSorted
     var unique: Bool = true
 
@@ -63,19 +63,19 @@ final class RecordSequence: Collection {
 
     func index(after i: Int) -> Int { elements.index(after: i) }
 
-    subscript(position: Int) -> SequenceElement { elements[position] }
+    subscript(position: Int) -> PersonSetElement { elements[position] }
 
     var count: Int { elements.count }
     var isEmpty: Bool { elements.isEmpty }
 
     /// Append existing sequence element to sequence.
-    func append(_ element: SequenceElement) {
+    func append(_ element: PersonSetElement) {
         elements.append(element)
     }
 
     /// Append new sequence element to sequence.
     func append(root: Root, key: String, name: String? = nil) {
-        append(SequenceElement(node: root, key: key))
+        append(PersonSetElement(node: root, key: key))
     }
 
     /// Return deep copy of a record sequence.
@@ -301,7 +301,7 @@ extension RecordSequence {
     func nremoveDuplicates() {
         guard !elements.isEmpty else { return }
 
-        var uniqueElements: [SequenceElement] = []
+        var uniqueElements: [PersonSetElement] = []
         var previousKey: String? = nil
 
         for element in elements {
