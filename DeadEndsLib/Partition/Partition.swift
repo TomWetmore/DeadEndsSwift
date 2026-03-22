@@ -3,25 +3,23 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 17 March 2026.
+//  Last changed on 21 March 2026.
 //
 
 import Foundation
 
-/// Separate a list of persons ([Root]) into a partition ([[Root]]) of persons and
-/// optionally families. Each partition is a closed set based on FAMS, FAMC, HUSB,
-/// WIFE and CHIL links.
-
 extension Database {
 
-    /// Separate list of all person roots in a database to a closed partition.
+    /// Separate list person roots from a database into a partition ([[Root]]) based
+    /// on FAMC, FAMS, HUSB, WIFE, and CHIL links.
     public func partitions(includeFamilies: Bool = false) -> [[Root]] {
         recordIndex.partitions(personRoots: self.persons, includeFamilies: includeFamilies)
     }
 }
 extension RecordIndex {
 
-    /// Separate a list of person roots into closed partitions.
+    /// Separate list person roots from a record index into a partition ([[Root]])
+    /// based on FAMC, FAMS, HUSB, WIFE, and CHIL links.
     public func partitions(personRoots: [Root], includeFamilies: Bool = false) -> [[Root]] {
         var visited: Set<RecordKey> = []
         var partitions: [[Root]] = []
@@ -29,28 +27,35 @@ extension RecordIndex {
         for root in personRoots {
             guard let key = root.key else { fatalError("root without key") }
             guard !visited.contains(key) else { continue }
-            let partition = createPartition(root: root, visited: &visited, includeFamilies: includeFamilies)
+            let partition = partition(with: root, visited: &visited, includeFamilies: includeFamilies)
             partitions.append(partition)
         }
         return partitions
     }
 
-    /// Create the partition the argument person root belongs to.
-    func createPartition(root: Root, visited: inout Set<RecordKey>, includeFamilies: Bool) -> [Root] {
-        var partition: [Root] = []
-        var queue: [Root] = [root]
+    /// Find the partition a person (via its root node) belongs to. The result is an array of person
+    /// roots. If includeFamilies is true family roots are included in the results.
+    func partition(with personRoot: Root, visited: inout Set<RecordKey>,
+                   includeFamilies: Bool = false) -> [Root] {
+        var result: [Root] = []
+        var queue: [Root] = [personRoot]
+        var next = 0
 
-        while !queue.isEmpty {
-            let root = queue.removeLast()  // Stack behavior.
+        // Process each person root on the queue.
+        while next < queue.count {
+            let root = queue[next]
+            next += 1
             guard let key = root.key else { fatalError("root without key") }
             if visited.contains(key) { continue }
             visited.insert(key)
+
             switch root.tag {
-            case GedcomTag.INDI: partition.append(root)
-            case GedcomTag.FAM:  if includeFamilies { partition.append(root) }
+            case GedcomTag.INDI: result.append(root)
+            case GedcomTag.FAM:  if includeFamilies { result.append(root) }
             default: break
             }
-
+            // TODO: We should be prepared for FAMS and FAMC tags in familes, and
+            // HUSB, WIFE and CHIL tags in persons.
             for kid in root.kids {
                 switch kid.tag {
                 case GedcomTag.FAMS, GedcomTag.FAMC:
@@ -66,6 +71,6 @@ extension RecordIndex {
                 }
             }
         }
-        return partition
+        return result
     }
 }

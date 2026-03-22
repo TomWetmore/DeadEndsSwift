@@ -3,13 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 16 March 2026.
+//  Last changed on 21 March 2026.
 //
 
 import Foundation
 
 public typealias RecordKey = String
-public typealias KeyMap = [RecordKey : Int]  // Keys to line numbers.
+public typealias KeyMap = [RecordKey : Int]  // Map keys to line numbers.
 public typealias RootList = [Root]
 
 /// DeadEnds in-RAM database.
@@ -32,12 +32,12 @@ final public class Database: CustomStringConvertible {
     /// Description of database.
     public var description: String {
         var summary = "Database Summary:"
-        summary += "\n    Length of index: \(recordIndex.count)"
+        summary += "\n    Number of keyed records: \(recordIndex.count)"
         summary += "\n    Number of persons: \(personCount)"
         summary += "\n    Number of families: \(familyCount)"
         summary += "\n    Header present: \(header != nil ? "Yes" : "No")"
         summary += "\n    Size of name index: \(nameIndex.count)"
-        summary += "\n    Size of data index: \(dateIndex.count)"
+        summary += "\n    Size of date index: \(dateIndex.count)"
         summary += "\n    Size of place index: \(placeIndex.count)"
         summary += "\n    Size of refn index: \(refnIndex.count)"
         summary += "\n    Persons use \(size(of: persons)) nodes"
@@ -94,7 +94,7 @@ extension Database {
 
     /// Return new database with random record keys and key references.
     public func rekeyDatabase() -> Database? {
-        var rekeyMap: [RecordKey: RecordKey] = [:]  // Old key to new key map.
+        var rekeyMap: [RecordKey: RecordKey] = [:]  // Old to new key map.
 
         for (key, root) in recordIndex {  // Create old to new key map.
             rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
@@ -108,7 +108,7 @@ extension Database {
         return Database(records: newRoots)  // Return new database.
     }
 
-    /// Deep copy Gedcom tree rewriting keys and key refs; recurse kids but iterate sibs.
+    /// Deep copy Gedcom tree rewriting keys and key refs; recurse kids and iterate sibs.
     private func copyTreeRekeying(_ node: GedcomNode, keyTable: [RecordKey: RecordKey]) -> GedcomNode {
         let newNode = GedcomNode(key: rekeyKey(node.key, keyTable: keyTable), tag: node.tag,
                                  val: rekeyVal(node.val, keyTable: keyTable))

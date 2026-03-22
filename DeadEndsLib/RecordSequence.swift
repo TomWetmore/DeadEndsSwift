@@ -19,14 +19,13 @@ enum SortType {
 struct SequenceElement: Hashable {
     let node: Root
     let key: String
-    let name: String?
 
     /// Check if two sequence elements are equal.
     static func == (lhs: SequenceElement, rhs: SequenceElement) -> Bool {
         return lhs.key == rhs.key
     }
 
-    /// Hash a sequence element. Key is enough.
+    /// Hash a sequence element using its key.
     func hash(into hasher: inout Hasher) {
         hasher.combine(key)
     }
@@ -52,11 +51,8 @@ struct SequenceElement: Hashable {
 }
 
 /// Sequence of record elements. The underlying representation is an array
-/// of sequence elements. What does Collection get:
-///   Element, Index, startIndex, endIndex, Iterator
+/// of sequence elements.
 final class RecordSequence: Collection {
-    typealias Index = Int
-    typealias Element = SequenceElement
 
     private var elements: [SequenceElement] = []
     var sortType: SortType = .notSorted
@@ -79,16 +75,10 @@ final class RecordSequence: Collection {
 
     /// Append new sequence element to sequence.
     func append(root: Root, key: String, name: String? = nil) {
-        append(SequenceElement(node: root, key: key, name: name))
+        append(SequenceElement(node: root, key: key))
     }
 
-    /// Return copy of a record sequence.
-    /// This method creates a distinct new RecordSequence object whose content
-    /// and state match the original. The elements array is copied by value,
-    /// but because Swift arrays use copy-on-write, the old and new sequences will
-    /// usually share underlying array storage until one of them is mutated.
-    /// The metadata fields sortType and unique are copied as-is, under the
-    /// assumption that they correctly describe the state of the original sequence.
+    /// Return deep copy of a record sequence.
     func copy() -> RecordSequence {
         let copy = RecordSequence()
         copy.elements = self.elements
@@ -139,13 +129,7 @@ final class RecordSequence: Collection {
     }
 
     /// Sort a record sequence by name.
-    /// TODO: There is very likely a much better way to do this now. TODO.
-    //    func nameSort() {
-    //        elements.sort { ($0.name ?? "") < ($1.name ?? "") }
-    //        sortType = .nameSorted
-    //    }
-
-    func sortByName() {
+    func nameSort() {
         elements.sort { $0.nameSortsBefore($1) }
         sortType = .nameSorted
     }
@@ -175,29 +159,59 @@ extension RecordSequence {
         return copy
     }
 
-    /// Union of two sequences, not affecting the two sequences.
+    /// Union of two sequences, not affecting the sequences.
     func union(_ other: RecordSequence) -> RecordSequence {
-        let left = self.normalizedCopy()
-        let right = other.normalizedCopy()
-        return left.sortedUnion(with: right)
+        self.keySort()
+        other.keySort()
+        return self.sortedUnion(with: other)
+    }
+
+    /// Form union of two sequences in the first sequence.
+    func formUnion(_ other: RecordSequence) {
+        self.keySort()
+        other.keySort()
+        self.elements = self.sortedUnion(with: other).elements
+        self.sortType = .keySorted
+        self.unique = true
+    }
+
+    /// Ensure that a sequence is key sorted and possibly deduped.
+    private func keySort(unique: Bool = true) {
+        if sortType != .keySorted { keySort() }
+        if !self.unique && unique { removeDuplicates() }
     }
 
     /// Intersection of two sequences, not affecting the two sequences.
     func intersection(_ other: RecordSequence) -> RecordSequence {
-        let left = self.normalizedCopy()
-        let right = other.normalizedCopy()
-        return left.sortedIntersection(with: right)
+        self.keySort()
+        other.keySort()
+        return self.sortedIntersection(with: other)
+    }
+
+    func formIntersection(_ other: RecordSequence) {
+        self.keySort()
+        other.keySort()
+        self.elements = self.sortedIntersection(with: other).elements
+        self.sortType = .keySorted
+        self.unique = true
     }
 
     /// Difference of two sequences, not affecting the two sequences.
     func difference(_ other: RecordSequence) -> RecordSequence {
-        let left = self.normalizedCopy()
-        let right = other.normalizedCopy()
-        return left.sortedDifference(with: right)
+        self.keySort()
+        other.keySort()
+        return self.sortedDifference(with: other)
     }
 
-    // MARK: - Sorted Core Algorithms
+    func formDifference(_ other: RecordSequence) {
+        self.keySort()
+        other.keySort()
+        self.elements = self.sortedDifference(with: other).elements
+        self.sortType = .keySorted
+        self.unique = true
+    }
 
+    /// Form union of key-sorted and deduped sequences. Operands not affected.
     private func sortedUnion(with other: RecordSequence) -> RecordSequence {
         let result = RecordSequence()
         var i = startIndex
@@ -206,35 +220,32 @@ extension RecordSequence {
         while i < endIndex && j < other.endIndex {
             let elem1 = self[i]
             let elem2 = other[j]
-
             if elem1.key < elem2.key {
                 result.append(elem1)
-                i = index(after: i)
+                i += 1
             } else if elem1.key > elem2.key {
                 result.append(elem2)
-                j = other.index(after: j)
+                j += 1
             } else {
                 result.append(elem1)
-                i = index(after: i)
-                j = other.index(after: j)
+                i += 1
+                j += 1
             }
         }
-
         while i < endIndex {
             result.append(self[i])
-            i = index(after: i)
+            i += 1
         }
-
         while j < other.endIndex {
             result.append(other[j])
-            j = other.index(after: j)
+            j += 1
         }
-
         result.sortType = .keySorted
         result.unique = true
         return result
     }
 
+    /// Form intersection of key-sorted and deduped sequences. Operands not affected.
     private func sortedIntersection(with other: RecordSequence) -> RecordSequence {
         let result = RecordSequence()
         var i = startIndex
@@ -243,23 +254,22 @@ extension RecordSequence {
         while i < endIndex && j < other.endIndex {
             let elem1 = self[i]
             let elem2 = other[j]
-
             if elem1.key < elem2.key {
-                i = index(after: i)
+                i += 1
             } else if elem1.key > elem2.key {
-                j = other.index(after: j)
+                j += 1
             } else {
                 result.append(elem1)
-                i = index(after: i)
-                j = other.index(after: j)
+                i += 1
+                j += 1
             }
         }
-
         result.sortType = .keySorted
         result.unique = true
         return result
     }
 
+    /// Form difference of key-sorted and deduped sequences. Operaands are not affected.
     private func sortedDifference(with other: RecordSequence) -> RecordSequence {
         let result = RecordSequence()
         var i = startIndex
@@ -271,21 +281,18 @@ extension RecordSequence {
 
             if elem1.key < elem2.key {
                 result.append(elem1)
-                i = index(after: i)
+                i += 1
             } else if elem1.key > elem2.key {
-                j = other.index(after: j)
+                j += 1
             } else {
-                // Same key: skip
-                i = index(after: i)
-                j = other.index(after: j)
+                i += 1
+                j += 1
             }
         }
-
         while i < endIndex {
             result.append(self[i])
-            i = index(after: i)
+            i += 1
         }
-
         result.sortType = .keySorted
         result.unique = true
         return result
@@ -319,11 +326,11 @@ extension RecordSequence {
                 // Self has a key not found in other.
                 return false
             } else if elem1.key > elem2.key {
-                j = other.index(after: j)
+                j += 1
             } else {
                 // Keys match
-                i = index(after: i)
-                j = other.index(after: j)
+                i += 1
+                j += 1
             }
         }
 
