@@ -3,16 +3,11 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 16 March 2026.
-
-/// In progress. Want to make the RecordIndex a structure so it can have
-/// methods. The current state of the software (16 March 2026) has the
-/// RecordIndex as a [RecordKey : Root] property of the database.
+//  Last changed on 22 March 2026.
 
 import Foundation
 
 public struct RecordIndex {
-    //var recordIndex: [RecordKey : Root] = [:]
 
     private var table: [RecordKey: Root] = [:]  // Representation.
 
@@ -64,5 +59,87 @@ extension RecordIndex {
             if let person = person(for: key) { out.append(person) }
         }
         return out
+    }
+}
+
+/// Bottom of the relationships ladder.
+
+extension RecordIndex {
+
+    func childrenKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+        let perRoot = requireRoot(from: key, tag: GedcomTag.INDI)
+        var results: [RecordKey] = []
+
+        for famsNode in perRoot.kids(withTag: GedcomTag.FAMS) {
+            let famsRoot = requireRoot(from: famsNode, tag: GedcomTag.FAM)
+            for chilNode in famsRoot.kids(withTag: GedcomTag.CHIL) {
+                let chilRoot = requireRoot(from: chilNode, tag: GedcomTag.INDI)
+                guard let chilKey = chilRoot.key
+                else { fatalError("looks like a child root without a key") }
+                results.append(chilKey)
+            }
+        }
+        return dedupeKeys(results)
+    }
+
+    /// Return the keys of the children of a family key.
+    func childrenKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
+        let root = requireRoot(from: key, tag: GedcomTag.FAM)
+        var result: [RecordKey] = []
+        for chil in root.kids(withTag: GedcomTag.CHIL) {
+            let chilRoot = requireRoot(from: chil, tag: GedcomTag.INDI)
+            guard let chilKey = chil.val, let chilRoot = self[chilKey],
+                  chilRoot.tag == GedcomTag.INDI
+            else { fatalError("invalid CHIL link") }
+            result.append(chilKey)
+        }
+        return dedupeKeys(result)
+    }
+
+    func children(ofPersonRoot root: Root) -> [Root] {
+        guard let personKey = root.key else { return [] }
+        let childKeys = childrenKeys(ofPersonKey: personKey)
+        return childKeys.compactMap{ self[$0] }
+    }
+    /*
+     /// Return children of self, in all FAMS families, deduped in Gedcom order.
+     func children(in index: RecordIndex) -> [Person] {
+         var seen: Set<RecordKey> = []
+         var result: [Person] = []
+
+         for family in spouseFamilies(in: index) {
+             for child in family.children(in: index) {
+                 if seen.insert(child.key).inserted { result.append(child) }
+             }
+         }
+         return result
+     }
+     */
+    //childrenKeys(ofFamily key: RecordKey) -> Set<RecordKey>
+
+//    children(of person: Person) -> PersonSet
+//    children(of family: Family) -> PersonSet
+//
+//    children(ofPersonRoot root: Root) -> PersonSet
+//    children(ofFamilyRoot root: Root) -> PersonSet
+
+    func childrenKeys(of: RecordKey) -> Set<RecordKey> {
+        var results = Set<RecordKey>()
+        // The record key can be that of either a person or a family.
+        // Handle both kinds.
+
+        return results
+    }
+
+
+
+    func parentKeys(ofPersonKey key: RecordKey) -> Set<RecordKey> {
+        var results = Set<RecordKey>()
+        return results
+    }
+
+    func spouseKeys(of: RecordKey) -> Set<RecordKey> {
+        var results: Set<RecordKey> = []
+        return results
     }
 }
