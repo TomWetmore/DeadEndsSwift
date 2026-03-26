@@ -127,10 +127,10 @@ extension RecordIndex {
 //    children(ofPersonRoot root: Root) -> PersonSet
 //    children(ofFamilyRoot root: Root) -> PersonSet
 
-    func parentKeys(ofPersonKey key: RecordKey) -> Set<RecordKey> {
-        var results = Set<RecordKey>()
-        return results
-    }
+//    func parentKeys(ofPersonKey key: RecordKey) -> Set<RecordKey> {
+//        var results = Set<RecordKey>()
+//        return results
+//    }
 
     func spouseKeys(of: RecordKey) -> Set<RecordKey> {
         var results: Set<RecordKey> = []
