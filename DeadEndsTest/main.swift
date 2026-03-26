@@ -3,7 +3,7 @@
 //  DeadEndsTest
 //
 //  Created by Thomas Wetmore on 4 September 2025.
-//  Last changed on 17 March 2026.
+//  Last changed on 24 March 2026.
 //
 
 import Foundation
@@ -20,8 +20,41 @@ func runTest() {
     }
 }
 
+func runTestTwo() throws {
+    print("Running test two")
+    print("Reading Gedcom File in database")
+    var errLog = ErrorLog()
+    let database = loadDatabase(from: "/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged", errlog: &errLog)
+    guard let database = database else {
+        throw RuntimeError.missingDatabase("Could not load Gedcom file into database.")
+    }
+    print("Database loaded successfully\n\(database)")
+    let index = database.recordIndex
+    let me = index.person(for: "@I1@")!
+    let meRoot = me.root
+    let meDesc = index.descendants(of: me)
+    let meRootDesc = index.descendants(of: meRoot)
+    for d in meDesc {
+        print("descendant of me: \(d.name)")
+    }
+    for d in meRootDesc {
+        print("descendant of meRoot: \(d)")
+    }
+    print("number of descendants of me is \(index.numDescendants(of: me))")
+    print("number of descendants of meRoot is \(index.numDescendants(of: meRoot))")
+    let meAnc = index.ancestors(of: me)
+    let meRootAnc = index.ancestors(of: meRoot)
+    for a in meAnc {
+        print("ancestor of me: \(a.name)")
+    }
+    for a in meRootAnc {
+        print("ancestor of meRoot: \(a)")
+    }
+}
+
 // Load a database from a Gedcom file.
 func runTestOne() throws {
+    print("Running Test One")
     print("Reading Gedcom file into database")
     var errLog = ErrorLog()
     let database = loadDatabase(from: "/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged", errlog: &errLog)
@@ -44,12 +77,11 @@ func runTestOne() throws {
         print(mememe)
         let ancestors = database.recordIndex.ancestors(of: mememe)
         print("There are \(ancestors.count) ancestors")
+        print("List found using the ancestors method")
         for ancestor in ancestors {
             print(ancestor.displayName())
         }
         print("numAncestors: \(database.recordIndex.numAncestors(of: mememe))")
-
-
         let descendants = database.recordIndex.descendants(of: mememe)
         print("There are \(descendants.count) descendants")
         for descendant in descendants {

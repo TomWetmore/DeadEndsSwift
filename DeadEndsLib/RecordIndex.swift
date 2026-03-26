@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 22 March 2026.
+//  Last changed on 24 March 2026.
 
 import Foundation
 
@@ -75,7 +75,7 @@ extension RecordIndex {
             for chilNode in famsRoot.kids(withTag: GedcomTag.CHIL) {
                 let chilRoot = requireRoot(from: chilNode, tag: GedcomTag.INDI)
                 guard let chilKey = chilRoot.key
-                else { fatalError("looks like a child root without a key") }
+                else { fatalError("child root \(chilRoot) without a key") }
                 results.append(chilKey)
             }
         }
@@ -84,22 +84,28 @@ extension RecordIndex {
 
     /// Return the keys of the children of a family key.
     func childrenKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
-        let root = requireRoot(from: key, tag: GedcomTag.FAM)
+        let famRoot = requireRoot(from: key, tag: GedcomTag.FAM)
         var result: [RecordKey] = []
-        for chil in root.kids(withTag: GedcomTag.CHIL) {
-            let chilRoot = requireRoot(from: chil, tag: GedcomTag.INDI)
-            guard let chilKey = chil.val, let chilRoot = self[chilKey],
-                  chilRoot.tag == GedcomTag.INDI
-            else { fatalError("invalid CHIL link") }
+
+        for chilNode in famRoot.kids(withTag: GedcomTag.CHIL) {
+            let chilRoot = requireRoot(from: chilNode, tag: GedcomTag.INDI)
+            guard let chilKey = chilRoot.key
+            else { fatalError("child root \(chilRoot) without a key")}
             result.append(chilKey)
         }
         return dedupeKeys(result)
     }
 
     func children(ofPersonRoot root: Root) -> [Root] {
-        guard let personKey = root.key else { return [] }
-        let childKeys = childrenKeys(ofPersonKey: personKey)
-        return childKeys.compactMap{ self[$0] }
+        guard root.tag == GedcomTag.INDI, let perKey = root.key
+        else { fatalError("person root \(root) is not a person or has no key") }
+        return childrenKeys(ofPersonKey: perKey).compactMap{ self[$0] }
+    }
+
+    func children(ofFamilyRoot root: Root) -> [Root] {
+        guard root.tag == GedcomTag.FAM, let famKey = root.key
+        else { fatalError("family root \(root) is not a family or has no key") }
+        return childrenKeys(ofFamilyKey: famKey).compactMap { self[$0] }
     }
     /*
      /// Return children of self, in all FAMS families, deduped in Gedcom order.
@@ -115,23 +121,11 @@ extension RecordIndex {
          return result
      }
      */
-    //childrenKeys(ofFamily key: RecordKey) -> Set<RecordKey>
-
 //    children(of person: Person) -> PersonSet
 //    children(of family: Family) -> PersonSet
 //
 //    children(ofPersonRoot root: Root) -> PersonSet
 //    children(ofFamilyRoot root: Root) -> PersonSet
-
-    func childrenKeys(of: RecordKey) -> Set<RecordKey> {
-        var results = Set<RecordKey>()
-        // The record key can be that of either a person or a family.
-        // Handle both kinds.
-
-        return results
-    }
-
-
 
     func parentKeys(ofPersonKey key: RecordKey) -> Set<RecordKey> {
         var results = Set<RecordKey>()

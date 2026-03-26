@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 19 March 2026.
+//  Last changed on 25 March 2026.
 //
 
 import Foundation
@@ -26,7 +26,8 @@ extension RecordIndex {
     public func connections(partition: [Root]) -> ConnectIndex {
         var connectIndex: ConnectIndex = [:]
         for root in partition {
-            guard let key = root.key, root.tag == GedcomTag.INDI else { continue }
+            let key = requireKey(on: root)
+            if root.tag != GedcomTag.INDI { continue }
             connectIndex[key] = ConnectData()
         }
         for root in partition {
@@ -34,6 +35,8 @@ extension RecordIndex {
         }
         return connectIndex
     }
+
+
 
     /// Find connection data for a person which includes finding the
     /// connection data for the person's ancestors and descendants.
@@ -51,8 +54,21 @@ extension RecordIndex {
         connectIndex[key] = data
     }
 
-    /// Find number of ancestors of a person which includes finding the number
-    /// of ancestors for all ancestors.
+    /// The next two methods use memoization to find the numbers of
+    /// ancestors and descendants of all persons in a closed partition.
+    /// When a person is visited the first time the numbers or all its
+    /// ancestors and descendants are found and stored in the connect
+    /// data index, and this includes finding the numbers of ancestors
+    /// of all ancesters and the numbers of descendants of all
+    /// descandants. No work is done on later visits.
+    /// There are other methods for finding the numbers of ancestors
+    /// and descendants, but these do not use memoization so they
+    /// compute the numbers afresh on every call.
+
+    /// Find the number of ancestors of a person which includes finding
+    /// the numbers of ancestors for all ancestors. Uses memoization.
+    /// If the same ancestors are reached by different paths because of
+    /// pedigree collapse ("cousin marriages") the duplicates are counted.
     func numAncestors(of key: RecordKey, connectIndex: inout ConnectIndex) -> Int {
 
         if let known = connectIndex[key]!.ancestors { return known }
@@ -66,13 +82,13 @@ extension RecordIndex {
         return result
     }
 
-    /// Find number of descendants of a person which includes finding the number
-    /// of descendants of all descendants.
+    /// Find the number of descendants of a person which includes finding the
+    /// numbers of descendants for all descendants. Uses memoization.
     func numDescendants(of key: RecordKey, connectIndex: inout ConnectIndex) -> Int {
 
         if let known = connectIndex[key]!.descendants { return known }
         var result = 0
-        for ckey in self.childrenKeys(of: key) {
+        for ckey in self.childrenKeys(ofPersonKey: key) {
             result += 1 + numDescendants(of: ckey, connectIndex: &connectIndex)
         }
         var data = connectIndex[key]!
@@ -85,9 +101,10 @@ extension RecordIndex {
 extension RecordIndex {
 
     /// Find all ancestors of a person; argument and results are root nodes.
+    /// As currently written (checking the visited set) duplicate ancestors
+    /// caused by pedigree collapse ("cousin marriages") are removed.
     public func ancestors(of personRoot: Root) -> [Root] {
-        guard let startKey = personRoot.key
-        else { fatalError("INDI record must have a key") }
+        let startKey = requireKey(on: personRoot)
         var visited: Set<RecordKey> = []
         var queue: [RecordKey] = parentKeys(of: startKey)
         var next = 0
@@ -96,14 +113,13 @@ extension RecordIndex {
         while next < queue.count {
             let key = queue[next]
             next += 1
-            guard !visited.contains(key) else { continue }
+            // Using the visited set removes duplicate ancestors caused
+            // by pedigree collapse. It might be a good idea to have the
+            // visited check be optional.
+            if visited.contains(key) { continue }
             visited.insert(key)
-            // Look up the record root that this key refers to.
-            guard let root = self[key] else {
-                fatalError("cannot lookup up a record in the index")
-            }
             // Append that record root to the results list.
-            result.append(root)
+            result.append(requireRoot(from: key, tag: GedcomTag.INDI))
             queue.append(contentsOf: parentKeys(of: key))
         }
         return result
@@ -144,7 +160,7 @@ extension RecordIndex {
             visited.insert(key)
             let root = requireRoot(from: key, tag: GedcomTag.INDI)
             result.append(root)
-            queue.append(contentsOf: childrenKeys(of: key))
+            queue.append(contentsOf: childrenKeys(ofPersonKey: key))
         }
         return result
     }
@@ -238,10 +254,18 @@ extension RecordIndex {
         else { fatalError("expected \(tag) record for key \(key)") }
         return root
     }
+
+
 }
 
 /// Dedupe the keys in a record list while keeping order.
 func dedupeKeys(_ keys: [RecordKey]) -> [RecordKey] {
     var seen = Set<RecordKey>()
     return keys.filter { seen.insert($0).inserted }
+}
+
+func requireKey(on root: GedcomNode) -> RecordKey {
+    guard let key = root.key
+    else { fatalError("expected a key for root record") }
+    return key
 }
