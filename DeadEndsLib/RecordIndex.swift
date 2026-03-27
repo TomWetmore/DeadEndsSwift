@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 24 March 2026.
+//  Last changed on 26 March 2026.
 
 import Foundation
 
@@ -48,12 +48,12 @@ extension RecordIndex {
 extension RecordIndex {
 
     /// Return all persons with a set of roles in the family in Gedcom order.
-    private func people(in family: Family, roles: Set<FamilyRoleTag>) -> [Person] {
+    private func people(in family: Family, roles: Set<Tag>) -> [Person] {
         var out: [Person] = []
         var seen = Set<RecordKey>()
 
         for node in family.root.kids {
-            guard roles.contains(where: { $0.rawValue == node.tag }) else { continue }
+            guard roles.contains(where: { $0 == node.tag }) else { continue }
             guard let key = node.val else { continue }
             guard seen.insert(key).inserted else { continue }
             if let person = person(for: key) { out.append(person) }

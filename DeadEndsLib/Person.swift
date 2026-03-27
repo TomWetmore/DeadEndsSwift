@@ -3,26 +3,16 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 20 March 2026.
+//  Last changed on 26 March 2026.
 //
 
 import Foundation
 
-public enum FamilyRoleTag: String {
-    case husband = "HUSB"
-    case wife    = "WIFE"
-    case child   = "CHIL"
-}
-
-public enum ParentRoleTag: String {
-    case husband = "HUSB"
-    case wife    = "WIFE"
-}
-
-public enum FamilyLinkTag: String {
-    case fams = "FAMS"
-    case famc = "FAMC"
-}
+//public enum FamilyRoleTag: String {
+//    case husband = "HUSB"
+//    case wife    = "WIFE"
+//    case child   = "CHIL"
+//}
 
 public enum SexType: String {
     case male = "M"
@@ -120,12 +110,12 @@ public extension Person {
 public extension Person {
 
     /// Return person's parents.
-    private func parents(in index: RecordIndex, role: ParentRoleTag) -> [Person] {
+    private func parents(in index: RecordIndex, role: Tag) -> [Person] {
         var result: [Person] = []
         var seen: Set<RecordKey> = []
 
         for family in childFamilies(in: index) {
-            for key in family.kidVals(forTag: role.rawValue) {
+            for key in family.kidVals(forTag: role) {
                 guard seen.insert(key).inserted,
                       let parent = index.person(for: key)
                 else { continue }
@@ -136,16 +126,24 @@ public extension Person {
     }
 
     /// Return person's father from first husband in person's first FAMC with a husband.
-    func father(in index: RecordIndex) -> Person? { parents(in: index, role: .husband).first }
+    func father(in index: RecordIndex) -> Person? {
+        parents(in: index, role: GedcomTag.HUSB).first
+    }
 
     /// Return person's mother by finding first wife in person's first FAMC with a wife.
-    func mother(in index: RecordIndex) -> Person? { parents(in: index, role: .wife).first }
+    func mother(in index: RecordIndex) -> Person? {
+        parents(in: index, role: GedcomTag.WIFE).first
+    }
 
     /// Return all person's fathers by finding all husbands in all person's FAMC families.
-    func fathers(in index: RecordIndex) -> [Person] { parents(in: index, role: .husband) }
+    func fathers(in index: RecordIndex) -> [Person] {
+        parents(in: index, role: GedcomTag.HUSB)
+    }
 
     /// Return all person's mothers by finding all wives in all person's FAMC families.
-    func mothers(in index: RecordIndex) -> [Person] { parents(in: index, role: .wife) }
+    func mothers(in index: RecordIndex) -> [Person] {
+        parents(in: index, role: GedcomTag.WIFE)
+    }
 }
 
 /// Extension for Families.
@@ -154,7 +152,7 @@ public extension Person {
     /// Return families person is a spouse in.
     func spouseFamilies(in index: RecordIndex) -> [Family] {
         var families: [Family] = []
-        for famsKey in kidVals(forTag: FamilyLinkTag.fams.rawValue) {
+        for famsKey in kidVals(forTag: GedcomTag.FAMS) {
             guard let family = index.family(for: famsKey)
             else { continue }
             families.append(family)
@@ -165,7 +163,7 @@ public extension Person {
     /// Return families person is a child in.
     func childFamilies(in index: RecordIndex) -> [Family] {
         var families: [Family] = []
-        for famcKey in kidVals(forTag: FamilyLinkTag.famc.rawValue) {
+        for famcKey in kidVals(forTag: GedcomTag.FAMC) {
             guard let family = index.family(for: famcKey)
             else { continue }
             families.append(family)
@@ -178,10 +176,10 @@ public extension Person {
 public extension Person {
 
     /// Return first spouse of self by role; is no restriction on sex of spouse.
-    func spouse(in index: RecordIndex, roles: [FamilyRoleTag]) -> Person? {
+    func spouse(in index: RecordIndex, roles: [Tag]) -> Person? {
         for family in spouseFamilies(in: index) {
             for role in roles {
-                for key in family.kidVals(forTag: role.rawValue) where key != self.key {
+                for key in family.kidVals(forTag: role) where key != self.key {
                     if let spouse = index.person(for: key) { return spouse }
                 }
             }
@@ -191,23 +189,24 @@ public extension Person {
 
     /// Return first husband of person; person can be male or female.
     func husband(in index: RecordIndex) -> Person? {
-        spouse(in: index, roles: [.husband])
+        spouse(in: index, roles: [GedcomTag.HUSB])
     }
 
     /// Return first wife of person; person can be male or female.
     func wife(in index: RecordIndex) -> Person? {
-        spouse(in: index, roles: [.wife])
+        spouse(in: index, roles: [GedcomTag.WIFE])
     }
 
     /// Return all spouses of person, filtered by roles, deduped, in Gedcom order.
-    func spouses(in index: RecordIndex, roles: [FamilyRoleTag] = [.husband, .wife]) -> [Person] {
+    func spouses(in index: RecordIndex,
+                 roles: [Tag] = [GedcomTag.HUSB,GedcomTag.WIFE]) -> [Person] {
 
         var seen = Set<RecordKey>()
         var out: [Person] = []
 
         for family in spouseFamilies(in: index) {
             for role in roles {
-                for key in family.kidVals(forTag: role.rawValue)
+                for key in family.kidVals(forTag: role)
                 where key != self.key && seen.insert(key).inserted {
                     if let spouse = index.person(for: key) { out.append(spouse) }
                 }
@@ -218,12 +217,12 @@ public extension Person {
 
     /// Return all husbands of person, deduped and in order; person can be male or female.
     func husbands(in index: RecordIndex) -> [Person] {
-        spouses(in: index, roles: [.husband])
+        spouses(in: index, roles: [GedcomTag.HUSB])
     }
 
     /// Return all wives of person, deduped and in order; person can be male or female.
     func wives(in index: RecordIndex) -> [Person] {
-        spouses(in: index, roles: [.wife])
+        spouses(in: index, roles: [GedcomTag.WIFE])
     }
 }
 

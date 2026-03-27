@@ -3,12 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 11 March 2026.
+//  Last changed on 26 March 2026.
 //
 
 import Foundation
 
 public typealias Root = GedcomNode
+public typealias Tag = String
 
 /// Represent a line in a Gedcom source; key, tag and val are from the Gedcom line; lev is computed.
 final public class GedcomNode: Identifiable, CustomStringConvertible {

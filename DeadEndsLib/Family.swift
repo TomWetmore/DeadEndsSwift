@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 20 March 2026.
+//  Last changed on 26 March 2026.
 //
 
 import Foundation
@@ -24,20 +24,20 @@ public struct Family: Record {
 extension Family {
 
     /// Return all persons with a specific role in the family in Gedcom order.
-    private func people(in index: RecordIndex, role: FamilyRoleTag) -> [Person] {
-        root.kids(withTag: role.rawValue).compactMap { node in
+    private func people(in index: RecordIndex, role: String) -> [Person] {
+        root.kids(withTag: role).compactMap { node in
             node.val.flatMap { index.person(for: $0) }
         }
     }
 
     /// Return all persons with a set of roles in the family in Gedcom order.
-    private func people(in index: RecordIndex, roles: Set<FamilyRoleTag>) -> [Person] {
+    private func people(in index: RecordIndex, roles: Set<String>) -> [Person] {
 
         var out: [Person] = []
         var seen = Set<RecordKey>()
 
         for node in root.kids {
-            guard roles.contains(where: { $0.rawValue == node.tag }) else { continue }
+            guard roles.contains(where: { $0 == node.tag }) else { continue }
             guard let key = node.val else { continue }
             guard seen.insert(key).inserted else { continue }
             if let person = index.person(for: key) { out.append(person) }
@@ -47,17 +47,17 @@ extension Family {
 
     /// Return first husband in the family in Gedcom order.
     public func husband(in index: RecordIndex) -> Person? {
-        people(in: index, role: .husband).first
+        people(in: index, role: GedcomTag.HUSB).first
     }
 
     /// Return first wife of the family in Gedcom order.
     public func wife(in index: RecordIndex) -> Person? {
-        people(in: index, role: .wife).first
+        people(in: index, role: GedcomTag.WIFE).first
     }
 
     /// Return all children of the family in Gedcom order.
     public func children(in index: RecordIndex) -> [Person] {
-        people(in: index, role: .child)
+        people(in: index, role: GedcomTag.CHIL)
     }
 
     /// Return all spouses in the family; same as parents.
@@ -67,17 +67,17 @@ extension Family {
     
     /// Return all husbands of the family in Gedcom order.
     public func husbands(in index: RecordIndex) -> [Person] {
-        people(in: index, role: .husband)
+        people(in: index, role: GedcomTag.HUSB)
     }
 
     /// Return all wives of the family in Gedcom order.
     public func wives(in index: RecordIndex) -> [Person] {
-        people(in: index, role: .wife)
+        people(in: index, role: GedcomTag.WIFE)
     }
 
     /// Return all spouses in the family in Gedcom order.
     func spouses(in index: RecordIndex) -> [Person] {
-        people(in: index, roles: [.husband, .wife])
+        people(in: index, roles: [GedcomTag.HUSB, GedcomTag.WIFE])
     }
 
     /// Return all spouses except given person in the family in Gedcom order.

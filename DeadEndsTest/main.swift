@@ -3,7 +3,7 @@
 //  DeadEndsTest
 //
 //  Created by Thomas Wetmore on 4 September 2025.
-//  Last changed on 24 March 2026.
+//  Last changed on 26 March 2026.
 //
 
 import Foundation
@@ -13,7 +13,7 @@ runTest()
 
 func runTest() {
     do {
-        try runTestOne()
+        try testThree()
     } catch {
         print("Top level catch")
         exit(1)

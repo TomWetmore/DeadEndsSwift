@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 20 March 2026.
+//  Last changed on 26 March 2026.
 //
 
 import Foundation
@@ -35,15 +35,15 @@ public extension Record {
     var sib: GedcomNode? { root.sib }
 
     // Forwarded methods.
-    func kid(withTag tag: String) -> GedcomNode? { root.kid(withTag: tag) }
-    func kid(atPath path: [String]) -> GedcomNode? { root.kid(atPath: path) }
+    func kid(withTag tag: Tag) -> GedcomNode? { root.kid(withTag: tag) }
+    func kid(atPath path: [Tag]) -> GedcomNode? { root.kid(atPath: path) }
 
-    func kidVal(forTag tag: String) -> String? { root.kidVal(forTag: tag) }
-    func kidVal(atPath path: [String]) -> String? { root.kidVal(atPath: path) }
+    func kidVal(forTag tag: Tag) -> String? { root.kidVal(forTag: tag) }
+    func kidVal(atPath path: [Tag]) -> String? { root.kidVal(atPath: path) }
 
-    func kids(withTag tag: String) -> [GedcomNode] { root.kids(withTag: tag) }
-    func kidVals(forTag tag: String) -> [String] { root.kidVals(forTag: tag) }
-    func kidVals(forTags tags: [String]) -> [String] {root.kidVals(forTags: tags) }
+    func kids(withTag tag: Tag) -> [GedcomNode] { root.kids(withTag: tag) }
+    func kidVals(forTag tag: Tag) -> [String] { root.kidVals(forTag: tag) }
+    func kidVals(forTags tags: [Tag]) -> [String] {root.kidVals(forTags: tags) }
 }
 
 /// Foward useful methods to the Gedcom node level.

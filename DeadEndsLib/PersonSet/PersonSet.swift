@@ -3,12 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 22 March 2026.
+//  Last changed on 26 March 2026.
 //
 
 import Foundation
 
-/// A record squence is in one of three sorted states.
+/// A person set is in one of three sorted states.
 enum SortType {
     case notSorted
     case keySorted
@@ -16,24 +16,29 @@ enum SortType {
 }
 
 /// Element in a person set.
-struct PersonSetElement: Hashable {
-    let node: Root
+public struct PersonSetElement: Hashable, CustomStringConvertible {
+    let root: Root  // Should be an INDI -- IS THIS CHECKED YET.
     let key: String
 
     /// Check if two sequence elements are equal.
-    static func == (lhs: PersonSetElement, rhs: PersonSetElement) -> Bool {
+    public static func == (lhs: PersonSetElement, rhs: PersonSetElement) -> Bool {
         return lhs.key == rhs.key
     }
 
     /// Hash a sequence element using its key.
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(key)
     }
 
+    public var description: String {
+        let name = root.kid(withTag: "NAME")?.val ?? "<no name>"
+        return "\(key): \(name)"
+    }
+    
     /// Compare two elements for name sorting.
     func nameSortsBefore(_ other: PersonSetElement) -> Bool {
-        let lhsName = GedcomName(from: node)
-        let rhsName = GedcomName(from: other.node)
+        let lhsName = GedcomName(from: root)
+        let rhsName = GedcomName(from: other.root)
 
         switch (lhsName, rhsName) {
         case let (lhs?, rhs?):
@@ -50,24 +55,24 @@ struct PersonSetElement: Hashable {
     }
 }
 
-/// Sequence of record elements. The underlying representation is an array
+/// Sequence of person set elements. The underlying representation is an array
 /// of sequence elements.
-final class PersonSet: Collection {
+public class PersonSet: Collection {
 
     var elements: [PersonSetElement] = []
     var sortType: SortType = .notSorted
     // TODO: Change code so unique is no longer needed.
     var unique: Bool = true
 
-    var startIndex: Int { elements.startIndex }
-    var endIndex: Int { elements.endIndex }
+    public var startIndex: Int { elements.startIndex }
+    public var endIndex: Int { elements.endIndex }
 
-    func index(after i: Int) -> Int { elements.index(after: i) }
+    public func index(after i: Int) -> Int { elements.index(after: i) }
 
-    subscript(position: Int) -> PersonSetElement { elements[position] }
+    public subscript(position: Int) -> PersonSetElement { elements[position] }
 
-    var count: Int { elements.count }
-    var isEmpty: Bool { elements.isEmpty }
+    public var count: Int { elements.count }
+    public var isEmpty: Bool { elements.isEmpty }
 
     /// Append existing sequence element to sequence.
     func append(_ element: PersonSetElement) {
@@ -76,7 +81,7 @@ final class PersonSet: Collection {
 
     /// Append new sequence element to sequence.
     func append(root: Root, key: String, name: String? = nil) {
-        append(PersonSetElement(node: root, key: key))
+        append(PersonSetElement(root: root, key: key))
     }
 
     /// Return deep copy of a record sequence.
@@ -140,6 +145,29 @@ final class PersonSet: Collection {
             }
         }
         unique = true
+    }
+}
+
+/// Convenience initializers.
+extension PersonSet {
+
+    /// Create a person set from an array of Gedcom person roots.
+    public convenience init(roots: [Root]) {
+        self.init()   // Call default init.
+        for root in roots {
+            let key = requireKey(on: root)
+            self.elements.append(PersonSetElement(root: root, key: key))
+        }
+    }
+}
+
+extension PersonSet: CustomStringConvertible {
+    public var description: String {
+        print("PersonSet(\(elements.count) elements)")
+        for element in elements {
+            print(element)
+        }
+        return ""
     }
 }
 

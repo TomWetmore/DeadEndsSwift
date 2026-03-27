@@ -26,13 +26,35 @@ extension PersonSet {
         return results
     }
 
-    func ancestors() -> PersonSet {
-        var results = PersonSet()
-        return results
-    }
+    /// Return the ancestors person set of a person set.
+    func ancestorsSet(in index: RecordIndex) -> PersonSet {
+            var visited: Set<RecordKey> = []
+            var result: [Root] = []
 
-    func descendants() -> PersonSet {
-        var results = PersonSet()
-        return results
+            for element in elements {
+                for ancRoot in index.ancestors(of: element.root) {
+                    let ancKey = requireKey(on: ancRoot)
+                    if visited.insert(ancKey).inserted {
+                        result.append(ancRoot)
+                    }
+                }
+            }
+            return PersonSet(roots: result)
+        }
+
+    /// Return the descendants person set of a person set.
+    func descendantsSet(in index: RecordIndex) -> PersonSet {
+        var visited: Set<RecordKey> = []
+        var result: [Root] = []
+
+        for element in elements {
+            for descRoot in index.descendants(of: element.root) {
+                let descKey = requireKey(on: descRoot)
+                if visited.insert(descKey).inserted {
+                    result.append(descRoot)
+                }
+            }
+        }
+        return PersonSet(roots: result)
     } 
 }
