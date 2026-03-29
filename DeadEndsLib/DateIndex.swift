@@ -66,9 +66,9 @@ public func buildDateIndex(from recordIndex: RecordIndex) -> DateIndex {
     for (_, root) in recordIndex {
         switch root.tag {
         case GedcomTag.INDI:
-            if let person = Person(root) { dateIndex.indexDates(from: person) }
+            dateIndex.indexDates(from: Person(root))
         case GedcomTag.FAM:
-            if let family = Family(root) { dateIndex.indexDates(from: family) }
+            dateIndex.indexDates(from: Family(root))
         default: break
         }
     }
@@ -85,6 +85,7 @@ extension DateIndex {
         }
     }
 
+    /// TODO: If the argument is a person root, the caller to this method is simpler.
     /// Index the birth and death dates of a person.
     func indexDates(from person: Person) {
         guard let key = person.root.key else { return }
@@ -94,6 +95,7 @@ extension DateIndex {
         }
     }
 
+    /// TODO: If the argument is a family root, the caller to this method is simpler.
     /// Index the marriage dates of a family.
     func indexDates(from family: Family) {
         guard let key = family.root.key else { return }

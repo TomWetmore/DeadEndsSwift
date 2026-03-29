@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 26 March 2026.
+//  Last changed on 28 March 2026.
 
 import Foundation
 
@@ -107,6 +107,10 @@ extension RecordIndex {
         else { fatalError("family root \(root) is not a family or has no key") }
         return childrenKeys(ofFamilyKey: famKey).compactMap { self[$0] }
     }
+
+//    func spouses(ofPersonRoot root: Root) -> [Root] {
+//        let spouseKey = requireKey(on: root)
+//    }
     /*
      /// Return children of self, in all FAMS families, deduped in Gedcom order.
      func children(in index: RecordIndex) -> [Person] {

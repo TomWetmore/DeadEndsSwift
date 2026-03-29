@@ -3,7 +3,7 @@
 //  DeadEndsTest
 //
 //  Created by Thomas Wetmore on 4 September 2025.
-//  Last changed on 26 March 2026.
+//  Last changed on 28 March 2026.
 //
 
 import Foundation
@@ -13,11 +13,21 @@ runTest()
 
 func runTest() {
     do {
-        try testThree()
+        try testPerson()
     } catch {
         print("Top level catch")
         exit(1)
     }
+}
+
+/// Read a database for the tests to use.
+func loadDatabase() -> Database {
+    print("Reading Gedcom File in database")
+    var errLog = ErrorLog()
+    let database = loadDatabase(from: "/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged", errlog: &errLog)
+    guard let database = database else { fatalError("Could not load database") }
+    print("Database loaded successfully\n\(database)")
+    return database
 }
 
 func runTestTwo() throws {

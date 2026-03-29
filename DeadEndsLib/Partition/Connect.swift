@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 25 March 2026.
+//  Last changed on 27 March 2026.
 //
 
 import Foundation
@@ -231,7 +231,7 @@ extension RecordIndex {
 
     /// Given a node with a value that is a key, return the root node the key
     /// refers to, checking its type, turning any problems into fatal error.
-    func requireRoot(from node: GedcomNode, tag: String) -> Root {
+    func requireRoot(from node: GedcomNode, tag: Tag) -> Root {
         guard let key = node.val, let root = self[key], root.tag == tag
         else { fatalError("expected \(tag) record referenced by \(node)") }
         return root
@@ -239,9 +239,12 @@ extension RecordIndex {
 
     /// Given a record key return the root node it refers to, checking its type,
     /// turning any problems into a fatal error.
-    func requireRoot(from key: RecordKey, tag: String) -> Root {
+    func requireRoot(from key: RecordKey, tag: Tag? = nil) -> Root {
         guard let root = self[key], root.tag == tag
-        else { fatalError("expected \(tag) record for key \(key)") }
+        else { fatalError("expected root \(key) to refer to a root") }
+        if tag == nil { return root }
+        guard tag! == root.tag
+        else { fatalError("expected root \(root) to have tag \(tag!)") }
         return root
     }
 }
@@ -252,8 +255,21 @@ func dedupeKeys(_ keys: [RecordKey]) -> [RecordKey] {
     return keys.filter { seen.insert($0).inserted }
 }
 
-func requireKey(on root: GedcomNode) -> RecordKey {
+/// Require a root node to have a key. This is a sanity function.
+func requireKey(on root: GedcomNode, tag: Tag? = nil) -> RecordKey {
     guard let key = root.key
-    else { fatalError("expected a key for root record") }
+    else { fatalError("expected root \(root) to have a key") }
+    if tag == nil { return key }
+    guard tag! == root.tag
+    else { fatalError("expected root \(root) to have key \(tag!)") }
     return key
 }
+
+func requirePersonKey(on root: GedcomNode) -> RecordKey {
+    return requireKey(on: root, tag: GedcomTag.INDI)
+}
+
+func requireFamilyKey(on root: GedcomNode) -> RecordKey {
+    return requireKey(on: root, tag: GedcomTag.FAM)
+}
+

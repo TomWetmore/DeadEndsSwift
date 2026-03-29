@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 26 March 2026.
+//  Last changed on 28 March 2026.
 //
 
 import Foundation
@@ -13,9 +13,10 @@ public struct Family: Record {
 
     public let root: Root
 
-    /// Create family from a 0 FAM node; fail if tag not FAM or no key.
-    public init?(_ root: Root) {
-        guard root.tag == GedcomTag.FAM, root.key != nil  else { return nil }
+    /// Create family from a 0 FAM node. Fatal error if not possible.
+    public init(_ root: Root) {
+        guard root.tag == GedcomTag.FAM, root.key != nil
+        else { fatalError("Root \(root) is not a valid 0 FAM node") }
         self.root = root
     }
 }
@@ -24,10 +25,22 @@ public struct Family: Record {
 extension Family {
 
     /// Return all persons with a specific role in the family in Gedcom order.
-    private func people(in index: RecordIndex, role: String) -> [Person] {
+    private func oldpeople(in index: RecordIndex, role: String) -> [Person] {
         root.kids(withTag: role).compactMap { node in
             node.val.flatMap { index.person(for: $0) }
         }
+    }
+
+    /// Get all persons from a family who have a specific role.
+    private func people(in index: RecordIndex, role: Tag) -> [Person] {
+        var result: [Person] = []
+        
+        let nodes = root.kids(withTag: role)
+        for node in nodes { // HUSB, WIFE, or CHIL nodes.
+            let roleRoot = index.requireRoot(from: node, tag: GedcomTag.INDI)
+            result.append(requirePerson(with: roleRoot, in: index))
+        }
+        return result
     }
 
     /// Return all persons with a set of roles in the family in Gedcom order.

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 26 March 2026.
+//  Last changed on 27 March 2026.
 //
 
 import Foundation
@@ -153,11 +153,18 @@ extension PersonSet {
 
     /// Create a person set from an array of Gedcom person roots.
     public convenience init(roots: [Root]) {
-        self.init()   // Call default init.
+        self.init()
         for root in roots {
             let key = requireKey(on: root)
             self.elements.append(PersonSetElement(root: root, key: key))
         }
+    }
+
+    /// Create a person set from a single person root.
+    public convenience init(root: Root) {
+        self.init()
+        let key = requireKey(on: root)
+        self.elements.append(PersonSetElement(root: root, key: key))
     }
 }
 

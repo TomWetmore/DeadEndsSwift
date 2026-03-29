@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 13 March 2026.
+//  Last changed on 28 March 2026.
 //
 
 import Foundation
@@ -183,9 +183,9 @@ public func buildPlaceIndex(from recordIndex: RecordIndex) -> PlaceIndex {
     for (_, root) in recordIndex {
         switch root.tag {
         case GedcomTag.INDI:
-            if let person = Person(root) { placeIndex.indexPlaces(from: person) }
+            placeIndex.indexPlaces(from: Person(root))
         case GedcomTag.FAM:
-            if let family = Family(root) { placeIndex.indexPlaces(from: family) }
+            placeIndex.indexPlaces(from: Family(root))
         default: break
         }
     }

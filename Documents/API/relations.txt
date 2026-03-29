@@ -1,125 +1,12 @@
-//
-//  Person.swift
-//  DeadEndsLib
-//
-//  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 28 March 2026.
-//
+Showing the levels of relationship code.
 
-import Foundation
+=================================================================================================
+The Person/Family Level
+	The code should be in Person.swift and Family.swift.
 
-public enum SexType: String {
-    case male = "M"
-    case female = "F"
-    case unknown = "U"
-}
+Returning Parents
 
-/// Person structure.
-public struct Person: Record {
-
-    public let root: Root
-
-    /// Create person. Fatal error if not possible.
-    public init(_ root: Root) {
-        guard root.tag == GedcomTag.INDI, root.key != nil
-        else { fatalError("Root \(root) is not a valid 0 INDI node") }
-        self.root = root
-    }
-}
-
-extension Person {
-
-    /// Return display name from the first 1 NAME node.
-    public var name: String? {
-        guard let nameNode = root.kid(withTag: GedcomTag.NAME),
-              let gedcomName = GedcomName(from: nameNode)
-        else { return nil }
-        return gedcomName.displayName()
-    }
-}
-
-/// Event API.
-extension Person {
-
-    /// Return first birth event.
-    public var birthEvent: Event? {
-        root.eventOfKind(.birth)
-    }
-
-    /// Return first death event.
-    public var deathEvent: Event? {
-        root.eventOfKind(.death)
-    }
-}
-
-/// Person is Equatable and Hashable.
-extension Person: Equatable, Hashable {
-
-    /// Equate two persons.
-    public static func == (lhs: Person, rhs: Person) -> Bool {
-        lhs.root.key == rhs.root.key
-    }
-
-    /// Return person hash.
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(root.key)
-    }
-}
-
-public extension Person {
-
-    /// Return sex type person.
-    var sex: SexType {
-        guard let value = kidVal(forTag: GedcomTag.SEX)?.uppercased()
-        else { return .unknown }
-        switch value {
-        case "M": return .male
-        case "F": return .female
-        default: return .unknown
-        }
-    }
-
-    /// Return sex symbol of person.
-    var sexSymbol: String {
-        switch sex {
-        case .male: return "♂️"
-        case .female: return "♀️"
-        default: return "?"
-        }
-    }
-
-    /// Return Gedcom name of person from its first 1 NAME node.
-    var gedcomName: GedcomName? {
-        GedcomName(from: self.root)
-    }
-
-    /// Return true if person is female.
-    var isFemale: Bool { sex == .female }
-
-    /// Return true if person is male.
-    var isMale: Bool { return sex == .male }
-}
-
-/// Extension for Parents, Mothers, and Fathers.
-public extension Person {
-
-    /// Return all person's parents.
-    func parents(in index: RecordIndex) -> [Person] {
-        var result: [Person] = []
-        var seen: Set<RecordKey> = []
-        for family in childFamilies(in: index) {
-            for spouNode in family.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE]) {
-                let spouRoot = index.requireRoot(from: spouNode, tag: GedcomTag.INDI)
-                let parent = requirePerson(with: spouRoot, in: index)
-                if seen.insert(parent.root.key!).inserted { result.append(parent) }
-            }
-        }
-        return result
-    }
-
-    /// Return person's parents.
     private func parents(in index: RecordIndex, role: Tag) -> [Person] {
-        var result: [Person] = []
         var seen: Set<RecordKey> = []
 
         for family in childFamilies(in: index) {
@@ -161,7 +48,8 @@ public extension Person {
     func spouseFamilies(in index: RecordIndex) -> [Family] {
         var families: [Family] = []
         for famsKey in kidVals(forTag: GedcomTag.FAMS) {
-            let family = requireFamily(for: famsKey, in: index)
+            guard let family = index.family(for: famsKey)
+            else { continue }
             families.append(family)
         }
         return families
@@ -171,33 +59,12 @@ public extension Person {
     func childFamilies(in index: RecordIndex) -> [Family] {
         var families: [Family] = []
         for famcKey in kidVals(forTag: GedcomTag.FAMC) {
-            let family = requireFamily(for: famcKey, in: index)
+            guard let family = index.family(for: famcKey)
+            else { continue }
             families.append(family)
         }
         return families
     }
-}
-
-/// Return family a key refers to. Fatal error if it does not.
-func requireFamily(for key: RecordKey, in index: RecordIndex) -> Family {
-    guard let family = index.family(for: key), family.root.tag == GedcomTag.FAM
-    else { fatalError("key \(key) must refer to a family") }
-    return family
-}
-
-/// Return person a key refers to. Fatal error if it does not.
-public func requirePerson(with key: RecordKey, in index: RecordIndex) -> Person {
-    guard let person = index.person(for: key), person.root.tag == GedcomTag.INDI
-    else { fatalError("key \(key) must refer to a person") }
-    return person
-}
-
-
-public func requirePerson(with root: Root, in index: RecordIndex) -> Person {
-    let key = requireKey(on: root)
-    guard let person = index.person(for: key), person.root.tag == GedcomTag.INDI
-    else { fatalError("root \(root) must be the root of a person") }
-    return person
 }
 
 /// Extension for Spouses, Husbands, and Wives
@@ -259,6 +126,7 @@ extension Person {
 
     /// Return person's siblings from all FAMC families, deduped and in gedcom order.
     public func siblings(in index: RecordIndex) -> [Person] {
+
         var seen: Set<RecordKey> = []
         var result: [Person] = []
 
@@ -357,3 +225,10 @@ private func compareOptionalInts(_ a: Int?, _ b: Int?) -> ComparisonResult? {
         return .orderedSame
     }
 }
+=================================================================================================
+
+The Root Node Level
+
+=================================================================================================
+The Key Level
+=================================================================================================
