@@ -25,37 +25,40 @@ public struct Family: Record {
 extension Family {
 
     /// Return all persons with a specific role in the family in Gedcom order.
-    private func oldpeople(in index: RecordIndex, role: String) -> [Person] {
-        root.kids(withTag: role).compactMap { node in
-            node.val.flatMap { index.person(for: $0) }
-        }
-    }
-
-    /// Get all persons from a family who have a specific role.
     private func people(in index: RecordIndex, role: Tag) -> [Person] {
-        var result: [Person] = []
-        
-        let nodes = root.kids(withTag: role)
-        for node in nodes { // HUSB, WIFE, or CHIL nodes.
-            let roleRoot = index.requireRoot(from: node, tag: GedcomTag.INDI)
-            result.append(requirePerson(with: roleRoot, in: index))
+        root.kids(withTag: role).map { node in
+            requirePerson(with: index.requireRoot(from: node, tag: GedcomTag.INDI), in: index)
         }
-        return result
     }
 
     /// Return all persons with a set of roles in the family in Gedcom order.
-    private func people(in index: RecordIndex, roles: Set<String>) -> [Person] {
+    private func oldpeople(in index: RecordIndex, roles: Set<String>) -> [Person] {
 
         var out: [Person] = []
         var seen = Set<RecordKey>()
 
         for node in root.kids {
-            guard roles.contains(where: { $0 == node.tag }) else { continue }
+            guard roles.contains(node.tag) else { continue }
             guard let key = node.val else { continue }
             guard seen.insert(key).inserted else { continue }
             if let person = index.person(for: key) { out.append(person) }
         }
         return out
+    }
+
+    /// Return all persons with a set of roles in the family in Gedcom order.
+    private func people(in index: RecordIndex, roles: Set<Tag>) -> [Person] {
+        var seen = Set<RecordKey>()
+
+        return root.kids.compactMap { node in
+            guard roles.contains(node.tag) else { return nil }
+
+            let root = index.requireRoot(from: node, tag: GedcomTag.INDI)
+            let person = Person(root)
+            let key = requireKey(on: root)
+
+            return seen.insert(key).inserted ? person : nil
+        }
     }
 
     /// Return first husband in the family in Gedcom order.

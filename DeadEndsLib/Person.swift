@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 28 March 2026.
+//  Last changed on 29 March 2026.
 //
 
 import Foundation
@@ -30,10 +30,10 @@ public struct Person: Record {
 extension Person {
 
     /// Return display name from the first 1 NAME node.
-    public var name: String? {
+    public var name: String {
         guard let nameNode = root.kid(withTag: GedcomTag.NAME),
               let gedcomName = GedcomName(from: nameNode)
-        else { return nil }
+        else { return "no name" }
         return gedcomName.displayName()
     }
 }

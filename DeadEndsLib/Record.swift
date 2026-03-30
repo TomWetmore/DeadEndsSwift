@@ -3,13 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 28 March 2026.
+//  Last changed on 29 March 2026.
 //
 
 import Foundation
 
 /// Kinds of records.
 enum RecordKind: String {
+
     case header = "HEAD"
     case trailer = "TRLR"
     case person = "INDI"
@@ -18,8 +19,9 @@ enum RecordKind: String {
     case other =  "OTHR"
 }
 
-/// Record protocol; allow person, family, etc, to be types.
+/// Record protocol. This protocol allow person, family, source, etc, to be types.
 public protocol Record {
+
     var root: Root { get }  // Record root.
     var key: String { get }  // Record key.
 }

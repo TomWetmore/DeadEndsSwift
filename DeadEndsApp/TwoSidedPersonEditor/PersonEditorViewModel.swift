@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 September 2025.
-//  Last changed on 28 September 2025.
+//  Last changed on 28 March 2026.
 //
 
 import Foundation
@@ -93,7 +93,7 @@ final class PersonEditorViewModel: ObservableObject {
         // Defer publishing to avoid "Publishing changes from within view updates"
         DispatchQueue.main.async {
             self.root = root
-            self.person = Person(root)!
+            self.person = Person(root)
             self.expanded = previousExpanded.union(ObjectIdentifierSet(pathTo: root))
         }
     }

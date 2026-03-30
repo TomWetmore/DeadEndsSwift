@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 11 March 2026.
+//  Last changed on 28 March 2026.
 //
 
 import SwiftUI
@@ -134,8 +134,7 @@ extension PersonEditSheet {
         }
         if errlog.count > 0 { return (nil, ["Error parsing record"]) }
         guard nodes.count == 1 else { return (nil, ["Found \(nodes.count) records"]) }
-        guard let person = Person(nodes[0]) else { return (nil, ["The record is not a Person (INDI)"]) }
-        return (person, [])
+        return (Person(nodes[0]), [])
     }
 
     /// Validates an edited Person record.
