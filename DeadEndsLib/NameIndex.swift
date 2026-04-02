@@ -26,25 +26,25 @@ final public class NameIndex {
 
     var count: Int { index.count }
 
-	/// Add entry to name index; convert value to name key.
+	/// Add an entry to the name index; convert the value to a name key.
 	public func add(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value) else { return }
 		self.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
 	}
 
-	/// Add entry to name index.
+	/// Add an entry to the name index.
 	func add(nameKey: NameKey, recordKey: RecordKey) {
 		index[nameKey, default: Set()].insert(recordKey)
 	}
 
-    /// Remove entry from name index; convert value name key.
+    /// Remove an entry from the name index; convert value name key.
     public func remove(value: String, recordKey: RecordKey) {
         guard let gedcomName = GedcomName(string: value)
 		else { return }
         remove(nameKey: gedcomName.nameKey, recordKey: recordKey)
     }
 
-    /// Remove entry from name index.
+    /// Remove an entry from the name index.
     func remove(nameKey: NameKey, recordKey: RecordKey) {
         if var records = index[nameKey] {
             records.remove(recordKey)
@@ -66,7 +66,7 @@ final public class NameIndex {
 	}
 }
 
-/// Return name key of a 1 NAME value.
+/// Return the name key of a 1 NAME value.
 func nameKey(value: String) -> String {
     guard let gedcomName = GedcomName(string: value) else {
         fatalError("Invalid name: \(value)")
@@ -74,7 +74,7 @@ func nameKey(value: String) -> String {
     return gedcomName.nameKey
 }
 
-/// Build name index from record list.
+/// Build a name index from a root list.
 func buildNameIndex(from persons: RootList) -> NameIndex {
     let index = NameIndex()
 
@@ -91,7 +91,7 @@ func buildNameIndex(from persons: RootList) -> NameIndex {
     return index
 }
 
-// Find Soundex code of string.
+// Find the Deadends-defined Soundex code of a string.
 func soundex(for surname: String) -> String {
 	var result = ""
 	var previousCode: String? = nil
@@ -118,7 +118,7 @@ extension Person {
     }
 }
 
-// Squeeze string into array of uppercase words.
+/// Squeeze a string into an array of uppercase words.
 func squeeze(_ input: String) -> [String] {
 	input
 		.split { !$0.isLetter }
@@ -138,11 +138,13 @@ func exactMatch(partial: [String], complete: [String]) -> Bool {
 	return partialIndex == partial.count
 }
 
-// piecematch matches a partial word to a complete word. The first chars in each must be the same, and all chars
-// in partial must be in complete and be in order.
+/// Match a partial word to a complete word. The first chars in each must be the
+/// same, and all chars in partial must be in complete and be in order.
 func pieceMatch(_ partial: String, _ complete: String) -> Bool {
-	guard let firstPartial = partial.first, let firstComplete = complete.first else { return false }
-	guard firstPartial == firstComplete else { return false } // First chars must match.
+	guard let firstPartial = partial.first, let firstComplete = complete.first
+    else { return false }
+	guard firstPartial == firstComplete
+    else { return false } // First chars must match.
 	var partialIndex = partial.index(after: partial.startIndex)
 	var completeIndex = complete.index(after: complete.startIndex)
 	while partialIndex < partial.endIndex, completeIndex < complete.endIndex {

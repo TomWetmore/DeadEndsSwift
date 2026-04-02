@@ -3,13 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 21 March 2026.
+//  Last changed on 31 March 2026.
 //
 
 import Foundation
 
 public typealias RecordKey = String
-public typealias KeyMap = [RecordKey : Int]  // Map keys to line numbers.
+public typealias KeyMap = [RecordKey : Int]  // Maps keys to line numbers.
 public typealias RootList = [Root]
 
 /// DeadEnds in-RAM database.
@@ -56,8 +56,9 @@ final public class Database: CustomStringConvertible {
         roots.reduce(0) { $0 + $1.count }
     }
 
-    /// Create database from array of validated records.
+    /// Create a database from an array of validated records.
     init(records: RootList, path: String? = nil) {
+
         self.path = path
         recordIndex = RecordIndex()
         persons = RootList()
@@ -76,15 +77,15 @@ final public class Database: CustomStringConvertible {
     }
 }
 
-/// Load database from Gedcom file; if errors no database is created.
+/// Load a database from a Gedcom file; if there are errors no database is created.
 public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? {
     loadDatabase(from: FileGedcomSource(path: path), path: path, errLog: &errlog)
 }
 
-/// Load database from source; keyMap used for error messages.
+/// Load a database from a source; keyMap is used in error messages.
 private func loadDatabase(from source: GedcomSource, path: String? = nil,
                           errLog: inout ErrorLog) -> Database? {
-    var keyMap = KeyMap()
+    var keyMap = KeyMap()  // Maps record keys to their defining lines in source.
     guard let roots = loadValidRecords(from: source, keyMap: &keyMap, errlog: &errLog)
     else { return nil }
     return Database(records: roots, path: path)
@@ -92,11 +93,13 @@ private func loadDatabase(from source: GedcomSource, path: String? = nil,
 
 extension Database {
 
-    /// Return new database with random record keys and key references.
+    /// Return a new database identical to self except that all keys are replaced with
+    /// random values.
     public func rekeyDatabase() -> Database? {
-        var rekeyMap: [RecordKey: RecordKey] = [:]  // Old to new key map.
 
-        for (key, root) in recordIndex {  // Create old to new key map.
+        var rekeyMap: [RecordKey: RecordKey] = [:]  // Map from old to new keys.
+
+        for (key, root) in recordIndex {  // Create the rekey map.
             rekeyMap[key] = generateRandomKey(prefix: typeLetter(root.tag), map: rekeyMap)
         }
         var newRoots: [Root] = []
@@ -145,25 +148,24 @@ private func typeLetter(_ tag: String) -> String {
     return String(tag.first?.uppercased() ?? "X")
 }
 
-// Generate a random record key.
-public func generateRandomKey(prefix: String, map: [String : String], length: Int = 8) -> RecordKey {
+// Generate a random record key using Gedcom rules.
+public func generateRandomKey(prefix: String, map: [String : String],
+                              length: Int = 8) -> RecordKey {
     let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
-    while true {
+    while true {  // Loop until unique key is generated.
         let suffix = String((0..<length).map { _ in alphabet.randomElement()! })
         let key = "@\(prefix)\(suffix)@"
-        if map[key] == nil {
-            return key
-        }
+        if map[key] == nil { return key }
     }
 }
 
 extension Database {
 
+    /// Write a database to a file system path.
     func write(to path: String) {
-         //flatten the database into top-level records
          //write HEAD if present or synthesize one
-         //write all keyed records in chosen order
+         //write all keyed records in some chosen order
          //write TRLR
          //atomically write the file
     }
