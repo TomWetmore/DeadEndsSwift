@@ -66,7 +66,7 @@ extension RecordIndex {
 
 extension RecordIndex {
 
-    /// Return the keys of the children of a person with a given key.
+    /// Return the keys of the children of a person with the given key.
     func childrenKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
         let perRoot = requireRoot(from: key, tag: GedcomTag.INDI)
         var results: [RecordKey] = []
@@ -83,7 +83,7 @@ extension RecordIndex {
         return dedupeKeys(results)
     }
 
-    /// Return the keys of the children of a family key.
+    /// Return the children of a family using keys.
     func childrenKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
         let famRoot = requireRoot(from: key, tag: GedcomTag.FAM)
         var result: [RecordKey] = []

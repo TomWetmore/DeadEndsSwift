@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2631CF252F80128F00EFAE4F /* Parsing in Frameworks */ = {isa = PBXBuildFile; productRef = 2631CF242F80128F00EFAE4F /* Parsing */; };
 		263408D52E21698F00F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		263408E12E216A8100F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
+		26CAAD652F802CE1002C5B5A /* Parsing in Frameworks */ = {isa = PBXBuildFile; productRef = 26CAAD642F802CE1002C5B5A /* Parsing */; };
 		26DF075D2E69F15E000D08EE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 /* End PBXBuildFile section */
 
@@ -24,6 +26,15 @@
 
 /* Begin PBXCopyFilesBuildPhase section */
 		263408D82E216A7200F4E6DE /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		26CAAD592F8014EC002C5B5A /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -49,6 +60,7 @@
 		263408DA2E216A7200F4E6DE /* RunScript */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RunScript; sourceTree = BUILT_PRODUCTS_DIR; };
 		2673AD292E22A6B10078C61B /* libWarehouse.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWarehouse.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2682068B2D1337930051544B /* libDeadEndsLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDeadEndsLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		26CAAD5B2F8014EC002C5B5A /* ParsingTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ParsingTest; sourceTree = BUILT_PRODUCTS_DIR; };
 		26DF07562E69E7E6000D08EE /* DeadEndsTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DeadEndsTest; sourceTree = BUILT_PRODUCTS_DIR; };
 		26EABDC32F2ACDAF001406E5 /* DeadEnds.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeadEnds.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		26FB11272F51F9C800E30FDE /* PRINCIPLES.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; path = PRINCIPLES.md; sourceTree = "<group>"; };
@@ -88,17 +100,8 @@
 				GedcomPlace.swift,
 				GedcomTag.swift,
 				ImportStack.swift,
-				Interpreter/BuiltIn.swift,
-				Interpreter/BuiltinList.swift,
-				Interpreter/BuiltinPerson.swift,
-				Interpreter/BuiltinsMath.swift,
-				Interpreter/Evaluate.swift,
-				Interpreter/Interpret.swift,
-				Interpreter/Program.swift,
-				Interpreter/ProgramNode.swift,
-				Interpreter/ProgramValue.swift,
-				Interpreter/SExpression.swift,
 				NameIndex.swift,
+				Parser/Lexer.swift,
 				Partition/Connect.swift,
 				Partition/Partition.swift,
 				Person.swift,
@@ -110,6 +113,16 @@
 				RecordIndex.swift,
 				RefnIndex.swift,
 				Search.swift,
+				SExprInterpreter/BuiltIn.swift,
+				SExprInterpreter/BuiltinList.swift,
+				SExprInterpreter/BuiltinPerson.swift,
+				SExprInterpreter/BuiltinsMath.swift,
+				SExprInterpreter/Evaluate.swift,
+				SExprInterpreter/Interpret.swift,
+				SExprInterpreter/Program.swift,
+				SExprInterpreter/ProgramNode.swift,
+				SExprInterpreter/ProgramValue.swift,
+				SExprInterpreter/SExpression.swift,
 				SplitJoin.swift,
 				ToBeMoved.swift,
 				Traverse.swift,
@@ -157,6 +170,11 @@
 			path = DeadEndsLib;
 			sourceTree = "<group>";
 		};
+		26CAAD5C2F8014EC002C5B5A /* ParsingTest */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ParsingTest;
+			sourceTree = "<group>";
+		};
 		26DF07572E69E7E6000D08EE /* DeadEndsTest */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = DeadEndsTest;
@@ -197,6 +215,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2631CF252F80128F00EFAE4F /* Parsing in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		26CAAD582F8014EC002C5B5A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26CAAD652F802CE1002C5B5A /* Parsing in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -236,6 +263,7 @@
 				2673AD2D2E22A7000078C61B /* Warehouse */,
 				26DF07572E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC42F2ACDAF001406E5 /* DeadEndsIPad */,
+				26CAAD5C2F8014EC002C5B5A /* ParsingTest */,
 				26106FAE2D7BC96400994B2C /* Frameworks */,
 				263C00902F4CD5DD0061F086 /* Documents */,
 				268206632D13370F0051544B /* Products */,
@@ -251,6 +279,7 @@
 				2673AD292E22A6B10078C61B /* libWarehouse.a */,
 				26DF07562E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC32F2ACDAF001406E5 /* DeadEnds.app */,
+				26CAAD5B2F8014EC002C5B5A /* ParsingTest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -354,10 +383,35 @@
 			);
 			name = DeadEndsLib;
 			packageProductDependencies = (
+				2631CF242F80128F00EFAE4F /* Parsing */,
 			);
 			productName = DeadEndsLib;
 			productReference = 2682068B2D1337930051544B /* libDeadEndsLib.a */;
 			productType = "com.apple.product-type.library.static";
+		};
+		26CAAD5A2F8014EC002C5B5A /* ParsingTest */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26CAAD5F2F8014EC002C5B5A /* Build configuration list for PBXNativeTarget "ParsingTest" */;
+			buildPhases = (
+				26CAAD572F8014EC002C5B5A /* Sources */,
+				26CAAD582F8014EC002C5B5A /* Frameworks */,
+				26CAAD592F8014EC002C5B5A /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				26CAAD632F802C18002C5B5A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				26CAAD5C2F8014EC002C5B5A /* ParsingTest */,
+			);
+			name = ParsingTest;
+			packageProductDependencies = (
+				26CAAD642F802CE1002C5B5A /* Parsing */,
+			);
+			productName = ParsingTest;
+			productReference = 26CAAD5B2F8014EC002C5B5A /* ParsingTest */;
+			productType = "com.apple.product-type.tool";
 		};
 		26DF07552E69E7E6000D08EE /* DeadEndsTest */ = {
 			isa = PBXNativeTarget;
@@ -410,7 +464,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
 					263408AF2E21680900F4E6DE = {
@@ -426,6 +480,9 @@
 					2682068A2D1337930051544B = {
 						CreatedOnToolsVersion = 16.2;
 						LastSwiftMigration = 1620;
+					};
+					26CAAD5A2F8014EC002C5B5A = {
+						CreatedOnToolsVersion = 26.4;
 					};
 					26DF07552E69E7E6000D08EE = {
 						CreatedOnToolsVersion = 16.4;
@@ -444,6 +501,9 @@
 			);
 			mainGroup = 268206592D13370F0051544B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2631CF232F80128F00EFAE4F /* XCRemoteSwiftPackageReference "swift-parsing" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 268206632D13370F0051544B /* Products */;
 			projectDirPath = "";
@@ -455,6 +515,7 @@
 				2673AD282E22A6B10078C61B /* Warehouse */,
 				26DF07552E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC22F2ACDAF001406E5 /* DeadEndsIPad */,
+				26CAAD5A2F8014EC002C5B5A /* ParsingTest */,
 			);
 		};
 /* End PBXProject section */
@@ -505,6 +566,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		26CAAD572F8014EC002C5B5A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		26DF07522E69E7E6000D08EE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -526,6 +594,10 @@
 			isa = PBXTargetDependency;
 			target = 2682068A2D1337930051544B /* DeadEndsLib */;
 			targetProxy = 264C9E9B2ED7CD7A00BA7D56 /* PBXContainerItemProxy */;
+		};
+		26CAAD632F802C18002C5B5A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 26CAAD622F802C18002C5B5A /* Parsing */;
 		};
 /* End PBXTargetDependency section */
 
@@ -785,6 +857,34 @@
 			};
 			name = Release;
 		};
+		26CAAD602F8014EC002C5B5A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 22WT5TK79S;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		26CAAD612F8014EC002C5B5A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 22WT5TK79S;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		26DF075A2E69E7E6000D08EE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -926,6 +1026,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		26CAAD5F2F8014EC002C5B5A /* Build configuration list for PBXNativeTarget "ParsingTest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				26CAAD602F8014EC002C5B5A /* Debug */,
+				26CAAD612F8014EC002C5B5A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		26DF075C2E69E7E6000D08EE /* Build configuration list for PBXNativeTarget "DeadEndsTest" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -945,6 +1054,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2631CF232F80128F00EFAE4F /* XCRemoteSwiftPackageReference "swift-parsing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-parsing";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.14.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2631CF242F80128F00EFAE4F /* Parsing */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2631CF232F80128F00EFAE4F /* XCRemoteSwiftPackageReference "swift-parsing" */;
+			productName = Parsing;
+		};
+		26CAAD622F802C18002C5B5A /* Parsing */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2631CF232F80128F00EFAE4F /* XCRemoteSwiftPackageReference "swift-parsing" */;
+			productName = Parsing;
+		};
+		26CAAD642F802CE1002C5B5A /* Parsing */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2631CF232F80128F00EFAE4F /* XCRemoteSwiftPackageReference "swift-parsing" */;
+			productName = Parsing;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2682065A2D13370F0051544B /* Project object */;
 }

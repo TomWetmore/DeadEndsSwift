@@ -50,7 +50,7 @@ struct PedigreeActionBar: View {
         return index
     }
 
-    /// Find father; go to him in the pedigree.
+    /// Find father; go to him in the pedigree page.
     private func gotoFather() {
         
         guard let index = requireIndex() else { return }
@@ -62,7 +62,7 @@ struct PedigreeActionBar: View {
         model.path.append(Route.pedigree(father))
     }
 
-    /// Find mother; go to her in the pedigree.
+    /// Find mother; go to her in the pedigree page.
     private func gotoMother() {
 
         guard let index = requireIndex() else { return }

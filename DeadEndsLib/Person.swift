@@ -157,7 +157,7 @@ public extension Person {
 /// Extension for Families.
 public extension Person {
 
-    /// Return families person is a spouse in.
+    /// Return the families a person is in as a spouse.
     func spouseFamilies(in index: RecordIndex) -> [Family] {
         var families: [Family] = []
         for famsKey in kidVals(forTag: GedcomTag.FAMS) {
@@ -167,7 +167,7 @@ public extension Person {
         return families
     }
 
-    /// Return families person is a child in.
+    /// Return the families a person is in as a child.
     func childFamilies(in index: RecordIndex) -> [Family] {
         var families: [Family] = []
         for famcKey in kidVals(forTag: GedcomTag.FAMC) {
@@ -178,21 +178,21 @@ public extension Person {
     }
 }
 
-/// Return family a key refers to. Fatal error if it does not.
+/// Return the family a key refers to. Fatal error if cannot be done.
 func requireFamily(for key: RecordKey, in index: RecordIndex) -> Family {
     guard let family = index.family(for: key), family.root.tag == GedcomTag.FAM
     else { fatalError("key \(key) must refer to a family") }
     return family
 }
 
-/// Return person a key refers to. Fatal error if it does not.
+/// Return the person a key refers to. Fatal error if it cannot be done.
 public func requirePerson(with key: RecordKey, in index: RecordIndex) -> Person {
     guard let person = index.person(for: key), person.root.tag == GedcomTag.INDI
     else { fatalError("key \(key) must refer to a person") }
     return person
 }
 
-
+/// Return the person a node is the root of. Fatal error if it cannot be done.
 public func requirePerson(with root: Root, in index: RecordIndex) -> Person {
     let key = requireKey(on: root)
     guard let person = index.person(for: key), person.root.tag == GedcomTag.INDI
