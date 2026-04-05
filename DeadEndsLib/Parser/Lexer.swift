@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 3 April 2026.
+//  Last changed on 4 April 2026.
 //
 
 import Foundation
@@ -13,23 +13,72 @@ struct Lexer {
     let source: String
     var index: String.Index
     var line: Int = 1
+
+    init(source: String) {
+        self.source = source
+        self.index = source.startIndex
+    }
 }
 
+/// High level methods for overall tokenization.
 extension Lexer {
-//    func getToken() -> Token {
-//        while let token = nextToken() {
-//            return token
-//        }
-//        return Token(kind: .eof, line: line)
-//    }
 
-    /// Peek at the next character in the program.
+    /// Tokenize the source into an array of tokens, including EOF.
+    mutating func tokenize() -> [Token] {
+        var tokens: [Token] = []
+
+        while true {
+            let token = nextToken()
+            tokens.append(token)
+            if token.kind == .eof { break }
+        }
+        return tokens
+    }
+
+    /// Return the next token from the source.
+    mutating func nextToken() -> Token {
+        skipWhiteSpaceAndComments()
+
+        let startLine = line
+
+        guard let c = peek() else {  // End of source.
+            return Token(kind: .eof, line: startLine)
+        }
+        if c.isLetter {  // Identifier or keyword.
+            return lexIdentifierOrKeyword()
+        }
+        if c.isNumber || c == "-" || c == "." {  // Numbers, minus sign, and period.
+            return lexNumberOrMinus()
+        }
+        if c == "\"" {  // String constant.
+            return lexString()
+        }
+        advance()
+        switch c {  // Single character punctuation.
+        case "(": return Token(kind: .lParen, line: startLine)
+        case ")": return Token(kind: .rParen, line: startLine)
+        case "{": return Token(kind: .lBrace, line: startLine)
+        case "}": return Token(kind: .rBrace, line: startLine)
+        case ",": return Token(kind: .comma, line: startLine)
+        case "/": return Token(kind: .slash, line: startLine)
+        default:
+            // For now, return EOF or consider adding an .unknown(Character) token.
+            // During early development, trapping here may be even better.
+            fatalError("Unexpected character '\(c)' at line \(startLine)")
+        }
+    }
+}
+
+/// Low level index methods.
+extension Lexer {
+
+    /// Peek at the next character.
     func peek() -> Character? {
         guard index < source.endIndex else { return nil }
         return source[index]
     }
 
-    /// Advance one character in the program.
+    /// Advance one character.
     @discardableResult mutating func advance() -> Character? {
         guard let c = peek() else { return nil }
         index = source.index(after: index)
@@ -37,50 +86,39 @@ extension Lexer {
         return c
     }
 
-    /// Backup one character in the program; currently needed.
+    /// Backup one character.
     mutating func backup() {
         index = source.index(before: index)
         if peek() == "\n" { line -= 1 }
     }
+}
 
+/// Mid level source processing methods.
+extension Lexer {
+
+    /// Skip whitespace and comments.
     mutating func skipWhiteSpaceAndComments() {
         while true {
-            // Skip ordinary whitespace.
-            while let c = peek(), c.isWhitespace {
-                advance()
-            }
+            while let c = peek(), c.isWhitespace {  advance() } // Skip whitespace.
+            guard peek() == "/" else { return }  // If not at '/' return.
 
-            // If we're not looking at '/', we're done.
-            guard peek() == "/" else { return }
-
-            // Consume the '/' and see whether this is really a comment.
-            advance()
-
-            if peek() != "*" {
-                // Not a comment. Put the '/' back and stop.
+            advance()  // Pass the '/'.
+            if peek() != "*" {  // Put the '/' back, return.
                 backup()
                 return
             }
-
-            // Consume the '*'; now we are inside a /* ... */ comment.
-            advance()
-
-            // Scan until we find the closing */
-            while let c = advance() {
+            advance()  // Now in a comment.
+            while let c = advance() {  // Scan to end of comment.
                 if c == "*" && peek() == "/" {
-                    advance()   // consume the '/'
+                    advance()   // Consume the final '/'.
                     break
                 }
             }
-
-            // If advance() returned nil, we hit end-of-input.
-            // In either case, loop back and skip any following whitespace/comments.
-            if peek() == nil { return }
+            if peek() == nil { return }  // Check for end of input, continue main loop.
         }
     }
 
     /// Lex an identifier or reserved word.
-    /// Assumes the current character is the first letter of the token.
     mutating func lexIdentifierOrKeyword() -> Token {
         let startLine = line
         var text = ""
@@ -93,16 +131,112 @@ extension Lexer {
         return Token(kind: kind, line: startLine)
     }
 
-}  // End of extension with lexing functions.
+    /// Lex an integer or floating point literal. It can be positive or negative.
+    mutating func lexNumberOrMinus() -> Token {
+        let startLine = line
 
-        //        while (true) {
-        //            while ((c = inchar()) != '*' && c != 0) ;  // Read to a *.
-        //            if (c == 0) return 0;
-        //            while ((c = inchar()) == '*') ;  // Allow multiple *'s.
-        //            if (c == '/') break;
-        //            if (c == 0) return 0;
-        //            // Anything else continues the comment finding loop.
-        //        }
+        // Handle '-'.
+        var isNegative = false
+        if peek() == "-" {
+            advance()
+            if let n = peek(), !(n.isNumber || n == ".") {
+                return Token(kind: .minus, line: startLine)
+            }
+            if peek() == nil {
+                return Token(kind: .minus, line: startLine)
+            }
+            isNegative = true
+        }
+
+        // Current char is a digit or '.'
+        var sawWholeDigit = false
+        var intValue = 0
+
+        // Integer part
+        while let c = peek(), c.isNumber {
+            sawWholeDigit = true
+            if let d = c.wholeNumberValue {
+                intValue = intValue * 10 + d
+            }
+            advance()
+        }
+
+        var sawFractionDigit = false
+        var fracValue: Double = 0
+        var fracDivisor: Double = 1
+        var sawDecimalPoint = false
+
+        // Fractional part
+        if peek() == "." {
+            sawDecimalPoint = true
+            advance() // consume '.'
+
+            while let c = peek(), c.isNumber {
+                sawFractionDigit = true
+                if let d = c.wholeNumberValue {
+                    fracValue = fracValue * 10 + Double(d)
+                    fracDivisor *= 10
+                }
+                advance()
+            }
+        }
+        // No digits at all: either "." or "-."
+        if !sawWholeDigit && !sawFractionDigit {
+            if isNegative && sawDecimalPoint {
+                backup()   // put back '.'
+                return Token(kind: .minus, line: startLine)
+            } else {
+                return Token(kind: .period, line: startLine)
+            }
+        }
+        if !sawDecimalPoint {
+            let value = isNegative ? -intValue : intValue
+            return Token(kind: .intConst(value), line: startLine)
+        } else {
+            let whole = Double(intValue)
+            let value = whole + (fracValue / fracDivisor)
+            let final = isNegative ? -value : value
+            return Token(kind: .floatConst(final), line: startLine)
+        }
+    }
+
+    /// Lex a string constant.
+    mutating func lexString() -> Token {
+        let startLine = line
+
+        advance()  // Consume opening quote.
+        var text = ""
+
+        while true {
+            guard let c = advance() else {
+                return Token(kind: .stringConst(text), line: startLine)  // EOF.
+            }
+            if c == "\"" {  // Closing quote.
+                return Token(kind: .stringConst(text), line: startLine)
+            }
+            if c == "\\" { // Escape sequence.
+                guard let esc = advance() else {
+                    // EOF after backslash: return what we have.
+                    return Token(kind: .stringConst(text), line: startLine)
+                }
+                switch esc {
+                case "n":  text.append("\n")
+                case "t":  text.append("\t")
+                case "v":  text.append("\u{000B}")   // vertical tab
+                case "r":  text.append("\r")
+                case "b":  text.append("\u{0008}")   // backspace
+                case "f":  text.append("\u{000C}")   // form feed
+                case "\"": text.append("\"")
+                case "\\": text.append("\\")
+                default:   text.append(esc)
+                }
+            } else {
+                // Ordinary character
+                text.append(c)
+            }
+        }
+    }
+}
 
 enum TokenKind: Equatable {
     case identifier(String)
@@ -185,211 +319,3 @@ func keywordKind(for word: String) -> TokenKind? {
     default: return nil
     }
 }
-
-//static int inchar(void);      // Get the next character from the current file.
-//static void unreadchar(int c);  // Unread a character to the current file.
-//static bool reserved(String word, int *pval);  // Check whether an identifier is reserved.
-//extern int curLine;; // Current line number in file being parsed.
-//extern SemanticValue yylval;  // Defined in y.tab.c
-//int yylex(void) { return getToken(); }
-//
-//// getTokenLow is the real lexer.
-//static int getTokenLow(void) {
-//    int retval;
-//    CharType t; // Type of current character.
-//    int c; // Current character.
-//    static char tokbuf[512]; // Buffer where tokens accumulate.
-//
-//    char* p = tokbuf; // Pointer to current point in tokbuf.
-//    // Get by white space, including comments.
-//    while (true) {
-//        while ((t = characterType(c = inchar())) == White)
-//            ;
-//        if (c != '/') break; // Passed any whitespace not followed by a comment.
-//        // Handle comment if there.
-//        if ((c = inchar()) != '*') {
-//            // Not in comment. Unread last character and return /.
-//            unreadchar(c);
-//            return '/';
-//        }
-//        // Found the start of a comment. Read to its end.
-//        while (true) {
-//            while ((c = inchar()) != '*' && c != 0) ;  // Read to a *.
-//            if (c == 0) return 0;
-//            while ((c = inchar()) == '*') ;  // Allow multiple *'s.
-//            if (c == '/') break;
-//            if (c == 0) return 0;
-//            // Anything else continues the comment finding loop.
-//        }
-//    }
-//
-//    // Got by any white space and/or comments. Now at the first character of a token.
-//    if (t == Letter) {
-//        p = (String) tokbuf;
-//        while (t == Letter || t == Digit || c == '_') {
-//            *p++ = c;
-//            t = characterType(c = inchar());
-//        }
-//        *p = 0;
-//        unreadchar(c);
-//        //printf("in lexer.c -- IDEN is %s\n", tokbuf);
-//        yylval.string = strsave((String) tokbuf);  // TODO: RESERVED WORDS GETTING IN THERE TOO
-//        // See if the IDEN is a reserved word.
-//        if (reserved((String) tokbuf, &retval)) return retval;
-//        return IDEN;
-//    }
-//
-//    // Handle numbers. They can be positive or negative. They can be integers or floating point.
-//    if (c == '-' || t == Digit || c == '.') {
-//        bool whole = false;
-//        bool frac = false;
-//        int mul = 1;
-//        if (c == '-') {  // Hyphen could be a hypnen or a minus sign in front of a number.
-//            t = characterType(c = inchar());  // Read the next character to find out.
-//            if (c != '.' && t != Digit) {
-//                unreadchar(c);
-//                return '-';
-//            }
-//            mul = -1;
-//        }
-//        int ivalue = 0;
-//        while (t == Digit) {
-//            whole = true;
-//            ivalue = ivalue*10 + c - '0';  // Accumulate the integer part of the number.
-//            t = characterType(c = inchar());
-//        }
-//
-//        // If the next character is not Period an integer was read.
-//        if (c != '.') {
-//            unreadchar(c);
-//            ivalue *= mul;
-//            yylval.integer = ivalue;
-//            return ICONS;
-//        }
-//
-//        // Just read . at end of integer. Read next character to see what's up.
-//        t = characterType(c = inchar());
-//        float fvalue = 0.0;
-//        float fdiv = 1.0;
-//        while (t == Digit) {
-//            frac = true;
-//            fvalue = fvalue*10 + c - '0';
-//            fdiv *= 10;
-//            t = characterType(c = inchar());
-//        }
-//
-//        // Unread character after last digit.
-//        unreadchar(c);
-//        if (!whole && !frac) {  // Is this possible.
-//            unreadchar(c);
-//            if (mul == -1) {
-//                unreadchar('.');
-//                return '-';
-//            } else
-//                return '.';
-//        }
-//        yylval.floating = mul*(ivalue + fvalue/fdiv);
-//        return FCONS;
-//    }
-//
-//    // Handle string constants.
-//    if (c == '"') {
-//        p = tokbuf;
-//        while (true) {
-//            c = inchar();
-//            if (c == 0 || c == '"') {
-//                *p = 0;
-//                yylval.string = strsave(tokbuf);
-//                return SCONS;
-//            }
-//            if (c == '\\') {
-//                // Escape sequence
-//                c = inchar();
-//                switch (c) {
-//                    case 'n': *p++ = '\n'; break;
-//                    case 't': *p++ = '\t'; break;
-//                    case 'v': *p++ = '\v'; break;
-//                    case 'r': *p++ = '\r'; break;
-//                    case 'b': *p++ = '\b'; break;
-//                    case 'f': *p++ = '\f'; break;
-//                    case '"': *p++ = '"'; break;
-//                    case '\\': *p++ = '\\'; break;
-//                    case 0:
-//                        *p = 0;
-//                        yylval.string = strsave(tokbuf);
-//                        return SCONS;
-//                    default:
-//                        *p++ = c; break;
-//                }
-//            } else {
-//                // Normal character
-//                *p++ = c;
-//            }
-//        }
-//    }
-//    if (c == 0) return 0;
-//    return c;
-//}
-//
-//// inchar gets the next character from the Lexer.
-//static int inchar(void) {
-//    int c = getc(currentFile);
-//    if (c == '\n') curLine++;
-//    if (debugging) printf("+: '%c'\n", c);
-//    return c == EOF ? 0 : c;
-//}
-//
-//// unreadchar returns a character to the lexer.
-//static void unreadchar(int c) {
-//    if (c == 0) return;
-//    if (debugging) printf("-: '%c'\n", c);
-//    ungetc(c, currentFile);
-//    if (c == '\n') curLine--;
-//}
-//
-//// rwordtable is the reserved word table.
-//static struct {
-//    char* rword;
-//    int val;
-//} rwordtable[] = {
-//    { "break",    BREAK },
-//    { "call",     CALL },
-//    { "children",  CHILDREN },
-//    { "continue",  CONTINUE },
-//    { "else",     ELSE },
-//    { "elsif",    ELSIF },
-//    { "families", FAMILIES },
-//    { "fathers",  FATHERS },
-//    { "foreven",  FOREVEN },
-//    { "forfam",   FORFAM },
-//    { "forindiset",  FORINDISET },
-//    { "forindi",  FORINDI },
-//    { "forlist",  FORLIST_TOK },
-//    { "fornodes", FORNODES },
-//    { "fornotes", FORNOTES },
-//    { "forothr",  FOROTHR },
-//    { "forsour",  FORSOUR },
-//    { "func",     FUNC_TOK },
-//    { "if",       IF },
-//    { "mothers",  MOTHERS },
-//    { "Parents",  PARENTS },
-//    { "proc",     PROC },
-//    { "return",   RETURN },
-//    { "spouses",  SPOUSES },
-//    { "traverse", TRAVERSE },
-//    { "while",    WHILE },
-//};
-//
-//static const int nrwords = ARRAYSIZE(rwordtable);
-//
-//// reserved checks if a String is a reserved word.
-//static bool reserved (String word, int* pval) {
-//    for (int i = 0; i < nrwords; i++) {
-//        if (eqstr(word, rwordtable[i].rword)) {
-//            *pval = rwordtable[i].val;
-//            return true;
-//        }
-//    }
-//    return false;
-//}
-//
