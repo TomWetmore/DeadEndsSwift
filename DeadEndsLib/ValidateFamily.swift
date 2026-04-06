@@ -33,14 +33,14 @@ func validateFamily(family: Root, index: RecordIndex, source: String, keymap: Ke
 		case "HUSB":
 			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal husband link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			guard !husbKeys.contains(pkey) else {
 				let errmsg = "Family \(pkey) has duplicate husband link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
@@ -48,28 +48,28 @@ func validateFamily(family: Root, index: RecordIndex, source: String, keymap: Ke
 			husbKeys.insert(fkey)
 			guard let person = index[pkey] else {
 				let errmsg = "Family \(fkey) has an illegal husband link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			if !person.hasFamilyAsChildLink(to: family) {
 				let errmsg = "Family \(fkey) has husband link to \(pkey) that does not link back."
-				errlog.append(Error(type: .linkage, severity: .severe, message: errmsg))
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, message: errmsg))
 				errorCount += 1
 				break
 			}
 		case "WIFE":
 			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal wife link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			guard !wifeKeys.contains(pkey) else {
 				let errmsg = "Family \(pkey) has duplicate wife link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
@@ -77,14 +77,14 @@ func validateFamily(family: Root, index: RecordIndex, source: String, keymap: Ke
 			husbKeys.insert(fkey)
 			guard let person = index[pkey] else {
 				let errmsg = "Family \(fkey) has an illegal wife link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			if !person.hasFamilyAsChildLink(to: family) {
 				let errmsg = "Family \(fkey) has wife link to \(pkey) that does not link back."
-				errlog.append(Error(type: .linkage, severity: .severe, message: errmsg))
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, message: errmsg))
 				errorCount += 1
 				break
 			}
@@ -92,14 +92,14 @@ func validateFamily(family: Root, index: RecordIndex, source: String, keymap: Ke
 		case "CHIL":
 			guard let pkey = node.val else {
 				let errmsg = "Family \(fkey) has an illegal child link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			guard !husbKeys.contains(pkey) else {
 				let errmsg = "Family \(pkey) has duplicate child link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
@@ -107,14 +107,14 @@ func validateFamily(family: Root, index: RecordIndex, source: String, keymap: Ke
 			chilKeys.insert(fkey)
 			guard let person = index[pkey] else {
 				let errmsg = "Family \(fkey) has an illegal child link"
-				errlog.append(Error(type: .linkage, severity: .severe, source: source,
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, source: source,
 									line: line + node.offset, message: errmsg))
 				errorCount += 1
 				break
 			}
 			if !person.hasFamilyAsChildLink(to: family) {
 				let errmsg = "Family \(fkey) has child link to \(pkey) that does not link back."
-				errlog.append(Error(type: .linkage, severity: .severe, message: errmsg))
+				errlog.append(DeadEndsError(type: .linkage, severity: .severe, message: errmsg))
 				errorCount += 1
 				break
 			}

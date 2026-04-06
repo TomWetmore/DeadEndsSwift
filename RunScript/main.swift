@@ -72,8 +72,8 @@ func runPipeline() throws {
 
     // Load a database from a Gedcom file.
     print("Reading Gedcom file into database")
-    var errLog: [Error] = []
-    let database = loadDatabase("/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged", errlog: &errLog)
+    var errLog = ErrorLog()
+    let database = loadDatabase(from: "/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged", errlog: &errLog)
     guard let db = database else {
         throw RuntimeError.missingDatabase("Could not load Gedcom file into database.")
     }

@@ -3,18 +3,18 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 4 April 2026.
+//  Last changed on 5 April 2026.
 //
 
 import Foundation
 
 /// Lexer for the DeadEnds programming language.
-struct Lexer {
+public struct Lexer {
     let source: String
     var index: String.Index
     var line: Int = 1
 
-    init(source: String) {
+    public init(source: String) {
         self.source = source
         self.index = source.startIndex
     }
@@ -36,25 +36,17 @@ extension Lexer {
     }
 
     /// Return the next token from the source.
-    mutating func nextToken() -> Token {
-        skipWhiteSpaceAndComments()
-
+    public mutating func nextToken() -> Token {
         let startLine = line
 
-        guard let c = peek() else {  // End of source.
-            return Token(kind: .eof, line: startLine)
-        }
-        if c.isLetter {  // Identifier or keyword.
-            return lexIdentifierOrKeyword()
-        }
-        if c.isNumber || c == "-" || c == "." {  // Numbers, minus sign, and period.
-            return lexNumberOrMinus()
-        }
-        if c == "\"" {  // String constant.
-            return lexString()
-        }
+        skipWhiteSpaceAndComments()
+        guard let c = peek()
+        else { return Token(kind: .eof, line: startLine) }
+        if c.isLetter { return lexIdentifierOrKeyword() }
+        if c.isNumber || c == "-" || c == "." { return lexNumberOrMinus() }
+        if c == "\"" { return lexString() }
         advance()
-        switch c {  // Single character punctuation.
+        switch c {
         case "(": return Token(kind: .lParen, line: startLine)
         case ")": return Token(kind: .rParen, line: startLine)
         case "{": return Token(kind: .lBrace, line: startLine)
@@ -63,7 +55,6 @@ extension Lexer {
         case "/": return Token(kind: .slash, line: startLine)
         default:
             // For now, return EOF or consider adding an .unknown(Character) token.
-            // During early development, trapping here may be even better.
             fatalError("Unexpected character '\(c)' at line \(startLine)")
         }
     }
@@ -99,7 +90,7 @@ extension Lexer {
     /// Skip whitespace and comments.
     mutating func skipWhiteSpaceAndComments() {
         while true {
-            while let c = peek(), c.isWhitespace {  advance() } // Skip whitespace.
+            while let c = peek(), c.isWhitespace { advance() } // Skip whitespace.
             guard peek() == "/" else { return }  // If not at '/' return.
 
             advance()  // Pass the '/'.
@@ -238,7 +229,7 @@ extension Lexer {
     }
 }
 
-enum TokenKind: Equatable {
+public enum TokenKind: Equatable {
     case identifier(String)
     case intConst(Int)
     case floatConst(Double)
@@ -283,9 +274,15 @@ enum TokenKind: Equatable {
     case eof
 }
 
-struct Token: Equatable {
-    let kind: TokenKind
+public struct Token: Equatable {
+    public let kind: TokenKind
     let line: Int
+}
+
+extension Token: CustomStringConvertible {
+    public var description: String {
+        "Token(\(line), \(kind))"
+    }
 }
 
 func keywordKind(for word: String) -> TokenKind? {
@@ -317,5 +314,60 @@ func keywordKind(for word: String) -> TokenKind? {
     case "traverse": return .traverse
     case "while": return .whileTok
     default: return nil
+    }
+}
+
+
+//extension Token: CustomStringConvertible {
+//    var description: String {
+//        "Token(\(line), \(kind))"
+//    }
+//}
+
+extension TokenKind: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .identifier(let s):  return "identifier(\(String(reflecting: s)))"
+        case .intConst(let i):    return "intConst(\(i))"
+        case .floatConst(let d):  return "floatConst(\(d))"
+        case .stringConst(let s): return "stringConst(\(String(reflecting: s)))"
+
+        case .proc: return "proc"
+        case .funcTok: return "funcTok"
+        case .children: return "children"
+        case .spouses: return "spouses"
+        case .ifTok: return "ifTok"
+        case .elseTok: return "elseTok"
+        case .elsif: return "elsif"
+        case .families: return "families"
+        case .whileTok: return "whileTok"
+        case .call: return "call"
+        case .forindiset: return "forindiset"
+        case .forindi: return "forindi"
+        case .fornotes: return "fornotes"
+        case .traverse: return "traverse"
+        case .fornodes: return "fornodes"
+        case .forlist: return "forlist"
+        case .forfam: return "forfam"
+        case .forsour: return "forsour"
+        case .foreven: return "foreven"
+        case .forothr: return "forothr"
+        case .breakTok: return "breakTok"
+        case .continueTok: return "continueTok"
+        case .returnTok: return "returnTok"
+        case .fathers: return "fathers"
+        case .mothers: return "mothers"
+        case .parents: return "parents"
+
+        case .lParen: return "lParen"
+        case .rParen: return "rParen"
+        case .lBrace: return "lBrace"
+        case .rBrace: return "rBrace"
+        case .comma: return "comma"
+        case .slash: return "slash"
+        case .minus: return "minus"
+        case .period: return "period"
+        case .eof: return "eof"
+        }
     }
 }

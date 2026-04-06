@@ -51,7 +51,7 @@ extension Root {
 				if let value = node.val, !value.isEmpty {
 					hasName = true
 				} else {
-					errlog.append(Error(type: .validate, severity: .severe, line: line + node.offset,
+					errlog.append(DeadEndsError(type: .validate, severity: .severe, line: line + node.offset,
 										message: "Person \(pkey) has an empty NAME line."))
 				}
 			case "SEX":
@@ -59,7 +59,7 @@ extension Root {
 				if let value = node.val, ["M", "F", "U"].contains(value) {
 					hasSex = true
 				} else {
-					errlog.append(Error(type: .validate, severity: .severe, line: line + node.offset,
+					errlog.append(DeadEndsError(type: .validate, severity: .severe, line: line + node.offset,
 										  message: "Person \(pkey) has an invalid SEX line."))
 				}
 			default:
@@ -68,14 +68,14 @@ extension Root {
 		}
 
 		if !hasName {
-			errlog.append(Error(type: .validate, severity: .severe, source: source, line: line,
+			errlog.append(DeadEndsError(type: .validate, severity: .severe, source: source, line: line,
 								message: "Person \(pkey) is missing a NAME line."))
 		}
 		if !hasSex {
-			errlog.append(Error(type: .validate, severity: .severe, source: source, line: line,
+			errlog.append(DeadEndsError(type: .validate, severity: .severe, source: source, line: line,
 								message: "Person \(pkey) is missing a SEX line."))
 		} else if sexLines != 1 {
-			errlog.append(Error(type: .validate, severity: .severe, source: source, line: line,
+			errlog.append(DeadEndsError(type: .validate, severity: .severe, source: source, line: line,
 								message: "Person \(pkey) has more than one SEX line."))
 		}
 
@@ -130,7 +130,7 @@ extension GedcomNode { // Extension for internal Nodes.
 }
 
 private func appendError(errlog: ErrorLog, type: ErrorType, source: String, line: Int = 0, message: String) {
-	errlog.append(Error(type: type, severity: .severe, source: source, line: line, message: message))
+	errlog.append(DeadEndsError(type: type, severity: .severe, source: source, line: line, message: message))
 }
 
 enum FamilyRole: String {

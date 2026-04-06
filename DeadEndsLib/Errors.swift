@@ -26,7 +26,7 @@ enum Severity: String {
 }
 
 /// DeadEnds error.
-public struct Error: CustomStringConvertible {
+public struct DeadEndsError: CustomStringConvertible {
 	let type: ErrorType
 	let severity: Severity
 	let source: String?
@@ -56,7 +56,7 @@ public struct Error: CustomStringConvertible {
 /// Error log class.
 public class ErrorLog: CustomStringConvertible {
 
-    var log: [Error] = []  // Array of errors.
+    var log: [DeadEndsError] = []  // Array of errors.
     public var count: Int { return log.count }  // Number of entries in log.
 
     /// Create an error log.
@@ -70,7 +70,7 @@ public class ErrorLog: CustomStringConvertible {
     }
 
     /// Append an error to the log.
-    public func append(_ error: Error) {
+    public func append(_ error: DeadEndsError) {
         log.append(error)
     }
 }

@@ -11,11 +11,19 @@
 		263408D52E21698F00F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		263408E12E216A8100F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		26CAAD652F802CE1002C5B5A /* Parsing in Frameworks */ = {isa = PBXBuildFile; productRef = 26CAAD642F802CE1002C5B5A /* Parsing */; };
+		26CAB03C2F82C88E002C5B5A /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		26DF075D2E69F15E000D08EE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		264C9E9B2ED7CD7A00BA7D56 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2682065A2D13370F0051544B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2682068A2D1337930051544B;
+			remoteInfo = DeadEndsLib;
+		};
+		26CAB03A2F82C885002C5B5A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2682065A2D13370F0051544B /* Project object */;
 			proxyType = 1;
@@ -102,6 +110,8 @@
 				ImportStack.swift,
 				NameIndex.swift,
 				Parser/Lexer.swift,
+				Parser/Parser.swift,
+				Parser/ParserTest.swift,
 				Partition/Connect.swift,
 				Partition/Partition.swift,
 				Person.swift,
@@ -223,6 +233,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				26CAB03C2F82C88E002C5B5A /* libDeadEndsLib.a in Frameworks */,
 				26CAAD652F802CE1002C5B5A /* Parsing in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -400,6 +411,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				26CAB03B2F82C885002C5B5A /* PBXTargetDependency */,
 				26CAAD632F802C18002C5B5A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -598,6 +610,11 @@
 		26CAAD632F802C18002C5B5A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 26CAAD622F802C18002C5B5A /* Parsing */;
+		};
+		26CAB03B2F82C885002C5B5A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2682068A2D1337930051544B /* DeadEndsLib */;
+			targetProxy = 26CAB03A2F82C885002C5B5A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

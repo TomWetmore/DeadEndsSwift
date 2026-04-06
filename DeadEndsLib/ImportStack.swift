@@ -104,7 +104,7 @@ func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
             nodes.add(node: node, data: level)
             if level == 0, let key = key { keyMap[key] = lineno }
         case .failure(errmsg: let errmsg):
-            let error = Error(type: .syntax, severity: .severe, source: source.name, line: lineno, message: errmsg)
+            let error = DeadEndsError(type: .syntax, severity: .severe, source: source.name, line: lineno, message: errmsg)
             errlog.append(error)
         }
     }
@@ -128,7 +128,7 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorL
                 curRoot = curNode;  // Set curRoot and goto .main.
                 state = .main;
             } else {  // Add error and goto .error.
-                let error = Error(type: .syntax, severity: .fatal, message: "First line must have level 0")
+                let error = DeadEndsError(type: .syntax, severity: .fatal, message: "First line must have level 0")
                 errlog.append(error)
                 state = .error
             }
@@ -147,7 +147,7 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorL
                 while (curLev < prevLev) {
                     count += 1
                     if (count > 100 || prevNode == nil) { // Error in tree structure.
-                        let error = Error(type: .syntax, severity: .fatal,
+                        let error = DeadEndsError(type: .syntax, severity: .fatal,
                                           message: "Too many ancestors: mis-formed tree?")
                         errlog.append(error)
                         state = .error
@@ -159,7 +159,7 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorL
                 curNode.dad = prevNode!.dad
                 prevNode!.sib = curNode
             } else { // curLevel > prevLevel + 1.
-                let error = Error(type: .syntax, severity: .fatal, message: "Invalid level")
+                let error = DeadEndsError(type: .syntax, severity: .fatal, message: "Invalid level")
                 errlog.append(error)
                 state = .error
             }

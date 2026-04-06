@@ -16,13 +16,13 @@ func checkKeysAndReferences(records: RootList, path: String, keymap: KeyMap, err
         let type = root.recordKind()
         if type == .header || type == .trailer { continue }
         guard let key = root.key else {  // Existance.
-            errlog.append(Error(type: .gedcom, severity: .fatal, source: path,
+            errlog.append(DeadEndsError(type: .gedcom, severity: .fatal, source: path,
                                 message: "Record \(root) is missing a key"))
             continue
         }
         if keyset.contains(key) {  // Uniqueness.
             let line = keymap[key]
-            errlog.append(Error(type: .gedcom, severity: .fatal, source: path, line: line!,
+            errlog.append(DeadEndsError(type: .gedcom, severity: .fatal, source: path, line: line!,
                                 message: "Duplicate key: \(key)"))
             continue
         }
@@ -35,7 +35,7 @@ func checkKeysAndReferences(records: RootList, path: String, keymap: KeyMap, err
             if !keyset.contains(value) {
                 var line = 0
                 if let key = key { line = keymap[key]! + node.offset }
-                let error = Error(type: .gedcom, severity: .fatal, source: path, line: line,
+                let error = DeadEndsError(type: .gedcom, severity: .fatal, source: path, line: line,
                                   message: "Invalid key value: \(value)")
                 errlog.append(error)
             }
