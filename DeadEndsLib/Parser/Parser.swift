@@ -6,10 +6,6 @@
 //  Last changed on 6 April 2026.
 //
 
-//
-//  ParsingTest.swift
-//
-
 import Foundation
 import Parsing
 
@@ -108,11 +104,10 @@ enum DeadEndsParseError: Error, CustomStringConvertible {
     var description: String { "parse error" }
 }
 
-// ------------------------------------------------------------
-// Expression parser
-// ------------------------------------------------------------
-
+/// Expression parser.
 struct ExprParser: Parser {
+
+
     func parse(_ input: inout TokStream) throws -> ParsedExpr {
         // Try function call first because it begins with an identifier.
         let saved = input
@@ -133,7 +128,6 @@ struct ExprParser: Parser {
         if let s = try? StringConstToken().parse(&input) {
             return .stringConst(s)
         }
-
         throw DeadEndsParseError()
     }
 
@@ -180,12 +174,12 @@ struct ExprListOptionalParser: Parser {
     }
 }
 
-// ------------------------------------------------------------
-// CALL statement parser
-// ------------------------------------------------------------
-
+/// Call statement parser.
 struct CallStmtParser: Parser {
+
+    /// Parse procedure call statements.
     func parse(_ input: inout TokStream) throws -> ParsedCallStmt {
+
         try ExactToken(kind: .call).parse(&input)
         let name = try IdentifierToken().parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
