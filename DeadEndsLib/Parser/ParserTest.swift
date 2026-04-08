@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 6 April 2026.
-//  Last changed 6 April 2026.
+//  Last changed 76 April 2026.
 //
 
 import Foundation
@@ -19,10 +19,27 @@ public func testParser() {
     parseTokens(ExprListParser(), from: "a, 123, \"x\", mother(p)")
     parseTokens(CallStmtParser(), from: "call showevent(29, birth(indi), 0, 0)")
     parseTokens(CallStmtParser(), from: "call setupabbvtab()")
-
     parseTokens(WhileStmtParser(), from: "while(a, 1) { \"abc\" }")
-
     parseTokens(IfStmtParser(), from: "if (b, 1) { 42 } else { 43 }" )
+    parseTokens(BreakStmtParser(), from: "break()")
+    parseTokens(ContinueStmtParser(), from: "continue()")
+    parseTokens(ReturnStmtParser(), from: "return()")
+    parseTokens(ReturnStmtParser(), from: "return(a, 1, foo(x))")
+    parseTokens(ProcDefParser(), from: "proc main() { break() }")
+    parseTokens(FuncDefParser(), from: "func f(a, b) { return(a) }")
+    parseTokens(
+        ProgramParser(),
+        from: """
+        global(plist)
+        proc main() {
+            while(a, 1) { "abc" }
+            if(b) { continue() } else { break() }
+        }
+        func f(x) {
+            return(x)
+        }
+        """
+    )
 }
 
 public func parseTokens<P: Parser, T>(_ parser: P, from source: String)

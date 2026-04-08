@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 6 April 2026.
-//  Last changed on 6 April 2026.
+//  Last changed on 7 April 2026.
 //
 
 import Foundation
@@ -35,20 +35,25 @@ struct ParsedWhileStmt: Equatable, CustomStringConvertible {
     }
 }
 
-/// Enum for the different statement types.
+/// Enum for the statement types.
 enum ParsedStmt: Equatable, CustomStringConvertible {
-    case call(ParsedCallStmt)
+    case callStmt(ParsedCallStmt)
     case whileStmt(ParsedWhileStmt)
     case ifStmt(ParsedIfStmt)
-    case expr(ParsedExpr)
+    case returnStmt(ParsedReturnStmt)
+    case breakStmt(ParsedBreakStmt)
+    case continueStmt(ParsedContinueStmt)
+    case exprStmt(ParsedExpr)
 
     var description: String {
-        
         switch self {
-        case .call(let s):      return s.description
-        case .whileStmt(let s): return s.description
-        case .ifStmt(let s):    return s.description
-        case .expr(let e):      return "EXPRSTMT(\(e))"
+        case .callStmt(let s):         return s.description
+        case .whileStmt(let s):    return s.description
+        case .ifStmt(let s):       return s.description
+        case .returnStmt(let s):   return s.description
+        case .breakStmt(let s):    return s.description
+        case .continueStmt(let s): return s.description
+        case .exprStmt(let e):         return "EXPRSTMT(\(e))"
         }
     }
 }
@@ -76,25 +81,30 @@ struct ConditionParser: Parser {
 
 /// Statement parser.
 struct StmtParser: Parser {
-
-    /// Parse a statement.
     func parse(_ input: inout TokStream) throws -> ParsedStmt {
-
         guard let tok = input.first else {
             throw DeadEndsParseError()
         }
-
         switch tok.kind {
         case .whileTok:
             return .whileStmt(try WhileStmtParser().parse(&input))
+        case .ifTok:
+            return .ifStmt(try IfStmtParser().parse(&input))
         case .call:
-            return .call(try CallStmtParser().parse(&input))
+            return .callStmt(try CallStmtParser().parse(&input))
+        case .returnTok:
+            return .returnStmt(try ReturnStmtParser().parse(&input))
+        case .breakTok:
+            return .breakStmt(try BreakStmtParser().parse(&input))
+        case .continueTok:
+            return .continueStmt(try ContinueStmtParser().parse(&input))
         default:
-            return .expr(try ExprParser().parse(&input))
+            return .exprStmt(try ExprParser().parse(&input))
         }
     }
 }
 
+/// Statement list parser.
 struct StmtListParser: Parser {
     func parse(_ input: inout TokStream) throws -> [ParsedStmt] {
         var result: [ParsedStmt] = []
@@ -102,30 +112,14 @@ struct StmtListParser: Parser {
         while let tok = input.first, tok.kind != .rBrace, tok.kind != .eof {
             result.append(try StmtParser().parse(&input))
         }
-
         return result
     }
 }
 
 /// While statement parser.
-struct OldWhileStmtParser: Parser {
+struct WhileStmtParser: Parser {
 
     /// Parse a while statement.
-    func parse(_ input: inout TokStream) throws -> ParsedWhileStmt {
-
-        try ExactToken(kind: .whileTok).parse(&input)
-        try ExactToken(kind: .lParen).parse(&input)
-        let condition = try ConditionParser().parse(&input)
-        try ExactToken(kind: .rParen).parse(&input)
-        try ExactToken(kind: .lBrace).parse(&input)
-        let body = try StmtListParser().parse(&input)
-        try ExactToken(kind: .rBrace).parse(&input)
-
-        return ParsedWhileStmt(condition: condition, body: body)
-    }
-}
-
-struct WhileStmtParser: Parser {
     func parse(_ input: inout TokStream) throws -> ParsedWhileStmt {
         try ExactToken(kind: .whileTok).parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
@@ -136,7 +130,10 @@ struct WhileStmtParser: Parser {
     }
 }
 
+/// Block parser.
 struct BlockParser: Parser {
+
+    /// Parse a statement block.
     func parse(_ input: inout TokStream) throws -> [ParsedStmt] {
         try ExactToken(kind: .lBrace).parse(&input)
         let stmts = try StmtListParser().parse(&input)
@@ -185,13 +182,11 @@ struct IfStmtParser: Parser {
                 break
             }
         }
-
         let saved = input
         let elseBody = (try? parseElse(&input)) ?? {
             input = saved
             return nil
         }()
-
         return ParsedIfStmt(
             condition: condition,
             thenBody: thenBody,
