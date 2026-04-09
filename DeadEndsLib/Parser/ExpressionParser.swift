@@ -1,5 +1,5 @@
 //
-//  IfWhileParser.swift
+//  ExpressionParser.swift
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 6 April 2026.
@@ -30,6 +30,74 @@ struct ConditionParser: Parser {
         try ExactToken(kind: .comma).parse(&input)
         let expr = try ExprParser().parse(&input)
         return .assign(name, expr)
+    }
+}
+
+/// Expression list parser.
+struct ExprListParser: Parser {
+    func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
+        var result: [ParsedExpr] = []
+        result.append(try ExprParser().parse(&input))
+
+        while true {
+            let saved = input
+            if (try? ExactToken(kind: .comma).parse(&input)) != nil {
+                result.append(try ExprParser().parse(&input))
+            } else {
+                input = saved
+                break
+            }
+        }
+        return result
+    }
+}
+
+/// Optional expression list parser.
+struct ExprListOptionalParser: Parser {
+    func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
+        let saved = input
+        if let exprs = try? ExprListParser().parse(&input) {
+            return exprs
+        }
+        input = saved
+        return []
+    }
+}
+
+/// Expression parser.
+struct ExprParser: Parser {
+
+    /// Parse an expression.
+    func parse(_ input: inout TokStream) throws -> ParsedExpr {
+        // Try function call first because it begins with an identifier.
+        let saved = input
+        if let expr = try? parseFunctionCall(&input) {
+            return expr
+        }
+        input = saved
+
+        if let name = try? IdentifierToken().parse(&input) {
+            return .identifier(name)
+        }
+        if let i = try? IntConstToken().parse(&input) {
+            return .intConst(i)
+        }
+        if let f = try? FloatConstToken().parse(&input) {
+            return .floatConst(f)
+        }
+        if let s = try? StringConstToken().parse(&input) {
+            return .stringConst(s)
+        }
+        throw DeadEndsParseError()
+    }
+
+    /// Function call parser.
+    private func parseFunctionCall(_ input: inout TokStream) throws -> ParsedExpr {
+        let name = try IdentifierToken().parse(&input)
+        try ExactToken(kind: .lParen).parse(&input)
+        let args = try ExprListOptionalParser().parse(&input)
+        try ExactToken(kind: .rParen).parse(&input)
+        return .funcCall(name, args)
     }
 }
 
@@ -98,73 +166,6 @@ enum DeadEndsParseError: Error, CustomStringConvertible {
     var description: String { "parse error" }
 }
 
-/// Expression parser.
-struct ExprParser: Parser {
-
-
-    func parse(_ input: inout TokStream) throws -> ParsedExpr {
-        // Try function call first because it begins with an identifier.
-        let saved = input
-        if let expr = try? parseFunctionCall(&input) {
-            return expr
-        }
-        input = saved
-
-        if let name = try? IdentifierToken().parse(&input) {
-            return .identifier(name)
-        }
-        if let i = try? IntConstToken().parse(&input) {
-            return .intConst(i)
-        }
-        if let f = try? FloatConstToken().parse(&input) {
-            return .floatConst(f)
-        }
-        if let s = try? StringConstToken().parse(&input) {
-            return .stringConst(s)
-        }
-        throw DeadEndsParseError()
-    }
-
-    /// Function call parser.
-    private func parseFunctionCall(_ input: inout TokStream) throws -> ParsedExpr {
-        let name = try IdentifierToken().parse(&input)
-        try ExactToken(kind: .lParen).parse(&input)
-        let args = try ExprListOptionalParser().parse(&input)
-        try ExactToken(kind: .rParen).parse(&input)
-        return .funcCall(name, args)
-    }
-}
-
-/// Expression list parser.
-struct ExprListParser: Parser {
-    func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
-        var result: [ParsedExpr] = []
-        result.append(try ExprParser().parse(&input))
-
-        while true {
-            let saved = input
-            if (try? ExactToken(kind: .comma).parse(&input)) != nil {
-                result.append(try ExprParser().parse(&input))
-            } else {
-                input = saved
-                break
-            }
-        }
-        return result
-    }
-}
-
-/// Optional expression list parser.
-struct ExprListOptionalParser: Parser {
-    func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
-        let saved = input
-        if let exprs = try? ExprListParser().parse(&input) {
-            return exprs
-        }
-        input = saved
-        return []
-    }
-}
 
 
 
