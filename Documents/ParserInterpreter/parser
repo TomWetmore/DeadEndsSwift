@@ -1,0 +1,221 @@
+=============================================================================
+Parsing.swift:
+
+/// Enum of expression types.
+enum ParsedExpr: Equatable, CustomStringConvertible {
+    case identifier(String)
+    case intConst(Int)
+    case floatConst(Double)
+    case stringConst(String)
+    case funcCall(String, [ParsedExpr])
+    var description: String {...}
+
+struct ParsedCallStmt: Equatable, CustomStringConvertible {
+    let name: String
+    let args: [ParsedExpr]
+    var description: String { ... }
+
+/// Exact token parser.
+struct ExactToken: Parser {
+    let kind: TokenKind
+    func parse(_ input: inout TokStream) throws { ... }
+
+/// Identifier parser.
+struct IdentifierToken: Parser {
+    func parse(_ input: inout TokStream) throws -> String { ... }
+
+/// Integer parser.
+struct IntConstToken: Parser {
+    func parse(_ input: inout TokStream) throws -> Int { ... }
+
+/// Floating point parser.
+struct FloatConstToken: Parser {
+    func parse(_ input: inout TokStream) throws -> Double { ... }
+
+/// Parser for a string constant.
+struct StringConstToken: Parser {
+    func parse(_ input: inout TokStream) throws -> String { ... }
+
+/// Current state of the DeadEndsParserErropr
+enum DeadEndsParseError: Error, CustomStringConvertible {
+    case generic
+    init() { self = .generic }
+    var description: String { ... }
+
+/// Expression parser.
+struct ExprParser: Parser {
+
+    func parse(_ input: inout TokStream) throws -> ParsedExpr {
+        // Try function call first
+        // Then try identifier, integer, floating point and string.
+    private func parseFunctionCall(_ input: inout TokStream) throws -> ParsedExpr { ... }
+
+/// Expression list parser.
+struct ExprListParser: Parser {
+    func parse(_ input: inout TokStream) throws -> [ParsedExpr] { ... }
+
+/// Optional expression list parser.
+struct ExprListOptionalParser: Parser {
+    func parse(_ input: inout TokStream) throws -> [ParsedExpr] { ... }
+
+/// Call statement parser.
+struct CallStmtParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedCallStmt { ... }
+
+=====================================================================
+IfWhileParser.swift
+
+/// Enum for the two kinds of conditional expressions.
+enum ParsedCondition: Equatable, CustomStringConvertible {
+    case expr(ParsedExpr)
+    case assign(String, ParsedExpr)
+    var description: String { ... }
+
+/// Structure that holds a parsed while statement.
+struct ParsedWhileStmt: Equatable, CustomStringConvertible {
+    let condition: ParsedCondition
+    let body: [ParsedStmt]
+    var description: String { ... }
+
+/// Enum for the statement types.
+enum ParsedStmt: Equatable, CustomStringConvertible {
+    case callStmt(ParsedCallStmt)
+    case whileStmt(ParsedWhileStmt)
+    case ifStmt(ParsedIfStmt)
+    case returnStmt(ParsedReturnStmt)
+    case breakStmt(ParsedBreakStmt)
+    case continueStmt(ParsedContinueStmt)
+    case exprStmt(ParsedExpr)
+    var description: String { ... }
+
+/// Condition parwer.
+struct ConditionParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedCondition { ... }
+    private func parseAssignedCondition(_ input: inout TokStream) throws -> ParsedCondition { ... }
+
+/// Statement parser.
+struct StmtParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedStmt {
+	// Switches on the type of the first token -- covers while, if, call
+	// return, break, and continue statements.
+    }
+
+/// Statement list parser.
+struct StmtListParser: Parser {
+    func parse(_ input: inout TokStream) throws -> [ParsedStmt] { ... }
+
+/// While statement parser.
+struct WhileStmtParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedWhileStmt { ... }
+
+/// Block parser.
+struct BlockParser: Parser {
+    func parse(_ input: inout TokStream) throws -> [ParsedStmt] { ... }
+
+
+struct ParsedIfStmt: Equatable, CustomStringConvertible {
+    let condition: ParsedCondition
+    let thenBody: [ParsedStmt]
+    let elseIfs: [ParsedElseIf]
+    let elseBody: [ParsedStmt]?
+    var description: String { ... }
+}
+
+struct ParsedElseIf: Equatable, CustomStringConvertible {
+    let condition: ParsedCondition
+    let body: [ParsedStmt]
+    var description: String { ... }
+
+struct IfStmtParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedIfStmt { ... }
+    private func parseElseIf(_ input: inout TokStream) throws -> ParsedElseIf { ... }
+    private func parseElse(_ input: inout TokStream) throws -> [ParsedStmt] { ... }
+
+=============================================================================
+ProcFuncParser.swift
+
+/// ParsedProcDef
+struct ParsedProcDef: Equatable, CustomStringConvertible {
+    let name: String
+    let params: [String]
+    let body: [ParsedStmt]
+    var description: String { ... }
+
+/// Parsed function definition.
+struct ParsedFuncDef: Equatable, CustomStringConvertible {
+    let name: String
+    let params: [String]
+    let body: [ParsedStmt]
+    var description: String { ... }
+
+/// Parsed global definition
+struct ParsedGlobalDef: Equatable, CustomStringConvertible {
+    let name: String
+    var description: String { ... }
+
+/// Enumeration of definitionn types.
+enum ParsedDefn: Equatable, CustomStringConvertible {
+    case proc(ParsedProcDef)
+    case funcDef(ParsedFuncDef)
+    case global(ParsedGlobalDef)
+    var description: String { ... }
+
+/// Parsed program.
+struct ParsedProgram: Equatable, CustomStringConvertible {
+    let defns: [ParsedDefn]
+    var description: String { ... }
+
+/// Parsed break statement.
+struct ParsedBreakStmt: Equatable, CustomStringConvertible {
+    var description: String { "BREAK()" }
+
+/// Parsed continue statement.
+struct ParsedContinueStmt: Equatable, CustomStringConvertible {
+    var description: String { "CONTINUE()" }
+
+/// Parsed return statement.
+struct ParsedReturnStmt: Equatable, CustomStringConvertible {
+    let values: [ParsedExpr]
+    var description: String { ... }
+
+/// Break statement parser.
+struct BreakStmtParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedBreakStmt { ... }
+
+/// Continue statement parser.
+struct ContinueStmtParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedContinueStmt { ... }
+
+/// Return statement parser.
+struct ReturnStmtParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedReturnStmt { ... }
+
+/// Identifier list parser.
+struct IdentifierListParser: Parser {
+    func parse(_ input: inout TokStream) throws -> [String] { ... }
+
+/// Optional identifer list parser.
+struct IdentifierListOptionalParser: Parser {
+    func parse(_ input: inout TokStream) throws -> [String] { ... }
+
+/// Procedure definition parser.
+struct ProcDefParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedProcDef { ... }
+
+/// Function definition parser.
+struct FuncDefParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedFuncDef { ... }
+
+/// Global definition parser.
+struct GlobalDefParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedGlobalDef { ... }
+
+/// Definition parser.
+struct DefnParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedDefn { 
+	/// Switch on proc, funcTok, "global"
+    }
+
+/// Program parser.
+struct ProgramParser: Parser {
+    func parse(_ input: inout TokStream) throws -> ParsedProgram { ... }

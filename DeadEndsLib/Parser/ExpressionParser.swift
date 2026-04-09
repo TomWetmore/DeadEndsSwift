@@ -1,51 +1,41 @@
 //
-//  Parser.swift
+//  IfWhileParser.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 5 April 2026.
-//  Last changed on 6 April 2026.
+//  Created by Thomas Wetmore on 6 April 2026.
+//  Last changed on 8 April 2026.
 //
 
 import Foundation
 import Parsing
 
-// ------------------------------------------------------------
-// Temporary parsed forms for early testing
-// ------------------------------------------------------------
+/// Conditional expression parser.
+struct ConditionParser: Parser {
 
-enum ParsedExpr: Equatable, CustomStringConvertible {
-    case identifier(String)
-    case intConst(Int)
-    case floatConst(Double)
-    case stringConst(String)
-    case funcCall(String, [ParsedExpr])
+    /// Parse a conditional expression.
+    func parse(_ input: inout TokStream) throws -> ParsedCondition {
+        let saved = input
 
-    var description: String {
-        switch self {
-        case .identifier(let s):         return "id(\(s))"
-        case .intConst(let i):           return "int(\(i))"
-        case .floatConst(let f):         return "float(\(f))"
-        case .stringConst(let s):        return "str(\(String(reflecting: s)))"
-        case .funcCall(let name, let a): return "call(\(name), \(a))"
+        if let cond = try? parseAssignedCondition(&input) {
+            return cond
         }
+
+        input = saved
+        let expr = try ExprParser().parse(&input)
+        return .expr(expr)
+    }
+
+    private func parseAssignedCondition(_ input: inout TokStream) throws -> ParsedCondition {
+        let name = try IdentifierToken().parse(&input)
+        try ExactToken(kind: .comma).parse(&input)
+        let expr = try ExprParser().parse(&input)
+        return .assign(name, expr)
     }
 }
-
-struct ParsedCallStmt: Equatable, CustomStringConvertible {
-    let name: String
-    let args: [ParsedExpr]
-
-    var description: String {
-        "CALL \(name)(\(args.map(\.description).joined(separator: ", ")))"
-    }
-}
-
-// ------------------------------------------------------------
-// Tiny token-level parser primitives
-// ------------------------------------------------------------
 
 public typealias TokStream = ArraySlice<Token>
 
+/// Exact token parser.
 struct ExactToken: Parser {
     let kind: TokenKind
 
@@ -60,6 +50,7 @@ struct ExactToken: Parser {
     }
 }
 
+/// Identifier parser.
 struct IdentifierToken: Parser {
     func parse(_ input: inout TokStream) throws -> String {
         guard let tok = input.first else { throw DeadEndsParseError() }
@@ -69,6 +60,7 @@ struct IdentifierToken: Parser {
     }
 }
 
+/// Integer parser.
 struct IntConstToken: Parser {
     func parse(_ input: inout TokStream) throws -> Int {
         guard let tok = input.first else { throw DeadEndsParseError() }
@@ -78,6 +70,7 @@ struct IntConstToken: Parser {
     }
 }
 
+/// Floating point parser.
 struct FloatConstToken: Parser {
     func parse(_ input: inout TokStream) throws -> Double {
         guard let tok = input.first else { throw DeadEndsParseError() }
@@ -87,6 +80,7 @@ struct FloatConstToken: Parser {
     }
 }
 
+/// String constant parser.
 struct StringConstToken: Parser {
     func parse(_ input: inout TokStream) throws -> String {
         guard let tok = input.first else { throw DeadEndsParseError() }
@@ -131,6 +125,7 @@ struct ExprParser: Parser {
         throw DeadEndsParseError()
     }
 
+    /// Function call parser.
     private func parseFunctionCall(_ input: inout TokStream) throws -> ParsedExpr {
         let name = try IdentifierToken().parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
@@ -140,10 +135,7 @@ struct ExprParser: Parser {
     }
 }
 
-// ------------------------------------------------------------
-// Expression list parsers
-// ------------------------------------------------------------
-
+/// Expression list parser.
 struct ExprListParser: Parser {
     func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
         var result: [ParsedExpr] = []
@@ -158,11 +150,11 @@ struct ExprListParser: Parser {
                 break
             }
         }
-
         return result
     }
 }
 
+/// Optional expression list parser.
 struct ExprListOptionalParser: Parser {
     func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
         let saved = input
@@ -174,18 +166,10 @@ struct ExprListOptionalParser: Parser {
     }
 }
 
-/// Call statement parser.
-struct CallStmtParser: Parser {
 
-    /// Parse procedure call statements.
-    func parse(_ input: inout TokStream) throws -> ParsedCallStmt {
 
-        try ExactToken(kind: .call).parse(&input)
-        let name = try IdentifierToken().parse(&input)
-        try ExactToken(kind: .lParen).parse(&input)
-        let args = try ExprListOptionalParser().parse(&input)
-        try ExactToken(kind: .rParen).parse(&input)
-        return ParsedCallStmt(name: name, args: args)
-    }
-}
+
+
+
+
 
