@@ -1,0 +1,65 @@
+struct ParsedProgram
+    let defns: [ParsedDefn]
+
+enum ParsedDefn
+    case procDef(ParsedProcDef)
+    case funcDef(ParsedFuncDef)
+    case global(ParsedGlobalDef)
+
+struct ParsedProcDef
+    let name: String
+    let params: [String]
+    let body: [ParsedStmt]
+
+struct ParsedFuncDef
+    let name: String
+    let params: [String]
+    let body: [ParsedStmt]
+
+struct ParsedGlobalDef
+    let name: String
+
+enum ParsedStmt
+    case callStmt(ParsedCallStmt)
+    case whileStmt(ParsedWhileStmt)
+    case ifStmt(ParsedIfStmt)
+    case returnStmt(ParsedReturnStmt)
+    case breakStmt(ParsedBreakStmt)
+    case continueStmt(ParsedContinueStmt)
+    case exprStmt(ParsedExpr)
+
+struct ParsedCallStmt
+    let name: String
+    let args: [ParsedExpr]
+
+struct ParsedWhileStmt
+    let condition: ParsedCondition
+    let body: [ParsedStmt]
+
+struct ParsedIfStmt
+    let condition: ParsedCondition
+    let thenBody: [ParsedStmt]
+    let elseIfs: [ParsedElseIf]
+    let elseBody: [ParsedStmt]?
+
+struct ParsedElseIf
+    let condition: ParsedCondition
+    let body: [ParsedStmt]
+
+struct ParsedReturnStmt: Equatable, CustomStringConvertible {
+    let values: [ParsedExpr]
+
+struct ParsedBreakStmt
+
+struct ParsedContinueStmt
+
+enum ParsedCondition
+    case expr(ParsedExpr)
+    case assign(String, ParsedExpr)
+
+enum ParsedExpr
+    case identifier(String)
+    case intConst(Int)
+    case floatConst(Double)
+    case stringConst(String)
+    case funcCall(String, [ParsedExpr])

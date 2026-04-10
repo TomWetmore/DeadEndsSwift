@@ -3,12 +3,11 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 7 April 2026.
+//  Last changed on 9 April 2026.
 //
 
 import Foundation
 
-// SymbolTable is a type that maps variables to program values.
 public typealias SymbolTable = [String: ProgramValue?]
 
 // Program is the type of DeadEnds programs.
@@ -16,21 +15,18 @@ final public class Program {
 
     //var builtins: [String: Builtin] = [:]
 
-    // MARK: Static program properties
     let procedureTable: [String: ParsedProcDef] // Procedure definitions.
     let functionTable: [String: ParsedFuncDef] // Function definitions.
 
-    // MARK: Runtime program state.
-    private(set) var globalSymbolTable: SymbolTable // Global variables.
+    private(set) var globalSymbolTable: SymbolTable
     var database: Database? // Database
     private var callStack: [SymbolTable] = [[:]] // Runtime stack of symbol tables.
 
-    // MARK: Computed properties.
-    var localSymbolTable: SymbolTable { // Symbol table at the top of the call stack.
+    var localSymbolTable: SymbolTable { // Symbol table at the top of the stack.
         callStack.last ?? [:] // Should never be nil.
     }
 
-    /// The current frame (some sloppiness in terms: frame vs. symbol table).
+    /// The current frame. Note that frame and symbol table are near synonomous.
     private var currentFrame: SymbolTable {
         get {
             guard let frame = callStack.last else { fatalError("No frame available") }
@@ -42,9 +38,11 @@ final public class Program {
         }
     }
 
-    // MARK: Initializer
-    init(procTable: [String : ParsedProcDef], funcTable: [String : ParsedFuncDef], globalTable: SymbolTable,
-         database: Database? = nil, callStack: [SymbolTable] = [[:]]) {
+    /// Create a program from its proc, func, and global tables, and a database.
+    init(procTable: [String : ParsedProcDef], funcTable: [String : ParsedFuncDef],
+         globalTable: SymbolTable, database: Database? = nil,
+         callStack: [SymbolTable] = [[:]]) {
+
         self.procedureTable = procTable
         self.functionTable = funcTable
         self.globalSymbolTable = globalTable
@@ -53,44 +51,46 @@ final public class Program {
         //setupBuiltins()
     }
 
-    // This allows the builtins to not worry about nil databases.
+    // Allow the builtins to not worry about nil databases.
     var recordIndex: RecordIndex {
         guard let db = self.database else {
-            fatalError("No database loaded — interpretation should not have started.")
+            fatalError("No database loaded — interpretation impossible.")
         }
         return db.recordIndex
     }
 
-    // MARK: Frame management.
-    // pushCallFrame pushes a new local frame when a procedure or fuction is called.
+    /// Push a new local frame when a procedure or fuction is called.
     func pushCallFrame(_ frame: SymbolTable) {
         callStack.append(frame)
     }
 
-    // popCallFrame pops the current frame when a procedure or function returns.
+    /// Pop the current frame when a procedure or function returns.
     func popCallFrame() {
         precondition(callStack.count > 1, "Cannot pop the global frame")
         callStack.removeLast()
     }
 
-    // MARK: Symbol assignment.
-    // lookupSymbol looks up a variable in the local symbol table, and if not there in the global table.
+    /// Look up an identifier in the local symbol table, and if not
+    /// there, in the global table.
     func lookupSymbol(_ name: String) -> ProgramValue? {
-        if let localValue = localSymbolTable[name] { // First look in the local symbol table.
+        if let localValue = localSymbolTable[name] {
             return localValue
         }
-        if let globalValue = globalSymbolTable[name] { // Then look in the global symbol table.
+        if let globalValue = globalSymbolTable[name] {
             return globalValue
         }
-        return nil // If not found.
+        return nil // Not found.
     }
 
-    // assignLocal assigns the value of an identifier to the local symbol table.
+    /// Assign a value to an identifier in the local symbol table.
     func assignLocal(_ name: String, value: ProgramValue) {
         currentFrame[name] = value
     }
 
-    // assignToSymbol udates or adds a new entry to the local or global symbol table.
+    /// Update or add a new entry to the local or global symbol table.
+    /// If the identifier is in the local table, change its value, else
+    /// if it is in the global table change it there, else add it to
+    /// the local table.
     func assignToSymbol(_ name: String, value: ProgramValue) {
         if localSymbolTable[name] != nil {
             currentFrame[name] = value  // Update in local.
@@ -102,8 +102,9 @@ final public class Program {
     }
 }
 
-// RunTimeError is the error thrown when errors are while interpreting a program.
+/// Run time errors that can happen when a program is running.
 public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing the over use of Error.
+
     case typeMismatch(_ detail: String)
     case invalidArguments(_ detail: String)
     case runtimeError(_ detail: String)
@@ -120,23 +121,22 @@ public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing t
     case io(_ detail: String)
 }
 
-// Extension to Program with the interpretProgram method begins the interpretation of a script program
+/// Extension to Program with the interpretProgram method/
 extension Program {
 
-    // Interpret the program by calling its entry procedure. The database must be passed in.
+    /// Run the program by calling the main procedure. procedure.
     @discardableResult
     public func interpretProgram(database: Database) throws -> InterpResult {
         self.database = database
-
-        // Look for the entry point procedure 'main'.
-        // TODO: Should check that it has no parameters.
-        let entry = "main"
-        guard let _ = procedureTable[entry] else {
-            throw RuntimeError.undefinedProcedure("No '\(entry)' procedure found")
+        // Get the main procedure.
+        guard let mainProc = procedureTable["main"] else {
+            throw RuntimeError.undefinedProcedure("No main procedure found")
         }
-
-        // Create a ParseCallStmt and call the main entry point.
+        if mainProc.params.count != 0 {
+            throw RuntimeError.argumentCount("Main proc cannot have parameters")
+        }
+        // Create a bootstrap ParsedCallStmt for main and call it.
         let mainCall = ParsedCallStmt(name: "main", args: [])
-        return try interpretProcedureCall(mainCall)
+        return try interpProcCall(mainCall)
     }
 }

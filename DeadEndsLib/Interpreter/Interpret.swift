@@ -3,18 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 7 April 2026.
-//
-
-import Foundation
-
-//
-//  Interpret.swift
-//  This file has many of the functions that interpret DeadEnds program.
-//  DeadEndsLib
-//
-//  Created by Thomas Wetmore on 18 March 2025.
-//  Last changed on 21 April 2025.
+//  Last changed on 9 April 2026.
 //
 
 import Foundation
@@ -31,36 +20,72 @@ public func runProgram(program: Program) throws {
     // Create a database.
 }
 
-func interpret(_ stmt: ParsedStmt) throws -> InterpResult {
-    switch stmt {
-    case .callStmt(let call):
-        return try interpretProcedureCall(call)
-    case .whileStmt(let whileStmt):
-        return try interpretWhile(whileStmt)
-    case .ifStmt(let ifStmt):
-        return try interpretIf(ifStmt)
-    case .returnStmt(let ret):
-        return try interpretReturn(ret)
-    case .breakStmt:
-        return .breaking
-    case .continueStmt:
-        return .continuing
-    case .exprStmt(let expr):
-        _ = try evaluate(expr: expr)
+extension Program {
+
+    /// Interpret a statement.
+    func interpStatement(_ stmt: ParsedStmt) throws -> InterpResult {
+        
+        switch stmt {
+        case .callStmt(let call):
+            return try interpProcCall(call)
+        case .whileStmt(let whileStmt):
+            return try interpWhile(whileStmt)
+        case .ifStmt(let ifStmt):
+            return try interpIf(ifStmt)
+        case .returnStmt(let ret):
+            //return try interpReturn(ret)
+            return .returning(nil) // REPLACE WITH CORRECT STUFF.
+        case .breakStmt:
+            return .breaking
+        case .continueStmt:
+            return .continuing
+        case .exprStmt(let expr):
+            _ = try evaluate(expr)
+            return .okay
+        }
+    }
+}
+
+extension Program {
+
+    /// Interpret a while statement.
+    func interpWhile(_ whileStmt: ParsedWhileStmt) throws -> InterpResult {
+        while true {
+            if !(try evalCondition(whileStmt.condition)) { break }
+            let result = try interpStmtList(whileStmt.body)
+            switch result {
+            case .breaking:
+                return .breaking
+            case .returning:
+                return result
+            case .error:
+                return .error
+            case .continuing, .okay:
+                continue
+            }
+        }
+        return .error
+    }
+
+    /// Interpret an if statement.
+    func interpIf(_ ifStmt: ParsedIfStmt) throws -> InterpResult {
+        if try evalCondition(ifStmt.condition) {
+            return try interpStmtList(ifStmt.thenBody)
+        }
+        for elseIf in ifStmt.elseIfs {
+            if try evalCondition(elseIf.condition) {
+                return try interpStmtList(elseIf.body)
+            }
+        }
+
+        if let elseBody = ifStmt.elseBody {
+            return try interpStmtList(elseBody)
+        }
         return .okay
     }
 }
 
-func interpretProcedureCall(_ call: ParsedCallStmt) throws -> InterpResult {
-    return .error
-}
-func interpretWhile(_ whileStmt: ParsedWhileStmt) throws -> InterpResult {
-    return .error
-}
-func interpretIf(_ ifStmt: ParsedIfStmt) throws -> InterpResult {
-    return .error
-}
-func interpretReturn(_ ret: ParsedReturnStmt) throws -> InterpResult {
+func interpReturn(_ ret: ParsedReturnStmt) throws -> InterpResult {
     return .error
 }
 func interpretContinue() -> InterpResult {
@@ -106,85 +131,77 @@ func interpretContinue() -> InterpResult {
 //                if case let .string(output) = result {
 //                    print(output, terminator: "")
 //                }
-//            case let .ifState(condition, thenc, elsec):
-//                let result: Bool = try evaluateCondition(condition)
-//                let blockToExecute = result ? thenc : elsec
-//                if let block = blockToExecute {
-//                    return try interpret(block)
-//                }
-//                return .okay
-//            case let .whileState(condition, body):
-//                while true {
-//                    if !(try evaluateCondition(condition)) { break } // Break this while loop.
-//                    let result = try interpret(body)
-//                    switch result {
-//                    case .breaking:
-//                        break
-//                    case .returning:
-//                        return result
-//                    case .error:
-//                        return .error
-//                    case .continuing, .okay:
-//                        continue // Continue this loop.
-//                    }
-//                }
-//                return .okay
-//            case .breakState:
-//                return .breaking
-//            case .continueState:
-//                return .continuing
+//
 //            case let .returnState(resultExpr):
 //                let returnValue = try resultExpr.map { try evaluate($0) }
 //                return .returning(returnValue)
-//            case .block:
-//                return try interpretBlock(node)
 //            default:
 //                throw RuntimeError.runtimeError("Unhandled statement type: \(node.kind)")
 //        }
 //        return .okay // TODO: Can this be reached? Or does it just keep the compiler happy?
 //    }
 //
-//    // interpretBlock interperts a .block PNode.
-//    func interpretBlock(_ pnode: ProgramNode) throws -> InterpResult {
-//        guard case let .block(statements) = pnode.kind else {
-//            throw RuntimeError.invalidSyntax("Expected a block node")
-//        }
-//        for statement in statements {
-//            let result = try interpret(statement)
-//            switch result { // Handle control flow.
-//            case .okay:
-//                continue // No control flow break, keep going
-//            case .returning, .breaking, .continuing:
-//                return result // Propagate return/break/continue upward
-//            case .error:
-//                return .error
-//            }
-//        }
-//        return .okay
-//    }
-//
-//    // interpretProcedure interprets a .procedureCall ProgramNode.
-//    func interpretProcedure(_ pnode: ProgramNode) throws -> InterpResult {
-//        guard case let .procedureCall(name, args) = pnode.kind else { // pnode must be a .procedureCall.
-//            throw RuntimeError.invalidSyntax("Expected a procedure call")
-//        }
-//        guard let procDef = procedureTable[name] else { // Procedure called must exit.
-//            throw RuntimeError.undefinedSymbol("Procedure '\(name)' not found")
-//        }
-//        guard case let .procedureDef(_, params, body) = procDef.kind else { // Overkill?
-//            throw RuntimeError.invalidSyntax("Expected a procedure definition for '\(name)'")
-//        }
-//        guard args.count == params.count else { // Numbers of args and params must be the same.
-//            throw RuntimeError.invalidArguments("Procedure '\(name)' expects \(params.count) arguments, got \(args.count)")
-//        }
-//        var table: SymbolTable = [:] // Create symbol table for the procedure.
-//        for (param, arg) in zip(params, args) { // Bind the evaluated args to the params in the symbol table.
-//            let value = try evaluate(arg) // Evaluate the argument.
-//            table[param] = value // Bind the argument's value to the parameter.
-//        }
-//        pushCallFrame(table) // Push and pop the call frame.
-//        defer { popCallFrame() }
-//
-//        return try interpret(body) // Interpret the procedure body.
-//    }
-//}
+
+extension Program {
+
+    func interpBreak() -> InterpResult {
+        .breaking
+    }
+
+    func interpContinue() -> InterpResult {
+        .continuing
+    }
+
+    func interpReturn(_ expr: ParsedExpr?) -> InterpResult {
+        // If there is no expression
+        if expr == nil { return .returning(nil) }
+
+        let returnValue = try? expr.map { try evaluate($0) }
+        return .returning(returnValue)
+    }
+}
+
+extension Program {
+
+    // Interpret a ParsedCallStmt.
+    // Crib sheet: the defn is a ParsedProcDef; the call is a ParsedCallStmt.
+    func interpProcCall(_ procCall: ParsedCallStmt) throws -> InterpResult {
+
+        let name = procCall.name
+
+        guard let procDef = procedureTable[name] else { // Proc called must exist.
+            throw RuntimeError.undefinedSymbol("Procedure '\(name)' not found")
+        }
+        let nArgs = procCall.args.count
+        let nParams = procDef.params.count
+        guard nArgs == nParams else { // Numbers of args and params must be the same.
+            throw RuntimeError.invalidArguments("Proc '\(name)' expects \(nParams) arguments, got \(nArgs)")
+        }
+        var table: SymbolTable = [:] // Create the symbol table for the procedure.
+        for (param, arg) in zip(procDef.params, procCall.args) { // Bind the args and params.
+            let value = try evaluate(arg)
+            table[param] = value
+        }
+        pushCallFrame(table) // Push and pop the call frame.
+        defer { popCallFrame() }
+
+        return try interpStmtList(procDef.body) // Interpret the procedure body.
+    }
+
+    /// Interpret a list of statements.
+    func interpStmtList(_ stmts: [ParsedStmt]) throws -> InterpResult {
+        for stmt in stmts {
+            let result = try interpStatement(stmt)
+            switch result { 
+            case .okay:
+                continue 
+            case .returning, .breaking, .continuing:
+                return result
+            case .error:
+                return .error
+            }
+        }
+        return .okay
+    }
+}
+
