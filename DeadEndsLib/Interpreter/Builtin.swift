@@ -2,7 +2,8 @@
 //  Builtin.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 4/11/26.
+//  Created by Thomas Wetmore on 11 April 2026.
+//  Last changed on 11 April 2026.
 //
 
 import Foundation
@@ -46,25 +47,25 @@ extension Program {
             "or":  Builtin(minArgs: 1, maxArgs: 32) { try self.builtinOr($0) },
             "not": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinNot($0) },
 
-//            // Person operations.
-//            "indi": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndi($0) },
-//            "name": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinName($0) },
-//            //"givens": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinGivens($0) },
-//            //"surname": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSurname($0) },
-//            "birth" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinBirth($0) },
-//            "death": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDeath($0) },
+            // Person operations.
+            "indi": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndi($0) },
+            "name": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinName($0) },
+            //"givens": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinGivens($0) },
+            //"surname": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSurname($0) },
+            "birth" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinBirth($0) },
+            "death": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDeath($0) },
 //
 //            // Event operations.
 //            "date":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDate($0) },
 //            "place": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinPlace($0) },
 //
 //            // List operations.
-//            "append":  Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
-//            "prepend": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinPrepend($0) },
-//            "push":    Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
-//            "pop":     Builtin(minArgs: 1, maxArgs: 1) { try self.builtinRemoveFirst($0) },
-//            "enqueue": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
-//            "dequeue": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinRemoveFirst($0) },
+            "append":  Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
+            "prepend": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinPrepend($0) },
+            "push":    Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
+            "pop":     Builtin(minArgs: 1, maxArgs: 1) { try self.builtinRemoveFirst($0) },
+            "enqueue": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
+            "dequeue": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinRemoveFirst($0) },
         ]
     }
 }

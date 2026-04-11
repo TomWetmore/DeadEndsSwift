@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 7 April 2026.
+//  Last changed on 11 April 2026.
 //
 //  ProgramValue is the type of program values during program interpreting.
 //  They are the values of expressions and are the values stored in symbol
@@ -16,6 +16,7 @@ import Foundation
 public enum ProgramValue: @unchecked Sendable, Equatable {
     case null
     case any
+    case ident(String)
     case integer(Int)
     case double(Double)
     case boolean(Bool)
@@ -26,7 +27,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     //case source(GedcomNode)
     //case event(GedcomNode)
     //case other(GedcomNode)
-    //case list(List<ProgramValue>)
+    case list(List<ProgramValue>)
     case table
     case sequence
 
