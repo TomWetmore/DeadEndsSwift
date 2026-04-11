@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 8 April 2026.
+//  Last changed on 10 April 2026.
 //
 
 /// The parsed structs (and enums) make up the "abstract syntax tree"
@@ -188,6 +188,7 @@ enum ParsedExpr: Equatable, CustomStringConvertible {
     case floatConst(Double)
     case stringConst(String)
     case funcCall(String, [ParsedExpr])
+    case builtinCall(String, [ParsedExpr])
 
     var description: String {
         switch self {
@@ -195,7 +196,8 @@ enum ParsedExpr: Equatable, CustomStringConvertible {
         case .intConst(let i):           return "int(\(i))"
         case .floatConst(let f):         return "float(\(f))"
         case .stringConst(let s):        return "str(\(String(reflecting: s)))"
-        case .funcCall(let name, let a): return "call(\(name), \(a))"
+        case .funcCall(let name, let a): return "funccall(\(name), \(a))"
+        case .builtinCall(let name, let a): return "builtinCall(\(name), \(a))"
         }
     }
 }

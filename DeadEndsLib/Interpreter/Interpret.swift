@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 9 April 2026.
+//  Last changed on 10 April 2026.
 //
 
 import Foundation
@@ -51,7 +51,7 @@ extension Program {
     /// Interpret a while statement.
     func interpWhile(_ whileStmt: ParsedWhileStmt) throws -> InterpResult {
         while true {
-            if !(try evalCondition(whileStmt.condition)) { break }
+            if !(evalCondition(whileStmt.condition)) { break }
             let result = try interpStmtList(whileStmt.body)
             switch result {
             case .breaking:
@@ -69,11 +69,11 @@ extension Program {
 
     /// Interpret an if statement.
     func interpIf(_ ifStmt: ParsedIfStmt) throws -> InterpResult {
-        if try evalCondition(ifStmt.condition) {
+        if evalCondition(ifStmt.condition) {
             return try interpStmtList(ifStmt.thenBody)
         }
         for elseIf in ifStmt.elseIfs {
-            if try evalCondition(elseIf.condition) {
+            if evalCondition(elseIf.condition) {
                 return try interpStmtList(elseIf.body)
             }
         }
@@ -152,24 +152,23 @@ extension Program {
         .continuing
     }
 
-    func interpReturn(_ expr: ParsedExpr?) -> InterpResult {
-        // If there is no expression
-        if expr == nil { return .returning(nil) }
-
-        let returnValue = try? expr.map { try evaluate($0) }
-        return .returning(returnValue)
-    }
+//    func interpReturn(_ expr: ParsedExpr?) -> InterpResult {
+//        // If there is no expression
+//        if expr == nil { return .returning(nil) }
+//
+//        let returnValue = try? expr.map { evaluate($0) }
+//        return .returning(returnValue)
+//    }
 }
 
 extension Program {
 
-    // Interpret a ParsedCallStmt.
-    // Crib sheet: the defn is a ParsedProcDef; the call is a ParsedCallStmt.
+    /// Interpret a ParsedCallStmt.
     func interpProcCall(_ procCall: ParsedCallStmt) throws -> InterpResult {
 
         let name = procCall.name
 
-        guard let procDef = procedureTable[name] else { // Proc called must exist.
+        guard let procDef: ParsedProcDef = procedureTable[name] else { // Called proc must exist.
             throw RuntimeError.undefinedSymbol("Procedure '\(name)' not found")
         }
         let nArgs = procCall.args.count
@@ -177,14 +176,12 @@ extension Program {
         guard nArgs == nParams else { // Numbers of args and params must be the same.
             throw RuntimeError.invalidArguments("Proc '\(name)' expects \(nParams) arguments, got \(nArgs)")
         }
-        var table: SymbolTable = [:] // Create the symbol table for the procedure.
-        for (param, arg) in zip(procDef.params, procCall.args) { // Bind the args and params.
-            let value = try evaluate(arg)
-            table[param] = value
+        var table: SymbolTable = [:] // Symbol table for the called procedure.
+        for (param, arg) in zip(procDef.params, procCall.args) { // Bind the args to the params.
+            table[param] = try evaluate(arg)
         }
-        pushCallFrame(table) // Push and pop the call frame.
+        pushCallFrame(table)
         defer { popCallFrame() }
-
         return try interpStmtList(procDef.body) // Interpret the procedure body.
     }
 

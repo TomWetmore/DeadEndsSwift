@@ -13,7 +13,7 @@ public typealias SymbolTable = [String: ProgramValue?]
 // Program is the type of DeadEnds programs.
 final public class Program {
 
-    //var builtins: [String: Builtin] = [:]
+    var builtins: [String: Builtin] = [:]
 
     let procedureTable: [String: ParsedProcDef] // Procedure definitions.
     let functionTable: [String: ParsedFuncDef] // Function definitions.

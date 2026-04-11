@@ -14,7 +14,7 @@ public typealias SymbolTable = [String: ProgramValue?]
 // Program is the type of DeadEnds programs.
 final public class Program {
 
-    var builtins: [String: Builtin] = [:]
+    var oldBbuiltins: [String: Builtin] = [:]
 
     // MARK: Static program properties
     let procedureTable: [String: ProgramNode] // Procedure definitions.
