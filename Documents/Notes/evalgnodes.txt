@@ -1,0 +1,10 @@
+
+ParsedExprs can represent persons.
+
+How does it work.
+
+How do we get a person in a program.
+
+In the language, do we need separate types for Person records, record roots, and generate nodes?
+
+We have indi(KEY) -- this returns the person with the key or either nothing  or error.

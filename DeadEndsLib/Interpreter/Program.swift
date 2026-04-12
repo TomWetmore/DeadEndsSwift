@@ -10,23 +10,30 @@ import Foundation
 
 public typealias SymbolTable = [String: ProgramValue?]
 
-// Program is the type of DeadEnds programs.
+/// DeadEnds program; Combines the static program parts with the run time parts.
 final public class Program {
 
-    var builtins: [String: Builtin] = [:]
+    let parsedProgram: ParsedProgram  // The static, immutable program.
+    var builtins: [String: Builtin] = [:]  // The table of builtin library functions.
+    let procedureTable: [String: Int]  // User defined procedures.
+    let functionTable: [String: Int]  // User defined functions.
 
-    let procedureTable: [String: ParsedProcDef] // Procedure definitions.
-    let functionTable: [String: ParsedFuncDef] // Function definitions.
+    private(set) var globalSymbolTable: SymbolTable  // Global symbol table.
+    var database: Database?  // Database
+    private var callStack: [SymbolTable] = [[:]]  // Run time stack.
 
-    private(set) var globalSymbolTable: SymbolTable
-    var database: Database? // Database
-    private var callStack: [SymbolTable] = [[:]] // Runtime stack of symbol tables.
-
-    var localSymbolTable: SymbolTable { // Symbol table at the top of the stack.
-        callStack.last ?? [:] // Should never be nil.
+    var recordIndex: RecordIndex {
+        guard let db = self.database else {
+            fatalError("No database loaded — interpretation impossible.")
+        }
+        return db.recordIndex
     }
 
-    /// The current frame. Note that frame and symbol table are near synonomous.
+    var localSymbolTable: SymbolTable {
+        callStack.last ?? [:]
+    }
+
+    /// The current frame. Note that frame and symbol table are near synonymous.
     private var currentFrame: SymbolTable {
         get {
             guard let frame = callStack.last else { fatalError("No frame available") }
@@ -38,25 +45,33 @@ final public class Program {
         }
     }
 
-    /// Create a program from its proc, func, and global tables, and a database.
-    init(procTable: [String : ParsedProcDef], funcTable: [String : ParsedFuncDef],
-         globalTable: SymbolTable, database: Database? = nil,
+    /// Create a run time program from a parsed program.
+    init(parsedProgram: ParsedProgram, database: Database? = nil,
          callStack: [SymbolTable] = [[:]]) {
 
-        self.procedureTable = procTable
-        self.functionTable = funcTable
-        self.globalSymbolTable = globalTable
+        self.parsedProgram = parsedProgram
         self.database = database
         self.callStack = callStack
-        //setupBuiltins()
-    }
 
-    // Allow the builtins to not worry about nil databases.
-    var recordIndex: RecordIndex {
-        guard let db = self.database else {
-            fatalError("No database loaded — interpretation impossible.")
+        var procTable: [String: Int] = [:]
+        var funcTable: [String: Int] = [:]
+        var globals: SymbolTable = [:]
+
+        for (i, defn) in parsedProgram.defns.enumerated() {
+            switch defn {
+            case .procDef(let procDef):
+                procTable[procDef.name] = i
+            case .funcDef(let funcDef):
+                funcTable[funcDef.name] = i
+            case .global(let globalDef):
+                globals[globalDef.name] = .null
+            }
         }
-        return db.recordIndex
+        self.procedureTable = procTable
+        self.functionTable = funcTable
+        self.globalSymbolTable = globals
+
+        setupBuiltins()
     }
 
     /// Push a new local frame when a procedure or fuction is called.
@@ -129,14 +144,37 @@ extension Program {
     public func interpretProgram(database: Database) throws -> InterpResult {
         self.database = database
         // Get the main procedure.
-        guard let mainProc = procedureTable["main"] else {
-            throw RuntimeError.undefinedProcedure("No main procedure found")
-        }
+        let mainProc = try procedureDefinition("main")
         if mainProc.params.count != 0 {
             throw RuntimeError.argumentCount("Main proc cannot have parameters")
         }
         // Create a bootstrap ParsedCallStmt for main and call it.
-        let mainCall = ParsedCallStmt(name: "main", args: [])
+        let mainCall = ParsedCallStatement(name: "main", args: [])
         return try interpProcCall(mainCall)
+    }
+}
+
+extension Program {
+
+    /// Return the definition of a user procedure.
+    func procedureDefinition(_ name: String) throws -> ParsedProcDef {
+        guard let index = procedureTable[name] else {
+            throw RuntimeError.undefinedSymbol("Procedure '\(name)' not found")
+        }
+        guard case .procDef(let procDef) = parsedProgram.defns[index] else {
+            fatalError("Corrupt procedure table for \(name)")
+        }
+        return procDef
+    }
+
+    /// Return the definition of a user function.
+    func functionDefinition(_ name: String) throws -> ParsedFuncDef {
+        guard let index = procedureTable[name] else {
+            throw RuntimeError.undefinedSymbol("Function '\(name)' not found")
+        }
+        guard case .funcDef(let funcDef) = parsedProgram.defns[index] else {
+            fatalError("Corrupt funcion table for \(name)")
+        }
+        return funcDef
     }
 }

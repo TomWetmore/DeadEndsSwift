@@ -11,6 +11,7 @@ import Parsing
 
 testLexer()
 testParser()
+try testInterpreter()
 
 let parser: some Parser<Substring.UTF8View, Int> = Int.parser()
 
@@ -46,7 +47,31 @@ func readFile(at path: String) -> String? {
     return contents
 }
 
+func loadDatabase() -> Database {
+    print("Reading Gedcom File in database")
+    var errLog = ErrorLog()
+    let database = loadDatabase(from: "/Users/ttw4/Desktop/DeadEndsVScode/Gedfiles/modified.ged", errlog: &errLog)
+    guard let database = database else { fatalError("Could not load database") }
+    print("Database loaded successfully\n\(database)")
+    return database
+}
 
+
+func testInterpreter() throws {
+    print("test interpreter")
+    
+    let database = loadDatabase()
+    let program =
+        """
+        proc main ()
+        {
+            set(i, indi("@I1@"))
+            "hellow, world\n"
+            name(i)
+        }
+        """
+    try runProgram(source: program, database: database)
+}
 
 
 

@@ -196,17 +196,15 @@ extension Program {
         return .null
     }
 
-    /// Look up a person in the database and returns the its root.
+    /// Look up a person in the database and return its root.
     func builtinIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
-        // indi() requires a database.
-        guard let database = self.database else { // TODO: Didn't we find a better way to do this? In Database.Swift?
+        guard let _ = self.database else {
             throw RuntimeError.missingDatabase("indi() requires a database")
         }
-        // The argument to indi() must be a String.
-        let val = try evaluate(args[0])
-        guard case let .string(key) = val, let node = recordIndex[key] else {
-            return .null
-        }
+        let key = try evaluate(args[0])
+        guard case let .string(key) = key, let node = recordIndex[key],
+              node.tag == GedcomTag.INDI
+        else { return .null }
         return .gnode(node)
     }
 
@@ -270,9 +268,11 @@ extension Program {
 
     // Extract an event from a .gnode associated ProgramNode.
     func extractPersonEvent(from arg: ParsedExpr, tag: String, functionName: String) throws -> ProgramValue {
-        // Get the person with the requested event.
-        let person = try personFromProgramNode(arg, errorMessage: "\(functionName)() expects a person root node")
-        // Get the first child node with the even's tag in the person's tree.
-        return person.kid(withTag: tag).map { .gnode($0) } ?? .null
+//        // Get the person with the requested event.
+//        let person = try personFromProgramNode(arg, errorMessage: "\(functionName)() expects a person root node")
+//        // Get the first child node with the even's tag in the person's tree.
+//        return person.kid(withTag: tag).map { .gnode($0) } ?? .null
+
+        return .null
     }
 }

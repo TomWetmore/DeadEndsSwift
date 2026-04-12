@@ -116,6 +116,7 @@
 				Interpreter/Interpret.swift,
 				Interpreter/Program.swift,
 				Interpreter/ProgramValue.swift,
+				Interpreter/RunProgram.swift,
 				NameIndex.swift,
 				Parser/ExpressionParser.swift,
 				Parser/Lexer.swift,

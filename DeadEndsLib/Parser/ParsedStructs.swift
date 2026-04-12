@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 10 April 2026.
+//  Last changed on 12 April 2026.
 //
 
 /// The parsed structs (and enums) make up the "abstract syntax tree"
@@ -46,7 +46,7 @@ struct ParsedProcDef: Equatable, CustomStringConvertible {
 
     let name: String
     let params: [String]
-    let body: [ParsedStmt]
+    let body: [ParsedStatement]
 
     var description: String {
         "PROC \(name)(\(params.joined(separator: ", "))) \(body)"
@@ -58,7 +58,7 @@ struct ParsedFuncDef: Equatable, CustomStringConvertible {
 
     let name: String
     let params: [String]
-    let body: [ParsedStmt]
+    let body: [ParsedStatement]
 
     var description: String {
         "FUNC \(name)(\(params.joined(separator: ", "))) \(body)"
@@ -76,31 +76,31 @@ struct ParsedGlobalDef: Equatable, CustomStringConvertible {
 }
 
 /// Parsed statement types.
-enum ParsedStmt: Equatable, CustomStringConvertible {
+enum ParsedStatement: Equatable, CustomStringConvertible {
     
-    case callStmt(ParsedCallStmt)
-    case whileStmt(ParsedWhileStmt)
-    case ifStmt(ParsedIfStmt)
-    case returnStmt(ParsedReturnStmt)
-    case breakStmt(ParsedBreakStmt)
-    case continueStmt(ParsedContinueStmt)
-    case exprStmt(ParsedExpr)
+    case callStatement(ParsedCallStatement)
+    case whileStatement(ParsedWhileStmt)
+    case ifStatement(ParsedIfStmt)
+    case returnStatement(ParsedReturnStmt)
+    case breakStatement(ParsedBreakStmt)
+    case continueStatement(ParsedContinueStmt)
+    case expressionStatement(ParsedExpr)
 
     var description: String {
         switch self {
-        case .callStmt(let s):         return s.description
-        case .whileStmt(let s):    return s.description
-        case .ifStmt(let s):       return s.description
-        case .returnStmt(let s):   return s.description
-        case .breakStmt(let s):    return s.description
-        case .continueStmt(let s): return s.description
-        case .exprStmt(let e):         return "EXPRSTMT(\(e))"
+        case .callStatement(let s):         return s.description
+        case .whileStatement(let s):    return s.description
+        case .ifStatement(let s):       return s.description
+        case .returnStatement(let s):   return s.description
+        case .breakStatement(let s):    return s.description
+        case .continueStatement(let s): return s.description
+        case .expressionStatement(let e):         return "EXPRSTMT(\(e))"
         }
     }
 }
 
 /// Parsed call statement.
-struct ParsedCallStmt: Equatable, CustomStringConvertible {
+struct ParsedCallStatement: Equatable, CustomStringConvertible {
 
     let name: String
     let args: [ParsedExpr]
@@ -114,7 +114,7 @@ struct ParsedCallStmt: Equatable, CustomStringConvertible {
 struct ParsedWhileStmt: Equatable, CustomStringConvertible {
 
     let condition: ParsedCondition
-    let body: [ParsedStmt]
+    let body: [ParsedStatement]
 
     var description: String {
         "WHILE(\(condition)) { \(body) }"
@@ -125,9 +125,9 @@ struct ParsedWhileStmt: Equatable, CustomStringConvertible {
 struct ParsedIfStmt: Equatable, CustomStringConvertible {
 
     let condition: ParsedCondition
-    let thenBody: [ParsedStmt]
+    let thenBody: [ParsedStatement]
     let elseIfs: [ParsedElseIf]
-    let elseBody: [ParsedStmt]?
+    let elseBody: [ParsedStatement]?
 
     var description: String {
         "IF(\(condition)) THEN \(thenBody) ELSIFS \(elseIfs) ELSE \(String(describing: elseBody))"
@@ -138,7 +138,7 @@ struct ParsedIfStmt: Equatable, CustomStringConvertible {
 struct ParsedElseIf: Equatable, CustomStringConvertible {
     
     let condition: ParsedCondition
-    let body: [ParsedStmt]
+    let body: [ParsedStatement]
 
     var description: String {
         "ELSIF(\(condition)) \(body)"

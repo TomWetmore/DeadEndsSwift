@@ -105,6 +105,15 @@ extension Program {
         // TODO: THIS SHOULD THROW AN ERROR.
         return gnode
     }
+
+
+    func evaluateGedcomNode(_ expr: ParsedExpr) throws -> GedcomNode? {
+        let pvalue = try evaluate(expr)
+        guard case .gnode(let gnode) = pvalue else {
+            return nil
+        }
+        return gnode
+    }
 }
 
 

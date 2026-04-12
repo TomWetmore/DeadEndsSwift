@@ -14,7 +14,7 @@ import Parsing
 struct BlockParser: Parser {
 
     /// Parse a statement block.
-    func parse(_ input: inout TokStream) throws -> [ParsedStmt] {
+    func parse(_ input: inout TokStream) throws -> [ParsedStatement] {
 
         try ExactToken(kind: .lBrace).parse(&input)
         let stmts = try StmtListParser().parse(&input)
@@ -27,9 +27,9 @@ struct BlockParser: Parser {
 struct StmtListParser: Parser {
 
     /// Parse a statement list.
-    func parse(_ input: inout TokStream) throws -> [ParsedStmt] {
+    func parse(_ input: inout TokStream) throws -> [ParsedStatement] {
 
-        var result: [ParsedStmt] = []
+        var result: [ParsedStatement] = []
 
         while let tok = input.first, tok.kind != .rBrace, tok.kind != .eof {
             result.append(try StmtParser().parse(&input))
@@ -42,26 +42,26 @@ struct StmtListParser: Parser {
 struct StmtParser: Parser {
 
     /// Parse a statement.
-    func parse(_ input: inout TokStream) throws -> ParsedStmt {
+    func parse(_ input: inout TokStream) throws -> ParsedStatement {
 
         guard let tok = input.first else {
             throw DeadEndsParseError()
         }
         switch tok.kind {
         case .whileTok:
-            return .whileStmt(try WhileStmtParser().parse(&input))
+            return .whileStatement(try WhileStmtParser().parse(&input))
         case .ifTok:
-            return .ifStmt(try IfStmtParser().parse(&input))
+            return .ifStatement(try IfStmtParser().parse(&input))
         case .call:
-            return .callStmt(try CallStmtParser().parse(&input))
+            return .callStatement(try CallStmtParser().parse(&input))
         case .returnTok:
-            return .returnStmt(try ReturnStmtParser().parse(&input))
+            return .returnStatement(try ReturnStmtParser().parse(&input))
         case .breakTok:
-            return .breakStmt(try BreakStmtParser().parse(&input))
+            return .breakStatement(try BreakStmtParser().parse(&input))
         case .continueTok:
-            return .continueStmt(try ContinueStmtParser().parse(&input))
+            return .continueStatement(try ContinueStmtParser().parse(&input))
         default:
-            return .exprStmt(try ExprParser().parse(&input))
+            return .expressionStatement(try ExprParser().parse(&input))
         }
     }
 }
@@ -128,7 +128,7 @@ struct IfStmtParser: Parser {
     }
 
     /// Parse an else clause.
-    private func parseElse(_ input: inout TokStream) throws -> [ParsedStmt] {
+    private func parseElse(_ input: inout TokStream) throws -> [ParsedStatement] {
         try ExactToken(kind: .elseTok).parse(&input)
         return try BlockParser().parse(&input)
     }
@@ -138,14 +138,14 @@ struct IfStmtParser: Parser {
 struct CallStmtParser: Parser {
 
     /// Parse a call statement.
-    func parse(_ input: inout TokStream) throws -> ParsedCallStmt {
+    func parse(_ input: inout TokStream) throws -> ParsedCallStatement {
 
         try ExactToken(kind: .call).parse(&input)
         let name = try IdentifierToken().parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
         let args = try ExprListOptionalParser().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
-        return ParsedCallStmt(name: name, args: args)
+        return ParsedCallStatement(name: name, args: args)
     }
 }
 

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 10 April 2026.
+//  Last changed on 12 April 2026.
 //
 
 import Foundation
@@ -23,23 +23,23 @@ public func runProgram(program: Program) throws {
 extension Program {
 
     /// Interpret a statement.
-    func interpStatement(_ stmt: ParsedStmt) throws -> InterpResult {
+    func interpStatement(_ stmt: ParsedStatement) throws -> InterpResult {
         
         switch stmt {
-        case .callStmt(let call):
+        case .callStatement(let call):
             return try interpProcCall(call)
-        case .whileStmt(let whileStmt):
+        case .whileStatement(let whileStmt):
             return try interpWhile(whileStmt)
-        case .ifStmt(let ifStmt):
+        case .ifStatement(let ifStmt):
             return try interpIf(ifStmt)
-        case .returnStmt(let ret):
+        case .returnStatement(let ret):
             //return try interpReturn(ret)
             return .returning(nil) // REPLACE WITH CORRECT STUFF.
-        case .breakStmt:
+        case .breakStatement:
             return .breaking
-        case .continueStmt:
+        case .continueStatement:
             return .continuing
-        case .exprStmt(let expr):
+        case .expressionStatement(let expr):
             _ = try evaluate(expr)
             return .okay
         }
@@ -164,29 +164,26 @@ extension Program {
 extension Program {
 
     /// Interpret a ParsedCallStmt.
-    func interpProcCall(_ procCall: ParsedCallStmt) throws -> InterpResult {
+    func interpProcCall(_ procCall: ParsedCallStatement) throws -> InterpResult {
 
         let name = procCall.name
-
-        guard let procDef: ParsedProcDef = procedureTable[name] else { // Called proc must exist.
-            throw RuntimeError.undefinedSymbol("Procedure '\(name)' not found")
-        }
+        let procDef = try procedureDefinition(name)
         let nArgs = procCall.args.count
         let nParams = procDef.params.count
-        guard nArgs == nParams else { // Numbers of args and params must be the same.
+        guard nArgs == nParams else { // Check numbers of args and params.
             throw RuntimeError.invalidArguments("Proc '\(name)' expects \(nParams) arguments, got \(nArgs)")
         }
-        var table: SymbolTable = [:] // Symbol table for the called procedure.
-        for (param, arg) in zip(procDef.params, procCall.args) { // Bind the args to the params.
+        var table: SymbolTable = [:] // Prepare the symbol table for the procedure.
+        for (param, arg) in zip(procDef.params, procCall.args) {
             table[param] = try evaluate(arg)
         }
         pushCallFrame(table)
         defer { popCallFrame() }
-        return try interpStmtList(procDef.body) // Interpret the procedure body.
+        return try interpStmtList(procDef.body) // Call user procedure.
     }
 
     /// Interpret a list of statements.
-    func interpStmtList(_ stmts: [ParsedStmt]) throws -> InterpResult {
+    func interpStmtList(_ stmts: [ParsedStatement]) throws -> InterpResult {
         for stmt in stmts {
             let result = try interpStatement(stmt)
             switch result { 
