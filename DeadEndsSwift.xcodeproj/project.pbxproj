@@ -110,7 +110,7 @@
 				ImportStack.swift,
 				Interpreter/Builtin.swift,
 				Interpreter/BuiltinList.swift,
-				Interpreter/builtinMath.swift,
+				Interpreter/BuiltinMath.swift,
 				Interpreter/BuiltinPerson.swift,
 				Interpreter/Evaluate.swift,
 				Interpreter/Interpret.swift,

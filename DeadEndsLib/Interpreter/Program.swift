@@ -3,18 +3,18 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 9 April 2026.
+//  Last changed on 14 April 2026.
 //
 
 import Foundation
 
 public typealias SymbolTable = [String: ProgramValue?]
 
-/// DeadEnds program; Combines the static program parts with the run time parts.
+/// DeadEnds program; combines the static program parts with the run time parts.
 final public class Program {
 
-    let parsedProgram: ParsedProgram  // The static, immutable program.
-    var builtins: [String: Builtin] = [:]  // The table of builtin library functions.
+    let parsedProgram: ParsedProgram  // The immutable program.
+    var builtins: [String: Builtin] = [:]  // The builtin library functions.
     let procedureTable: [String: Int]  // User defined procedures.
     let functionTable: [String: Int]  // User defined functions.
 
@@ -22,6 +22,7 @@ final public class Program {
     var database: Database?  // Database
     private var callStack: [SymbolTable] = [[:]]  // Run time stack.
 
+    /// Return the record index, failing if the database does not exist.
     var recordIndex: RecordIndex {
         guard let db = self.database else {
             fatalError("No database loaded — interpretation impossible.")
@@ -29,11 +30,12 @@ final public class Program {
         return db.recordIndex
     }
 
+    /// Return the local symbol table, the current frame.
     var localSymbolTable: SymbolTable {
         callStack.last ?? [:]
     }
 
-    /// The current frame. Note that frame and symbol table are near synonymous.
+    /// The current frame; frame and symbol table are synonymous.
     private var currentFrame: SymbolTable {
         get {
             guard let frame = callStack.last else { fatalError("No frame available") }
@@ -45,7 +47,7 @@ final public class Program {
         }
     }
 
-    /// Create a run time program from a parsed program.
+    /// Create a runnable program from a parsed program.
     init(parsedProgram: ParsedProgram, database: Database? = nil,
          callStack: [SymbolTable] = [[:]]) {
 
@@ -53,6 +55,7 @@ final public class Program {
         self.database = database
         self.callStack = callStack
 
+        /// Set up the tables
         var procTable: [String: Int] = [:]
         var funcTable: [String: Int] = [:]
         var globals: SymbolTable = [:]
@@ -103,7 +106,7 @@ final public class Program {
     }
 
     /// Update or add a new entry to the local or global symbol table.
-    /// If the identifier is in the local table, change its value, else
+    /// If the identifier is in the local table, change its there, else
     /// if it is in the global table change it there, else add it to
     /// the local table.
     func assignToSymbol(_ name: String, value: ProgramValue) {
@@ -118,7 +121,7 @@ final public class Program {
 }
 
 /// Run time errors that can happen when a program is running.
-public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing the over use of Error.
+public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing incorrect use of Error.
 
     case typeMismatch(_ detail: String)
     case invalidArguments(_ detail: String)
@@ -136,7 +139,7 @@ public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing t
     case io(_ detail: String)
 }
 
-/// Extension to Program with the interpretProgram method/
+/// Interpreter for interpretProgram method.
 extension Program {
 
     /// Run the program by calling the main procedure. procedure.
@@ -156,7 +159,7 @@ extension Program {
 
 extension Program {
 
-    /// Return the definition of a user procedure.
+    /// Return a user procedure definition.
     func procDefn(_ name: String) throws -> ParsedProcDefn {
         guard let index = procedureTable[name] else {
             throw RuntimeError.undefinedSymbol("Proc '\(name)' is not found")
@@ -167,7 +170,7 @@ extension Program {
         return procDef
     }
 
-    /// Return the definition of a user function.
+    /// Return a user function definition.
     func funcDefn(_ name: String) throws -> ParsedFuncDefn {
         guard let index = procedureTable[name] else {
             throw RuntimeError.undefinedSymbol("Function '\(name)' not found")

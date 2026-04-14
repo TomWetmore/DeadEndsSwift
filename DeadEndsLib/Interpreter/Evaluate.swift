@@ -3,37 +3,42 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 9 April 2026.
+//  Last changed on 14 April 2026.
 //
 
 import Foundation
 
 extension Program {
 
-    // Generic evaluator. Handles .identifier, .integer, .double, .string, .functionCall,
-    // and builtinCall.
+    // Generic evaluator for identifier, integer, double, string, and functionCall.
     func evaluate(_ expr: ParsedExpr) throws -> ProgramValue {
 
         switch expr {
-        case .identifier(let string): // Lookup variables in symbol tables.
+        case .identifier(let string): // Identifier.
             return try evaluateIdent(string)
-//        case .builtinCall(let name, let args): // Builtin Swift functions.
-//            return try evaluateBuiltin(name, args: args)
-        case .funcCall(let name, let args): // User-defined functions.
+        case .funcCall(let name, let args): // Builtin or user function.
             return try evaluateFunction(name, args: args)
-        case .intConst(let integer): // Simple integer.
+        case .intConst(let integer): // Integer.
             return ProgramValue.integer(integer)
-        case .stringConst(let string): // Simple string.
+        case .stringConst(let string): // String.
             return ProgramValue.string(string)
-        case .floatConst(let float): // Simple float.
-            return ProgramValue.double(float) // TODO: Inconsistent use of .float and .double.
-        default:
-            throw RuntimeError.undefinedFunction("Cannot evaluate \(String(describing: expr))")
+        case .doubleConst(let double): // Double.
+            return ProgramValue.double(double)
         }
     }
 
-    func evalCondition(_ cond: ParsedCondition) -> Bool {
-        return true
+    /// Evaluate a conditional expression.
+    func evalCondition(_ cond: ParsedCondition) throws -> Bool {
+        switch cond {
+        case .expr(let expr):
+            let value = try evaluate(expr)
+            return value.toBool()
+
+        case .assign(let name, let expr):
+            let value = try evaluate(expr)
+            assignToSymbol(name, value: value)
+            return value.toBool()
+        }
     }
 
     /// Evaluate an identifer by looking it up in a symbol table.

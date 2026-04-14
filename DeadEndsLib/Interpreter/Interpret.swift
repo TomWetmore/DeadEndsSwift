@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 13 April 2026.
+//  Last changed on 14 April 2026.
 //
 
 import Foundation
@@ -66,7 +66,7 @@ extension Program {
     /// Interpret a while statement.
     func interpWhile(_ whileStmt: ParsedWhileStmt) throws -> InterpResult {
         while true {
-            if !(evalCondition(whileStmt.condition)) { break }
+            if !(try evalCondition(whileStmt.condition)) { break }
             let result = try interpStmtList(whileStmt.body)
             switch result {
             case .breaking:
@@ -84,11 +84,11 @@ extension Program {
 
     /// Interpret an if statement.
     func interpIf(_ ifStmt: ParsedIfStmt) throws -> InterpResult {
-        if evalCondition(ifStmt.condition) {
+        if try evalCondition(ifStmt.condition) {
             return try interpStmtList(ifStmt.thenBody)
         }
         for elseIf in ifStmt.elseIfs {
-            if evalCondition(elseIf.condition) {
+            if try evalCondition(elseIf.condition) {
                 return try interpStmtList(elseIf.body)
             }
         }

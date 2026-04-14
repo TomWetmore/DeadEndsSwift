@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 6 April 2026.
-//  Last changed on 8 April 2026.
+//  Last changed on 14 April 2026.
 //
 
 import Foundation
@@ -83,7 +83,7 @@ struct ExprParser: Parser {
             return .intConst(i)
         }
         if let f = try? FloatConstToken().parse(&input) {
-            return .floatConst(f)
+            return .doubleConst(f)
         }
         if let s = try? StringConstToken().parse(&input) {
             return .stringConst(s)

@@ -1,9 +1,9 @@
 //
-//  builtinMath.swift
+//  BuiltinMath.swift
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed 11 April 2026.
+//  Last changed 14 April 2026.
 //
 //  This file has the builtin functions for add, sub, mul, div, mod, neg,
 //  eq, ne, lt, le, gt, ge, and, or, not, incr, decr.
