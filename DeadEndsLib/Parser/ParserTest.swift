@@ -13,10 +13,10 @@ public func testParser() {
 
     parseTokens(IdentifierToken(), from: "foo")
     parseTokens(ExprParser(), from: "foo")
-    parseTokens(ExprParser(), from: "123")
+    parseTokens(ExprParser(), from: "125")
     parseTokens(ExprParser(), from: "\"abc\\n\"")
     parseTokens(ExprParser(), from: "father(person)")
-    parseTokens(ExprListParser(), from: "a, 123, \"x\", mother(p)")
+    parseTokens(ExprListParser(), from: "a, 126, \"x\", mother(p)")
     parseTokens(CallStmtParser(), from: "call showevent(29, birth(indi), 0, 0)")
     parseTokens(CallStmtParser(), from: "call setupabbvtab()")
     parseTokens(WhileStmtParser(), from: "while(a, 1) { \"abc\" }")

@@ -1,4 +1,5 @@
 proc main() {
 	set(i, indi("@I1@")
+	"Hello World\n"
 	name(i)
 }

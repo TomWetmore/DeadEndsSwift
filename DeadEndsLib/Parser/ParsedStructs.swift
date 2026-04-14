@@ -3,19 +3,18 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 12 April 2026.
+//  Last changed on 13 April 2026.
 //
 
-/// The parsed structs (and enums) make up the "abstract syntax tree"
-/// of a DeadEnds program. They are all value types so the syntax tree
-/// is a fully formed constructed value object with no pointers.
-/// Theoretically this is a fine Swift approach. As an abstract syntax
-/// tree these parsed objects are never changed as they respresent the
-/// static program, not its execution.
+/// The parsed structs and enums make up the "abstract syntax tree" of
+/// a DeadEnds program. They are value types so the syntax tree fully
+/// formed value object with no pointers. As abstract syntax trees
+/// these parsed objects are never changed. They represent the static
+/// program, not its execution.
 
 import Foundation
 
-/// Parsed program struct.
+/// Parsed program, holding the syntax tree of an entire program.
 struct ParsedProgram: Equatable, CustomStringConvertible {
 
     let defns: [ParsedDefn]  // A program is a list of definitions.
@@ -25,12 +24,13 @@ struct ParsedProgram: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed definition.
+/// Parsed definition, holding the three definition types that
+/// make up a program.
 enum ParsedDefn: Equatable, CustomStringConvertible {
     
-    case procDef(ParsedProcDef)  // Procedure definition.
-    case funcDef(ParsedFuncDef)  // Function definition.
-    case global(ParsedGlobalDef)  // Global definition.
+    case procDef(ParsedProcDefn)  // Procedure definition.
+    case funcDef(ParsedFuncDefn)  // Function definition.
+    case global(ParsedGlobalDefn)  // Global definition.
 
     var description: String {
         switch self {
@@ -41,8 +41,9 @@ enum ParsedDefn: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed procedure definition.
-struct ParsedProcDef: Equatable, CustomStringConvertible {
+/// Parsed procedure definition, holding the definition of a
+/// user procedure.
+struct ParsedProcDefn: Equatable, CustomStringConvertible {
 
     let name: String
     let params: [String]
@@ -53,8 +54,9 @@ struct ParsedProcDef: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed function definition.
-struct ParsedFuncDef: Equatable, CustomStringConvertible {
+/// Parsed function definition, holding the definition of a
+/// user function.
+struct ParsedFuncDefn: Equatable, CustomStringConvertible {
 
     let name: String
     let params: [String]
@@ -65,8 +67,9 @@ struct ParsedFuncDef: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed global definition.
-struct ParsedGlobalDef: Equatable, CustomStringConvertible {
+/// Parsed global definition, holding the definition of a
+/// global variable.
+struct ParsedGlobalDefn: Equatable, CustomStringConvertible {
 
     let name: String
 
@@ -88,13 +91,13 @@ enum ParsedStatement: Equatable, CustomStringConvertible {
 
     var description: String {
         switch self {
-        case .callStatement(let s):         return s.description
-        case .whileStatement(let s):    return s.description
-        case .ifStatement(let s):       return s.description
-        case .returnStatement(let s):   return s.description
-        case .breakStatement(let s):    return s.description
+        case .callStatement(let s): return s.description
+        case .whileStatement(let s): return s.description
+        case .ifStatement(let s): return s.description
+        case .returnStatement(let s): return s.description
+        case .breakStatement(let s): return s.description
         case .continueStatement(let s): return s.description
-        case .expressionStatement(let e):         return "EXPRSTMT(\(e))"
+        case .expressionStatement(let e): return "EXPRSTMT(\(e))"
         }
     }
 }
@@ -188,7 +191,6 @@ enum ParsedExpr: Equatable, CustomStringConvertible {
     case floatConst(Double)
     case stringConst(String)
     case funcCall(String, [ParsedExpr])
-    case builtinCall(String, [ParsedExpr])
 
     var description: String {
         switch self {
@@ -197,7 +199,6 @@ enum ParsedExpr: Equatable, CustomStringConvertible {
         case .floatConst(let f):         return "float(\(f))"
         case .stringConst(let s):        return "str(\(String(reflecting: s)))"
         case .funcCall(let name, let a): return "funccall(\(name), \(a))"
-        case .builtinCall(let name, let a): return "builtinCall(\(name), \(a))"
         }
     }
 }

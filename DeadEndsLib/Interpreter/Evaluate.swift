@@ -19,8 +19,8 @@ extension Program {
             return try evaluateIdent(string)
 //        case .builtinCall(let name, let args): // Builtin Swift functions.
 //            return try evaluateBuiltin(name, args: args)
-//        case .funcCall(let name, let args): // User-defined functions.
-//            return try evaluateFunction(name, args: args)
+        case .funcCall(let name, let args): // User-defined functions.
+            return try evaluateFunction(name, args: args)
         case .intConst(let integer): // Simple integer.
             return ProgramValue.integer(integer)
         case .stringConst(let string): // Simple string.
@@ -36,7 +36,7 @@ extension Program {
         return true
     }
 
-    // evaluateIdent evaluates an identifer by looking it up in the symbol tables and returning its value.
+    /// Evaluate an identifer by looking it up in a symbol table.
     func evaluateIdent(_ ident: String) throws -> ProgramValue {
         guard let value = lookupSymbol(ident) else {
             throw RuntimeError.undefinedSymbol("Undefined variable: \(ident)")
@@ -46,52 +46,58 @@ extension Program {
 }
 
 extension Program {
-    
-//    func evaluateBuiltin(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
-//        guard let builtin = builtins[name] else {  // Get builtin function.
-//            throw RuntimeError.undefinedSymbol("Unknown builtin function: \(name)")
-//        }
-//        guard (builtin.minArgs...builtin.maxArgs).contains(args.count) else {  // Check arg count.
-//            throw RuntimeError.invalidArguments(
-//                "\(name)() expects \(builtin.minArgs)-\(builtin.maxArgs) args, got \(args.count)"
-//            )
-//        }
-//        return try builtin.function(args)  // Call builtin.
-//    }
+
+    func evaluateFunction(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
+        if let _ = builtins[name] {
+            return try evaluateBuiltin(name, args: args)
+        } else {
+            return try evaluateUserFunc(name, args: args)
+        }
+    }
+
+    func evaluateBuiltin(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
+        guard let builtin = builtins[name] else {  // Get builtin function.
+            throw RuntimeError.undefinedSymbol("Unknown builtin function: \(name)")
+        }
+        guard (builtin.minArgs...builtin.maxArgs).contains(args.count) else {  // Check arg count.
+            throw RuntimeError.invalidArguments(
+                "\(name)() expects \(builtin.minArgs)-\(builtin.maxArgs) args, got \(args.count)"
+            )
+        }
+        return try builtin.function(args)  // Call builtin.
+    }
 
     // Evaluate a user function.
-//    func evaluateFunction(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
-//        guard let funcDef = functionTable[name] else {
-//            throw RuntimeError.undefinedSymbol("Function \(name) is not defined")
-//        }
-//        let nParams = funcDef.params.count
-//        let nArgs = args.count
-//        guard nParams == nArgs else {
-//            throw RuntimeError.invalidArguments("Function \(name) expects \(nParams) arguments, got \(nArgs)")
-//        }
-//        var frame: SymbolTable = [:]  // Create frame and bind the args to params.
-//        for (param, arg) in zip(funcDef.params, args) {
-//            let value = try evaluate(arg)
-//            frame[param] = value
-//        }
-//
-//        pushCallFrame(frame)  // Push frame on stack; defer the pop.
-//        defer { popCallFrame() }
-//
-//        let result = try interpret(funcDef.body)  // Evaluate function by interpreting body.
-//        switch result {
-//        case .returning(let value):
-//            return value ?? .null // Treat return() as returning null.
-//
-//        case .okay: return .null // Allow user functions to not return a value.
-//
-//        case .breaking, .continuing:
-//            throw RuntimeError.invalidControlFlow("break/continue statement outside of loop")
-//
-//        case .error: // Probably not needed.
-//            throw RuntimeError.executionFailed("Error  during function execution")
-//        }
-//    }
+    func evaluateUserFunc(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
+        let funcDef: ParsedFuncDefn = try funcDefn(name)
+        let nParams = funcDef.params.count
+        let nArgs = args.count
+        guard nParams == nArgs else {
+            throw RuntimeError.invalidArguments("Function \(name) expects \(nParams) arguments, got \(nArgs)")
+        }
+        var frame: SymbolTable = [:]  // Create frame and bind the args to params.
+        for (param, arg) in zip(funcDef.params, args) {
+            let value = try evaluate(arg)
+            frame[param] = value
+        }
+
+        pushCallFrame(frame)  // Push frame on stack; defer the pop.
+        defer { popCallFrame() }
+
+        let result = try interpStmtList(funcDef.body)  // Evaluate function by interpreting body.
+        switch result {
+        case .returning(let value):
+            return value ?? .null // Treat return() as returning null.
+
+        case .okay: return .null // Allow user functions to not return a value.
+
+        case .breaking, .continuing:
+            throw RuntimeError.invalidControlFlow("break/continue statement outside of loop")
+
+        case .error: // Probably not needed.
+            throw RuntimeError.executionFailed("Error  during function execution")
+        }
+    }
 }
 
 extension Program {

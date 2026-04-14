@@ -144,7 +144,7 @@ extension Program {
     public func interpretProgram(database: Database) throws -> InterpResult {
         self.database = database
         // Get the main procedure.
-        let mainProc = try procedureDefinition("main")
+        let mainProc = try procDefn("main")
         if mainProc.params.count != 0 {
             throw RuntimeError.argumentCount("Main proc cannot have parameters")
         }
@@ -157,9 +157,9 @@ extension Program {
 extension Program {
 
     /// Return the definition of a user procedure.
-    func procedureDefinition(_ name: String) throws -> ParsedProcDef {
+    func procDefn(_ name: String) throws -> ParsedProcDefn {
         guard let index = procedureTable[name] else {
-            throw RuntimeError.undefinedSymbol("Procedure '\(name)' not found")
+            throw RuntimeError.undefinedSymbol("Proc '\(name)' is not found")
         }
         guard case .procDef(let procDef) = parsedProgram.defns[index] else {
             fatalError("Corrupt procedure table for \(name)")
@@ -168,7 +168,7 @@ extension Program {
     }
 
     /// Return the definition of a user function.
-    func functionDefinition(_ name: String) throws -> ParsedFuncDef {
+    func funcDefn(_ name: String) throws -> ParsedFuncDefn {
         guard let index = procedureTable[name] else {
             throw RuntimeError.undefinedSymbol("Function '\(name)' not found")
         }

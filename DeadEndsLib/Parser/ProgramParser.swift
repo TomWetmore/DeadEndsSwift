@@ -49,7 +49,7 @@ struct DefnParser: Parser {
 struct ProcDefParser: Parser {
 
     /// Parse a procedure definition.
-    func parse(_ input: inout TokStream) throws -> ParsedProcDef {
+    func parse(_ input: inout TokStream) throws -> ParsedProcDefn {
         try ExactToken(kind: .proc).parse(&input)
         let name = try IdentifierToken().parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
@@ -57,7 +57,7 @@ struct ProcDefParser: Parser {
         try ExactToken(kind: .rParen).parse(&input)
         let body = try BlockParser().parse(&input)
 
-        return ParsedProcDef(name: name, params: params, body: body)
+        return ParsedProcDefn(name: name, params: params, body: body)
     }
 }
 
@@ -65,7 +65,7 @@ struct ProcDefParser: Parser {
 struct FuncDefParser: Parser {
 
     /// Parse a function definition.
-    func parse(_ input: inout TokStream) throws -> ParsedFuncDef {
+    func parse(_ input: inout TokStream) throws -> ParsedFuncDefn {
         try ExactToken(kind: .funcTok).parse(&input)
         let name = try IdentifierToken().parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
@@ -73,7 +73,7 @@ struct FuncDefParser: Parser {
         try ExactToken(kind: .rParen).parse(&input)
         let body = try BlockParser().parse(&input)
 
-        return ParsedFuncDef(name: name, params: params, body: body)
+        return ParsedFuncDefn(name: name, params: params, body: body)
     }
 }
 
@@ -81,7 +81,7 @@ struct FuncDefParser: Parser {
 struct GlobalDefParser: Parser {
 
     /// Parse a global definition.
-    func parse(_ input: inout TokStream) throws -> ParsedGlobalDef {
+    func parse(_ input: inout TokStream) throws -> ParsedGlobalDefn {
         let name = try IdentifierToken().parse(&input)
         guard name == "global" else {
             throw DeadEndsParseError.generic
@@ -89,7 +89,7 @@ struct GlobalDefParser: Parser {
         try ExactToken(kind: .lParen).parse(&input)
         let globalName = try IdentifierToken().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
-        return ParsedGlobalDef(name: globalName)
+        return ParsedGlobalDefn(name: globalName)
     }
 }
 

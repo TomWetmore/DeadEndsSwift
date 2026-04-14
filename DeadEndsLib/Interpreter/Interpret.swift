@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 12 April 2026.
+//  Last changed on 13 April 2026.
 //
 
 import Foundation
@@ -16,11 +16,23 @@ public enum InterpResult {
     case error
 }
 
-public func runProgram(program: Program) throws {
-    // Create a database.
-}
-
 extension Program {
+
+    /// Interpret a list of statements.
+    func interpStmtList(_ stmts: [ParsedStatement]) throws -> InterpResult {
+        for stmt in stmts {
+            let result = try interpStatement(stmt)
+            switch result {
+            case .okay:
+                continue
+            case .returning, .breaking, .continuing:
+                return result
+            case .error:
+                return .error
+            }
+        }
+        return .okay
+    }
 
     /// Interpret a statement.
     func interpStatement(_ stmt: ParsedStatement) throws -> InterpResult {
@@ -40,7 +52,10 @@ extension Program {
         case .continueStatement:
             return .continuing
         case .expressionStatement(let expr):
-            _ = try evaluate(expr)
+            let pvalue: ProgramValue = try evaluate(expr)
+            if case let .string(string) = pvalue {
+                print(string, terminator: "")
+            }
             return .okay
         }
     }
@@ -55,7 +70,7 @@ extension Program {
             let result = try interpStmtList(whileStmt.body)
             switch result {
             case .breaking:
-                return .breaking
+                return .okay
             case .returning:
                 return result
             case .error:
@@ -64,7 +79,7 @@ extension Program {
                 continue
             }
         }
-        return .error
+        return .okay
     }
 
     /// Interpret an if statement.
@@ -92,56 +107,6 @@ func interpretContinue() -> InterpResult {
     return .error
 }
 
-
-//extension Program {
-//
-//    // interpret is the top level interpreter. Its parameter is a ProgramNode. It handles some kinds of ProgramNodes directly,
-//    // and call separate functions for others.
-//    func interpret(_ node: ProgramNode) throws -> InterpResult {
-//        switch node.kind {
-//            case let .string(string): // Output string value.
-//                print(string, terminator: "")
-//            case .integer, .double: // Ignore numbers.
-//                break
-//            case .identifier: // Output identifer value if it is a string.
-//                let value = try evaluateIdent(node)
-//                if case let .string(output) = value {
-//                    print(output, terminator: "")
-//                }
-//            case .builtinCall: // Call builtin function.
-//                let result = try evaluateBuiltin(node)
-//                if case let .string(output) = result {
-//                    print(output, terminator: "")
-//                }
-//            case let .procedureCall(name, _): // Call user defined procedure.
-//                switch try interpretProcedure(node) {
-//                    case .okay:
-//                        break
-//                    case .error:
-//                        throw RuntimeError.runtimeError("Error calling procedure: \(name)")
-//                    case .returning(let value):
-//                        return .returning(value)
-//                    case .breaking:
-//                        return .breaking
-//                    case .continuing:
-//                        return .continuing
-//                }
-//            case .functionCall:
-//                let result = try evaluateFunction(node)
-//                if case let .string(output) = result {
-//                    print(output, terminator: "")
-//                }
-//
-//            case let .returnState(resultExpr):
-//                let returnValue = try resultExpr.map { try evaluate($0) }
-//                return .returning(returnValue)
-//            default:
-//                throw RuntimeError.runtimeError("Unhandled statement type: \(node.kind)")
-//        }
-//        return .okay // TODO: Can this be reached? Or does it just keep the compiler happy?
-//    }
-//
-
 extension Program {
 
     func interpBreak() -> InterpResult {
@@ -167,7 +132,7 @@ extension Program {
     func interpProcCall(_ procCall: ParsedCallStatement) throws -> InterpResult {
 
         let name = procCall.name
-        let procDef = try procedureDefinition(name)
+        let procDef = try procDefn(name)
         let nArgs = procCall.args.count
         let nParams = procDef.params.count
         guard nArgs == nParams else { // Check numbers of args and params.
@@ -180,22 +145,6 @@ extension Program {
         pushCallFrame(table)
         defer { popCallFrame() }
         return try interpStmtList(procDef.body) // Call user procedure.
-    }
-
-    /// Interpret a list of statements.
-    func interpStmtList(_ stmts: [ParsedStatement]) throws -> InterpResult {
-        for stmt in stmts {
-            let result = try interpStatement(stmt)
-            switch result { 
-            case .okay:
-                continue 
-            case .returning, .breaking, .continuing:
-                return result
-            case .error:
-                return .error
-            }
-        }
-        return .okay
     }
 }
 

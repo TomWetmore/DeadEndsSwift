@@ -15,7 +15,7 @@ try testInterpreter()
 
 let parser: some Parser<Substring.UTF8View, Int> = Int.parser()
 
-var input = "123"[...].utf8
+var input = "142"[...].utf8
 
 if let result = try? parser.parse(&input) {
     print(result)
@@ -26,9 +26,9 @@ func testLexer() {
     else { fatalError("Could not read test.txt") }
     showTokens(from: text)
     print("Second Test")
-    var testString = "- . -. 123. .5 -.5 \"abc\n\" / \""
+    var testString = "- . -. 129. .5 -.5 \"abc\n\" / \""
     showTokens(from: testString)
-    testString = "- . -. 123. .5 -.5 \"abc\\n\" / \""
+    testString = "- . -. 132. .5 -.5 \"abc\\n\" / \""
     showTokens(from: testString)
 }
 
@@ -66,8 +66,8 @@ func testInterpreter() throws {
         proc main ()
         {
             set(i, indi("@I1@"))
-            "hellow, world\n"
-            name(i)
+            "hello, world\n"
+            name(i)  "; " name(i)  "\n" name(i) nl()
         }
         """
     try runProgram(source: program, database: database)

@@ -15,7 +15,7 @@ struct SelectPersonView: View {
     var body: some View {
         VStack {
             Text("Enter a GEDCOM Key")
-            TextField("@I123@", text: $key)
+            TextField("@I124@", text: $key)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
 
