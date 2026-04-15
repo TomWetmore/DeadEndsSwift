@@ -8,14 +8,17 @@
 
 import Foundation
 
+/// Result values from the  interpreter methods.
 public enum InterpResult {
-    case okay
-    case returning(ProgramValue?)
-    case breaking
-    case continuing
-    case error
+
+    case okay  // Normal end.
+    case returning(ProgramValue?)  // Return statement end.
+    case breaking  // Break statement end.
+    case continuing  // Continue statement end.
+    case error  // Error result.
 }
 
+/// List of statements and enumerated statements.
 extension Program {
 
     /// Interpret a list of statements.
@@ -34,7 +37,7 @@ extension Program {
         return .okay
     }
 
-    /// Interpret a statement.
+    /// Interpret an enumerated statement.
     func interpStatement(_ stmt: ParsedStatement) throws -> InterpResult {
         
         switch stmt {
@@ -45,8 +48,7 @@ extension Program {
         case .ifStatement(let ifStmt):
             return try interpIf(ifStmt)
         case .returnStatement(let ret):
-            //return try interpReturn(ret)
-            return .returning(nil) // REPLACE WITH CORRECT STUFF.
+            return try interpReturn(ret)
         case .breakStatement:
             return .breaking
         case .continueStatement:
@@ -61,6 +63,7 @@ extension Program {
     }
 }
 
+/// While and if statements.
 extension Program {
 
     /// Interpret a while statement.
@@ -92,7 +95,6 @@ extension Program {
                 return try interpStmtList(elseIf.body)
             }
         }
-
         if let elseBody = ifStmt.elseBody {
             return try interpStmtList(elseBody)
         }
@@ -100,35 +102,20 @@ extension Program {
     }
 }
 
-func interpReturn(_ ret: ParsedReturnStmt) throws -> InterpResult {
-    return .error
-}
-func interpretContinue() -> InterpResult {
-    return .error
-}
-
+/// Return statement.
 extension Program {
 
-    func interpBreak() -> InterpResult {
-        .breaking
+    /// Interpret a return statement.
+    func interpReturn(_ stmt: ParsedReturnStmt) throws -> InterpResult {
+        if stmt.values.isEmpty { return .returning(nil) }
+        return try .returning(evaluate(stmt.values[0]))
     }
-
-    func interpContinue() -> InterpResult {
-        .continuing
-    }
-
-//    func interpReturn(_ expr: ParsedExpr?) -> InterpResult {
-//        // If there is no expression
-//        if expr == nil { return .returning(nil) }
-//
-//        let returnValue = try? expr.map { evaluate($0) }
-//        return .returning(returnValue)
-//    }
 }
 
+/// Procedure call statement
 extension Program {
 
-    /// Interpret a ParsedCallStmt.
+    /// Interpret a procedure call statement.
     func interpProcCall(_ procCall: ParsedCallStatement) throws -> InterpResult {
 
         let name = procCall.name

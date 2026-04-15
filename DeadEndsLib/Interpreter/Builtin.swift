@@ -3,13 +3,15 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 11 April 2026.
+//  Last changed on 14 April 2026.
 //
 
 import Foundation
 
 extension Program {
 
+    /// Structure holding a builtin function. Unlike user functions the
+    /// arguments are not evaluated.
     struct Builtin {
         let minArgs: Int
         let maxArgs: Int
@@ -50,16 +52,16 @@ extension Program {
             // Person operations.
             "indi": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndi($0) },
             "name": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinName($0) },
-            //"givens": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinGivens($0) },
-            //"surname": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSurname($0) },
+            "givens": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinGivens($0) },
+            "surname": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSurname($0) },
             "birth" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinBirth($0) },
             "death": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDeath($0) },
-//
-//            // Event operations.
-//            "date":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDate($0) },
-//            "place": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinPlace($0) },
-//
-//            // List operations.
+
+            // Event operations.
+            "date":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDate($0) },
+            "place": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinPlace($0) },
+
+            // List operations.
             "append":  Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
             "prepend": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinPrepend($0) },
             "push":    Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },

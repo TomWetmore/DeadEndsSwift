@@ -80,13 +80,13 @@ struct ExprParser: Parser {
             return .identifier(name)
         }
         if let i = try? IntConstToken().parse(&input) {
-            return .intConst(i)
+            return .integerConstant(i)
         }
         if let f = try? FloatConstToken().parse(&input) {
-            return .doubleConst(f)
+            return .doubleConstant(f)
         }
         if let s = try? StringConstToken().parse(&input) {
-            return .stringConst(s)
+            return .stringConstant(s)
         }
         throw DeadEndsParseError()
     }
@@ -97,7 +97,7 @@ struct ExprParser: Parser {
         try ExactToken(kind: .lParen).parse(&input)
         let args = try ExprListOptionalParser().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
-        return .funcCall(name, args)
+        return .functionCall(name, args)
     }
 }
 

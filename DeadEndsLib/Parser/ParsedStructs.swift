@@ -187,19 +187,19 @@ enum ParsedCondition: Equatable, CustomStringConvertible {
 enum ParsedExpr: Equatable, CustomStringConvertible {
     
     case identifier(String)
-    case intConst(Int)
-    case doubleConst(Double)
-    case stringConst(String)
-    case funcCall(String, [ParsedExpr])
+    case integerConstant(Int)
+    case doubleConstant(Double)
+    case stringConstant(String)
+    case functionCall(String, [ParsedExpr])
 
     var description: String {
         
         switch self {
         case .identifier(let s):         return "id(\(s))"
-        case .intConst(let i):           return "int(\(i))"
-        case .doubleConst(let f):         return "float(\(f))"
-        case .stringConst(let s):        return "str(\(String(reflecting: s)))"
-        case .funcCall(let name, let a): return "funccall(\(name), \(a))"
+        case .integerConstant(let i):           return "int(\(i))"
+        case .doubleConstant(let f):         return "float(\(f))"
+        case .stringConstant(let s):        return "str(\(String(reflecting: s)))"
+        case .functionCall(let name, let a): return "funccall(\(name), \(a))"
         }
     }
 }
