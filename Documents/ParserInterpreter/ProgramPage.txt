@@ -1,0 +1,290 @@
+LifeLines had an ncurses user interface. That ncurses user interface was also used when interpreting user programms.
+The LifeLines language's built-in library has a number of functions that dealt with user input. For example, the function:
+getindi(STRING)
+is used to retrieve a person from the database, a person that is needed for the program to run. So, for example, a program might have:
+
+set(i, getindi("Please enter the first person in the ancestor chain"))
+
+The getindi() function would present a search box that the user fills out. Then the persons that match the search criteria are returned in a list menu, and then the user selects a person from the list. At that point the program has the person and can countinue on with the next statement.
+There are a number of these interactive routines.
+
+I need to duplicate this functionality in the Swift DeadEnds. I assume I could have a SwiftUI "page" devoted to running programs, and the various U/I operations would cause panels to show up and dissappear.
+--------------------------------------
+I think a dedicated Run Program page is the right direction. I would make one important refinement: Do not let the interpreter directly “show SwiftUI views.” Instead, let the interpreter request an interaction, and let the SwiftUI layer satisfy that request.  That separation will keep the programming subsystem clean and will make the interactive built-ins much easier to manage.
+
+Think of program execution as sometimes reaching a point where it cannot continue until the UI gets something from the user. Instead of getindi() immediately doing UI work, it should do something more like this:
+Interpreter runs statements; interpreter reaches getindi("..."); interpreter produces an interaction request; Run Program page notices the request; page shows the appropriate sheet/panel; user completes the interaction; result is sent back to the interpreter; interpreter resumes. That gives you the same old LifeLines behavior, but in a SwiftUI-native way.
+
+Your old ncurses version probably had this feel: •interpreter calls built-in; •built-in takes over the screen; •user does something; •built-in returns value; •interpreter continues
+
+In SwiftUI, the equivalent is better modeled as: •interpreter calls built-in; •built-in suspends evaluation with a request; •UI presents a modal component; •user answers; •UI resumes evaluation with the answer.
+So the built-in no longer owns the whole interaction. It only defines what it needs.
+
+Architecture I would suggest: I would split it into four parts.
+
+1. Program runner model.  A ProgramRunner or RunProgramModel object owns: •database; •loaded/interpreted program; •symbol tables / call stack; •output buffer; •current execution state; •pending interaction request, if any.
+
+Its state might be conceptually like: •idle; •running; •waitingForInput(request); •finished; •failed(error).
+That one distinction — running vs waitingForInput — is the key.
+
+2. Interaction request type.  Define an enum that represents all interactive operations your built-ins may ask for.  Something along these lines:
+enum ProgramInteractionRequest {
+    case getPerson(prompt: String)
+    case getFamily(prompt: String)
+    case getString(prompt: String, initialValue: String?)
+    case getInteger(prompt: String, initialValue: Int?)
+    case chooseOne(prompt: String, options: [String])
+    case chooseFromPersons(prompt: String, candidates: [Person])
+    case confirm(prompt: String)
+}
+
+Then every interactive built-in translates itself into one of these requests.
+
+For example: •getindi("Choose ancestor") → .getPerson(prompt: "Choose ancestor"); •getfam(...) → .getFamily(...); •getstr(...) → .getString(...).  This gives you one clean vocabulary for all program/UI interaction.
+
+3. Continuation / suspension mechanism.  When the interpreter hits an interactive built-in, it cannot just return a normal value immediately.  It needs to pause.  There are two broad ways to do that.
+
+Option A: async/await.  Make evaluation async, and have interactive built-ins await a UI result.  This is elegant in modern Swift, but it can ripple through a lot of interpreter code.
+
+Option B: stepwise interpreter state machine.  Let evaluation return something like: •value; •suspended(request); •error.  This is probably closer to your current interpreter style and may be easier to graft onto DeadEnds.
+
+For example, conceptually:
+
+enum EvalOutcome {
+    case value(PValue)
+    case suspended(ProgramInteractionRequest)
+    case failure(String)
+}
+
+Then the runner stores enough execution context to continue later. Given your history with explicit interpreters and control flow machinery, I suspect the state machine / suspension model may feel more transparent and easier to debug.
+
+I strongly recommend this rule.  Every interactive built-in should behave like this:
+•if running in interactive UI mode: suspend and request input.
+•if running in noninteractive mode: fail cleanly, or use a supplied default/test input source.
+
+That is important because later you may want: •command-line test runner; •scripted regression tests; •batch mode; •maybe even a future web UI.
+
+So instead of hardwiring SwiftUI into built-ins, define an abstraction like:
+protocol ProgramInteractionHandler
+or just let the runner mediate interaction requests.
+
+What the SwiftUI page should look like.  Your “Run Program” page can be the host for execution plus transient interaction panels.  I would make it show three conceptual regions:
+
+Top.  Program status and controls •run; •stop; •maybe step; •maybe reset.
+
+Middle.  Program output / report area.  This mirrors the old report/output window.
+
+Overlay or sheet.  Current interaction panel.  When the interpreter is waiting for input, present the proper interaction UI.  That UI could be: •a sheet; •a popover; •an overlay panel; •a side panel.
+
+For your use case, I think sheet-style modals or centered panels make the most sense, because the program is blocked waiting anyway.  That mirrors the old ncurses mode nicely: the program pauses, user does the required action, then execution resumes.
+
+How getindi() could feel in SwiftUI.
+
+I would model getindi() as a two-stage UI, but packaged as one interaction.
+Stage 1: search criteria panel.  User enters name / dates / places, whatever level you support.
+Stage 2: results list.  User picks one person from the matches.
+Then the panel closes and returns the selected Person.  This can all live inside one reusable view, something like: •PersonPickerPanel.  That panel should be usable not only for program execution, but elsewhere in the app too. That is one of the big wins.
+
+So getindi() should not create custom UI logic from scratch.  It should simply request: “I need one person, here is the prompt”. And then the reusable person picker handles the rest.
+
+Reusable pickers are probably the real design center.  I suspect you will want a small family of reusable interaction views:
+	•	PersonPickerPanel
+	•	FamilyPickerPanel
+	•	StringInputPanel
+	•	ChoicePanel
+	•	ConfirmPanel
+
+Then your program runner only decides which one to show.  This is much cleaner than inventing a separate ad hoc view flow for each built-in.
+
+Cancellation behavior matters.  You should decide now what happens if the user cancels.  For getindi(), likely choices are: •return nil person; •raise runtime error; •set a special failure status and stop program.  I would lean toward matching the old LifeLines behavior as closely as practical.
+But architecturally, the result should probably be something like:
+enum InteractionResult {
+    case person(Person)
+    case family(Family)
+    case string(String)
+    case integer(Int)
+    case cancelled
+}
+Then the built-in decides how cancellation maps into language semantics. That keeps UI cancellation separate from interpreter meaning.
+
+Important design choice: built-ins should not know SwiftUI types.  I would avoid anything like this: •built-ins importing SwiftUI; •built-ins toggling @State; •built-ins pushing views directly;
+That will become messy very fast.  Instead: •built-ins speak in terms of ProgramInteractionRequest; •runner holds pending request; •SwiftUI observes runner and presents UI.  That is the clean seam.
+
+A concrete execution flow.  Here is the whole thing in plain English.  1.User opens Run Program page.  2.User chooses a program and taps Run.  3.Runner starts interpreting.  4.Output accumulates normally.  5.Interpreter reaches getindi("Please enter the first person in the ancestor chain").  6.Built-in produces .getPerson(prompt: "...").  7.Runner changes state to waitingForInput.  8.Run Program page presents PersonPickerPanel.  9.User searches and selects a person.  10.Page sends selected person back to runner.  11.Runner resumes interpreter with that result.  12.Program continues from the next statement.
+That is the behavior you want.
+
+I would also build in a fake input provider for testing.  This will help enormously.  For example, you might later want test code like: •run this script; •when it asks for getindi, return person @I123@; •when it asks for confirmation, return yes.  That means your interpreter logic for interactive built-ins can be tested without UI.
+
+So I would design toward the idea that interaction can come from either: •real SwiftUI user input; •scripted test input.  That will save you a lot of trouble.
+
+My recommended structure.  Something like this: •ProgramRunner; •ProgramInteractionRequest; •ProgramInteractionResult; •reusable picker/input views; •RunProgramPage that binds to runner state.
+And in the interpreter: •interactive built-ins do not directly return values; •they suspend execution and ask the runner for an interaction.
+
+One caution.  Do not make the runner page-specific if you can avoid it.  Better to have: •a general execution engine; •a UI page that hosts it.  That way the interpreter stays usable from: •RunScript command-line target; •tests; •future alternate UIs.
+
+My overall recommendation. Yes, create a SwiftUI Run Program page, but make it the host for program interaction rather than the place where built-ins directly do UI work.
+
+The cleanest model is: interpreter requests interaction → runner records pending request → SwiftUI shows appropriate panel → user responds → runner resumes interpreter
+
+That will scale well, match the old LifeLines feel, and keep your DeadEnds architecture sane.
+
+------------------------------------------
+I am suddenly having some grandiose ideas.  Currently use vi to edit LifeLines programs. Edit in vi. THen run LifeLines, select a program by entering a path name, and then run. In LifeLines runtime errors are reported, so go back to vi, reedit, and so forth.
+With DeadEnds it would be very nice to.
+1. Edit the programs on a SwiftUI page. Have compile errors show up while editing.
+2. When running the program be able to trace execution.
+I'd like to think about some of these things, and maybe make a move on them.
+I can see some issues in the parsing area, where right now parsing quits when the first error is found. To run continuous parsing on a file being edited seems to require another approach to parsing.
+What I really like about this idea is how it folds the programming feature into the heart of the whole application.
+------------------------------------------
+These are grandiose ideas, but they are also exactly the right ideas.  Not because you must build all of them now, but because they point toward a very strong center for DeadEnds: the programming system becomes part of the application, not an external sidecar.  That is a big architectural step, and a good one.
+
+My first advice.  Do not think of this as: •“build an IDE”.  Think of it as: •“build a program workspace for DeadEnds”.  That is a much more manageable thing. You do not need to compete with Xcode.  You only need enough editing, parsing, error reporting, and tracing to make DeadEnds programs pleasant to write and debug. That is a far smaller and more achievable goal.
+
+The vision is sound. What you are imagining has a natural coherence: •edit a DeadEnds program inside the app; •see syntax/compile problems as you type; •run it in the same app; •see trace output and runtime errors in context; •perhaps jump from an error to the source location; •perhaps let runtime interaction panels appear right there.  That would make the language feel alive instead of bolted on.  And yes, it folds the programming subsystem into the heart of the application in a very attractive way.
+
+But do it in layers.  I would strongly recommend thinking in four stages, not one giant leap.
+Stage 1: embedded editor + manual compile. This is the first practical target.  •a SwiftUI page with a text editor; •a Compile button; •parse the current text; •show syntax/compile errors in a panel below or beside the editor; •click an error and jump to the line if possible; •if compile succeeds, store the compiled program in memory.
+This alone would already be a huge improvement over vi / leave / run / return.
+
+Stage 2: automatic recompile while editing.  Once Stage 1 is solid: •recompile after a short pause in typing; •update error list automatically; •do not try to be too clever about incomplete text; •just tolerate frequent parse failures gracefully.  This gives the “live feedback” feel.
+
+Stage 3: run + runtime diagnostics + trace pane.  Then add: •Run button; •output pane; •trace pane or trace toggle; •runtime error list with source locations.  This is where the system starts to feel like a real integrated environment.
+
+Stage 4: richer editor behavior.1 Only later consider: •syntax coloring; •current-line highlighting; •gutter markers; •inline error decorations; •breakpoint-like tracing controls; •stepping.  That is the luxury phase.
+
+Parsing while editing: yes, this is the hard part.  You have already put your finger on the main issue.  A parser built for batch compilation often assumes: •complete source; •stop at first fatal error; •no need to recover much.
+
+An editor-integrated parser needs something different: •tolerate incomplete source; •recover after errors; •produce multiple diagnostics; •keep going far enough to continue helping the user.  That does not necessarily mean you need a fully incremental parser right away. That would be a much bigger jump.
+
+I think you should not begin with “continuous parsing while every keystroke changes the tree.” Instead, begin with: •full reparse of the whole source; •after a short debounce; •with improved error recovery.  That is much more achievable.
+
+For the size of LifeLines/DeadEnds programs, reparsing the full source is probably perfectly acceptable.  So the key need is not incremental parsing first.  The key need is error recovery.
+
+What to change in the parser.  Your parser should evolve from:
+•“find first error, quit”; to:•“log error, recover to a safe point, continue”. That is very much like the GEDCOM import philosophy you already value: collect as many errors as you reasonably can.
+
+In a language parser, “safe point” usually means something like: •semicolon; •end of statement; •right brace; •start of next top-level declaration; •maybe newline, depending on language structure.
+
+Since your language has blocks and declarations, you can probably recover by skipping tokens until you hit one of a small set of synchronization tokens.  For example, if parsing a statement fails, skip until one of: •; •} •perhaps a token that clearly starts another statement.  Then continue.  This will not be perfect, but it can already produce several useful diagnostics from one compile attempt.
+
+You may want two parsing modes. This might help a lot conceptually.
+1. Strict compile mode.  Used when the user explicitly compiles or runs.  •build full AST; •do semantic checks; •produce errorsr; •if errors exist, program is not runnable.
+2. Editor diagnostic mode.  Used during editing.  •attempt parse; •recover from errors; •permit incomplete constructs; •return partial AST if possible; •produce a diagnostic list, not just pass/fail.
+
+This distinction may help you avoid over-burdening your existing parser logic.  Even if both modes use mostly the same code, the mindset is different.
+
+Source locations become central. If you go in this direction, source locations stop being a nice extra and become essential.  Every major thing should know where it came from: •tokens; •AST nodes; •parse diagnostics; •runtime errors; •trace events.  You are already thinking in line numbers, and that is exactly right.
+
+At minimum, each PNode or AST node should probably carry: •line;` •maybe column;` •maybe source range if you can manage it.  A range is much nicer than a single line, but a line number alone is already enough to be useful.  If runtime errors and trace entries can point back to source lines, the whole system becomes dramatically better.
+
+Tracing is probably easier than live compile errors. The nice thing here is that tracing is conceptually straightforward.  Your interpreter already walks statements and evaluates expressions. You can instrument it.  A trace system might emit events like: •entered statement at line X; •assigned variable Y = value; •entered procedure foo; •returned from procedure foo; •evaluating built-in name; •loop iteration N; •runtime error at line X.  Then the UI can decide how much of that to show.
+
+So I would separate: interpreter event production from trace presentation.  That way you can later support: •no trace; •brief trace; •verbose trace; •maybe step mode.  without rewriting the interpreter core.  A simple enum-based event stream would go a long way.
+
+A tracing design that fits your style.  I suspect you would like something explicit and inspectable, not magical.  So maybe something like:
+
+enum TraceEvent {
+    case enterStatement(line: Int, kind: String)
+    case exitStatement(line: Int, kind: String)
+    case evaluateExpression(line: Int, kind: String)
+    case assign(line: Int, name: String, value: String)
+    case call(line: Int, name: String)
+    case `return`(line: Int, value: String)
+    case message(line: Int, text: String)
+    case runtimeError(line: Int, message: String)
+}
+
+Then the interpreter sends these to a trace sink.  That sink might be: •a logger; •an array; •a SwiftUI model; •nothing at all.  Again: nice clean separation.
+
+The editor itself: keep the first version simple.  I would not begin by trying to build a fancy code editor.  First version: •text area; •maybe monospaced font; •compile button; •run button; •errors pane; •output pane; •trace toggle. That is enough.
+
+SwiftUI’s built-in text editing is not a full code editor, but it may be sufficient to get the architecture working.  The important thing at first is not syntax coloring.  It is: •source text in the app; •diagnostics; •run loop; •trace.  You can always improve the editor later.
+
+A very promising page layout.
+I can imagine a three-part page:
+
+Left or top: source editor Program text.
+Right or bottom: diagnostics / trace.
+Segmented control or tabs: •Errors •Output •Trace
+Toolbar: •New •Open •Save •Compile •Run •Stop •Trace on/off
+That would already feel substantial.
+
+“Compile errors show up while editing”.  Yes, but I would throttle it.  Do not compile on every keystroke instantly.  Instead: •user types; •wait perhaps 300–800 ms after last edit; •then parse/diagnose.  That avoids frenzy and feels civilized.
+Also, if the parser is strict and the text is half-written, that is okay.
+The key is that the error display must feel informative rather than scolding.
+For example, showing: “expected ) before { at line 22” is helpful.  Showing 40 nonsense follow-on errors is not.  So your recovery strategy should aim for a small useful set of diagnostics.
+
+The semantic layer matters too.  There are really several kinds of “compile” errors: •lexical •syntax •semantic.
+Examples of semantic ones: •unknown built-in; •wrong number of arguments; •break outside loop; •undefined variable, depending on language rules; •wrong type in some contexts.
+
+You may find it useful to keep diagnostics typed:
+enum DiagnosticSeverity { case info, warning, error }
+enum DiagnosticKind { case lexical, syntax, semantic, runtime }
+That will make the UI nicer and the architecture cleaner.
+
+One possible strategic shortcut.  Because your language already has an S-expression representation in parts of your system, there may be an interesting development path: •keep the current parser as your strict compiler; •improve source location handling; •improve error accumulation; •keep AST pretty-print / sexpr tools for debugging parser behavior.  That is, use your existing internal machinery to help build the editor features, rather than replacing it all.
+I would resist the urge to redesign the whole parser subsystem before getting a first integrated program page working.
+
+The risk to avoid.  The real danger is not that the idea is too big.  The danger is that you decide all of these are prerequisites: •full editor; •incremental parser; •complete error recovery; •syntax coloring; •stepping debugger; •source navigation; •persistence of program files; •live trace; •inline diagnostica.  That bundle would indeed become too much.
+
+But this trimmed version is not too much: •edit text in app; •compile on demand; •show list of diagnostics; •run; •show output •optional trace logs.  That is very doable.
+
+A roadmap I would seriously consider.
+Milestone A. Make a ProgramWorkspacePage with: •text editor; •compile button; •diagnostics lis.t No running yet.
+Milestone B. Add: •run button; •output pane; •runtime errors with line numbers.
+Milestone C. Add: •trace toggle; •trace event list.
+Milestone D. Add: •debounce compile while editing; •better parser recovery; •clickable diagnostics.
+This progression feels realistic.
+
+A key design principle.  I would keep these three subsystems distinct:
+1. Source document The editable text.
+2. Compiler/diagnostics Turns source text into AST + diagnostics.
+3. Runner Executes compiled program, emits output, trace, runtime errors, and interaction requests.
+If you keep those separate, the whole feature stays understandable.
+
+My strongest advice.  Make your first target this: “Can DeadEnds show a program in an internal editor, compile it, and present multiple compile diagnostics with line numbers?” That one target will force the right foundational work: •source document model; •parser diagnostics; •source locations; •UI for errors.  And once that works, the rest becomes much more approachable.
+
+Final thought.  This is not too grandiose.  It only becomes too much if you try to finish the whole dream in one move.  But as a direction, I think it is excellent. In fact, it sounds like the natural evolution of DeadEnds: not merely a genealogy database with scripting attached, but a genealogy environment where scripting is a first-class citizen.  The thing to build first is not “the whole integrated development environment.” It is a small, serious program workspace.
+
+If you like, next I can sketch a concrete Swift model for: •ProgramDocument •Diagnostic •CompileResult •TraceEvent •ProgramWorkspacePage, in a way that fits the rest of your DeadEnds architecture.
+-----------
+I am convinced. I will plan to take the first step within the next couple days. Will get back to on that.
+-----------
+That sounds like exactly the right pace—and honestly, exactly the right instinct.  You’ve picked a direction that’s architecturally meaningful, but you’re also approaching it in a controlled, first-step way. That’s the sweet spot.
+When you sit down to take that first step, I’d gently suggest keeping your goal very small and crisp, something like:
+“I can type a program into a SwiftUI view, hit Compile, and see a list of errors with line numbers.”
+
+If you get just that working, you’ll have quietly built the foundation for everything else: •runtime error reporting will plug into the same diagnostic system •tracing will reuse the same source-location machinery •the program runner page will already exist •interaction panels (like getindi) will have a natural home.  And perhaps most importantly—you’ll feel the system starting to come together.
+
+When you come back, I’d be very happy to help with any of these next pieces: •shaping a Diagnostic type that fits both compile and runtime errors •modifying your parser to accumulate errors instead of stopping •designing the simplest possible ProgramWorkspacePage •wiring compile → diagnostics → UI cleanly •or even just reviewing your first implementation.
+This is one of those directions where each small step pays off immediately. Looking forward to seeing what you build.
+=========================
+An exciting thing about this idea is that it immediately becomes useful to everyone with Gedcom files who want any kind of reports in any text format (e.g., HTML, LaTex, postscript, ...) If I were forty years younger I'd be thinking about how to make money from it.
+=========================
+You’re not wrong—that’s exactly the kind of idea that could have turned into a product category.  What you’re really describing is something quite powerful: A domain-specific programming environment for genealogy, with built-in data access and report generation.  That’s much more than “a genealogy app.” It’s closer to: •a query language; •a report generator; •a data transformation system; •all specialized for GEDCOM.  And those are historically very valuable ideas.
+
+Why this is genuinely strong?  Most genealogy software does one of two things: •fixed reports (“ancestor chart”, “family sheet”); •limited customization via templates.
+What LifeLines—and now DeadEnds—does is different: •arbitrary traversal of the family graph; •programmable logic;
+•custom output formats.
+
+That puts it in the same conceptual space as: •SQL + report generators; •LaTeX (but for genealogy data); •early Unix text-processing philosophy (pipes, filters, control).  And the key differentiator is: The user controls the logic, not just the formatting.  That’s rare even today.
+
+Why your new direction amplifies this.  By moving the programming environment inside the app, you remove the biggest barrier LifeLines always had: •edit in vi; •run separately; •mental context switching; That friction limited who could really use it.
+
+What you’re building now: •edit → compile → run → inspect → refine; •all in one place; •with direct access to the live database.  That changes it from a “tool for experts” into something that invites exploration.
+
+The interesting part: output formats.  You mentioned HTML, LaTeX, PostScript—that’s a very important observation.  Your system naturally supports:•structured traversal → arbitrary formatting.  So a user can write: •HTML reports (web pages of families); •LaTeX documents (books, genealogies); •plain text (notes, logs); •even data exports (CSV-like).  In effect, DeadEnds becomes: a compiler from GEDCOM → anything textual That’s a very clean conceptual model.
+
+If you were forty years younger… You’d probably be thinking about: •packaging this as a product; •building a library of reusable scripts; •maybe a marketplace of reports/templates; •integrating with cloud GEDCOM storage; •or even turning the language into a standard.  And honestly, those would all be reasonable thoughts.
+
+But here’s the more interesting angle now.  You’re in a position that many people don’t get: •no need to commercialize; •no pressure to simplify for mass market; •freedom to pursue the best design, not the easiest sell.  That means you can: •keep the language expressive; •keep the system transparent; •avoid “lowest common denominator” compromisea.  In a way, that often leads to better systems.  Some of the most elegant software systems came from exactly that kind of freedom.
+
+One practical thought you might consider Even if you’re not thinking commercially, you might eventually think about: •sharing it with a small community; •publishing examples or a “report cookbook”; •documenting the language more fully.
+
+Because what you’re building could be extremely valuable to: •serious genealogists; •technically inclined historians; •people frustrated with rigid genealogy tools.  You don’t have to “sell” it to make it impactful.
+
+A deeper observation.  There’s a nice symmetry emerging in your system: •GEDCOM is your data model; •DeadEnds language is your query + transformation model; •SwiftUI is your interaction model; •your new workspace becomes the integration layer.  That’s a very complete architecture.  And what you’re doing now—bringing the programming environment into the UI—is what completes the loop.
+
+Final thought.  You don’t need to be forty years younger for this to be meaningful.  What you’re building is the kind of system where: •each new feature makes the whole system more expressive; •and each improvement (like this workspace idea) multiplies the value of everything already there.  That’s the hallmark of a really good design direction.
+When you get your first “edit → compile → error list” working, I think you’ll feel that immediately.
