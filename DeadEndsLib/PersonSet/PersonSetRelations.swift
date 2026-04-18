@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 30 March 2026.
+//  Last changed on 17 April 2026.
 //
 
 import Foundation
@@ -11,7 +11,7 @@ import Foundation
 extension PersonSet {
 
     /// Return the children person set of a person set.
-    public func childrenSet(in index: RecordIndex) -> PersonSet {
+    public func childrenSet(in index: RecordIndex) -> PersonSet<Payload> {
         var seen: Set<RecordKey> = []
         var roots: [Root] = []
 
@@ -26,8 +26,27 @@ extension PersonSet {
         return PersonSet(roots: roots)
     }
 
+    /// Return the parent person set of a person set.
+    public func parentsSet(in index: RecordIndex) -> PersonSet<Payload> {
+        var seen = Set<RecordKey>()
+        var result: [Root] = []
+
+        for element in self.elements {
+            let key = element.key
+
+        }
+
+    }
+
+    /// Return the spouse set of a person set.
+    public func spouseSet(in index: RecordIndex) -> PersonSet<Payload> {
+        var seen = Set<RecordKey>()
+        var result = [Root]()
+        
+    }
+
     /// Return the sibling person set of a person set.
-    public func siblingSet(in index: RecordIndex) -> PersonSet {
+    public func siblingSet(in index: RecordIndex) -> PersonSet<Payload> {
         var seen = Set<RecordKey>()
         var result: [Root] = []
 
@@ -43,7 +62,7 @@ extension PersonSet {
     }
 
     /// Return the ancestors person set of a person set.
-    func ancestorSet(in index: RecordIndex) -> PersonSet {
+    func ancestorSet(in index: RecordIndex) -> PersonSet<Payload> {
         var visited: Set<RecordKey> = []
         var roots: [Root] = []
 
@@ -59,7 +78,7 @@ extension PersonSet {
     }
 
     /// Return the descendants person set of a person set.
-    func descendantSet(in index: RecordIndex) -> PersonSet {
+    func descendantSet(in index: RecordIndex) -> PersonSet<Payload> {
         var visited: Set<RecordKey> = []
         var roots: [Root] = []
 

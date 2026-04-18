@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 5 March 2026.
+//  Last changed on 17 April 2026.
 
 /// RootView is the root view of the DeadEndsApp. If the database does
 /// not exist the Load Gedcom view is shown. If there is a database but
@@ -26,6 +26,7 @@ enum Route: Hashable {
     case gedcomFamilyEditor(Family)
     case desktop(Person)
     case desktopFamily(Family)  // Ugly name.
+    case program
 }
 
 /// Put the record index into the SwiftUI environment.
@@ -94,6 +95,14 @@ struct RootView: View {
                     DesktopView(family: fam)
                 case .gedcomFamilyEditor(_):
                     Text("hello")
+                case .program:
+                    ProgramPage(
+                        model: ProgramModel(
+                            programName: "Test Program",
+                            sourceText: ""
+                        ),
+                        compiler: DeadEndsProgramCompiler()
+                    )
                 }
             }
         }

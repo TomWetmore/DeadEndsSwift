@@ -3,31 +3,37 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 30 March 2026.
+//  Last changed on 17 April 2026.
 //
 
 import Foundation
 
+public enum NoPayload {}
+public typealias PlainPersonSet = PersonSet<NoPayload>
+
 /// A person set can be in one of three sorted states.
 enum SortType {
+
     case notSorted
     case keySorted
     case nameSorted
 }
 
 /// Element in a person set.
-public struct PersonSetElement: Hashable, CustomStringConvertible {
+public struct PersonSetElement<Payload>: Hashable, CustomStringConvertible {
 
     let root: Root
     let key: String  // Not optional.
+    let payload: Payload?
 
     /// Create an element; replaces the default init.
-    public init(root: Root) {
+    public init(root: Root, payload: Payload? = nil) {
 
         guard root.tag == GedcomTag.INDI, let key = root.key
         else { fatalError("root \(root) must be a keyed 0 INDI node") }
         self.root = root
         self.key = key
+        self.payload = payload
     }
 
     /// Check if two elements are equal.
@@ -69,9 +75,9 @@ public struct PersonSetElement: Hashable, CustomStringConvertible {
 }
 
 /// Person set is a class that wraps an array of person set elements.
-public class PersonSet: Collection {
+public class PersonSet<Payload>: Collection {
 
-    var elements: [PersonSetElement] = []
+    var elements: [PersonSetElement<Payload>] = []
     var sortType: SortType = .notSorted
     // TODO: Change code so unique is no longer needed.
     var unique: Bool = true
@@ -81,25 +87,24 @@ public class PersonSet: Collection {
 
     public func index(after i: Int) -> Int { elements.index(after: i) }
 
-    public subscript(position: Int) -> PersonSetElement { elements[position] }
+    public subscript(position: Int) -> PersonSetElement<Payload> { elements[position] }
 
     public var count: Int { elements.count }
     public var isEmpty: Bool { elements.isEmpty }
 
     /// Append an existing element to the set.
-    func append(_ element: PersonSetElement) {
+    func append(_ element: PersonSetElement<Payload>) {
         elements.append(element)
     }
 
     /// Append new a sequence element to the set.
-    func append(_ root: Root) {
-        append(PersonSetElement(root: root))
+    func append(_ root: Root, payload: Payload? = nil) {
+        append(PersonSetElement(root: root, payload: payload))
     }
 
     /// Return deep copy of a set.
-    func copy() -> PersonSet {
-
-        let copy = PersonSet()
+    func copy() -> PersonSet<Payload> {
+        let copy = PersonSet<Payload>()
         copy.elements = self.elements
         copy.sortType = self.sortType
         copy.unique = self.unique
@@ -133,6 +138,7 @@ public class PersonSet: Collection {
     }
 
     /// Remove an element with a specific key from a set.
+    @discardableResult
     func remove(key: String) -> Bool {
 
         if let index = elements.firstIndex(where: { $0.key == key }) {
@@ -167,15 +173,25 @@ public class PersonSet: Collection {
 extension PersonSet {
 
     /// Create a person set from an array of Gedcom person roots.
+//    public convenience init(roots: [Root]) {
+//        self.init()
+//        roots.forEach { self.elements.append(PersonSetElement(root: $0)) }
+//    }
+//
+//    /// Create a person set from a single person root.
+//    public convenience init(root: Root) {
+//        self.init()
+//        self.elements.append(PersonSetElement(root: root))
+//    }
+
     public convenience init(roots: [Root]) {
         self.init()
-        roots.forEach { self.elements.append(PersonSetElement(root: $0)) }
+        roots.forEach { self.elements.append(PersonSetElement<Payload>(root: $0)) }
     }
 
-    /// Create a person set from a single person root.
     public convenience init(root: Root) {
         self.init()
-        self.elements.append(PersonSetElement(root: root))
+        self.elements.append(PersonSetElement<Payload>(root: root))
     }
 }
 
@@ -200,8 +216,8 @@ extension PersonSet {
 /// Proposed test code.
 
 /// Helper function to test person sets.
-func makeSequence(keys: [String]) -> PersonSet {
-    let sequence = PersonSet()
+func makeSequence(keys: [String]) -> PlainPersonSet {
+    let sequence = PlainPersonSet()
     for key in keys {
         let node = GedcomNode(key: key, tag: GedcomTag.INDI, val: nil)
         sequence.append(node)

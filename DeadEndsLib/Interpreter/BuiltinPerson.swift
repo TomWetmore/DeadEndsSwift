@@ -2,19 +2,8 @@
 //  BuiltinPerson.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 4/11/26.
-//  Last changed on 11 April 2026.
-//
-
-import Foundation
-
-
-//
-//  BuiltinPerson.swift
-//  DeadEndsLib
-//
-//  Created by Thomas Wetmore on 12 April 2025.
-//  Last changed on 12 January 2026.
+//  Created by Thomas Wetmore on 11 April 2026.
+//  Last changed on 16 April 2026.
 //
 
 import Foundation
@@ -23,7 +12,7 @@ extension Program {
 
     // builtinName returns the value of the first 1 NAME line in a person's record.
     func builtinName(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluatePerson(arg[0]) else {
+        guard let person = try evaluateIndi(arg[0]) else {
             throw RuntimeError.typeError("name() expects a person parameter")
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
@@ -37,7 +26,7 @@ extension Program {
 
     // builtinSurname returns the surname found on the first NAME line in a person' record.
     func builtinSurname(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluatePerson(arg[0]) else {
+        guard let person = try evaluateIndi(arg[0]) else {
             throw RuntimeError.typeError("surname() expects a person parameter")
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
@@ -48,7 +37,7 @@ extension Program {
 
     // builtinGivens returns the given names ...
     func builtinGivens(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluatePerson(arg[0]) else {
+        guard let person = try evaluateIndi(arg[0]) else {
             throw RuntimeError.typeError("givens() expects a person parameter")
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
@@ -67,7 +56,7 @@ extension Program {
 
     // builtinBirth returns the first birth event for a person.
     func builtinBirth(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluatePerson(arg[0]) else {
+        guard let person = try evaluateIndi(arg[0]) else {
             throw RuntimeError.typeError("birth() expects a person parameter")
         }
         guard let birth = person.kid(withTag: "BIRT") else { return .null }

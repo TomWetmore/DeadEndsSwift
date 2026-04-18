@@ -3,16 +3,15 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 14 April 2026.
+//  Last changed on 17 April 2026.
 //
 //  ProgramValue is the type used for expression values in the DeadEnds
-//  programming language. They are the values stored in the programs'
-//  symbol tables.
+//  programming language. They are the values stored in symbol tables.
 //
 
 import Foundation
 
-/// Enumeration of program values, several with associated types.
+/// Enumeration of the kinds of program values with their associated types.
 public enum ProgramValue: @unchecked Sendable, Equatable {
     case null
     case ident(String)
@@ -26,12 +25,13 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     //case source(GedcomNode)
     //case event(GedcomNode)
     //case other(GedcomNode)
-    case list(List<ProgramValue>)
-    case table
-    case sequence
+    case list(List<ProgramValue>)  // List of any program values.
+    case table(ProgramTable)  // Table of string to program value mappings.
+    case indiset(PersonSet<ProgramValue>)  // Person set.
 
     /// Description of a program value.
     var description: String {
+
         switch self {
         case .null: return "null"
         case .ident(let string): return "\(string))"
@@ -45,8 +45,9 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         }
     }
 
-    /// Conform ProgramValue to Equatable.
+    /// Conform program values to equatable.
     public static func == (lhs: ProgramValue, rhs: ProgramValue) -> Bool {
+
         switch (lhs, rhs) {
 //        case (.null, .null), (.any, .any), (.list, .list), (.table, .table), (.sequence, .sequence):
 //            return true
@@ -66,7 +67,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     }
 }
 
-/// Boolean constant program values.
+/// Constant values for booleans.
 extension ProgramValue {
 
     static let trueProgramValue: ProgramValue = .boolean(true)
@@ -75,8 +76,9 @@ extension ProgramValue {
 
 extension ProgramValue {
 
-    /// Convert any ProgramValue to a .bool ProgramValue using C-like rules.
+    /// Convert any ProgramValue to a boolean progran value using C rules.
     func toBool() -> Bool {
+
         switch self {
             case .boolean(let value): return value
             case .integer(let value): return value != 0

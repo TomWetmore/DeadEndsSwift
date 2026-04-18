@@ -109,13 +109,11 @@ extension Program {
 // TODO: THESE ARE NOT FINAL IMPLEMENTATIONS.
 extension Program {
 
-    /// Evaluate an expression and be sure it is a person.
-    // TODO: THIS LOOKS LIKE IT SHOULD RETURN A PERSON, NOT A GEDCOM NODE.
-    // DCIDE WHAT IT SHOULD DO. I BELIEVE IT SHOULD RETURN A PERSON RIGHT NOW.
-    func evaluatePerson(_ pnode: ParsedExpr) throws -> GedcomNode? {
+    /// Evaluate an expression that should return a person root node.
+    func evaluateIndi(_ pnode: ParsedExpr) throws -> GedcomNode? {
         let pvalue = try evaluate(pnode)
+        /// Caller should check for nil and possibly throw an error.
         guard case .gnode(let gnode) = pvalue, gnode.tag == GedcomTag.INDI else { return nil }
-        // TODO: THIS SHOULD THROW AN ERROR.
         return gnode
     }
 

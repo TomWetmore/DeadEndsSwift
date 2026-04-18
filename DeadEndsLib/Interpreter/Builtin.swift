@@ -68,6 +68,11 @@ extension Program {
             "pop":     Builtin(minArgs: 1, maxArgs: 1) { try self.builtinRemoveFirst($0) },
             "enqueue": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
             "dequeue": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinRemoveFirst($0) },
+
+            // Table operations.
+            "table": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinTable($0) },
+            "insert": Builtin(minArgs: 3, maxArgs: 3) { try self.builtinInsert($0) },
+            "lookup": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinLookup($0) },
         ]
     }
 }

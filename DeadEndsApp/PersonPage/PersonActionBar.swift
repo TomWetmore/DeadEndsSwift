@@ -57,6 +57,7 @@ struct PersonActionBar: View {
 //                else { return }
 //                model.path.append(Route.personEditor(newPerson))
 //            }
+            Button("Program") { model.path.append(Route.program) }
             Button("Tree Editor") { model.path.append(Route.gedcomTreeEditor(person)) }
             Button("Open Desktop") { model.path.append(Route.desktop(person)) }
             Button("Edit") { showEditSheet = true }

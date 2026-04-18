@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 22 March 2026.
+//  Last changed on 17 April 2026.
 //
 
 import Foundation
@@ -12,14 +12,14 @@ import Foundation
 extension PersonSet {
 
     /// Return union of two person sets.
-    func union(_ other: PersonSet) -> PersonSet {
+    func union(_ other: PersonSet<Payload>) -> PersonSet<Payload> {
         self.keySort()
         other.keySort()
         return self.sortedUnion(with: other)
     }
     
     /// Form union of two person sets in the first person set.
-    func formUnion(_ other: PersonSet) {
+    func formUnion(_ other: PersonSet<Payload>) {
         self.keySort()
         other.keySort()
         self.elements = self.sortedUnion(with: other).elements
@@ -28,7 +28,7 @@ extension PersonSet {
     }
 
     /// Form union of key-sorted person sets.
-    private func sortedUnion(with other: PersonSet) -> PersonSet {
+    private func sortedUnion(with other: PersonSet<Payload>) -> PersonSet<Payload> {
         let result = PersonSet()
         var i = startIndex
         var j = other.startIndex
@@ -66,13 +66,13 @@ extension PersonSet {
 extension PersonSet {
 
     /// Intersection of two sequences, not affecting the two sequences.
-    func intersection(_ other: PersonSet) -> PersonSet {
+    func intersection(_ other: PersonSet<Payload>) -> PersonSet<Payload> {
         self.keySort()
         other.keySort()
         return self.sortedIntersection(with: other)
     }
 
-    func formIntersection(_ other: PersonSet) {
+    func formIntersection(_ other: PersonSet<Payload>) {
         self.keySort()
         other.keySort()
         self.elements = self.sortedIntersection(with: other).elements
@@ -81,7 +81,7 @@ extension PersonSet {
     }
 
     /// Form intersection of key-sorted and deduped sequences. Operands not affected.
-    private func sortedIntersection(with other: PersonSet) -> PersonSet {
+    private func sortedIntersection(with other: PersonSet<Payload>) -> PersonSet<Payload> {
         let result = PersonSet()
         var i = startIndex
         var j = other.startIndex
@@ -109,14 +109,14 @@ extension PersonSet {
 extension PersonSet {
 
     /// Find the difference between this person set and an other.
-    func difference(_ other: PersonSet) -> PersonSet {
+    func difference(_ other: PersonSet<Payload>) -> PersonSet<Payload> {
         self.keySort()
         other.keySort()
         return self.sortedDifference(with: other)
     }
 
     /// Find the difference between this person set and an other.
-    func formDifference(_ other: PersonSet) {
+    func formDifference(_ other: PersonSet<Payload>) {
         self.keySort()
         other.keySort()
         self.elements = self.sortedDifference(with: other).elements
@@ -125,7 +125,7 @@ extension PersonSet {
     }
 
     /// Form difference of key-sorted sets.
-    private func sortedDifference(with other: PersonSet) -> PersonSet {
+    private func sortedDifference(with other: PersonSet<Payload>) -> PersonSet<Payload> {
         let result = PersonSet()
         var i = startIndex
         var j = other.startIndex
@@ -158,7 +158,7 @@ extension PersonSet {
 extension PersonSet {
 
     /// Determine if this person set is a subset of another.
-    func isSubset(of other: PersonSet) -> Bool {
+    func isSubset(of other: PersonSet<Payload>) -> Bool {
         var i = startIndex
         var j = other.startIndex
 
@@ -179,7 +179,7 @@ extension PersonSet {
     }
 
     /// Determine if this person set is a superset of another.
-    func isSuperset(of other: PersonSet) -> Bool {
+    func isSuperset(of other: PersonSet<Payload>) -> Bool {
         return other.isSubset(of: self)
     }
 }

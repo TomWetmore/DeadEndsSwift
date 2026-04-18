@@ -137,8 +137,41 @@ extension RecordIndex {
 //        return results
 //    }
 
-    func spouseKeys(of: RecordKey) -> Set<RecordKey> {
-        var results: Set<RecordKey> = []
+    /// Return the keys of a person's souses. The person's key is not included.
+    func spouseKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+        var seen = Set<RecordKey>()
+        var results = [RecordKey]()
+
+        let indiRoot = requireRoot(from: key, tag: GedcomTag.INDI)
+        let famcNodes = indiRoot.kids(withTag: GedcomTag.FAMC)
+        for famcNode in famcNodes {
+            let famcRoot = requireRoot(from: famcNode, tag: GedcomTag.FAM)
+            let spouseNodes = famcRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE])
+            for spouseNode in spouseNodes {
+                let spouseRoot = requireRoot(from: spouseNode, tag: GedcomTag.INDI)
+                let spouseKey = requireKey(on: spouseRoot)
+                if spouseKey != key && !seen.contains(spouseKey) {
+                    seen.insert(spouseKey)
+                    results.append(spouseKey)
+                }
+            }
+        }
+        return results
+    }
+
+    func spouseKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
+        var seen = Set<RecordKey>()
+        var results = [RecordKey]()
+        let famRoot = requireRoot(from: key, tag: GedcomTag.FAM)
+        let spouseNodes = famRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE])
+        for spouseNode in spouseNodes {
+            let spouseRoot = requireRoot(from: spouseNode, tag: GedcomTag.INDI)
+            let spouseKey = requireKey(on: spouseRoot)
+            if !seen.contains(spouseKey) {
+                seen.insert(spouseKey)
+                results.append(spouseKey)
+            }
+        }
         return results
     }
 }
