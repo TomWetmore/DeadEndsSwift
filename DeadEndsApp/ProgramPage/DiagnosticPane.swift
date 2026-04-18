@@ -2,12 +2,15 @@
 //  DiagnosticPane.swift
 //  DeadEndsApp
 //
-//  Created by Thomas Wetmore on 4/15/26.
+//  Created by Thomas Wetmore on 15 April 2026.
+//  Last changed on 15 April 2026.
 //
 
 import SwiftUI
 
+/// Pane showing the current list of diagnostics.
 struct DiagnosticsPane: View {
+
     let diagnostics: [Diagnostic]
 
     var body: some View {
