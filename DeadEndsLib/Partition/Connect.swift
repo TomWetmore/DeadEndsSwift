@@ -187,52 +187,11 @@ extension RecordIndex {
 
 extension RecordIndex {
 
-    /// Return the keys of the parents of a person.
-    func parentKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
-        let root = requireRoot(from: key, tag: GedcomTag.INDI)
-        var result: [RecordKey] = []
 
-        for famc in root.kids(withTag: GedcomTag.FAMC) {
-            guard let famKey = famc.val, let famRoot = self[famKey],
-                  famRoot.tag == GedcomTag.FAM
-            else { fatalError("invalid FAMC link") }
-            for parNode in famRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE]) {
-                guard let parKey = parNode.val, let parRoot = self[parKey],
-                      parRoot.tag == GedcomTag.INDI
-                else { fatalError("unexpected node in INDI") }
-                result.append(parKey)
-            }
-        }
-        return dedupeKeys(result)
-    }
 
-    /// Return the keys of the spouses of a person key.
-    func spouseKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
-        let root = requireRoot(from: key, tag: GedcomTag.INDI)  // Person root.
-        var result: [RecordKey] = []
+    
 
-        for fams in root.kids(withTag: GedcomTag.FAMS) {  // Iterate FAMS nodes.
-            let famRoot = requireRoot(from: fams, tag: GedcomTag.FAM)  // Family root.
-            // Iterate over the HUSB and WIFE nodes in the family.
-            for spouseNode in famRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE]) {
-                let spouseRoot = requireRoot(from: spouseNode, tag: GedcomTag.INDI)
-                if spouseRoot.key != key {
-                    result.append(spouseRoot.key!)
-                }
-            }
-        }
-        return dedupeKeys(result)
-    }
-
-    /// Return the keys of the spouses from a family key.
-    func spouseKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
-        let root = requireRoot(from: key, tag: GedcomTag.FAM)
-        var result: [RecordKey] = []
-        for node in root.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE]) {
-            result.append(requireKey(on: node))
-        }
-        return dedupeKeys(result)
-    }
+    
 
     /// Require a node to have a key for its value, require that key to
     /// map to a root node, and return that node. Must succeed.

@@ -7,118 +7,49 @@ The Person/Family Level
 Returning Parents
 
     private func parents(in index: RecordIndex, role: Tag) -> [Person] {
-        var seen: Set<RecordKey> = []
-
-        for family in childFamilies(in: index) {
-            for key in family.kidVals(forTag: role) {
-                guard seen.insert(key).inserted,
-                      let parent = index.person(for: key)
-                else { continue }
-                result.append(parent)
-            }
-        }
-        return result
-    }
 
     /// Return person's father from first husband in person's first FAMC with a husband.
     func father(in index: RecordIndex) -> Person? {
-        parents(in: index, role: GedcomTag.HUSB).first
-    }
 
     /// Return person's mother by finding first wife in person's first FAMC with a wife.
     func mother(in index: RecordIndex) -> Person? {
-        parents(in: index, role: GedcomTag.WIFE).first
-    }
 
     /// Return all person's fathers by finding all husbands in all person's FAMC families.
     func fathers(in index: RecordIndex) -> [Person] {
-        parents(in: index, role: GedcomTag.HUSB)
-    }
 
     /// Return all person's mothers by finding all wives in all person's FAMC families.
     func mothers(in index: RecordIndex) -> [Person] {
-        parents(in: index, role: GedcomTag.WIFE)
-    }
-}
 
 /// Extension for Families.
 public extension Person {
 
     /// Return families person is a spouse in.
     func spouseFamilies(in index: RecordIndex) -> [Family] {
-        var families: [Family] = []
-        for famsKey in kidVals(forTag: GedcomTag.FAMS) {
-            guard let family = index.family(for: famsKey)
-            else { continue }
-            families.append(family)
-        }
-        return families
-    }
 
     /// Return families person is a child in.
     func childFamilies(in index: RecordIndex) -> [Family] {
-        var families: [Family] = []
-        for famcKey in kidVals(forTag: GedcomTag.FAMC) {
-            guard let family = index.family(for: famcKey)
-            else { continue }
-            families.append(family)
-        }
-        return families
-    }
 }
 
 /// Extension for Spouses, Husbands, and Wives
 public extension Person {
 
-    /// Return first spouse of self by role; is no restriction on sex of spouse.
     func spouse(in index: RecordIndex, roles: [Tag]) -> Person? {
-        for family in spouseFamilies(in: index) {
-            for role in roles {
-                for key in family.kidVals(forTag: role) where key != self.key {
-                    if let spouse = index.person(for: key) { return spouse }
-                }
-            }
-        }
-        return nil
-    }
 
     /// Return first husband of person; person can be male or female.
     func husband(in index: RecordIndex) -> Person? {
-        spouse(in: index, roles: [GedcomTag.HUSB])
-    }
 
     /// Return first wife of person; person can be male or female.
     func wife(in index: RecordIndex) -> Person? {
-        spouse(in: index, roles: [GedcomTag.WIFE])
-    }
 
     /// Return all spouses of person, filtered by roles, deduped, in Gedcom order.
     func spouses(in index: RecordIndex,
                  roles: [Tag] = [GedcomTag.HUSB,GedcomTag.WIFE]) -> [Person] {
 
-        var seen = Set<RecordKey>()
-        var out: [Person] = []
-
-        for family in spouseFamilies(in: index) {
-            for role in roles {
-                for key in family.kidVals(forTag: role)
-                where key != self.key && seen.insert(key).inserted {
-                    if let spouse = index.person(for: key) { out.append(spouse) }
-                }
-            }
-        }
-        return out
-    }
-
     /// Return all husbands of person, deduped and in order; person can be male or female.
     func husbands(in index: RecordIndex) -> [Person] {
-        spouses(in: index, roles: [GedcomTag.HUSB])
-    }
 
     /// Return all wives of person, deduped and in order; person can be male or female.
     func wives(in index: RecordIndex) -> [Person] {
-        spouses(in: index, roles: [GedcomTag.WIFE])
-    }
 }
 
 /// Extension for Siblings.
@@ -127,108 +58,145 @@ extension Person {
     /// Return person's siblings from all FAMC families, deduped and in gedcom order.
     public func siblings(in index: RecordIndex) -> [Person] {
 
-        var seen: Set<RecordKey> = []
-        var result: [Person] = []
-
-        for family in childFamilies(in: index) {
-            for child in family.children(in: index) where child.key != self.key {
-                if seen.insert(child.key).inserted { result.append(child) }
-            }
-        }
-        return result
-    }
-
     /// Return person's previous sibling in person's first FAMC.
     public func previousSibling(in index: RecordIndex) -> Person? {
 
-        guard let family = self.childFamilies(in: index).first else { return nil }
-        let children = family.children(in: index)
-        guard let indexOfSelf = children.firstIndex(of: self),
-              indexOfSelf < children.count - 1 else { return nil }
-        return children[indexOfSelf + 1]
-    }
-
     // Return person's next sibling in person's first FAMC.
     public func nextSibling(in index: RecordIndex) -> Person? {
-
-        guard let family = self.childFamilies(in: index).first else { return nil }
-        let children = family.children(in: index)
-        guard let indexOfSelf = children.firstIndex(of: self),
-              indexOfSelf > 0 else { return nil }
-        return children[indexOfSelf - 1]
-    }
 }
 
 public extension Person {
 
     /// Return children of self, in all FAMS families, deduped in Gedcom order.
     func children(in index: RecordIndex) -> [Person] {
-        var seen: Set<RecordKey> = []
-        var result: [Person] = []
-
-        for family in spouseFamilies(in: index) {
-            for child in family.children(in: index) {
-                if seen.insert(child.key).inserted { result.append(child) }
-            }
-        }
-        return result
-    }
-}
-
-extension Database {
-
-    enum PersonUpdateError: Swift.Error {
-
-        case missingName
-        case inconsistentSex
-        case invalidLinks
-        // ... add others as you refine rules
-    }
-
-    public func updatePerson(_ person: Person) {
-        recordIndex[person.key] = person.root
-    }
 }
 
 extension Person {
-
-    /// Compare persons by name, birth year, death year, and record key.
-    public func compare(to other: Person, in index: RecordIndex) -> ComparisonResult {
-
-        if let nameOne = GedcomName(from: self.root), let nameTwo = GedcomName(from: other.root) {
-            let relation = nameOne.compare(to: nameTwo)
-            if relation != .orderedSame { return relation }
-        }
-        let birthOne = self.birthEvent?.year
-        let birthTwo = other.birthEvent?.year
-        if let relation = compareOptionalInts(birthOne, birthTwo), relation != .orderedSame { return relation }
-
-        let deathOne = self.deathEvent?.year
-        let deathTwo = other.deathEvent?.year
-        if let relation = compareOptionalInts(deathOne, deathTwo), relation != .orderedSame { return relation }
-
-        if self.key == other.key { return .orderedSame }
-        return self.key < other.key ? .orderedAscending : .orderedDescending
-    }
-}
-
-/// Compare optional integers.
-private func compareOptionalInts(_ a: Int?, _ b: Int?) -> ComparisonResult? {
-    switch (a, b) {
-    case let (x?, y?) where x != y:
-        return x < y ? .orderedAscending : .orderedDescending
-    case (.some, .none):
-        return .orderedAscending
-    case (.none, .some):
-        return .orderedDescending
-    default:
-        return .orderedSame
-    }
-}
-=================================================================================================
 
 The Root Node Level
 
 =================================================================================================
 The Key Level
 =================================================================================================
+
+Code now in RecordIndex.swift
+
+extension RecordIndex {
+
+    /// Create a person record from its root node.
+    public func person(for key: String) -> Person?
+
+    /// Create a family record from its root node.
+    public func family(for key: String) -> Family?
+
+
+    private func people(in family: Family, roles: Set<Tag>) -> [Person] {
+
+    /// Return the keys of the children of a person with the given key.
+    func childrenKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+
+    /// Return the children of a family using keys.
+    func childrenKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
+
+    func children(ofPersonRoot root: Root) -> [Root] {
+
+    func children(ofFamilyRoot root: Root) -> [Root] {
+
+    /// Return the keys of a person's souses. The person's key is not included.
+    func spouseKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+
+    func spouseKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
+
+Code in Connect.swift
+
+public struct ConnectData {
+    var ancestors: Int? = nil
+    var descendants: Int? = nil
+}
+
+/// Dictionary mapping person keys to the person's connection data.
+public typealias ConnectIndex = [RecordKey: ConnectData]
+
+extension RecordIndex {
+
+    /// Find connection data for a list of root nodes. The list must contain
+    /// all persons from a closed partition based on FAMC, FAMS, HUSB, WIFE,
+    /// and CHIL links. If the list does not contain a closed partition there
+    /// is no guarantee that all connect data will be accurate.
+    public func connections(partition: [Root]) -> ConnectIndex {
+
+    /// Find connection data for a person which includes finding the
+    /// connection data for the person's ancestors and descendants.
+    func connections(root: Root, connectIndex: inout ConnectIndex) {
+
+    /// The next two methods use memoization to find the numbers of
+    /// ancestors and descendants of all persons in a closed partition.
+    /// When a person is visited the first time the numbers or all its
+    /// ancestors and descendants are found and stored in the connect
+    /// data index, and this includes finding the numbers of ancestors
+    /// of all ancesters and the numbers of descendants of all
+    /// descandants. No work is done on later visits.
+    /// There are other methods for finding the numbers of ancestors
+    /// and descendants, but these do not use memoization so they
+    /// compute the numbers afresh on every call.
+
+    /// Find the number of ancestors of a person, also finding the numbers
+    /// of ancestors for all ancestors. Uses memoization.
+    func numAncestors(of key: RecordKey, connectIndex: inout ConnectIndex) -> Int {
+
+    /// Find the number of descendants of a person, also finding the numbers
+    /// of descendants for all descendants. Uses memoization.
+    func numDescendants(of key: RecordKey, connectIndex: inout ConnectIndex) -> Int {
+
+    /// Find all ancestors of a person from its root node.
+    public func ancestors(of personRoot: Root) -> [Root] {
+
+    /// Find all ancestors of a person.
+    public func ancestors(of person: Person) -> [Person] {
+
+    /// Return the number of ancestors of a person from its root node.
+    public func numAncestors(of personRoot: Root) -> Int {
+
+    /// Return the number of ancestors of a person.
+    public func numAncestors(of person: Person) -> Int {
+
+    /// Find all descendants of a person from its root node.
+    public func descendants(of personRoot: Root) -> [Root] {
+
+    /// Find all descendants of a person.
+    public func descendants(of person: Person) -> [Person] {
+
+    /// Return the number of descendants of a person from its root node.
+    public func numDescendants(of personRoot: Root) -> Int {
+
+    /// Return the number of descendants of a person.
+    public func numDescendants(of person: Person) -> Int {
+
+    /// Return the keys of the parents of a person.
+    func parentKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+
+    /// Return the keys of the spouses of a person key.
+    func spouseKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+
+    /// Return the keys of the spouses from a family key.
+    func spouseKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
+
+    /// Require a node to have a key for its value, require that key to
+    /// map to a root node, and return that node. Must succeed.
+    func requireRoot(from node: GedcomNode, tag: Tag) -> Root {
+
+    /// Require a key to map to a root of optional type, and return that root.
+    func requireRoot(from key: RecordKey, tag: Tag? = nil) -> Root {
+}
+
+/// Dedupe the keys in a list while keeping order.
+func dedupeKeys(_ keys: [RecordKey]) -> [RecordKey] {
+
+/// Require a root node to have a key. Must succeed.
+func requireKey(on root: GedcomNode, tag: Tag? = nil) -> RecordKey {
+
+/// Require a node to be a person root node and have a key.
+func requirePersonKey(on root: GedcomNode) -> RecordKey {
+
+/// Require a node to be a family root and have a key.
+func requireFamilyKey(on root: GedcomNode) -> RecordKey {

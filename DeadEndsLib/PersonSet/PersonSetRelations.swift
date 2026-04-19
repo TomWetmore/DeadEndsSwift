@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 17 April 2026.
+//  Last changed on 18 April 2026.
 //
 
 import Foundation
@@ -12,6 +12,7 @@ extension PersonSet {
 
     /// Return the children person set of a person set.
     public func childrenSet(in index: RecordIndex) -> PersonSet<Payload> {
+        
         var seen: Set<RecordKey> = []
         var roots: [Root] = []
 
@@ -26,39 +27,54 @@ extension PersonSet {
         return PersonSet(roots: roots)
     }
 
-    /// Return the parent person set of a person set.
+    /// Return the parent person set of a person set. The result may
+    /// overlap with self.
     public func parentsSet(in index: RecordIndex) -> PersonSet<Payload> {
+
         var seen = Set<RecordKey>()
-        var result: [Root] = []
+        let result = PersonSet<Payload>()
 
-        for element in self.elements {
-            let key = element.key
-
+        for element in elements {
+            let keys = index.parentKeys(ofPersonKey: element.key)
+            for key in keys where seen.insert(key).inserted {
+                let root = index.requireRoot(from: key, tag: GedcomTag.INDI)
+                result.append(root)
+            }
         }
-
     }
 
-    /// Return the spouse set of a person set.
+    /// Return the set of all spouses of persons in this set.
+    /// The result may overlap with self.
     public func spouseSet(in index: RecordIndex) -> PersonSet<Payload> {
+
         var seen = Set<RecordKey>()
-        var result = [Root]()
-        
+        let result = PersonSet<Payload>()
+
+        for element in elements {
+            let keys = index.spouseKeys(ofPersonKey: element.key)
+            for key in keys where seen.insert(key).inserted {
+                let root = index.requireRoot(from: key, tag: GedcomTag.INDI)
+                result.append(root)
+            }
+        }
+        return result
     }
 
     /// Return the sibling person set of a person set.
     public func siblingSet(in index: RecordIndex) -> PersonSet<Payload> {
-        var seen = Set<RecordKey>()
-        var result: [Root] = []
 
-        for element in self.elements {
-            let key = element.key  // Not optional
-            for sibKey in index.siblingKeys(ofPersonKey: key) {
-                if seen.insert(sibKey).inserted {
-                    result.append(index.requireRoot(from: sibKey, tag: GedcomTag.INDI))
-                }
+        var seen = Set<RecordKey>()
+        let result = PersonSet<Payload>()
+
+        for element in elements {
+            let keys = index.siblingKeys(ofPersonKey: element.key)
+            for key in keys where seen.insert(key).inserted {
+                let root = index.requireRoot(from: key, tag: GedcomTag.INDI)
+                result.append(root)
+
             }
         }
-        return PersonSet(roots: result)
+        return result
     }
 
     /// Return the ancestors person set of a person set.
@@ -94,21 +110,3 @@ extension PersonSet {
     }
 }
 
-extension RecordIndex {
-    func siblingKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
-        let root = requireRoot(from: key, tag: GedcomTag.INDI)
-        var result: [RecordKey] = []
-
-        for famc in root.kids(withTag: GedcomTag.FAMC) {
-            let famRoot = requireRoot(from: famc, tag: GedcomTag.FAM)
-            for childNode in famRoot.kids(withTag: GedcomTag.CHIL) {
-                let childRoot = requireRoot(from: childNode, tag: GedcomTag.INDI)
-                let childKey = requireKey(on: childRoot)
-                if childKey != key {
-                    result.append(childKey)
-                }
-            }
-        }
-        return dedupeKeys(result)
-    }
-}

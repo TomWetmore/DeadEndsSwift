@@ -7,16 +7,21 @@
 
 import Foundation
 
+/// Index of Gedcom records. Wraps a dictionary that maps RecordKeys (Strings) to
+/// Roots (GedcomNodes).
 public struct RecordIndex {
 
     private var table: [RecordKey: Root] = [:]  // Representation.
 
+    /// Returns a record index with an empty table.
     public init() {}
 
+    /// Returns a record index with an established table.
     public init(_ table: [RecordKey: Root]) {
         self.table = table
     }
 
+    /// Passes the subscript operator down to the table.
     public subscript(key: RecordKey) -> Root? {
         get { table[key] }
         set { table[key] = newValue }
@@ -30,6 +35,7 @@ public struct RecordIndex {
 }
 
 extension RecordIndex: Sequence {
+
     public func makeIterator() -> Dictionary<RecordKey, Root>.Iterator {
         table.makeIterator()
     }
@@ -38,10 +44,10 @@ extension RecordIndex: Sequence {
 /// Extension for record retrieval from indexes.
 extension RecordIndex {
 
-    /// Create person from root.
+    /// Create a person record from its root node.
     public func person(for key: String) -> Person? { self[key].flatMap(Person.init) }
 
-    /// Create family from root.
+    /// Create a family record from its root node.
     public func family(for key: String) -> Family? { self[key].flatMap(Family.init) }
 }
 
@@ -62,8 +68,7 @@ extension RecordIndex {
     }
 }
 
-/// Bottom of the relationships ladder.
-
+/// Children key level.
 extension RecordIndex {
 
     /// Return the keys of the children of a person with the given key.
@@ -96,82 +101,184 @@ extension RecordIndex {
         }
         return dedupeKeys(result)
     }
+}
 
-    func children(ofPersonRoot root: Root) -> [Root] {
-        guard root.tag == GedcomTag.INDI, let perKey = root.key
-        else { fatalError("person root \(root) is not a person or has no key") }
-        return childrenKeys(ofPersonKey: perKey).compactMap{ self[$0] }
+/// Parent key level.
+extension RecordIndex {
+    
+    /// Return the keys of the parents of a person.
+    func parentKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+        let root = requireRoot(from: key, tag: GedcomTag.INDI)
+        var result: [RecordKey] = []
+
+        for famc in root.kids(withTag: GedcomTag.FAMC) {
+            guard let famKey = famc.val, let famRoot = self[famKey],
+                  famRoot.tag == GedcomTag.FAM
+            else { fatalError("invalid FAMC link") }
+            for parNode in famRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE]) {
+                guard let parKey = parNode.val, let parRoot = self[parKey],
+                      parRoot.tag == GedcomTag.INDI
+                else { fatalError("unexpected node in INDI") }
+                result.append(parKey)
+            }
+        }
+        return dedupeKeys(result)
     }
+}
 
-    func children(ofFamilyRoot root: Root) -> [Root] {
-        guard root.tag == GedcomTag.FAM, let famKey = root.key
-        else { fatalError("family root \(root) is not a family or has no key") }
-        return childrenKeys(ofFamilyKey: famKey).compactMap { self[$0] }
-    }
+/// Spouse key level
+extension RecordIndex {
 
-//    func spouses(ofPersonRoot root: Root) -> [Root] {
-//        let spouseKey = requireKey(on: root)
-//    }
-    /*
-     /// Return children of self, in all FAMS families, deduped in Gedcom order.
-     func children(in index: RecordIndex) -> [Person] {
-         var seen: Set<RecordKey> = []
-         var result: [Person] = []
-
-         for family in spouseFamilies(in: index) {
-             for child in family.children(in: index) {
-                 if seen.insert(child.key).inserted { result.append(child) }
-             }
-         }
-         return result
-     }
-     */
-//    children(of person: Person) -> PersonSet
-//    children(of family: Family) -> PersonSet
-//
-//    children(ofPersonRoot root: Root) -> PersonSet
-//    children(ofFamilyRoot root: Root) -> PersonSet
-
-//    func parentKeys(ofPersonKey key: RecordKey) -> Set<RecordKey> {
-//        var results = Set<RecordKey>()
-//        return results
-//    }
-
-    /// Return the keys of a person's souses. The person's key is not included.
+    /// Return the keys of the spouses of a person key.
     func spouseKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
-        var seen = Set<RecordKey>()
-        var results = [RecordKey]()
 
-        let indiRoot = requireRoot(from: key, tag: GedcomTag.INDI)
-        let famcNodes = indiRoot.kids(withTag: GedcomTag.FAMC)
-        for famcNode in famcNodes {
-            let famcRoot = requireRoot(from: famcNode, tag: GedcomTag.FAM)
-            let spouseNodes = famcRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE])
-            for spouseNode in spouseNodes {
+        let root = requireRoot(from: key, tag: GedcomTag.INDI)
+        var result: [RecordKey] = []
+
+        for famsNode in root.kids(withTag: GedcomTag.FAMS) {
+            let famsRoot = requireRoot(from: famsNode, tag: GedcomTag.FAM)
+            for spouseNode in famsRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE]) {
                 let spouseRoot = requireRoot(from: spouseNode, tag: GedcomTag.INDI)
-                let spouseKey = requireKey(on: spouseRoot)
-                if spouseKey != key && !seen.contains(spouseKey) {
-                    seen.insert(spouseKey)
-                    results.append(spouseKey)
+                if spouseRoot.key != key {
+                    result.append(spouseRoot.key!) // Okay use of !.
                 }
             }
         }
+        return dedupeKeys(result)
+    }
+
+    /// Return the keys of the spouses from a family key.
+    func spouseKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
+
+        let root = requireRoot(from: key, tag: GedcomTag.FAM)
+        var result: [RecordKey] = []
+        
+        for node in root.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE]) {
+            result.append(requirePersonKey(on: node))
+        }
+        return dedupeKeys(result)
+    }
+}
+
+/// Sibling key level.
+extension RecordIndex {
+
+    /// Return the keys of all siblings of the person with given key.
+    func siblingKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+        let root = requireRoot(from: key, tag: GedcomTag.INDI)
+        var result: [RecordKey] = []
+
+        for famcNode in root.kids(withTag: GedcomTag.FAMC) {
+            let famcRoot = requireRoot(from: famcNode, tag: GedcomTag.FAM)
+            for childNode in famcRoot.kids(withTag: GedcomTag.CHIL) {
+                let childKey = requirePersonKey(on: childNode)
+                if childKey != key {
+                    result.append(childKey)
+                }
+            }
+        }
+        return dedupeKeys(result)
+    }
+}
+
+/// Ancestor and descendant key level.
+extension RecordIndex {
+
+    /// Return the keys of all ancestors of the person with the given key.
+    public func ancestorKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+        let _ = requireRoot(from: key, tag: GedcomTag.INDI)
+        var seen = Set<RecordKey>()
+        var queue = parentKeys(ofPersonKey: key)
+        var next = 0
+        var results = [RecordKey]()
+
+        while next < queue.count {
+            let key = queue[next]
+            next += 1
+            if seen.contains(key) { continue }   // Pedigree collapse.
+            seen.insert(key)
+            results.append(key)
+            queue.append(contentsOf: parentKeys(ofPersonKey: key))
+        }
         return results
     }
 
-    func spouseKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
+    /// Return the keys of all descendants of the person with the given key.
+    public func descendantKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+        let _ = requireRoot(from: key, tag: GedcomTag.INDI)
         var seen = Set<RecordKey>()
+        var queue = childrenKeys(ofPersonKey: key)
+        var next = 0
         var results = [RecordKey]()
-        let famRoot = requireRoot(from: key, tag: GedcomTag.FAM)
-        let spouseNodes = famRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE])
-        for spouseNode in spouseNodes {
-            let spouseRoot = requireRoot(from: spouseNode, tag: GedcomTag.INDI)
-            let spouseKey = requireKey(on: spouseRoot)
-            if !seen.contains(spouseKey) {
-                seen.insert(spouseKey)
-                results.append(spouseKey)
-            }
+
+        while next < queue.count {
+            let key = queue[next]
+            next += 1
+            if seen.contains(key) { continue }   // Usually only needed if data is odd.
+            seen.insert(key)
+            results.append(key)
+            queue.append(contentsOf: childrenKeys(ofPersonKey: key))
         }
         return results
+    }
+}
+
+/// All root level relationship methods.
+extension RecordIndex {
+
+    func children(ofPersonRoot root: Root) -> [Root] {
+        let perKey = requirePersonKey(on: root)
+        return childrenKeys(ofPersonKey: perKey).map {
+            requireRoot(from: $0, tag: GedcomTag.INDI)
+        }
+    }
+
+    func children(ofFamilyRoot root: Root) -> [Root] {
+        let famKey = requireFamilyKey(on: root)
+        return childrenKeys(ofFamilyKey: famKey).map {
+            requireRoot(from: $0, tag: GedcomTag.INDI)
+        }
+    }
+
+    func parents(ofPersonRoot root: Root) -> [Root] {
+        let perKey = requirePersonKey(on: root)
+        return parentKeys(ofPersonKey: perKey).map {
+            requireRoot(from: $0, tag: GedcomTag.INDI)
+        }
+    }
+
+    func spouses(ofPersonRoot root: Root) -> [Root] {
+        let perKey = requirePersonKey(on: root)
+        return spouseKeys(ofPersonKey: perKey).map {
+            requireRoot(from: $0, tag: GedcomTag.INDI)
+        }
+    }
+
+    func spouses(ofFamilyRoot root: Root) -> [Root] {
+        let famKey = requireFamilyKey(on: root)
+        return spouseKeys(ofFamilyKey: famKey).map {
+            requireRoot(from: $0, tag: GedcomTag.INDI)
+        }
+    }
+
+    func siblings(ofPersonRoot root: Root) -> [Root] {
+        let perKey = requirePersonKey(on: root)
+        return siblingKeys(ofPersonKey: perKey).map {
+            requireRoot(from: $0, tag: GedcomTag.INDI)
+        }
+    }
+
+    func ancestors(ofPersonRoot root: Root) -> [Root] {
+        let perKey = requirePersonKey(on: root)
+        return ancestorKeys(ofPersonKey: perKey).map {
+            requireRoot(from: $0, tag: GedcomTag.INDI)
+        }
+    }
+
+    func descendants(ofPersonRoot root: Root) -> [Root] {
+        let perKey = requirePersonKey(on: root)
+        return descendantKeys(ofPersonKey: perKey).map {
+            requireRoot(from: $0, tag: GedcomTag.INDI)
+        }
     }
 }
