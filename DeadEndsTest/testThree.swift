@@ -24,15 +24,15 @@ func testThree() throws {
     let index = database.recordIndex
     let dvcw = index.person(for: "@I41@")!  // Daniel Van Cott Wetmore
     let ancRoots = index.ancestors(of: dvcw.root)
-    let personSet = PersonSet(roots: ancRoots)
+    let personSet = PlainPersonSet(roots: ancRoots)
     print(personSet)
 
     let decRoots = index.descendants(of: dvcw.root)
-    let decPersonSet = PersonSet(roots: decRoots)
+    let decPersonSet = PlainPersonSet(roots: decRoots)
     print(decPersonSet)
 
     // Create a PersonSet with just dvcw in it.
-    let dvcwSet = PersonSet(root: dvcw.root)
+    let dvcwSet = PlainPersonSet(root: dvcw.root)
     // Create and show the children set dvcw.
     let dvcwChildrenSet = dvcwSet.childrenSet(in: index)
     print("dvcw's children set has \(dvcwChildrenSet.count) members")

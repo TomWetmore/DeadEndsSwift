@@ -32,15 +32,16 @@ extension PersonSet {
     public func parentsSet(in index: RecordIndex) -> PersonSet<Payload> {
 
         var seen = Set<RecordKey>()
-        let result = PersonSet<Payload>()
+        let results = PersonSet<Payload>()
 
         for element in elements {
             let keys = index.parentKeys(ofPersonKey: element.key)
             for key in keys where seen.insert(key).inserted {
                 let root = index.requireRoot(from: key, tag: GedcomTag.INDI)
-                result.append(root)
+                results.append(root)
             }
         }
+        return results
     }
 
     /// Return the set of all spouses of persons in this set.
@@ -78,7 +79,7 @@ extension PersonSet {
     }
 
     /// Return the ancestors person set of a person set.
-    func ancestorSet(in index: RecordIndex) -> PersonSet<Payload> {
+    public func ancestorSet(in index: RecordIndex) -> PersonSet<Payload> {
         var visited: Set<RecordKey> = []
         var roots: [Root] = []
 
@@ -94,7 +95,7 @@ extension PersonSet {
     }
 
     /// Return the descendants person set of a person set.
-    func descendantSet(in index: RecordIndex) -> PersonSet<Payload> {
+    public func descendantSet(in index: RecordIndex) -> PersonSet<Payload> {
         var visited: Set<RecordKey> = []
         var roots: [Root] = []
 

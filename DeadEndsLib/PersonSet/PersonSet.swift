@@ -150,9 +150,13 @@ public class PersonSet<Payload>: Collection {
 
     /// Sort a person set by name.
     func nameSort() {
-        elements.sort { $0.nameSortsBefore($1) }
+        if sortType != .nameSorted {
+            elements.sort { $0.nameSortsBefore($1) }
+        }
         sortType = .nameSorted
     }
+
+
 
     /// Remove duplicates from a person set.
     func removeDuplicates() {
@@ -207,13 +211,21 @@ extension PersonSet: CustomStringConvertible {
 extension PersonSet {
 
     /// Ensure that a person set is key sorted and possibly deduped.
-    func keySort(unique: Bool = true) {
-        if sortType != .keySorted { keySort() }
-        if !self.unique && unique { removeDuplicates() }
+//    func keySort(unique: Bool = true) {
+//        if sortType != .keySorted { keySort() }
+//        if !self.unique && unique { removeDuplicates() }
+//    }
+
+    /// Sort a person set by key.
+    func keySort() {
+        if sortType != .keySorted {
+            elements.sort { $0.key < $1.key }
+        }
+        sortType = .keySorted
     }
 }
 
-/// Proposed test code.
+/// Some test code.
 
 /// Helper function to test person sets.
 func makeSequence(keys: [String]) -> PlainPersonSet {
@@ -235,7 +247,7 @@ func testRecordSequenceOperations() {
     let seqB = makeSequence(keys: ["@I2@", "@I4@", "@I5@", "@I6@"])
 
     // Test Union
-    let unionSeq = seqA.union(seqB)
+    let unionSeq = seqA.unionSet(seqB)
     assert(unionSeq.map { $0.key } == ["@I1@", "@I2@", "@I3@", "@I4@", "@I5@", "@I6@"],
            "Union failed")
 

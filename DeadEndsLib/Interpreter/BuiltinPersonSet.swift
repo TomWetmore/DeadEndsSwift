@@ -129,7 +129,7 @@ extension Program {
         guard case let .indiset(set2) = set2Value else {
             throw RuntimeError.typeMismatch("union: 2nd arg must evaluate to an indiseq")
         }
-        return .indiset(set1.union(set2))
+        return .indiset(set1.unionSet(set2))
     }
 
     /// Return the intersection of two indisets.

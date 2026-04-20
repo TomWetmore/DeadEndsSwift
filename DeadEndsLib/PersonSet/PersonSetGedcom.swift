@@ -14,33 +14,33 @@ import Foundation
 /// their links are removed from the families.
 ///
 
-func PersonSetToRecordIndex<Payload>(in index: RecordIndex,
-                                     personSet: PersonSet<Payload>) -> RecordIndex {
-
-    // Create a record index.
-    var localIndex = RecordIndex()
-    // Add the persons in the set to that index.
-    for element in personSet {
-        localIndex[element.key] = element.root
-    }
-    // Iterate all families referred to by all persons.
-    for element in personSet {
-        let famNodes = element.root.kids(withTags: [GedcomTag.FAMC, GedcomTag.FAMS])
-        for famNode in famNodes {
-            // famNode is a FAMC or FAMS node from the current person from the set.
-            // Get the families and make a deep copy.
-            let famRoot = index.requireRoot(from: famNode, tag: GedcomTag.FAM).deepCopy()
-            // Look at all the HUSB, WIFE, and CHIL links and keep the ones that refer to
-            // persons in the local index.
-            let nodes = famRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE,
-                                                GedcomTag.CHIL])
-            for node in nodes {
-                let key = node.requireKey
-            }
-        }
-    }
-    return localIndex
-}
+//func PersonSetToRecordIndex<Payload>(in index: RecordIndex,
+//                                     personSet: PersonSet<Payload>) -> RecordIndex {
+//
+//    // Create a record index.
+//    var localIndex = RecordIndex()
+//    // Add the persons in the set to that index.
+//    for element in personSet {
+//        localIndex[element.key] = element.root
+//    }
+//    // Iterate all families referred to by all persons.
+//    for element in personSet {
+//        let famNodes = element.root.kids(withTags: [GedcomTag.FAMC, GedcomTag.FAMS])
+//        for famNode in famNodes {
+//            // famNode is a FAMC or FAMS node from the current person from the set.
+//            // Get the families and make a deep copy.
+//            let famRoot = index.requireRoot(from: famNode, tag: GedcomTag.FAM).deepCopy()
+//            // Look at all the HUSB, WIFE, and CHIL links and keep the ones that refer to
+//            // persons in the local index.
+//            let nodes = famRoot.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE,
+//                                                GedcomTag.CHIL])
+//            for node in nodes {
+//                let key = node.requireKey
+//            }
+//        }
+//    }
+//    return localIndex
+//}
 
 
 

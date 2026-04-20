@@ -16,14 +16,22 @@ func testPerson() {
     let parents = me.parents(in: index)
     print("\(me)  \(parents)")
 
-    let mePersonSet = PersonSet(root: me.root)
+    let mePersonSet = PlainPersonSet(root: me.root)
     print(mePersonSet)
     let siblingsPersonSet = mePersonSet.siblingSet(in: index)
     print(siblingsPersonSet)
     let childrenSet = mePersonSet.childrenSet(in: index)
     print(childrenSet)
-    let anotherSiblingSet = childrenSet.siblingSet(in: index)
-    print(anotherSiblingSet)
+    let ancestorSet = mePersonSet.ancestorSet(in: index)
+    print(ancestorSet)
+    let descendantSet = mePersonSet.descendantSet(in: index)
+    print(descendantSet)
+    var anotherSet = mePersonSet.unionSet(siblingsPersonSet)
+    print(anotherSet)
+    anotherSet = mePersonSet.unionSet(mePersonSet.spouseSet(in: index))
+    print(anotherSet)
+    anotherSet = anotherSet.unionSet(anotherSet.ancestorSet(in: index))
+    print(anotherSet)
 }
 
 func testParents() {

@@ -171,7 +171,9 @@ extension RecordIndex {
         for famcNode in root.kids(withTag: GedcomTag.FAMC) {
             let famcRoot = requireRoot(from: famcNode, tag: GedcomTag.FAM)
             for childNode in famcRoot.kids(withTag: GedcomTag.CHIL) {
-                let childKey = requirePersonKey(on: childNode)
+                // childNode is a 1 CHIL node in a FAM record. We want the value of that
+                // node to be the key of person record.
+                let childKey = requireKeyValue(onNode: childNode)
                 if childKey != key {
                     result.append(childKey)
                 }

@@ -233,6 +233,14 @@ func requirePersonKey(on root: GedcomNode) -> RecordKey {
     return requireKey(on: root, tag: GedcomTag.INDI)
 }
 
+/// Require a node to have a key value.
+func requireKeyValue(onNode node: GedcomNode) -> RecordKey {
+    guard let key = node.val, key.isKey
+    else { fatalError("expected node \(node) to have a key value") }
+    return key
+}
+
+
 /// Require a node to be a family root and have a key.
 func requireFamilyKey(on root: GedcomNode) -> RecordKey {
     return requireKey(on: root, tag: GedcomTag.FAM)

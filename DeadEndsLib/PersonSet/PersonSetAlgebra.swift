@@ -12,7 +12,7 @@ import Foundation
 extension PersonSet {
 
     /// Return union of two person sets.
-    func union(_ other: PersonSet<Payload>) -> PersonSet<Payload> {
+    public func unionSet(_ other: PersonSet<Payload>) -> PersonSet<Payload> {
         self.keySort()
         other.keySort()
         return self.sortedUnion(with: other)
