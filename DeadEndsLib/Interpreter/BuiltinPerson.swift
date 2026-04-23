@@ -187,9 +187,6 @@ extension Program {
 
     /// Look up a person in the database and return its root.
     func builtinIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
-        guard let _ = self.database else {
-            throw RuntimeError.missingDatabase("indi() requires a database")
-        }
         let key = try evaluate(args[0])
         guard case let .string(key) = key, let node = recordIndex[key],
               node.tag == GedcomTag.INDI

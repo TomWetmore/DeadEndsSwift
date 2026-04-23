@@ -3,29 +3,45 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 15 April 2026.
+//  Last changed on 21 April 2026.
 //
 
 import SwiftUI
 
 struct ProgramPage: View {
+    
+    @EnvironmentObject var appModel: AppModel
     @Bindable var model: ProgramModel
-    let compiler: ProgramCompiler
+    //let compiler: ProgramCompiler
 
     var body: some View {
         VStack(spacing: 0) {
-            toolbar
+
+            TextEditor(text: $model.source)
+
+            HStack {
+                Button("Compile") {
+                    model.compile()
+                }
+                Button("Run") {
+                    if let db = appModel.database {
+                        model.run(database: db)
+                    }
+                }
+                .disabled(model.compiledProgram == nil)
+            }
 
             Divider()
-
-            VStack(spacing: 0) {
-                editorPane
-
-                Divider()
-
-                DiagnosticsPane(diagnostics: model.compileDiagnostics)
-                    .frame(minHeight: 160, idealHeight: 220)
+            ScrollView {
+                Text(model.output.text)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
             }
+            Divider()
+
+            DiagnosticsPane(diagnostics: model.compileDiagnostics)
+                .frame(minHeight: 160, idealHeight: 220)
+
         }
         .navigationTitle(model.programName)
     }
@@ -52,14 +68,14 @@ struct ProgramPage: View {
     }
 
     private var editorPane: some View {
-        TextEditor(text: $model.sourceText)
+        TextEditor(text: $model.source)
             .font(.system(.body, design: .monospaced))
             .padding(8)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func compileProgram() {
-        let result: CompileResult = compiler.compile(source: model.sourceText)
+        let result: CompileResult = ProgramCompiler.compile(source: model.source)
         model.applyCompileResult(result)
     }
 }
@@ -69,7 +85,7 @@ struct ProgramPage: View {
         ProgramPage(
             model: ProgramModel(
                 programName: "Ancestors Report",
-                sourceText:
+                source:
 """
 proc main ()
 {
@@ -79,7 +95,7 @@ proc main ()
 }
 """
             ),
-            compiler: MockProgramCompiler()
+            compiler: ProgramCompiler()
         )
     }
     .frame(width: 900, height: 650)

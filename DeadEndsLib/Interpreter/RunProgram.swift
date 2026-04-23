@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2026.
-//  Last changed on 12 April 2026.
+//  Last changed on 22 April 2026.
 //
 
 import Foundation
@@ -24,7 +24,8 @@ public enum FrontEndError: Error, CustomStringConvertible {
 }
 
 /// Run a program encoded in a string.
-public func runProgram(source: String, database: Database) throws -> InterpResult {
+public func runProgram(source: String, database: Database,
+                       output: ProgramOutput) throws -> InterpResult {
 
     var lexer = Lexer(source: source)  // Create lexer and get the tokens.
     let tokens = lexer.tokenize()
@@ -41,6 +42,7 @@ public func runProgram(source: String, database: Database) throws -> InterpResul
         throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
     }
 
-    let program = Program(parsedProgram: parsedProgram)  // Build runtime program object.
-    return try program.interpretProgram(database: database)  // Interpret the program.
+    let program = Program(parsedProgram: parsedProgram, database: database,
+                          output: ConsoleOutput())  // Build runtime program object.
+    return try program.interpretProgram()  // Interpret the program.
 }

@@ -3,25 +3,19 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 17 April 2026.
+//  Last changed on 20 April 2026.
 //
 
 import Foundation
 
 public typealias ProgramPersonSet = PersonSet<ProgramValue>
 
-///*
-// * initset -- Initialize list that holds created INDISEQs*/
-//initset ()
-//{
-//    keysets = create_list();
-//}
 
 extension Program {
 
     /// Create a new person set and put it in the symbol table.
     /// indiset(VARB) -> VOID
-    func builtinPersonSet(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func builtinIndiset(_ args: [ParsedExpr]) throws -> ProgramValue {
         guard case let .identifier(name) = args[0] else {
             throw RuntimeError.typeError("indiset() expects an identifier")
         }

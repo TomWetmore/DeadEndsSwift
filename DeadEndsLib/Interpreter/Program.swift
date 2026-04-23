@@ -3,32 +3,48 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 14 April 2026.
+//  Last changed on 21 April 2026.
 //
 
 import Foundation
 
 public typealias SymbolTable = [String: ProgramValue?]
 
-/// DeadEnds program; combines the static program parts with the run time parts.
+/// Generalize program output.
+public protocol ProgramOutput {
+    func write(_ text: String)
+}
+
+public extension ProgramOutput {
+    func writeln(_ text: String) {
+        write(text + "\n")
+    }
+}
+
+/// Program output for standard console output.
+public final class ConsoleOutput: ProgramOutput {
+
+    public func write(_ text: String) {
+        print(text, terminator: "")
+    }
+
+    public init() {}  // Needed to make it public.
+}
+
+/// DeadEnds program; combines static program parts with the runtime parts.
 final public class Program {
 
-    let parsedProgram: ParsedProgram  // The immutable program.
-    var builtins: [String: Builtin] = [:]  // The builtin library functions.
-    let procedureTable: [String: Int]  // User defined procedures.
-    let functionTable: [String: Int]  // User defined functions.
+    let parsedProgram: ParsedProgram  // Immutable program.
+    var builtins: [String: Builtin] = [:]  // Builtin library.
+    let procedureTable: [String: Int]  // User defined procs.
+    let functionTable: [String: Int]  // User defined funcs.
+    var hasRun = false
+    private(set) var globalSymbolTable: SymbolTable = [:]  // Global symbols.
+    var database: Database  // Database.
+    let output: ProgramOutput  // Output sink.
+    private var callStack: [SymbolTable] = [[:]]  // Runtime stack.
 
-    private(set) var globalSymbolTable: SymbolTable  // Global symbol table.
-    var database: Database?  // Database
-    private var callStack: [SymbolTable] = [[:]]  // Run time stack.
-
-    /// Return the record index, failing if the database does not exist.
-    var recordIndex: RecordIndex {
-        guard let db = self.database else {
-            fatalError("No database loaded — interpretation impossible.")
-        }
-        return db.recordIndex
-    }
+    var recordIndex: RecordIndex { database.recordIndex }
 
     /// Return the local symbol table, the current frame.
     var localSymbolTable: SymbolTable {
@@ -48,12 +64,12 @@ final public class Program {
     }
 
     /// Create a runnable program from a parsed program.
-    init(parsedProgram: ParsedProgram, database: Database? = nil,
-         callStack: [SymbolTable] = [[:]]) {
+    init(parsedProgram: ParsedProgram, database: Database, output: ProgramOutput) {
 
         self.parsedProgram = parsedProgram
         self.database = database
-        self.callStack = callStack
+        self.output = output
+        self.callStack = [[:]]
 
         /// Set up the tables
         var procTable: [String: Int] = [:]
@@ -91,6 +107,7 @@ final public class Program {
     /// Look up an identifier in the local symbol table, and if not
     /// there, in the global table.
     func lookupSymbol(_ name: String) -> ProgramValue? {
+
         if let localValue = localSymbolTable[name] {
             return localValue
         }
@@ -110,6 +127,7 @@ final public class Program {
     /// if it is in the global table change it there, else add it to
     /// the local table.
     func assignToSymbol(_ name: String, value: ProgramValue) {
+
         if localSymbolTable[name] != nil {
             currentFrame[name] = value  // Update in local.
         } else if globalSymbolTable[name] != nil {
@@ -142,41 +160,45 @@ public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing i
 /// Interpreter for interpretProgram method.
 extension Program {
 
-    /// Run the program by calling the main procedure. procedure.
+    /// Run the program by calling the main proc. This is method that begins the
+    /// execution of a program.
     @discardableResult
-    public func interpretProgram(database: Database) throws -> InterpResult {
-        self.database = database
-        // Get the main procedure.
+    public func interpretProgram() throws -> InterpResult {
+        guard !hasRun else {
+            throw RuntimeError.runtimeError("Program objects may only be run once")
+        }
+        hasRun = true
         let mainProc = try procDefn("main")
         if mainProc.params.count != 0 {
             throw RuntimeError.argumentCount("Main proc cannot have parameters")
         }
-        // Create a bootstrap ParsedCallStmt for main and call it.
-        let mainCall = ParsedCallStatement(name: "main", args: [])
+        let mainCall = ParsedCallStatement(name: "main", args: [])  // Bootstrap.
         return try interpProcCall(mainCall)
     }
 }
 
 extension Program {
 
-    /// Return a user procedure definition.
+    /// Return a user proc definition.
     func procDefn(_ name: String) throws -> ParsedProcDefn {
+
         guard let index = procedureTable[name] else {
-            throw RuntimeError.undefinedSymbol("Proc '\(name)' is not found")
+            throw RuntimeError.undefinedSymbol("proc '\(name)' is not found")
         }
         guard case .procDef(let procDef) = parsedProgram.defns[index] else {
-            fatalError("Corrupt procedure table for \(name)")
+            fatalError("Corrupt proc table for \(name)")
         }
         return procDef
     }
 
-    /// Return a user function definition.
+    /// Return a user func definition.
     func funcDefn(_ name: String) throws -> ParsedFuncDefn {
-        guard let index = procedureTable[name] else {
-            throw RuntimeError.undefinedSymbol("Function '\(name)' not found")
+        
+        guard let index = functionTable[name] else {
+            throw RuntimeError.undefinedSymbol("func '\(name)' not found")
         }
         guard case .funcDef(let funcDef) = parsedProgram.defns[index] else {
-            fatalError("Corrupt funcion table for \(name)")
+            fatalError("Corrupt func table for \(name)")
         }
         return funcDef
     }

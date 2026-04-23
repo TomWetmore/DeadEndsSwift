@@ -15,11 +15,11 @@
 import Foundation
 
 /// Parsed program, holding the syntax tree of an entire program.
-struct ParsedProgram: Equatable, CustomStringConvertible {
+public struct ParsedProgram: Equatable, CustomStringConvertible {
 
     let defns: [ParsedDefn]  // A program is a list of definitions.
 
-    var description: String {
+    public var description: String {
         defns.map(\.description).joined(separator: "\n")
     }
 }

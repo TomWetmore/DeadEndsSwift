@@ -3,13 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 5 April 2026.
+//  Last changed on 21 April 2026.
 //
 
 import Foundation
 
 /// Lexer for the DeadEnds programming language.
 public struct Lexer {
+
     let source: String
     var index: String.Index
     var line: Int = 1
@@ -24,7 +25,7 @@ public struct Lexer {
 extension Lexer {
 
     /// Tokenize the source into an array of tokens, including EOF.
-    mutating func tokenize() -> [Token] {
+    mutating public func tokenize() -> [Token] {
         var tokens: [Token] = []
 
         while true {
@@ -64,13 +65,14 @@ extension Lexer {
 extension Lexer {
 
     /// Peek at the next character.
-    func peek() -> Character? {
+    private func peek() -> Character? {
         guard index < source.endIndex else { return nil }
         return source[index]
     }
 
     /// Advance one character.
-    @discardableResult mutating func advance() -> Character? {
+    @discardableResult
+    mutating private func advance() -> Character? {
         guard let c = peek() else { return nil }
         index = source.index(after: index)
         if c.isNewline { line += 1 }
@@ -78,7 +80,7 @@ extension Lexer {
     }
 
     /// Backup one character.
-    mutating func backup() {
+    mutating private func backup() {
         index = source.index(before: index)
         if peek() == "\n" { line -= 1 }
     }
@@ -88,7 +90,7 @@ extension Lexer {
 extension Lexer {
 
     /// Skip whitespace and comments.
-    mutating func skipWhiteSpaceAndComments() {
+    mutating private func skipWhiteSpaceAndComments() {
         while true {
             while let c = peek(), c.isWhitespace { advance() } // Skip whitespace.
             guard peek() == "/" else { return }  // If not at '/' return.
@@ -110,7 +112,7 @@ extension Lexer {
     }
 
     /// Lex an identifier or reserved word.
-    mutating func lexIdentifierOrKeyword() -> Token {
+    mutating private func lexIdentifierOrKeyword() -> Token {
         let startLine = line
         var text = ""
 
@@ -123,7 +125,7 @@ extension Lexer {
     }
 
     /// Lex an integer or floating point literal. It can be positive or negative.
-    mutating func lexNumberOrMinus() -> Token {
+    mutating private func lexNumberOrMinus() -> Token {
         let startLine = line
 
         // Handle '-'.
@@ -192,7 +194,7 @@ extension Lexer {
     }
 
     /// Lex a string constant.
-    mutating func lexString() -> Token {
+    mutating private func lexString() -> Token {
         let startLine = line
 
         advance()  // Consume opening quote.
@@ -229,7 +231,9 @@ extension Lexer {
     }
 }
 
+/// Enumeration for kinds of tokens.
 public enum TokenKind: Equatable {
+
     case identifier(String)
     case intConst(Int)
     case floatConst(Double)
@@ -274,17 +278,20 @@ public enum TokenKind: Equatable {
     case eof
 }
 
+/// Implement equatable for tokens.
 public struct Token: Equatable {
     public let kind: TokenKind
     let line: Int
 }
 
+/// Implement custom string convertible for tokens.
 extension Token: CustomStringConvertible {
     public var description: String {
         "Token(\(line), \(kind))"
     }
 }
 
+/// Return token kind of a string.
 func keywordKind(for word: String) -> TokenKind? {
     switch word {
     case "break": return .breakTok
@@ -318,12 +325,7 @@ func keywordKind(for word: String) -> TokenKind? {
 }
 
 
-//extension Token: CustomStringConvertible {
-//    var description: String {
-//        "Token(\(line), \(kind))"
-//    }
-//}
-
+/// Implement custom string convertible for token kinds.
 extension TokenKind: CustomStringConvertible {
     public var description: String {
         switch self {

@@ -49,9 +49,11 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         return parts.count - 1 + parts.reduce(0) { $0 + $1.count }
     }
 
-    /// Return display version of name; surname can be capitalized and/or appear first; name can be limited
-    /// in length.
-    public func displayName(upSurname: Bool = false, surnameFirst: Bool = false, limit: Int = 0) -> String {
+    /// Return display version of name; surname can be capitalized and/or appear
+    /// first; name can be limited in length.
+    public func displayName(upSurname: Bool = false, surnameFirst: Bool = false,
+                            limit: Int = 0) -> String {
+
         var work = self
         if upSurname { work.uppercaseSurname() }
         if limit > 0 { work.shortened(to: limit) }
@@ -60,6 +62,7 @@ public struct GedcomName: Comparable, CustomStringConvertible {
 
     /// Format Gedcom name to string handling surname position.
     func format(surnameFirst: Bool) -> String {
+        
         guard !parts.isEmpty else { return "" }
         if surnameFirst, let si = surnameIndex {  // Surname first.
             let surname = parts[si]

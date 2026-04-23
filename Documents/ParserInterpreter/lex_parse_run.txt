@@ -1,0 +1,109 @@
+---------------------------------------------------------
+LEXER
+
+public struct Lexer {
+    let source: String
+    var index: String.Index
+    var line: Int = 1
+    public init(source: String) ...
+    mutating public func tokenize() -> [Token] ...
+    public mutating func nextToken() -> Token ...
+
+To lex:
+    var lexer = Lexer(... full text of program ...)
+    let tokens = lexer.tokenize()
+
+Tokenize returns a full token stream including EOF. It also records line numbers for diagnostics
+
+---------------------------------------------------------
+PARSER
+
+The parser is based on the Point-Free swift-parsing package. It is expressed as a family of parser combinators, organized roughly one struct per non-terminal in the grammar.
+
+To parse:
+Create and initialize a ProgramParser, which is the top level parser struct. Pass the tokens to its parse method. It there are no errors in the tokens this returns the fully parsed program as a ParsedProgram struct. If there are errors the method throws an error.
+
+    let parsedProgram = try ProgramParser().parse(&input)
+
+where input is a sequence of tokens. No database or other run-time information is needed when parsing. Only tokens.
+
+The software for lexing and parsing is in the Parser subfolder of the DeadEnds library.
+
+---------------------------------------------------------
+RUN
+
+The sofware that runs programs is in the Interpreter folder of the DeadEnds library. To run a program, a Program object is first created and initialized with a ParsedProgram, a Database and an output sink. Then the interpretProgram method on the Program object is called. For example:
+
+    let program = Program(parsedProgram: parsedProgram, database: database, output: output)
+    return try program.interpretProgram()  // Interpret the program.
+
+The Program object holds the state needed to run a program. This includes the ParsedProgram struct, function tables, symbol tables and run time stack, and the database and output sink. Here are the main properties of a Program object.
+
+final public class Program {
+    let parsedProgram: ParsedProgram  // Immutable program.
+    var builtins: [String: Builtin] = [:]  // Builtin library.
+    let procedureTable: [String: Int]  // User defined procs.
+    let functionTable: [String: Int]  // User defined funcs.
+
+    private(set) var globalSymbolTable: SymbolTable = [:]  // Global symbol table.
+    var database: Database  // Database.
+    let output: ProgramOutput  // Output sink.
+    private var callStack: [SymbolTable] = [[:]]  // Run time stack.
+    var recordIndex: RecordIndex ...
+
+The method interpretProgram method is:
+
+    /// Run the program by calling the main proc.
+    @discardableResult
+    public func interpretProgram() throws -> InterpResult {
+        let mainProc = try procDefn("main")
+        if mainProc.params.count != 0 {
+            throw RuntimeError.argumentCount("Main proc cannot have parameters")
+        }
+        let mainCall = ParsedCallStatement(name: "main", args: [])  // Bootstrap.
+        return try interpProcCall(mainCall)
+    }
+
+For a program to run, the procTable must have a user-proc named "main" with no parameters. This method searches for that proc and throws an error if not found. If found this method creates a ParsedCallStatement and "bootstraps" the program by interpreting that call statement.
+
+--------------------------------------------------------
+WHAT DO WE NOW FOR FOR RUNNING PROGRAMS?
+
+There is a runProgram function that wraps up the three parts. It is used to run tests. It requires the source text, a database, and an output sink. This is a pure function, not a member of any type.
+
+/// Run a program from a string that holds the entire program.
+public func runProgram(source: String, database: Database, output: ProgramOutput) throws -> InterpResult {
+    var lexer = Lexer(source: source)
+    let tokens = lexer.tokenize()
+    guard tokens.last?.kind == .eof else { throw FrontEndError.missingEOF }
+    var input = tokens[...]  // Parse the tokens into a parsed program syntax tree.
+    let parsedProgram = try ProgramParser().parse(&input)
+    if let first = input.first, first.kind == .eof { input.removeFirst() }
+    if !input.isEmpty { throw FrontEndError.parseDidNotConsumeAllInput(Array(input)) }
+    let program = Program(parsedProgram: parsedProgram, database: database, output: output)
+    return try program.interpretProgram()  // Interpret the program.
+}
+
+--------------------------------------------------------
+WHAT DO WE DO NEXT
+
+We now have to get these LEX, PARSE, RUN tasks done from the ProgramPage in the SwiftUI application. There is a COMPILE button to try to compile the program in the page's TextEditor pane. Pushing that button does the lex and parse layers. If there are no errors the returned ParsedProgram is kept in the model. If there are errors it must return the accompanying error array to the model so it can be displayed.
+
+There is also a RUN button that runs the ParsedProgram currently in the model That button is not enabled unless there is a good ParsedProgram in the model. That button runs the program, sinking its output to the output pane, and showing any run time errors in the diagnostic pane.
+
+---------------------
+COMPILE BUTTON
+
+When the COMPILE (combining lexing and parsing) button is pressed we need the text in the source pane. That's all we need. The parse button will either succeed or fail. If it succeeds we get a ParsedProgram object to put in the model. If we fail we have to catch the error, convert it into a 'diagnostic' and make it the list of diagnostics in the model. Currently there is no code that does this. So we need code that does lexing and parsing as in the test case, but returns a ParseResult.
+
+RUN BUTTON
+
+When the run button is called, a Program object must be created from the ParsedProgram that is in the model, the database which comes from the AppModel, and using the output sink that is tied to the output panel on the page.
+
+---------------------------------------
+PROGRAMPAGEMODEL
+
+Source text
+Output text
+Parsed Program.
+

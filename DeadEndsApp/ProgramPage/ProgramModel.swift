@@ -3,48 +3,65 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 15 April 2026.
+//  Last changed on 21 April 2026.
 //
 
 import Foundation
 import Observation
 import DeadEndsLib
 
-// MARK: - Source Location
+/// Sink for report output.
+@MainActor
+final class UIProgramOutput: ProgramOutput, ObservableObject {
 
+    @Published var text: String = ""
+
+    func write(_ text: String) {
+        self.text += text
+    }
+}
+
+/// Program page model.
 @MainActor
 @Observable
 final class ProgramModel {
-    var programName: String
-    var sourceText: String
 
-    var compileDiagnostics: [Diagnostic] = []
-    var compiledProgram: CompiledProgram? = nil
+    var programName: String
+    var source: String = ""  // Program source.
+    var output: String = ""  // Program output.
+
+    var diagnostics: [Diagnostic] = []
+    var compiledProgram: ParsedProgram? = nil
     var lastCompileSucceeded: Bool = false
 
-    // Future execution support
-    var outputText: String = ""
-    var runtimeDiagnostics: [Diagnostic] = []
-    // var traceEvents: [TraceEvent] = []
-    // var pendingInteraction: ProgramInteractionRequest? = nil
 
-    init(programName: String = "Untitled", sourceText: String = "") {
-        self.sourceText = sourceText
+    init(programName: String = "Untitled", source: String = "") {
+        self.source = source
         self.programName = programName
     }
 
     func applyCompileResult(_ result: CompileResult) {
         compiledProgram = result.program
-        compileDiagnostics = result.diagnostics
+        diagnostics = result.diagnostics
         lastCompileSucceeded = result.succeeded
     }
 
     func clearCompileResults() {
         compiledProgram = nil
-        compileDiagnostics = []
+        diagnostics = []
         lastCompileSucceeded = false
     }
-}
+
+    /// Model operation to compile a program and set model properties.
+    func compile() {
+
+        diagnostics = []  // Error (later errors) found in last compile try.
+        compiledProgram = nil  // Parsed program object upon success.
+
+        let compileResult = ProgramCompiler.compile(source: source)
+        compiledProgram = compileResult.program
+        diagnostics = compileResult.diagnostics
+    }}
 
 /// Identify a location in source code.
 struct SourceLocation: Hashable, Codable {
@@ -79,7 +96,7 @@ enum DiagnosticSeverity: String, Codable, Hashable {
 }
 
 struct Diagnostic: Identifiable, Hashable, Codable {
-    
+
     let id: UUID
     var kind: DiagnosticKind
     var severity: DiagnosticSeverity

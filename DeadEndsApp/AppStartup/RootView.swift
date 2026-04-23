@@ -99,9 +99,9 @@ struct RootView: View {
                     ProgramPage(
                         model: ProgramModel(
                             programName: "Test Program",
-                            sourceText: ""
+                            source: ""
                         ),
-                        compiler: DeadEndsProgramCompiler()
+                        compiler: ProgramCompiler()
                     )
                 }
             }

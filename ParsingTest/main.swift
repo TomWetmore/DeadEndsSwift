@@ -22,6 +22,7 @@ if let result = try? parser.parse(&input) {
 }
 
 func testLexer() {
+
     guard let text = readFile(at: "/Users/ttw4/Desktop/DeadEndsVScode/Scripts/eol.ll")
     else { fatalError("Could not read test.txt") }
     showTokens(from: text)
@@ -70,7 +71,7 @@ func testInterpreter() throws {
             name(i)  "; " name(i)  "\n" name(i) nl()
         }
         """
-    try runProgram(source: program, database: database)
+    try runProgram(source: program, database: database, output: ConsoleOutput())
 }
 
 

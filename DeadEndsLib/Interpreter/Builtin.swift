@@ -13,6 +13,7 @@ extension Program {
     /// Structure holding a builtin function. Unlike user functions the
     /// arguments are not evaluated.
     struct Builtin {
+        
         let minArgs: Int
         let maxArgs: Int
         let function: ([ParsedExpr]) throws -> ProgramValue
@@ -73,6 +74,11 @@ extension Program {
             "table": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinTable($0) },
             "insert": Builtin(minArgs: 3, maxArgs: 3) { try self.builtinInsert($0) },
             "lookup": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinLookup($0) },
+
+            // Person set operations.
+            "indiset": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndiset($0) },
+            "addtoset" : Builtin(minArgs: 3, maxArgs: 3) { try self.builtinAddtoset($0) },
+            // Lots of iterators are not yet implemented.
         ]
     }
 }
