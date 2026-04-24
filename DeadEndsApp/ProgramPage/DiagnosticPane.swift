@@ -3,103 +3,36 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 15 April 2026.
+//  Last changed on 23 April 2026.
 //
 
 import SwiftUI
 
-/// Pane showing the current list of diagnostics.
 struct DiagnosticsPane: View {
-
     let diagnostics: [Diagnostic]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header
-
-            Divider()
-
-            if diagnostics.isEmpty {
-                emptyState
-            } else {
-                List(diagnostics) { diagnostic in
-                    DiagnosticRow(diagnostic: diagnostic)
-                }
-                .listStyle(.plain)
-            }
-        }
-    }
-
-    private var header: some View {
-        HStack {
-            Text("Diagnostics")
-                .font(.headline)
-
-            Spacer()
-
-            Text("\(diagnostics.count)")
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-    }
-
-    private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("No diagnostics")
-                .font(.body)
-            Text("Compile the program to see syntax and semantic errors here.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding()
-    }
-}
-
-private struct DiagnosticRow: View {
-    let diagnostic: Diagnostic
-
-    var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(severityLabel)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(severityColor)
-
-                Text(kindLabel)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                if let location = diagnostic.location {
-                    Text(location.displayString)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            if diagnostics.isEmpty {
+                Text("No diagnostics")
+                    .italic()
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(Array(diagnostics.enumerated()), id: \.offset) { _, diag in
+                    Text(format(diag))
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-
-            Text(diagnostic.message)
-                .font(.body)
-                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.vertical, 4)
+        .padding(8)
     }
 
-    private var severityLabel: String {
-        diagnostic.severity.rawValue.uppercased()
-    }
-
-    private var kindLabel: String {
-        diagnostic.kind.rawValue.capitalized
-    }
-
-    private var severityColor: Color {
-        switch diagnostic.severity {
-        case .info: return .blue
-        case .warning: return .orange
-        case .error: return .red
+    private func format(_ diag: Diagnostic) -> String {
+        if let line = diag.line {
+            return "Line \(line): \(diag.message)"
+        } else {
+            return diag.message
         }
     }
 }

@@ -56,7 +56,7 @@ extension Program {
         case .expressionStatement(let expr):
             let pvalue: ProgramValue = try evaluate(expr)
             if case let .string(string) = pvalue {
-                print(string, terminator: "")
+                self.output.write(string)
             }
             return .okay
         }

@@ -158,12 +158,12 @@ struct StringConstToken: Parser {
     }
 }
 
-enum DeadEndsParseError: Error, CustomStringConvertible {
+public enum DeadEndsParseError: Error, CustomStringConvertible {
     case generic
 
     init() { self = .generic }
 
-    var description: String { "parse error" }
+    public var description: String { "parse error" }
 }
 
 

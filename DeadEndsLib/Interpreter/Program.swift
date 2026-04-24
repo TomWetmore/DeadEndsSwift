@@ -64,7 +64,7 @@ final public class Program {
     }
 
     /// Create a runnable program from a parsed program.
-    init(parsedProgram: ParsedProgram, database: Database, output: ProgramOutput) {
+    public init(parsedProgram: ParsedProgram, database: Database, output: ProgramOutput) {
 
         self.parsedProgram = parsedProgram
         self.database = database

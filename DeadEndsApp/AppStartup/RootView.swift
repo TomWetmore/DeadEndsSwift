@@ -100,8 +100,8 @@ struct RootView: View {
                         model: ProgramModel(
                             programName: "Test Program",
                             source: ""
-                        ),
-                        compiler: ProgramCompiler()
+                        )/*,
+                        compiler: ProgramCompiler()*/
                     )
                 }
             }

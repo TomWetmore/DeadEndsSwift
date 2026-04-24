@@ -8,75 +8,64 @@
 
 import SwiftUI
 
+//
+//  ProgramPage.swift
+//  DeadEndsApp
+//
+//  Created by Thomas Wetmore on 15 April 2026.
+//  Last changed on 23 April 2026.
+//
+
+import SwiftUI
+
 struct ProgramPage: View {
-    
+
     @EnvironmentObject var appModel: AppModel
     @Bindable var model: ProgramModel
-    //let compiler: ProgramCompiler
 
     var body: some View {
         VStack(spacing: 0) {
 
             TextEditor(text: $model.source)
+                .font(.system(.body, design: .monospaced))
+                .padding(8)
+
+            Divider()
 
             HStack {
                 Button("Compile") {
                     model.compile()
                 }
+                .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
                 Button("Run") {
                     if let db = appModel.database {
                         model.run(database: db)
                     }
                 }
-                .disabled(model.compiledProgram == nil)
+                .disabled(model.parsedProgram == nil || appModel.database == nil)
+
+                Spacer()
             }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
 
             Divider()
+
             ScrollView {
                 Text(model.output.text)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
+                    .padding(8)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
             Divider()
 
-            DiagnosticsPane(diagnostics: model.compileDiagnostics)
-                .frame(minHeight: 160, idealHeight: 220)
-
+            DiagnosticsPane(diagnostics: model.diagnostics)
+                .frame(minHeight: 120, idealHeight: 160)
+                .padding(8)
         }
         .navigationTitle(model.programName)
-    }
-
-    private var toolbar: some View {
-        HStack(spacing: 12) {
-            Text(model.programName)
-                .font(.headline)
-
-            Spacer()
-
-            if model.lastCompileSucceeded {
-                Text("Compiled")
-                    .font(.caption)
-                    .foregroundStyle(.green)
-            }
-            Button("Compile") {
-                compileProgram()
-            }
-            .keyboardShortcut("b", modifiers: [.command])
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-    }
-
-    private var editorPane: some View {
-        TextEditor(text: $model.source)
-            .font(.system(.body, design: .monospaced))
-            .padding(8)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func compileProgram() {
-        let result: CompileResult = ProgramCompiler.compile(source: model.source)
-        model.applyCompileResult(result)
     }
 }
 
@@ -90,12 +79,9 @@ struct ProgramPage: View {
 proc main ()
 {
     set(i, getindi("Enter person"))
-    ERROR
-    WARNING
 }
 """
-            ),
-            compiler: ProgramCompiler()
+            )
         )
     }
     .frame(width: 900, height: 650)

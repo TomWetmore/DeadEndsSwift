@@ -94,11 +94,51 @@ There is also a RUN button that runs the ParsedProgram currently in the model Th
 ---------------------
 COMPILE BUTTON
 
-When the COMPILE (combining lexing and parsing) button is pressed we need the text in the source pane. That's all we need. The parse button will either succeed or fail. If it succeeds we get a ParsedProgram object to put in the model. If we fail we have to catch the error, convert it into a 'diagnostic' and make it the list of diagnostics in the model. Currently there is no code that does this. So we need code that does lexing and parsing as in the test case, but returns a ParseResult.
+When the COMPILE (combines lexing and parsing) button is pressed we need the text in the source pane (disable button if no text). We need to empty the diagnostic pane. The parse button can succeed or fail. If it succeeds we get a ParsedProgram object to put in the model. If we fail we have to catch the error, convert it into a 'diagnostic' array and add it to the diagnostics pane. Currently there is no code that does this. Probably should be done by the button handler either directly or using a function that calls the lexer and parser and returns the result as a CompileReturn, a tuple of ParsedProgram and [Diagnostic]. So we need code that does lexing and parsing as in the test case, but returns a ParseResult. If the compile succeeds, the run button is enabled.
 
+When the COMPILE button is pressed:
+The source text is taken from the editor (button disabled if empty)
+The diagnostics pane is cleared
+The system performs lexing and parsing
+
+Result:
+Success
+    A ParsedProgram is stored in the model
+    Diagnostics remain empty
+    Run button is enabled
+Failure
+    Parsing errors are converted into a [Diagnostic]
+    Diagnostics are stored in the model
+    ParsedProgram is cleared
+    Run button is disabled
+Implementation note:
+The compile logic should return a Result<ParsedProgram, [Diagnostic]>
+
+-----------------------------------------------------------
 RUN BUTTON
 
-When the run button is called, a Program object must be created from the ParsedProgram that is in the model, the database which comes from the AppModel, and using the output sink that is tied to the output panel on the page.
+When the run button is called, a ParsedProgram object exists. Then a Program object is created. The database comes from the application model. The output sink is the output pane on on the program page. Then the "bootstrap" procCall statement is created and called. The return from the call must be handled as either a success case that writes to the output pane, or an error case where a runtime error is thrown. When that happens the output pane should show the program output up to the point of the error. The diagnostic pane should show the runtime error.
+
+When the RUN button is pressed:
+
+Preconditions:
+A valid ParsedProgram exists in the model
+
+Steps:
+1. Clear the output pane
+2. Clear diagnostics
+3. Create a new Program instance using:
+    the ParsedProgram
+    the database from AppModel
+    the output sink bound to the output pane
+4. Call interpretProgram()
+
+Results:
+Success
+    Program output appears in the output pane
+Runtime error
+    Output pane contains output up to the point of failure
+    Diagnostic pane shows the runtime error
 
 ---------------------------------------
 PROGRAMPAGEMODEL

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 21 April 2026.
+//  Last changed on 23 April 2026.
 //
 
 import Foundation
@@ -13,11 +13,15 @@ public struct Lexer {
 
     let source: String
     var index: String.Index
-    var line: Int = 1
+    public var line: Int = 1
 
     public init(source: String) {
         self.source = source
         self.index = source.startIndex
+
+        for c in source {
+            print(c, c.unicodeScalars.first!.value)
+        }
     }
 }
 
@@ -45,7 +49,7 @@ extension Lexer {
         else { return Token(kind: .eof, line: startLine) }
         if c.isLetter { return lexIdentifierOrKeyword() }
         if c.isNumber || c == "-" || c == "." { return lexNumberOrMinus() }
-        if c == "\"" { return lexString() }
+        if c == "\"" || c == "“" { return lexString() }
         advance()
         switch c {
         case "(": return Token(kind: .lParen, line: startLine)
@@ -204,7 +208,7 @@ extension Lexer {
             guard let c = advance() else {
                 return Token(kind: .stringConst(text), line: startLine)  // EOF.
             }
-            if c == "\"" {  // Closing quote.
+            if c == "\""  || c == "”"{  // Closing quote.
                 return Token(kind: .stringConst(text), line: startLine)
             }
             if c == "\\" { // Escape sequence.
@@ -281,7 +285,7 @@ public enum TokenKind: Equatable {
 /// Implement equatable for tokens.
 public struct Token: Equatable {
     public let kind: TokenKind
-    let line: Int
+    public let line: Int
 }
 
 /// Implement custom string convertible for tokens.

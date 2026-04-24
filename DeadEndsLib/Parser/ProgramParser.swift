@@ -3,17 +3,19 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 8 April 2026.
+//  Last changed on 23 April 2026.
 //
 
 import Foundation
 import Parsing
 
-/// Program parser.
-struct ProgramParser: Parser {
-    
+/// Program parser. Currently part of the public API. It might be a good idea
+/// to provide another public access that leaves this not public. Note we also
+/// had to had a public init because of the current design.
+public struct ProgramParser: Parser {
+
     /// Parse a program. A program is a list of definitions.
-    func parse(_ input: inout TokStream) throws -> ParsedProgram {
+    public func parse(_ input: inout TokStream) throws -> ParsedProgram {
         var defns: [ParsedDefn] = []
         
         while let tok = input.first, tok.kind != .eof {
@@ -21,6 +23,8 @@ struct ProgramParser: Parser {
         }
         return ParsedProgram(defns: defns)
     }
+
+    public init(){}  // Currently part of the public API
 }
 
 /// Definition Parser.
