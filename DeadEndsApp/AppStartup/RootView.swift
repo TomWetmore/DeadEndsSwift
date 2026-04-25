@@ -3,12 +3,12 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 17 April 2026.
+//  Last changed on 24 April 2026.
 
-/// RootView is the root view of the DeadEndsApp. If the database does
-/// not exist the Load Gedcom view is shown. If there is a database but
-/// the navigataion path is empty the person selection view is shown.
-/// Otherwise the page for the current navigation is route is shown.
+/// This is the root view of the DeadEndsApp. If the database does not
+/// exist the Load Gedcom view is shown. If there is a database but the
+/// navigataion path is empty the person selection view is shown.
+/// Otherwise the page for the current navigation route is shown.
 
 import SwiftUI
 import DeadEndsLib
@@ -56,7 +56,8 @@ struct RootView: View {
                     PersonSelectionView()
                 }
             }
-            // Build page for route on the navigation stack; runs when model.path.append is called.
+            // Build page for the route on the navigation stack;
+            // runs when model.path.append is called.
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .person(let person):
@@ -100,8 +101,7 @@ struct RootView: View {
                         model: ProgramModel(
                             programName: "Test Program",
                             source: ""
-                        )/*,
-                        compiler: ProgramCompiler()*/
+                        )
                     )
                 }
             }

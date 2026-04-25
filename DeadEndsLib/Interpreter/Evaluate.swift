@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 14 April 2026.
+//  Last changed on 24 April 2026.
 //
 
 import Foundation
@@ -45,7 +45,7 @@ extension Program {
     func evaluateIdentifier(_ ident: String) throws -> ProgramValue {
 
         guard let value = lookupSymbol(ident) else {
-            throw RuntimeError.undefinedSymbol("Undefined variable: \(ident)")
+            throw RuntimeError.undefinedSymbol("Undefined variable: \(ident)", line: 0)
         }
         return value
     }
@@ -65,11 +65,11 @@ extension Program {
     /// Evaluate a builtin function.
     func evaluateBuiltin(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
         guard let builtin = builtins[name] else {  // Get builtin function.
-            throw RuntimeError.undefinedSymbol("Unknown builtin function: \(name)")
+            throw RuntimeError.undefinedSymbol("Unknown builtin function: \(name)", line: 0)
         }
         guard (builtin.minArgs...builtin.maxArgs).contains(args.count) else {
             throw RuntimeError.invalidArguments(
-                "\(name)() expects \(builtin.minArgs)-\(builtin.maxArgs) args, got \(args.count)"
+                "\(name)() expects \(builtin.minArgs)-\(builtin.maxArgs) args, got \(args.count)", line: 0
             )
         }
         return try builtin.function(args)  // Call builtin.
@@ -81,7 +81,7 @@ extension Program {
         let nParams = funcDef.params.count
         let nArgs = args.count
         guard nParams == nArgs else {
-            throw RuntimeError.invalidArguments("Function \(name) expects \(nParams) arguments, got \(nArgs)")
+            throw RuntimeError.invalidArguments("Function \(name) expects \(nParams) arguments, got \(nArgs)", line: 0)
         }
         var frame: SymbolTable = [:]  // Create frame and bind the args to params.
         for (param, arg) in zip(funcDef.params, args) {
@@ -99,9 +99,9 @@ extension Program {
         case .okay:
             return .null // Allow user functions to not return a value.
         case .breaking, .continuing:
-            throw RuntimeError.invalidControlFlow("break/continue statement outside of loop")
+            throw RuntimeError.invalidControlFlow("break/continue statement outside of loop", line: 0)
         case .error: // Probably not needed.
-            throw RuntimeError.executionFailed("Error  during function execution")
+            throw RuntimeError.executionFailed("Error  during function execution", line: 0)
         }
     }
 }

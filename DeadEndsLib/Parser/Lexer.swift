@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 23 April 2026.
+//  Last changed on 24 April 2026.
 //
 
 import Foundation
@@ -18,10 +18,9 @@ public struct Lexer {
     public init(source: String) {
         self.source = source
         self.index = source.startIndex
-
-        for c in source {
-            print(c, c.unicodeScalars.first!.value)
-        }
+//        for c in source {
+//            print(c, c.unicodeScalars.first!.value)
+//        }
     }
 }
 
@@ -58,9 +57,7 @@ extension Lexer {
         case "}": return Token(kind: .rBrace, line: startLine)
         case ",": return Token(kind: .comma, line: startLine)
         case "/": return Token(kind: .slash, line: startLine)
-        default:
-            // For now, return EOF or consider adding an .unknown(Character) token.
-            fatalError("Unexpected character '\(c)' at line \(startLine)")
+        default: return Token(kind: .unknown, line: startLine)
         }
     }
 }
@@ -278,6 +275,7 @@ public enum TokenKind: Equatable {
     case slash
     case minus
     case period
+    case unknown
 
     case eof
 }
@@ -333,20 +331,20 @@ func keywordKind(for word: String) -> TokenKind? {
 extension TokenKind: CustomStringConvertible {
     public var description: String {
         switch self {
-        case .identifier(let s):  return "identifier(\(String(reflecting: s)))"
-        case .intConst(let i):    return "intConst(\(i))"
-        case .floatConst(let d):  return "floatConst(\(d))"
-        case .stringConst(let s): return "stringConst(\(String(reflecting: s)))"
+        case .identifier(let s):  return "\(String(reflecting: s))"
+        case .intConst(let i):    return "\(i))"
+        case .floatConst(let d):  return "\(d))"
+        case .stringConst(let s): return "\(String(reflecting: s))"
 
         case .proc: return "proc"
-        case .funcTok: return "funcTok"
+        case .funcTok: return "func"
         case .children: return "children"
         case .spouses: return "spouses"
-        case .ifTok: return "ifTok"
-        case .elseTok: return "elseTok"
+        case .ifTok: return "if"
+        case .elseTok: return "else"
         case .elsif: return "elsif"
         case .families: return "families"
-        case .whileTok: return "whileTok"
+        case .whileTok: return "while"
         case .call: return "call"
         case .forindiset: return "forindiset"
         case .forindi: return "forindi"
@@ -358,22 +356,23 @@ extension TokenKind: CustomStringConvertible {
         case .forsour: return "forsour"
         case .foreven: return "foreven"
         case .forothr: return "forothr"
-        case .breakTok: return "breakTok"
-        case .continueTok: return "continueTok"
-        case .returnTok: return "returnTok"
+        case .breakTok: return "break"
+        case .continueTok: return "continue"
+        case .returnTok: return "return"
         case .fathers: return "fathers"
         case .mothers: return "mothers"
         case .parents: return "parents"
 
-        case .lParen: return "lParen"
-        case .rParen: return "rParen"
-        case .lBrace: return "lBrace"
-        case .rBrace: return "rBrace"
-        case .comma: return "comma"
-        case .slash: return "slash"
-        case .minus: return "minus"
-        case .period: return "period"
+        case .lParen: return "()"
+        case .rParen: return ")"
+        case .lBrace: return "{"
+        case .rBrace: return "}"
+        case .comma: return ","
+        case .slash: return "/"
+        case .minus: return "-"
+        case .period: return "."
         case .eof: return "eof"
+        case .unknown: return "?"
         }
     }
 }

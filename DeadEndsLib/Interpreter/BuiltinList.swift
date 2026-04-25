@@ -26,7 +26,7 @@ extension Program {
     func builtinList(_ args: [ParsedExpr]) throws -> ProgramValue {
         let ident = try evaluate(args[0])
         guard case let .ident(varb) = ident else {
-            throw RuntimeError.typeMismatch("Expected identifier for list")
+            throw RuntimeError.typeMismatch("Expected identifier for list", line: 0)
         }
         let list = List<ProgramValue>.init()
         assignToSymbol(varb, value: .list(list))
@@ -70,7 +70,7 @@ extension Program {
     /// Evaluate an expression and be sure it it s list.
     func evaluateList(_ node: ParsedExpr, errMessage: String) throws -> List<ProgramValue> {
         guard case let .list(list) = try evaluate(node) else {
-            throw RuntimeError.typeMismatch(errMessage)
+            throw RuntimeError.typeMismatch(errMessage, line: 0)
         }
         return list
     }

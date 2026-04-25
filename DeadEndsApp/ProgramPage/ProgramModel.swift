@@ -41,13 +41,14 @@ final class ProgramModel {
         self.programName = programName
     }
 
-    /// Model operation to compile a program and set model properties.
-
     /// Handle the compile button. This is the model operation that compiles
     /// a DeadEnds program that either succeeds or displays diagnostics.
     func compile() {
+
         diagnostics = []
         parsedProgram = nil
+        output.text = ""
+
         guard !source.isEmpty else { return }
         do {  // In a do so we can get the diagnostics.
             let normalized = normalizedSource(source)
@@ -66,7 +67,7 @@ final class ProgramModel {
             }
         } catch let error as FrontEndError {
             diagnostics = [convertFrontEndError(error)]
-        } catch let error as DeadEndsParseError {
+        } catch let error as ParseError {
                 diagnostics = [Diagnostic(message: error.description, line: nil)]
         } catch {
             diagnostics = [Diagnostic(
@@ -76,10 +77,10 @@ final class ProgramModel {
         }
     }
 
-    /// Handle the run button. This is the model operation that runs a
-    /// successfully compiled program. Must create a Program object and
-    /// then interpret (by calling interpretProgram() with it.
+    /// Handles a run button press by interpreting the parsedProgram struct.
+    /// Creates a Program object and runs it.
     func run(database: Database) {
+
         guard let parsedProgram else { return }
         diagnostics = []
         output.text = ""
@@ -101,15 +102,6 @@ final class ProgramModel {
     }
 }
 
-/*
- catch let error as DeadEndsParseError {
-     diagnostics = [Diagnostic(message: error.description, line: nil)]
- }
- catch {
-     diagnostics = [Diagnostic(message: String(describing: error), line: nil)]
- }
- */
-
 /// Simple diagnostic to start with.
 struct Diagnostic: Identifiable {
     let id = UUID()
@@ -128,11 +120,6 @@ func convertFrontEndError(_ error: FrontEndError) -> Diagnostic {
             message: "Unexpected input after end of program",
             line: tokens.first?.line
         )
-//    case .syntax(let message, let line):
-//        return Diagnostic(
-//            message: message,
-//            line: line
-//        )
     default:
         return Diagnostic(
             message: "\(error)",
@@ -157,24 +144,27 @@ struct SourceLocation: Hashable, Codable {
 }
 
 func formatRuntimeError(_ error: RuntimeError) -> String {
+    
     switch error {
-    case .typeMismatch(let detail): return detail
-    case .invalidArguments(let detail): return detail
-    case .runtimeError(let detail): return detail
-    case .invalidSyntax(let detail): return detail
-    case .undefinedProcedure(let detail): return detail
-    case .undefinedFunction(let detail): return detail
-    case .undefinedSymbol(let detail): return detail
-    case .invalidControlFlow(let detail): return detail
-    case .executionFailed(let detail): return detail
-    case .argumentCount(let detail): return detail
-    case .typeError(let detail): return detail
-    case .missingDatabase(let detail): return detail
-    case .syntax(let detail): return detail
-    case .io(let detail): return detail
+    case .typeMismatch(let detail, let line): return detail
+    case .invalidArguments(let detail, let line): return detail
+    case .runtimeError(let detail, let line): return detail
+    case .invalidSyntax(let detail, let line): return detail
+    case .undefinedProcedure(let detail, let line): return detail
+    case .undefinedFunction(let detail, let line): return detail
+    case .undefinedSymbol(let detail, let line): return detail
+    case .invalidControlFlow(let detail, let line): return detail
+    case .executionFailed(let detail, let line): return detail
+    case .argumentCount(let detail, let line): return detail
+    case .typeError(let detail, let line): return detail
+    case .missingDatabase(let detail, let line): return detail
+    //case .syntax(let detail, let line): return detail
+    //case .io(let detail, let line): return detail
     }
 }
 
+/// Required because TextEditor uses smart quotes that is
+/// hard to turn off.
 func normalizedSource(_ text: String) -> String {
     text
         .replacingOccurrences(of: "“", with: "\"")

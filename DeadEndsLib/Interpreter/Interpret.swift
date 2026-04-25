@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 14 April 2026.
+//  Last changed on 24 April 2026.
 //
 
 import Foundation
@@ -123,7 +123,7 @@ extension Program {
         let nArgs = procCall.args.count
         let nParams = procDef.params.count
         guard nArgs == nParams else { // Check numbers of args and params.
-            throw RuntimeError.invalidArguments("Proc '\(name)' expects \(nParams) arguments, got \(nArgs)")
+            throw RuntimeError.invalidArguments("Proc '\(name)' expects \(nParams) arguments, got \(nArgs)", line: 0)
         }
         var table: SymbolTable = [:] // Prepare the symbol table for the procedure.
         for (param, arg) in zip(procDef.params, procCall.args) {

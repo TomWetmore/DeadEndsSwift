@@ -45,7 +45,7 @@ struct StmtParser: Parser {
     func parse(_ input: inout TokStream) throws -> ParsedStatement {
 
         guard let tok = input.first else {
-            throw DeadEndsParseError()
+            throw ParseError.syntax("expecting statement", line: 0)
         }
         switch tok.kind {
         case .whileTok:

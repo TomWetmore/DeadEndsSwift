@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 23 April 2026.
+//  Last changed on 24 April 2026.
 //
 
 import Foundation
@@ -16,6 +16,7 @@ public struct ProgramParser: Parser {
 
     /// Parse a program. A program is a list of definitions.
     public func parse(_ input: inout TokStream) throws -> ParsedProgram {
+
         var defns: [ParsedDefn] = []
         
         while let tok = input.first, tok.kind != .eof {
@@ -24,7 +25,7 @@ public struct ProgramParser: Parser {
         return ParsedProgram(defns: defns)
     }
 
-    public init(){}  // Currently part of the public API
+    public init() {}  // Currently part of the public API
 }
 
 /// Definition Parser.
@@ -32,8 +33,9 @@ struct DefnParser: Parser {
 
     /// Parse a definition using one of three definition parsers.
     func parse(_ input: inout TokStream) throws -> ParsedDefn {
+
         guard let tok = input.first else {
-            throw DeadEndsParseError()
+            throw ParseError.syntax("expecting a definition", line: 0)
         }
 
         switch tok.kind {
@@ -44,7 +46,7 @@ struct DefnParser: Parser {
         case .identifier("global"):
             return .global(try GlobalDefParser().parse(&input))
         default:
-            throw DeadEndsParseError.generic
+            throw ParseError.syntax("expecting a definiton", line: 0)
         }
     }
 }
@@ -88,7 +90,7 @@ struct GlobalDefParser: Parser {
     func parse(_ input: inout TokStream) throws -> ParsedGlobalDefn {
         let name = try IdentifierToken().parse(&input)
         guard name == "global" else {
-            throw DeadEndsParseError.generic
+            throw ParseError.syntax("expected \"global\"", line: 0)
         }
         try ExactToken(kind: .lParen).parse(&input)
         let globalName = try IdentifierToken().parse(&input)

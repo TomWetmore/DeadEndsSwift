@@ -141,20 +141,20 @@ final public class Program {
 /// Run time errors that can happen when a program is running.
 public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing incorrect use of Error.
 
-    case typeMismatch(_ detail: String)
-    case invalidArguments(_ detail: String)
-    case runtimeError(_ detail: String)
-    case invalidSyntax(_ detail: String)
-    case undefinedProcedure(_ detail: String)
-    case undefinedFunction(_ detail: String)
-    case undefinedSymbol(_ detail: String)
-    case invalidControlFlow(_ detail: String)
-    case executionFailed(_ detail: String)
-    case argumentCount(_ detail: String)
-    case typeError(_ detail: String)
-    case missingDatabase(_ detail: String)
-    case syntax(_ detail: String)
-    case io(_ detail: String)
+    case typeMismatch(_ detail: String, line: Int)
+    case invalidArguments(_ detail: String, line: Int)
+    case runtimeError(_ detail: String, line: Int)
+    case invalidSyntax(_ detail: String, line: Int)
+    case undefinedProcedure(_ detail: String, line: Int)
+    case undefinedFunction(_ detail: String, line: Int)
+    case undefinedSymbol(_ detail: String, line: Int)
+    case invalidControlFlow(_ detail: String, line: Int)
+    case executionFailed(_ detail: String, line: Int)
+    case argumentCount(_ detail: String, line: Int)
+    case typeError(_ detail: String, line: Int)
+    case missingDatabase(_ detail: String, line: Int)
+    //case syntax(_ detail: String, line: Int)
+    //case io(_ detail: String, line: Int)
 }
 
 /// Interpreter for interpretProgram method.
@@ -165,12 +165,12 @@ extension Program {
     @discardableResult
     public func interpretProgram() throws -> InterpResult {
         guard !hasRun else {
-            throw RuntimeError.runtimeError("Program objects may only be run once")
+            throw RuntimeError.runtimeError("Program objects may only be run once", line: 0)
         }
         hasRun = true
         let mainProc = try procDefn("main")
         if mainProc.params.count != 0 {
-            throw RuntimeError.argumentCount("Main proc cannot have parameters")
+            throw RuntimeError.argumentCount("Main proc cannot have parameters", line: 0)
         }
         let mainCall = ParsedCallStatement(name: "main", args: [])  // Bootstrap.
         return try interpProcCall(mainCall)
@@ -183,7 +183,7 @@ extension Program {
     func procDefn(_ name: String) throws -> ParsedProcDefn {
 
         guard let index = procedureTable[name] else {
-            throw RuntimeError.undefinedSymbol("proc '\(name)' is not found")
+            throw RuntimeError.undefinedSymbol("proc '\(name)' is not found", line: 0)
         }
         guard case .procDef(let procDef) = parsedProgram.defns[index] else {
             fatalError("Corrupt proc table for \(name)")
@@ -195,7 +195,7 @@ extension Program {
     func funcDefn(_ name: String) throws -> ParsedFuncDefn {
         
         guard let index = functionTable[name] else {
-            throw RuntimeError.undefinedSymbol("func '\(name)' not found")
+            throw RuntimeError.undefinedSymbol("func '\(name)' not found", line: 0)
         }
         guard case .funcDef(let funcDef) = parsedProgram.defns[index] else {
             fatalError("Corrupt func table for \(name)")

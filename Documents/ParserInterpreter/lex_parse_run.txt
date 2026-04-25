@@ -141,9 +141,43 @@ Runtime error
     Diagnostic pane shows the runtime error
 
 ---------------------------------------
-PROGRAMPAGEMODEL
+PROGRAM PAGE MODEL
 
 Source text
 Output text
 Parsed Program.
+---------------------------------------
+Diagnostics, etc.
+
+Currently (24 April 2026).
+
+There are two kinds of errors thrown.
+
+1. While compiling DeadEndsParseErrors are thrown. The definition is
+   in ExpressionParser.swift. They are too simple:
+
+   public enum DeadEndsParseError: Error, CustomStringConvertible {
+       case generic
+       init() { self = .generic }
+       public var description: String { "parse error" }
+   }
+   This should be extended beyond the single .generic case.
+
+2. When interpreting RuntimeErrors are thrown. The definition in
+   Program.swift. Its definition is:
+
+   public enum RuntimeError: Swift.Error {  // TODO: Remore Swift after fixing bad use of Error.
+       case typeMismatch(_ detail: String)
+       case invalidArguments(_ detail: String)
+       case runtimeError(_ detail: String)
+       case invalidSyntax(_ detail: String)
+       case undefinedProcedure(_ detail: String)
+       case undefinedFunction(_ detail: String)
+       case undefinedSymbol(_ detail: String)
+       case invalidControlFlow(_ detail: String)
+       case executionFailed(_ detail: String)
+       case argumentCount(_ detail: String)
+       case typeError(_ detail: String)
+       case missingDatabase(_ detail: String)
+   }
 
