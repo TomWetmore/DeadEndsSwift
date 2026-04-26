@@ -172,7 +172,7 @@ extension Program {
         if mainProc.params.count != 0 {
             throw RuntimeError.argumentCount("Main proc cannot have parameters", line: 0)
         }
-        let mainCall = ParsedCallStatement(name: "main", args: [])  // Bootstrap.
+        let mainCall = ParsedCallStatement(name: "main", args: [], line: 0)  // Bootstrap.
         return try interpProcCall(mainCall)
     }
 }

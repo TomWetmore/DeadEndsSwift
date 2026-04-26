@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 24 April 2026.
+//  Last changed on 26 April 2026.
 //
 
 import Foundation
@@ -11,9 +11,10 @@ import Foundation
 extension Program {
 
     // builtinName returns the value of the first 1 NAME line in a person's record.
-    func builtinName(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluateIndi(arg[0]) else {
-            throw RuntimeError.typeError("name() expects a person parameter", line: 0)
+    func builtinName(_ args: [ParsedExpr]) throws -> ProgramValue {
+        guard let person = try evaluateIndi(args[0]) else {
+            throw RuntimeError.typeError("name() expects a person parameter",
+                                         line: args[0].line)
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         return .string(name)
@@ -27,7 +28,8 @@ extension Program {
     // builtinSurname returns the surname found on the first NAME line in a person' record.
     func builtinSurname(_ arg: [ParsedExpr]) throws -> ProgramValue {
         guard let person = try evaluateIndi(arg[0]) else {
-            throw RuntimeError.typeError("surname() expects a person parameter", line: 0)
+            throw RuntimeError.typeError("surname() expects a person parameter",
+                                         line: arg[0].line)
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
@@ -38,7 +40,8 @@ extension Program {
     // builtinGivens returns the given names ...
     func builtinGivens(_ arg: [ParsedExpr]) throws -> ProgramValue {
         guard let person = try evaluateIndi(arg[0]) else {
-            throw RuntimeError.typeError("givens() expects a person parameter", line: 0)
+            throw RuntimeError.typeError("givens() expects a person parameter",
+                                         line: arg[0].line)
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
@@ -57,7 +60,8 @@ extension Program {
     // builtinBirth returns the first birth event for a person.
     func builtinBirth(_ arg: [ParsedExpr]) throws -> ProgramValue {
         guard let person = try evaluateIndi(arg[0]) else {
-            throw RuntimeError.typeError("birth() expects a person parameter", line: 0)
+            throw RuntimeError.typeError("birth() expects a person arg",
+                                         line: arg[0].line)
         }
         guard let birth = person.kid(withTag: "BIRT") else { return .null }
         return .gnode(birth)
@@ -223,16 +227,18 @@ extension Program {
 extension Program {
     func builtinDate(_ arg: [ParsedExpr]) throws -> ProgramValue {
         guard let event = try evaluateGedcomNode(arg[0]) else {
-            throw RuntimeError.runtimeError("date() requires an event argument", line: 0)
+            throw RuntimeError.runtimeError("date() requires an event argument",
+                                            line: arg[0].line)
         }
-        return ProgramValue.string(event.kidVal(forTag: "DATE") ?? "")
+        return ProgramValue.string(event.kidVal(forTag: GedcomTag.DEAT) ?? "")
     }
 
     func builtinPlace(_ arg: [ParsedExpr]) throws -> ProgramValue {
         guard let event = try evaluateGedcomNode(arg[0]) else {
-            throw RuntimeError.runtimeError("place() requires an event argument", line: 0)
+            throw RuntimeError.runtimeError("place() requires an event argument",
+                                            line: arg[0].line)
         }
-        return ProgramValue.string(event.kidVal(forTag: "PLAC") ?? "")
+        return ProgramValue.string(event.kidVal(forTag: GedcomTag.PLAC) ?? "")
     }
 }
 
@@ -247,7 +253,8 @@ extension Program {
         //TODO: I DON'T THINK THAT EVALUATE IS GOING TO RETURN A PERSON; I THINK JUST A NODE!!!!!
         // PValue must be a .gnode with a person root as associated value.
         guard case let .person(person) = pvalue, person.tag == GedcomTag.INDI else {
-            throw RuntimeError.typeError("\(line): \(errorMessage)", line: 0)
+            throw RuntimeError.typeError("\(line): \(errorMessage)",
+                                         line: expr.line)
         }
         return person
     }

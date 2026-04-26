@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on8 April 2026.
-//  Last changed on 8 April 2026.
+//  Last changed on 25 April 2026.
 //
 
 import Foundation
@@ -44,24 +44,39 @@ struct StmtParser: Parser {
     /// Parse a statement.
     func parse(_ input: inout TokStream) throws -> ParsedStatement {
 
+        let line = input.first?.line ?? 0
         guard let tok = input.first else {
-            throw ParseError.syntax("expecting statement", line: 0)
+            throw ParseError.syntax("expecting statement", line: line)
         }
         switch tok.kind {
         case .whileTok:
-            return .whileStatement(try WhileStmtParser().parse(&input))
+            return ParsedStatement(
+                kind: .whileStatement(try WhileStmtParser().parse(&input)),
+                line: line)
         case .ifTok:
-            return .ifStatement(try IfStmtParser().parse(&input))
+            return ParsedStatement(
+                kind: .ifStatement(try IfStmtParser().parse(&input)),
+                line: line)
         case .call:
-            return .callStatement(try CallStmtParser().parse(&input))
+            return ParsedStatement(
+                kind: .callStatement(try CallStmtParser().parse(&input)),
+                line: line)
         case .returnTok:
-            return .returnStatement(try ReturnStmtParser().parse(&input))
+            return ParsedStatement(
+                kind: .returnStatement(try ReturnStmtParser().parse(&input)),
+                line: line)
         case .breakTok:
-            return .breakStatement(try BreakStmtParser().parse(&input))
+            return ParsedStatement(
+                kind: .breakStatement(try BreakStmtParser().parse(&input)),
+                line: line)
         case .continueTok:
-            return .continueStatement(try ContinueStmtParser().parse(&input))
+            return ParsedStatement(
+                kind: .continueStatement(try ContinueStmtParser().parse(&input)),
+                line: line)
         default:
-            return .expressionStatement(try ExprParser().parse(&input))
+            return ParsedStatement(
+                kind: .expressionStatement(try ExprParser().parse(&input)),
+                line: line)
         }
     }
 }
@@ -71,12 +86,16 @@ struct WhileStmtParser: Parser {
 
     /// Parse a while statement.
     func parse(_ input: inout TokStream) throws -> ParsedWhileStmt {
+
+        let line = input.first?.line ?? 0
+
         try ExactToken(kind: .whileTok).parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
         let condition = try ConditionParser().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
         let body = try BlockParser().parse(&input)
-        return ParsedWhileStmt(condition: condition, body: body)
+        
+        return ParsedWhileStmt(condition: condition, body: body, line: line)
     }
 }
 
@@ -85,6 +104,9 @@ struct IfStmtParser: Parser {
 
     /// Parse an if statement.
     func parse(_ input: inout TokStream) throws -> ParsedIfStmt {
+
+        let line = input.first?.line ?? 0
+
         try ExactToken(kind: .ifTok).parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
         let condition = try ConditionParser().parse(&input)
@@ -111,24 +133,27 @@ struct IfStmtParser: Parser {
             condition: condition,
             thenBody: thenBody,
             elseIfs: elseIfs,
-            elseBody: elseBody
+            elseBody: elseBody, line: line
         )
     }
 
     /// Parse an else-if clause/
     private func parseElseIf(_ input: inout TokStream) throws -> ParsedElseIf {
 
+        let line = input.first?.line ?? 0
+
         try ExactToken(kind: .elsif).parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
         let condition = try ConditionParser().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
-
         let body = try BlockParser().parse(&input)
-        return ParsedElseIf(condition: condition, body: body)
+
+        return ParsedElseIf(condition: condition, body: body, line: line)
     }
 
     /// Parse an else clause.
     private func parseElse(_ input: inout TokStream) throws -> [ParsedStatement] {
+
         try ExactToken(kind: .elseTok).parse(&input)
         return try BlockParser().parse(&input)
     }
@@ -140,12 +165,14 @@ struct CallStmtParser: Parser {
     /// Parse a call statement.
     func parse(_ input: inout TokStream) throws -> ParsedCallStatement {
 
+        let line = input.first?.line ?? 0
+
         try ExactToken(kind: .call).parse(&input)
         let name = try IdentifierToken().parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
         let args = try ExprListOptionalParser().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
-        return ParsedCallStatement(name: name, args: args)
+        return ParsedCallStatement(name: name, args: args, line: line)
     }
 }
 
@@ -154,6 +181,7 @@ struct ReturnStmtParser: Parser {
 
     /// Parse a return statement.
     func parse(_ input: inout TokStream) throws -> ParsedReturnStmt {
+
         try ExactToken(kind: .returnTok).parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
         let values = try ExprListOptionalParser().parse(&input)
@@ -167,18 +195,22 @@ struct BreakStmtParser: Parser {
 
     /// Parse a break statement.
     func parse(_ input: inout TokStream) throws -> ParsedBreakStmt {
+
         try ExactToken(kind: .breakTok).parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
+
         return ParsedBreakStmt()
     }
 }
 
 struct ContinueStmtParser: Parser {
     func parse(_ input: inout TokStream) throws -> ParsedContinueStmt {
+
         try ExactToken(kind: .continueTok).parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
+        
         return ParsedContinueStmt()
     }
 }

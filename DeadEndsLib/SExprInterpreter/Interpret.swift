@@ -120,16 +120,16 @@ extension Program {
     // interpretProcedure interprets a .procedureCall ProgramNode.
     func interpretProcedure(_ pnode: ProgramNode) throws -> InterpResult {
         guard case let .procedureCall(name, args) = pnode.kind else { // pnode must be a .procedureCall.
-            throw RuntimeError.invalidSyntax("Expected a procedure call")
+            throw RuntimeError.invalidSyntax("expected a proc call")
         }
         guard let procDef = procedureTable[name] else { // Procedure called must exit.
-            throw RuntimeError.undefinedSymbol("Procedure '\(name)' not found")
+            throw RuntimeError.undefinedSymbol("proc '\(name)' not found")
         }
         guard case let .procedureDef(_, params, body) = procDef.kind else { // Overkill?
-            throw RuntimeError.invalidSyntax("Expected a procedure definition for '\(name)'")
+            throw RuntimeError.invalidSyntax("expected proc definition for '\(name)'")
         }
         guard args.count == params.count else { // Numbers of args and params must be the same.
-            throw RuntimeError.invalidArguments("Procedure '\(name)' expects \(params.count) arguments, got \(args.count)")
+            throw RuntimeError.invalidArguments("proc '\(name)' has \(params.count) args, got \(args.count)")
         }
         var table: SymbolTable = [:] // Create symbol table for the procedure.
         for (param, arg) in zip(params, args) { // Bind the evaluated args to the params in the symbol table.

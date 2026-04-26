@@ -3,11 +3,11 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed 14 April 2026.
+//  Last changed 26 April 2026.
 //
 //  This file has the builtin functions for add, sub, mul, div, mod, neg,
 //  eq, ne, lt, le, gt, ge, and, or, not, incr, decr.
-//  TODO: SHOULD THERE BE AN EXP OPERATION.
+//
 
 import Foundation
 
@@ -20,7 +20,7 @@ extension Program {
         let arg2 = try self.evaluate(args[1])
         let result = ProgramValue.addPValues(arg1, arg2)
         if result == .null {
-            throw RuntimeError.typeMismatch("add requires two integers, two floats, or two strings", line: 0)
+            throw RuntimeError.typeMismatch("add requires two integers, two floats, or two strings", line: args[0].line)
         }
         return result
     }
@@ -31,7 +31,8 @@ extension Program {
         let arg2 = try self.evaluate(args[1])
         let result = ProgramValue.subPValues(arg1, arg2)
         guard result != .null else {
-            throw RuntimeError.typeMismatch("sub requires two integers or two floats", line: 0)
+            throw RuntimeError.typeMismatch("sub requires two integers or two floats",
+                                            line: args[0].line)
         }
         return result
     }
@@ -42,7 +43,8 @@ extension Program {
         let arg2 = try self.evaluate(args[1])
         let result = ProgramValue.mulPValues(arg1, arg2)
         guard result != .null else {
-            throw RuntimeError.typeMismatch("mul requires two integers or two floats", line: 0)
+            throw RuntimeError.typeMismatch("mul requires two integers or two floats",
+                                            line: args[0].line)
         }
         return result
     }
@@ -51,12 +53,14 @@ extension Program {
     func builtinDiv(_ args: [ParsedExpr]) throws -> ProgramValue {
         let arg2 = try self.evaluate(args[1])
         if arg2 == .integer(0) || arg2 == .double(0.0) { // Check for zero divisor.
-            throw RuntimeError.runtimeError("division by zero is not allowed", line: 0)
+            throw RuntimeError.runtimeError("division by zero is not allowed",
+                                            line: args[1].line)
         }
         let arg1 = try self.evaluate(args[0])
         let result = ProgramValue.divPValues(arg1, arg2)
         guard result != .null else {
-            throw RuntimeError.typeMismatch("div requires two integers or two floats", line: 0)
+            throw RuntimeError.typeMismatch("div requires two integers or two floats",
+                                            line: args[0].line)
         }
         return result
     }
@@ -66,10 +70,12 @@ extension Program {
         let arg1 = try self.evaluate(args[0])
         let arg2 = try self.evaluate(args[1])
         guard case let .integer(left) = arg1, case let .integer(right) = arg2 else { // Only integers.
-            throw RuntimeError.typeMismatch("mod requires two integer arguments", line: 0)
+            throw RuntimeError.typeMismatch("mod requires two integer arguments",
+                                            line: args[0].line)
         }
         if right == 0 { // Check for zero.
-            throw RuntimeError.runtimeError("modulo by zero is not allowed", line: 0)
+            throw RuntimeError.runtimeError("modulo by zero is not allowed",
+                                            line: args[0].line)
         }
         return .integer(left % right)
     }
@@ -79,11 +85,13 @@ extension Program {
         // Evaluate the argument and check that it's numeric.
         let arg = try self.evaluate(args[0])
         if !ProgramValue.isNumeric(arg) {
-            throw RuntimeError.typeMismatch("neg requires a numeric argument", line: 0)
+            throw RuntimeError.typeMismatch("neg requires a numeric argument",
+                                            line: args[0].line)
         }
         let result = ProgramValue.negPValue(arg)
         if result == .null {
-            throw RuntimeError.typeMismatch("neg requires a numeric argument", line: 0)
+            throw RuntimeError.typeMismatch("neg requires a numeric argument",
+                                            line: args[0].line)
         }
         return result
     }
@@ -141,15 +149,18 @@ extension Program {
     /// Increment function.
     func builtinIncr(_ args: [ParsedExpr]) throws -> ProgramValue {
         // Argument must be an identifier.
-        guard case let .identifier(name) = args[0] else {
-            throw RuntimeError.typeError("incr() expects a variable name", line: 0)
+        guard case let .identifier(name) = args[0].kind else {
+            throw RuntimeError.typeError("incr() expects a variable name",
+                                         line: args[0].line)
         }
         // The identifer must be in a symbol table and have an integer value.
         guard let current = lookupSymbol(name) else {
-            throw RuntimeError.undefinedSymbol("incr(): variable '\(name)' is not defined", line: 0)
+            throw RuntimeError.undefinedSymbol("incr(): variable '\(name)' is not defined",
+                                               line: args[0].line)
         }
         guard case let .integer(i) = current else {
-            throw RuntimeError.typeMismatch("incr() requires an integer variable", line: 0)
+            throw RuntimeError.typeMismatch("incr() requires an integer variable",
+                                            line: args[0].line)
         }
         // Store back the incremented value.
         let newVal = ProgramValue.integer(i + 1)
@@ -160,15 +171,18 @@ extension Program {
     // Decrement function.
     func builtinDecr(_ args: [ParsedExpr]) throws -> ProgramValue {
         // Argument must be an identifier.
-        guard case let .identifier(name) = args[0] else {
-            throw RuntimeError.typeError("decr() expects a variable name", line: 0)
+        guard case let .identifier(name) = args[0].kind else {
+            throw RuntimeError.typeError("decr() expects a variable name",
+                                         line: args[0].line)
         }
         // The identifer must be in a symbol table and have an integer value.
         guard let current = lookupSymbol(name) else {
-            throw RuntimeError.undefinedSymbol("decr(): variable '\(name)' is not defined", line: 0)
+            throw RuntimeError.undefinedSymbol("decr(): variable '\(name)' is not defined",
+                                               line: args[0].line)
         }
         guard case let .integer(i) = current else {
-            throw RuntimeError.typeMismatch("decr() requires an integer variable", line: 0)
+            throw RuntimeError.typeMismatch("decr() requires an integer variable",
+                                            line: args[0].line)
         }
         // Store back the decremented value.
         let newVal = ProgramValue.integer(i - 1)

@@ -3,8 +3,18 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2026.
-//  Last changed on 22 April 2026.
+//  Last changed on 25 April 2026.
 //
+/// runProgram runs a DeadEnds program and sends the output to a
+/// ProgramOutput object. The program is passed in as a string.
+/// The function compiles the program (lexes and parses) the string,
+/// and then runs the resulting parsed program. If there are issues
+/// the function throws an error of various types.
+///
+/// This function is designed more for command line use than
+/// application use. There is another version of the programming code
+/// found in the programming page model.
+///
 
 import Foundation
 import Parsing

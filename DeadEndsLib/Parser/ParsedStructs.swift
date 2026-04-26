@@ -48,9 +48,10 @@ struct ParsedProcDefn: Equatable, CustomStringConvertible {
     let name: String
     let params: [String]
     let body: [ParsedStatement]
+    let line: Int
 
     var description: String {
-        "PROC \(name)(\(params.joined(separator: ", "))) \(body)"
+        "proc \(name)(\(params.joined(separator: ", "))) \(body)"
     }
 }
 
@@ -61,6 +62,7 @@ struct ParsedFuncDefn: Equatable, CustomStringConvertible {
     let name: String
     let params: [String]
     let body: [ParsedStatement]
+    let line: Int
 
     var description: String {
         "FUNC \(name)(\(params.joined(separator: ", "))) \(body)"
@@ -72,6 +74,7 @@ struct ParsedFuncDefn: Equatable, CustomStringConvertible {
 struct ParsedGlobalDefn: Equatable, CustomStringConvertible {
 
     let name: String
+    let line: Int
 
     var description: String {
         "GLOBAL(\(name))"
@@ -79,18 +82,24 @@ struct ParsedGlobalDefn: Equatable, CustomStringConvertible {
 }
 
 /// Parsed statement types.
-enum ParsedStatement: Equatable, CustomStringConvertible {
-    
-    case callStatement(ParsedCallStatement)
-    case whileStatement(ParsedWhileStmt)
-    case ifStatement(ParsedIfStmt)
-    case returnStatement(ParsedReturnStmt)
-    case breakStatement(ParsedBreakStmt)
-    case continueStatement(ParsedContinueStmt)
-    case expressionStatement(ParsedExpr)
+struct ParsedStatement: Equatable, CustomStringConvertible {
+
+    var kind: Kind
+    var line: Int
+
+    enum Kind: Equatable {
+
+        case callStatement(ParsedCallStatement)
+        case whileStatement(ParsedWhileStmt)
+        case ifStatement(ParsedIfStmt)
+        case returnStatement(ParsedReturnStmt)
+        case breakStatement(ParsedBreakStmt)
+        case continueStatement(ParsedContinueStmt)
+        case expressionStatement(ParsedExpr)
+    }
 
     var description: String {
-        switch self {
+        switch kind {
         case .callStatement(let s): return s.description
         case .whileStatement(let s): return s.description
         case .ifStatement(let s): return s.description
@@ -107,9 +116,13 @@ struct ParsedCallStatement: Equatable, CustomStringConvertible {
 
     let name: String
     let args: [ParsedExpr]
+    let line: Int
 
     var description: String {
-        "CALL \(name)(\(args.map(\.description).joined(separator: ", ")))"
+        let argDescriptions = args.map { expr in
+            expr.description
+        }
+        return "call \(name)(\(argDescriptions.joined(separator: ", ")))"
     }
 }
 
@@ -118,9 +131,10 @@ struct ParsedWhileStmt: Equatable, CustomStringConvertible {
 
     let condition: ParsedCondition
     let body: [ParsedStatement]
+    let line: Int
 
     var description: String {
-        "WHILE(\(condition)) { \(body) }"
+        "while(\(condition)) { \(body) }"
     }
 }
 
@@ -131,9 +145,10 @@ struct ParsedIfStmt: Equatable, CustomStringConvertible {
     let thenBody: [ParsedStatement]
     let elseIfs: [ParsedElseIf]
     let elseBody: [ParsedStatement]?
+    let line: Int
 
     var description: String {
-        "IF(\(condition)) THEN \(thenBody) ELSIFS \(elseIfs) ELSE \(String(describing: elseBody))"
+        "if(\(condition)) then \(thenBody) elsifs \(elseIfs) else \(String(describing: elseBody))"
     }
 }
 
@@ -142,9 +157,10 @@ struct ParsedElseIf: Equatable, CustomStringConvertible {
     
     let condition: ParsedCondition
     let body: [ParsedStatement]
+    let line: Int
 
     var description: String {
-        "ELSIF(\(condition)) \(body)"
+        "elsif(\(condition)) \(body)"
     }
 }
 
@@ -153,17 +169,20 @@ struct ParsedReturnStmt: Equatable, CustomStringConvertible {
     let values: [ParsedExpr]
 
     var description: String {
-        "RETURN(\(values))"
+
+        "return(\(values))"
     }
 }
 
 /// Parsed break statement.
 struct ParsedBreakStmt: Equatable, CustomStringConvertible {
+
     var description: String { "BREAK()" }
 }
 
 /// Parse continue statement.
 struct ParsedContinueStmt: Equatable, CustomStringConvertible {
+    
     var description: String { "CONTINUE()" }
 }
 
@@ -184,22 +203,29 @@ enum ParsedCondition: Equatable, CustomStringConvertible {
 }
 
 /// Parsed expressions.
-enum ParsedExpr: Equatable, CustomStringConvertible {
-    
-    case identifier(String)
-    case integerConstant(Int)
-    case doubleConstant(Double)
-    case stringConstant(String)
-    case functionCall(String, [ParsedExpr])
+struct ParsedExpr: Equatable, CustomStringConvertible {
+    let kind: Kind
+    let line: Int
 
+    enum Kind: Equatable {
+        case identifier(String)
+        case integerConstant(Int)
+        case doubleConstant(Double)
+        case stringConstant(String)
+        case functionCall(String, [ParsedExpr])
+    }
     var description: String {
-        
-        switch self {
-        case .identifier(let s):         return "id(\(s))"
-        case .integerConstant(let i):           return "int(\(i))"
-        case .doubleConstant(let f):         return "float(\(f))"
-        case .stringConstant(let s):        return "str(\(String(reflecting: s)))"
+        switch kind {
+        case .identifier(let s): return "id(\(s))"
+        case .integerConstant(let i): return "int(\(i))"
+        case .doubleConstant(let f): return "float(\(f))"
+        case .stringConstant(let s): return "str(\(String(reflecting: s)))"
         case .functionCall(let name, let a): return "funccall(\(name), \(a))"
         }
     }
 }
+
+//struct SourceLocation: Equatable {
+//    var line = 0
+//    var column = 0
+//}

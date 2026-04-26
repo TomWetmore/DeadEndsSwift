@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 6 April 2026.
-//  Last changed on 14 April 2026.
+//  Last changed on 25 April 2026.
 //
 
 import Foundation
@@ -19,7 +19,6 @@ struct ConditionParser: Parser {
         if let cond = try? parseAssignedCondition(&input) {
             return cond
         }
-
         input = saved
         let expr = try ExprParser().parse(&input)
         return .expr(expr)
@@ -69,35 +68,40 @@ struct ExprParser: Parser {
 
     /// Parse an expression.
     func parse(_ input: inout TokStream) throws -> ParsedExpr {
-        // Try function call first because it begins with an identifier.
+
+        let line = input.first?.line ?? 0
         let saved = input
+        // Try function call first because it begins with an identifier.
         if let expr = try? parseFunctionCall(&input) {
             return expr
         }
         input = saved
 
         if let name = try? IdentifierToken().parse(&input) {
-            return .identifier(name)
+            return ParsedExpr(kind: .identifier(name), line: line)
         }
         if let i = try? IntConstToken().parse(&input) {
-            return .integerConstant(i)
+            return ParsedExpr(kind: .integerConstant(i), line: line)
         }
         if let f = try? FloatConstToken().parse(&input) {
-            return .doubleConstant(f)
+            return ParsedExpr(kind: .doubleConstant(f), line: line)
         }
         if let s = try? StringConstToken().parse(&input) {
-            return .stringConstant(s)
+            return ParsedExpr(kind: .stringConstant(s), line: line)
         }
-        throw ParseError.syntax("expected expression start", line: 0)
+        throw ParseError.syntax("expected expression start", line: line)
     }
 
     /// Function call parser.
     private func parseFunctionCall(_ input: inout TokStream) throws -> ParsedExpr {
+
+        let line = input.first?.line ?? 0
         let name = try IdentifierToken().parse(&input)
+
         try ExactToken(kind: .lParen).parse(&input)
         let args = try ExprListOptionalParser().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
-        return .functionCall(name, args)
+        return ParsedExpr(kind: .functionCall(name, args), line: line)
     }
 }
 
@@ -105,14 +109,18 @@ public typealias TokStream = ArraySlice<Token>
 
 /// Exact token parser.
 struct ExactToken: Parser {
+
     let kind: TokenKind
 
     func parse(_ input: inout TokStream) throws {
+        
+        let line = input.first?.line ?? 0
+
         guard let tok = input.first else {
-            throw ParseError.syntax("expected \(kind)", line: 0)
+            throw ParseError.syntax("expected \(kind)", line: line)
         }
         guard tok.kind == kind else {
-            throw ParseError.syntax("expected \(kind)", line: 0)
+            throw ParseError.syntax("expected \(kind)", line: line)
         }
         input.removeFirst()
     }
@@ -120,12 +128,16 @@ struct ExactToken: Parser {
 
 /// Identifier parser.
 struct IdentifierToken: Parser {
+
     func parse(_ input: inout TokStream) throws -> String {
+
+        let line = input.first?.line ?? 0
+        
         guard let tok = input.first else {
-            throw ParseError.syntax("expected identifier", line: 0)
+            throw ParseError.syntax("expected identifier", line: line)
         }
         guard case .identifier(let name) = tok.kind else {
-            throw ParseError.syntax("expected identifier", line: 0)
+            throw ParseError.syntax("expected identifier", line: line)
         }
         input.removeFirst()
         return name
@@ -136,11 +148,14 @@ struct IdentifierToken: Parser {
 struct IntConstToken: Parser {
 
     func parse(_ input: inout TokStream) throws -> Int {
+
+        let line = input.first?.line ?? 0
+
         guard let tok = input.first else {
-            throw ParseError.syntax("expected integer", line: 0)
+            throw ParseError.syntax("expected integer", line: line)
         }
         guard case .intConst(let value) = tok.kind else {
-            throw ParseError.syntax("expected integer", line: 0) }
+            throw ParseError.syntax("expected integer", line: line) }
         input.removeFirst()
         return value
     }
@@ -148,12 +163,16 @@ struct IntConstToken: Parser {
 
 /// Floating point parser.
 struct FloatConstToken: Parser {
+
     func parse(_ input: inout TokStream) throws -> Double {
+
+        let line = input.first?.line ?? 0
+
         guard let tok = input.first else {
-            throw ParseError.syntax("expected float", line: 0)
+            throw ParseError.syntax("expected float", line: line)
         }
         guard case .floatConst(let value) = tok.kind else {
-            throw ParseError.syntax("expected float", line: 0) }
+            throw ParseError.syntax("expected float", line: line) }
         input.removeFirst()
         return value
     }
@@ -161,12 +180,15 @@ struct FloatConstToken: Parser {
 
 /// String constant parser.
 struct StringConstToken: Parser {
+
     func parse(_ input: inout TokStream) throws -> String {
+
+        let line = input.first?.line ?? 0
         guard let tok = input.first else {
-            throw ParseError.syntax("expected string", line: 0)
+            throw ParseError.syntax("expected string", line: line)
         }
         guard case .stringConst(let value) = tok.kind else {
-            throw ParseError.syntax("expected string", line: 0)
+            throw ParseError.syntax("expected string", line: line)
         }
         input.removeFirst()
         return value

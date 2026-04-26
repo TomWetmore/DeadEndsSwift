@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 14 April 2026.
+//  Last changed on 26 April 2026.
 //
 
 import Foundation
@@ -89,7 +89,8 @@ extension Program {
     func builtinD(_ args: [ParsedExpr]) throws -> ProgramValue {
         let value = try self.evaluate(args[0])
         guard case let .integer(integer) = value else {
-            throw RuntimeError.typeMismatch("d() requires an integer argument", line: 0)
+            throw RuntimeError.typeMismatch("d() requires an integer argument",
+                                            line: args[0].line)
         }
         return .string(String(integer))
     }
@@ -101,8 +102,8 @@ extension Program {
     
     /// Assignment 'statement' of the scripting language; side effect only.
     func builtinSet(_ args: [ParsedExpr]) throws -> ProgramValue {
-        guard case let .identifier(name) = args[0] else {
-            throw RuntimeError.typeError("set() expects a variable as its first argument", line: 0)
+        guard case let .identifier(name) = args[0].kind else {
+            throw RuntimeError.typeError("set() expects a variable as its first argument", line: args[0].line)
         }
         let value = try evaluate(args[1])
         assignToSymbol(name, value: value)

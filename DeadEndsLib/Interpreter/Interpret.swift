@@ -40,7 +40,7 @@ extension Program {
     /// Interpret an enumerated statement.
     func interpStatement(_ stmt: ParsedStatement) throws -> InterpResult {
         
-        switch stmt {
+        switch stmt.kind {
         case .callStatement(let call):
             return try interpProcCall(call)
         case .whileStatement(let whileStmt):

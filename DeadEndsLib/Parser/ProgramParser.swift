@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 24 April 2026.
+//  Last changed on 25 April 2026.
 //
 
 import Foundation
@@ -34,10 +34,11 @@ struct DefnParser: Parser {
     /// Parse a definition using one of three definition parsers.
     func parse(_ input: inout TokStream) throws -> ParsedDefn {
 
-        guard let tok = input.first else {
-            throw ParseError.syntax("expecting a definition", line: 0)
-        }
+        let line = input.first?.line ?? 0
 
+        guard let tok = input.first else {
+            throw ParseError.syntax("expecting a definition", line: line)
+        }
         switch tok.kind {
         case .proc:
             return .procDef(try ProcDefParser().parse(&input))
@@ -46,7 +47,7 @@ struct DefnParser: Parser {
         case .identifier("global"):
             return .global(try GlobalDefParser().parse(&input))
         default:
-            throw ParseError.syntax("expecting a definiton", line: 0)
+            throw ParseError.syntax("expecting a definiton", line: line)
         }
     }
 }
@@ -56,6 +57,9 @@ struct ProcDefParser: Parser {
 
     /// Parse a procedure definition.
     func parse(_ input: inout TokStream) throws -> ParsedProcDefn {
+
+        let line = input.first?.line ?? 0
+        
         try ExactToken(kind: .proc).parse(&input)
         let name = try IdentifierToken().parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
@@ -63,7 +67,7 @@ struct ProcDefParser: Parser {
         try ExactToken(kind: .rParen).parse(&input)
         let body = try BlockParser().parse(&input)
 
-        return ParsedProcDefn(name: name, params: params, body: body)
+        return ParsedProcDefn(name: name, params: params, body: body, line: line)
     }
 }
 
@@ -72,6 +76,9 @@ struct FuncDefParser: Parser {
 
     /// Parse a function definition.
     func parse(_ input: inout TokStream) throws -> ParsedFuncDefn {
+
+        let line = input.first?.line ?? 0
+
         try ExactToken(kind: .funcTok).parse(&input)
         let name = try IdentifierToken().parse(&input)
         try ExactToken(kind: .lParen).parse(&input)
@@ -79,7 +86,7 @@ struct FuncDefParser: Parser {
         try ExactToken(kind: .rParen).parse(&input)
         let body = try BlockParser().parse(&input)
 
-        return ParsedFuncDefn(name: name, params: params, body: body)
+        return ParsedFuncDefn(name: name, params: params, body: body, line: line)
     }
 }
 
@@ -88,19 +95,25 @@ struct GlobalDefParser: Parser {
 
     /// Parse a global definition.
     func parse(_ input: inout TokStream) throws -> ParsedGlobalDefn {
+
+        let line = input.first?.line ?? 0
         let name = try IdentifierToken().parse(&input)
+
         guard name == "global" else {
-            throw ParseError.syntax("expected \"global\"", line: 0)
+            throw ParseError.syntax("expected \"global\"", line: line)
         }
         try ExactToken(kind: .lParen).parse(&input)
         let globalName = try IdentifierToken().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
-        return ParsedGlobalDefn(name: globalName)
+        
+        return ParsedGlobalDefn(name: globalName, line: line)
     }
 }
 
 struct IdentifierListParser: Parser {
+
     func parse(_ input: inout TokStream) throws -> [String] {
+        
         var result: [String] = []
         result.append(try IdentifierToken().parse(&input))
 
@@ -113,14 +126,16 @@ struct IdentifierListParser: Parser {
                 break
             }
         }
-
         return result
     }
 }
 
 struct IdentifierListOptionalParser: Parser {
+
     func parse(_ input: inout TokStream) throws -> [String] {
+
         let saved = input
+        
         if let ids = try? IdentifierListParser().parse(&input) {
             return ids
         }

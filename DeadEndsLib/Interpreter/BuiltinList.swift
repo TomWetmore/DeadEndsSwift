@@ -15,7 +15,7 @@ import Foundation
 //  This file has the builtin functions for the list data type
 //
 //  Created by Thomas Wetmore on 28 April 2025.
-//  Last changed 28 April 2025.
+//  Last changed 26 April 2025.
 //
 
 import Foundation
@@ -24,9 +24,12 @@ extension Program {
 
     /// Declare an identifier to have a .list type.
     func builtinList(_ args: [ParsedExpr]) throws -> ProgramValue {
+
         let ident = try evaluate(args[0])
+
         guard case let .ident(varb) = ident else {
-            throw RuntimeError.typeMismatch("Expected identifier for list", line: 0)
+            throw RuntimeError.typeMismatch("Expected identifier for list",
+                                            line: args[0].line)
         }
         let list = List<ProgramValue>.init()
         assignToSymbol(varb, value: .list(list))
@@ -36,13 +39,13 @@ extension Program {
 
     /// Return whether a list is empty.
     func builtinEmpty(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let list = try evaluateList(args[0], errMessage: "empty() expects a list argument")
+        let list = try evaluateList(args[0], errMessage: "empty: arg must be a list")
         return list.count == 0 ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
     /// Return the length of a list.
     func builtinLength(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let list = try evaluateList(args[0], errMessage: "length() expects a list argument")
+        let list = try evaluateList(args[0], errMessage: "length: arg must be a list")
         return .integer(list.count)
     }
 
@@ -67,10 +70,10 @@ extension Program {
         return first
     }
 
-    /// Evaluate an expression and be sure it it s list.
+    /// Evaluate an expression and be sure it is a list.
     func evaluateList(_ node: ParsedExpr, errMessage: String) throws -> List<ProgramValue> {
         guard case let .list(list) = try evaluate(node) else {
-            throw RuntimeError.typeMismatch(errMessage, line: 0)
+            throw RuntimeError.typeMismatch(errMessage, line: node.line)
         }
         return list
     }
