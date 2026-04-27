@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 25 April 2026.
+//  Last changed on 26 April 2026.
 //
 
 import Foundation
@@ -15,9 +15,9 @@ extension Program {
 
         switch expr.kind {
         case .identifier(let string): // Identifier.
-            return try evaluateIdentifier(string)
+            return try evaluateIdentifier(string, line: expr.line)
         case .functionCall(let name, let args): // Builtin or user function.
-            return try evaluateFunction(name, args: args)
+            return try evaluateFunction(name, args: args, line: expr.line)
         case .integerConstant(let integer): // Integer.
             return ProgramValue.integer(integer)
         case .stringConstant(let string): // String.
@@ -42,11 +42,11 @@ extension Program {
     }
 
     /// Evaluate an identifer by looking it up in a symbol table.
-    func evaluateIdentifier(_ ident: String) throws -> ProgramValue {
+    func evaluateIdentifier(_ ident: String, line: Int) throws -> ProgramValue {
 
         guard let value = lookupSymbol(ident) else {
             // TODO: Set a line number for the identifier.
-            throw RuntimeError.undefinedSymbol("Undefined variable: \(ident)", line: 0)
+            throw RuntimeError.undefinedSymbol("undefined variable: \(ident)", line: line)
         }
         return value
     }
@@ -55,43 +55,50 @@ extension Program {
 extension Program {
 
     /// Evaluate a builtin or user function.
-    func evaluateFunction(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
+    func evaluateFunction(_ name: String, args: [ParsedExpr], line: Int) throws -> ProgramValue {
         if let _ = builtins[name] {
-            return try evaluateBuiltin(name, args: args)
+            return try evaluateBuiltin(name, args: args, line: line)
         } else {
-            return try evaluateUserFunction(name, args: args)
+            return try evaluateUserFunction(name, args: args, line: line)
         }
     }
 
     /// Evaluate a builtin function.
-    func evaluateBuiltin(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
+    private func evaluateBuiltin(_ name: String, args: [ParsedExpr], line: Int) throws -> ProgramValue {
         guard let builtin = builtins[name] else {  // Get builtin function.
             throw RuntimeError.undefinedSymbol("Unknown builtin function: \(name)",
-                                               line: args[0].line)
+                                               line: line)
         }
         guard (builtin.minArgs...builtin.maxArgs).contains(args.count) else {
             throw RuntimeError.invalidArguments(
-                "\(name)() expects \(builtin.minArgs)-\(builtin.maxArgs) args, got \(args.count)",
-                line: args[0].line)
+                "\(name)() expects \(expectedArgs(builtin)) args, got \(args.count)",
+                line: line)
         }
         return try builtin.function(args)  // Call builtin.
+
+        func expectedArgs(_ builtin: Builtin) -> String {
+            if builtin.minArgs == builtin.maxArgs {
+                return "\(builtin.minArgs)"
+            } else {
+                return "\(builtin.minArgs)-\(builtin.maxArgs)"
+            }
+        }
     }
 
     // Evaluate a user function.
-    func evaluateUserFunction(_ name: String, args: [ParsedExpr]) throws -> ProgramValue {
-        let funcDef: ParsedFuncDefn = try funcDefn(name)
+    func evaluateUserFunction(_ name: String, args: [ParsedExpr], line: Int) throws -> ProgramValue {
+        let funcDef: ParsedFuncDefn = try funcDefn(name, line: line)
         let nParams = funcDef.params.count
         let nArgs = args.count
         guard nParams == nArgs else {
-            throw RuntimeError.invalidArguments("Function \(name) expects \(nParams) args, got \(nArgs)",
-                                                line: args[0].line)
+            throw RuntimeError.invalidArguments("func \(name): expects \(nParams) args, got \(nArgs)",
+                                                line: line)
         }
         var frame: SymbolTable = [:]  // Create frame and bind the args to params.
         for (param, arg) in zip(funcDef.params, args) {
             let value = try evaluate(arg)
             frame[param] = value
         }
-
         pushCallFrame(frame)  // Push frame on stack; defer the pop.
         defer { popCallFrame() }
 
@@ -102,9 +109,9 @@ extension Program {
         case .okay:
             return .null // Allow user functions to not return a value.
         case .breaking, .continuing:
-            throw RuntimeError.invalidControlFlow("break/continue statement outside of loop", line: 0)
+            throw RuntimeError.invalidControlFlow("break/continu statement outside of loop", line: line) // TODO: This line should be the line of the break/continue!!!
         case .error: // Probably not needed.
-            throw RuntimeError.executionFailed("Error during function execution", line: 0)
+            throw RuntimeError.executionFailed("Error during function execution", line: line)
         }
     }
 }

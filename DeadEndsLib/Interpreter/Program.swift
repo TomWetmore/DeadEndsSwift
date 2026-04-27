@@ -31,13 +31,13 @@ public final class ConsoleOutput: ProgramOutput {
     public init() {}  // Needed to make it public.
 }
 
-/// DeadEnds program; combines static program parts with the runtime parts.
+/// DeadEnds program; combines static program parts with runtime parts.
 final public class Program {
 
     let parsedProgram: ParsedProgram  // Immutable program.
     var builtins: [String: Builtin] = [:]  // Builtin library.
-    let procedureTable: [String: Int]  // User defined procs.
-    let functionTable: [String: Int]  // User defined funcs.
+    let procTable: [String: Int]  // User defined procs.
+    let funcTable: [String: Int]  // User defined funcs.
     var hasRun = false
     private(set) var globalSymbolTable: SymbolTable = [:]  // Global symbols.
     var database: Database  // Database.
@@ -86,8 +86,8 @@ final public class Program {
                 globals[globalDef.name] = .null
             }
         }
-        self.procedureTable = procTable
-        self.functionTable = funcTable
+        self.procTable = procTable
+        self.funcTable = funcTable
         self.globalSymbolTable = globals
 
         setupBuiltins()
@@ -138,8 +138,8 @@ final public class Program {
     }
 }
 
-/// Run time errors that can happen when a program is running.
-public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing incorrect use of Error.
+/// Run time errors that happen when a program is running.
+public enum RuntimeError: Swift.Error, CustomStringConvertible {  // TODO: Remove "Swift." after fixing incorrect use of Error.
 
     case typeMismatch(_ detail: String, line: Int)
     case invalidArguments(_ detail: String, line: Int)
@@ -155,22 +155,47 @@ public enum RuntimeError: Swift.Error {  // TODO: Remove "Swift." after fixing i
     case missingDatabase(_ detail: String, line: Int)
     //case syntax(_ detail: String, line: Int)
     //case io(_ detail: String, line: Int)
+
+    public var description: String {
+        switch self {
+        case let .typeMismatch(m, l),
+             let .invalidArguments(m, l),
+             let .runtimeError(m, l),
+             let .invalidSyntax(m, l),
+             let .undefinedProcedure(m, l),
+             let .undefinedFunction(m, l),
+             let .undefinedSymbol(m, l),
+             let .invalidControlFlow(m, l),
+             let .executionFailed(m, l),
+             let .argumentCount(m, l),
+             let .typeError(m, l),
+             let .missingDatabase(m, l):
+            return "line \(l): \(m)"
+        }
+    }
 }
 
 /// Interpreter for interpretProgram method.
 extension Program {
 
-    /// Run the program by calling the main proc. This is method that begins the
-    /// execution of a program.
+    /// Run the program by calling the main proc. This is the method that starts running
+    /// a program.
     @discardableResult
     public func interpretProgram() throws -> InterpResult {
         guard !hasRun else {
-            throw RuntimeError.runtimeError("Program objects may only be run once", line: 0)
+            throw RuntimeError.runtimeError("programs can only be run once",
+                                            line: 0)  // Line 0 okay.
         }
         hasRun = true
-        let mainProc = try procDefn("main")
+        guard let mainIndex = procTable["main"] else {
+            throw RuntimeError.undefinedProcedure("no main proc found", line: 0)
+        }
+        guard case .procDef(let mainProc) = parsedProgram.defns[mainIndex] else {
+            fatalError("corrupt proc table for main")
+        }
         if mainProc.params.count != 0 {
-            throw RuntimeError.argumentCount("Main proc cannot have parameters", line: 0)
+            throw RuntimeError.argumentCount("main proc cannot have params",
+                                             line: mainProc.line)
         }
         let mainCall = ParsedCallStatement(name: "main", args: [], line: 0)  // Bootstrap.
         return try interpProcCall(mainCall)
@@ -179,23 +204,29 @@ extension Program {
 
 extension Program {
 
-    /// Return a user proc definition.
-    func procDefn(_ name: String) throws -> ParsedProcDefn {
+    /// Return a user proc definition. The proc table maps proc names to integers.
+    /// This method gets the number from the name and then gets the definitioin
+    /// by subscripting the defns list in the parsed program,
+    func procDefn(_ name: String, line: Int) throws -> ParsedProcDefn {
 
-        guard let index = procedureTable[name] else {
-            throw RuntimeError.undefinedSymbol("proc '\(name)' is not found", line: 0)
+        guard let index = procTable[name] else {
+            throw RuntimeError.undefinedSymbol("proc '\(name)' is not found",
+                                               line: line)
         }
         guard case .procDef(let procDef) = parsedProgram.defns[index] else {
-            fatalError("Corrupt proc table for \(name)")
+            fatalError("corrupt proc table for \(name)")
         }
         return procDef
     }
 
-    /// Return a user func definition.
-    func funcDefn(_ name: String) throws -> ParsedFuncDefn {
-        
-        guard let index = functionTable[name] else {
-            throw RuntimeError.undefinedSymbol("func '\(name)' not found", line: 0)
+    /// Return a user func definition. The func table maps names to integers.
+    /// This method looks up the number from the name and then gets the
+    /// definition by subscripting the list of definitions in the parsed program.
+    func funcDefn(_ name: String, line: Int) throws -> ParsedFuncDefn {
+
+        guard let index = funcTable[name] else {
+            throw RuntimeError.undefinedSymbol("func '\(name)' not found",
+                                               line: line)
         }
         guard case .funcDef(let funcDef) = parsedProgram.defns[index] else {
             fatalError("Corrupt func table for \(name)")
@@ -203,3 +234,28 @@ extension Program {
         return funcDef
     }
 }
+
+/* TEST PROGRAM
+ proc main ()
+ {
+     set(indi, indi(“@I1@“))
+     list(ilist)
+     list(alist)
+     enqueue(ilist, indi)
+     enqueue(alist, 1)
+     while(indi, dequeue(ilist)) {
+         set(ahnen, dequeue(alist))
+         d(ahnen) ". " name(indi) nl()
+         if (e, birth(indi)) { " if (e, death(indi)) { " if (par, father(indi)) {
+             enqueue(ilist, par)
+             enqueue(alist, mul(2,ahnen))
+             “b. " long(e) nl() }
+             “d. " long(e) nl() }
+         }
+     if (par,mother(indi)) {
+         enqueue(ilist, par)
+             enqueue(alist, add(1,mul(2,ahnen)))
+     }
+ }
+
+ */

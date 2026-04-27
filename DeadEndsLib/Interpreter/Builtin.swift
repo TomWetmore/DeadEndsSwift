@@ -63,6 +63,7 @@ extension Program {
             "place": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinPlace($0) },
 
             // List operations.
+            "list":    Builtin(minArgs: 1, maxArgs: 1) { try self.builtinList($0) },
             "append":  Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
             "prepend": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinPrepend($0) },
             "push":    Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },

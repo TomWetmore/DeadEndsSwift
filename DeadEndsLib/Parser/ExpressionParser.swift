@@ -202,7 +202,7 @@ public enum ParseError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .syntax(let message, let line):
-            return "Line \(line): \(message)"
+            return "line \(line): \(message)"
         }
     }
 }

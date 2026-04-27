@@ -88,10 +88,7 @@ final class ProgramModel {
         do {
             try program.interpretProgram()
         } catch let error as RuntimeError {
-            diagnostics = [Diagnostic(
-                message: formatRuntimeError(error),
-                line: nil
-            )]
+            diagnostics = [Diagnostic(message: error.description, line: nil)]
         }
         catch {
             diagnostics = [Diagnostic(

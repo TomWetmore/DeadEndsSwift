@@ -119,11 +119,12 @@ extension Program {
     func interpProcCall(_ procCall: ParsedCallStatement) throws -> InterpResult {
 
         let name = procCall.name
-        let procDef = try procDefn(name)
+        let procDef = try procDefn(name, line: procCall.line)
         let nArgs = procCall.args.count
         let nParams = procDef.params.count
+
         guard nArgs == nParams else { // Check numbers of args and params.
-            throw RuntimeError.invalidArguments("Proc '\(name)' expects \(nParams) arguments, got \(nArgs)", line: 0)
+            throw RuntimeError.invalidArguments("\(name) expects \(nParams) args, got \(nArgs)", line: procCall.line)
         }
         var table: SymbolTable = [:] // Prepare the symbol table for the procedure.
         for (param, arg) in zip(procDef.params, procCall.args) {
