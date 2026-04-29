@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 26 April 2026.
+//  Last changed on 28 April 2026.
 //
 
 import Foundation
@@ -24,7 +24,7 @@ extension Program {
         return .null
     }
 
-    /// Add a an element to a person set
+    /// Add an element to a person set
     /// addtoset(SET, INDI, ANY) -> VOID
     func builtinAddtoset(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
@@ -40,17 +40,6 @@ extension Program {
         let anyValue = try evaluate(args[2])
         set.append(indi, payload: anyValue)
         return .null
-    }
-
-    /// Return length of set as an integer program value.
-    /// lengthset(SET) -> INT
-    func builtinLengthset(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let setValue = try evaluate(args[0])
-        guard case let .indiset(set) = setValue else {
-            throw RuntimeError.typeError("lengthset: arg must be an indiset",
-                                         line: args[0].line)
-        }
-        return .integer(set.count)
     }
 
     /// Delete an element from an indiseq.

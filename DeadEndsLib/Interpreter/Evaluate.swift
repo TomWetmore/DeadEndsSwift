@@ -87,18 +87,29 @@ extension Program {
 
     // Evaluate a user function.
     func evaluateUserFunction(_ name: String, args: [ParsedExpr], line: Int) throws -> ProgramValue {
+
         let funcDef: ParsedFuncDefn = try funcDefn(name, line: line)
+        //let name = funcDef.name
         let nParams = funcDef.params.count
         let nArgs = args.count
         guard nParams == nArgs else {
             throw RuntimeError.invalidArguments("func \(name): expects \(nParams) args, got \(nArgs)",
                                                 line: line)
         }
-        var frame: SymbolTable = [:]  // Create frame and bind the args to params.
+        var table: SymbolTable = [:]  // Create frame and bind the args to params.
         for (param, arg) in zip(funcDef.params, args) {
             let value = try evaluate(arg)
-            frame[param] = value
+            table[param] = value
         }
+
+        let frame = RuntimeFrame(
+            name: name,
+            kind: .function,
+            defnLine: funcDef.line,
+            callLine: line,
+            params: funcDef.params,
+            symbols: table
+        )
         pushCallFrame(frame)  // Push frame on stack; defer the pop.
         defer { popCallFrame() }
 

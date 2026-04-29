@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 17 April 2026.
+//  Last changed on 28 April 2026.
 //
 //  ProgramValue is the type used for expression values in the DeadEnds
 //  programming language. They are the values stored in symbol tables.
@@ -13,6 +13,7 @@ import Foundation
 
 /// Enumeration of the kinds of program values with their associated types.
 public enum ProgramValue: @unchecked Sendable, Equatable {
+
     case null
     case ident(String)
     case integer(Int)
@@ -44,6 +45,55 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         default: return "not implememented yet"
         }
     }
+
+    var typeName: String {
+
+            switch self {
+            case .null: return "null"
+            case .boolean: return "boolean"
+            case .integer: return "integer"
+            case .double: return "double"
+            case .string: return "string"
+            case .person: return "person"
+            case .family: return "family"
+            case .gnode: return "gnode"
+            case .indiset: return "indiset"
+            case .table: return "table"
+            case .ident(_): return "ident"
+            case .list(_): return "list"
+            }
+
+        }
+
+    var displayValue: String {
+            switch self {
+            case .null:
+                return "null"
+            case .boolean(let b):
+                return b ? "true" : "false"
+            case .integer(let i):
+                return String(i)
+            case .double(let d):
+                return String(d)
+            case .string(let s):
+                return s
+            case .person(let p):
+                return p.displayName()
+            case .family(let f):
+                return f.key
+            case .gnode(let node):
+                return node.description
+            case .indiset(let set):
+                return "\(set.count) persons"
+            case .table(let table):
+                return "\(table.count) entries" // adjust to your table wrapper
+            case .ident(_): return "ident"
+            case .list(let list):
+                let elements = list.map { $0.displayValue }
+                return "[" + elements.joined(separator: ", ") + "]"
+            }
+
+        }
 
     /// Conform program values to equatable.
     public static func == (lhs: ProgramValue, rhs: ProgramValue) -> Bool {

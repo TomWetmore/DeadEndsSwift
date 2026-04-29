@@ -3,86 +3,105 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 11 April 2026.
+//  Last changed on 28 April 2026.
 //
 
 import Foundation
 
-
-//
-//  BuiltinList.swift
-//  DeadEndsLib
-//  This file has the builtin functions for the list data type
-//
-//  Created by Thomas Wetmore on 28 April 2025.
-//  Last changed 26 April 2025.
-//
-
-import Foundation
-
+/// Builtins are methods on Programs.
 extension Program {
 
     /// Declare an identifier to have a .list type.
     func builtinList(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let ident = try evaluate(args[0])
-
-        guard case let .ident(varb) = ident else {
-            throw RuntimeError.typeMismatch("Expected identifier for list",
-                                            line: args[0].line)
+        guard case let .identifier(varb) = args[0].kind else {
+            throw RuntimeError.typeMismatch("list: arg to list must be an identifier", line: args[0].line)
         }
-        let list = List<ProgramValue>.init()
+        let list = List<ProgramValue>()
         assignToSymbol(varb, value: .list(list))
         return .null
-
     }
 
-    /// Return whether a list is empty.
+    /// Return whether a list, table, person set or string is empty.
     func builtinEmpty(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let list = try evaluateList(args[0], errMessage: "empty: arg must be a list")
-        return list.count == 0 ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
+
+        switch try evaluate(args[0]) {
+        case .list(let list):
+            return list.count == 0 ? .trueProgramValue : .falseProgramValue
+        case .table(let table):
+            return table.count == 0 ? .trueProgramValue : .falseProgramValue
+        case .indiset(let set):
+            return set.count == 0 ? .trueProgramValue : .falseProgramValue
+        case .string(let string):
+            return string.isEmpty ? .trueProgramValue : .falseProgramValue
+        default:
+            throw RuntimeError.typeMismatch(
+                "empty: arg must be a list, table, indiset, or string",
+                line: args[0].line
+            )
+        }
     }
 
-    /// Return the length of a list.
+    /// Return the length of a list, table, person set or string.
     func builtinLength(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let list = try evaluateList(args[0], errMessage: "length: arg must be a list")
-        return .integer(list.count)
+
+        switch try evaluate(args[0]) {
+        case .list(let list):
+            return .integer(list.count)
+        case .table(let table):
+            return .integer(table.count)
+        case .indiset(let set):
+            return .integer(set.count)
+        case .string(let string):
+            return .integer(string.count)
+        default:
+            throw RuntimeError.typeMismatch("length: arg must be a list, table, indiset, or string",
+                                            line: args[0].line)
+        }
     }
 
     /// Append a value to a list.
     func builtinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
-        var list = try evaluateList(args[0], errMessage: "append() expects a list first argument")
+        var (name, list) =
+            try requireListVariable(args[0],errMessage: "append: 1st arg must be a list variable")
         list.append(try evaluate(args[1]))
+        assignToSymbol(name, value: .list(list))
         return .null
     }
 
     /// Prepend a value to a list.
     func builtinPrepend(_ args: [ParsedExpr]) throws -> ProgramValue {
-        var list = try evaluateList(args[0], errMessage: "append() expects a list first argument")
+        var (name, list) =
+            try requireListVariable(args[0], errMessage: "prepend: 1st arg must be a list variable")
         list.prepend(try evaluate(args[1]))
+        assignToSymbol(name, value: .list(list))
         return .null
     }
 
     /// Remove the first value from a list.
     func builtinRemoveFirst(_ args: [ParsedExpr]) throws -> ProgramValue {
-        var list = try evaluateList(args[0], errMessage: "removeFirst() expects a list argument")
-        guard let first =  list.removeFirst() else { return .null }
+        var (name, list) =
+            try requireListVariable(args[0], errMessage: "removefirst: 1st arg must be a list variable")
+        guard let first = list.removeFirst() else { return .null }
+        assignToSymbol(name, value: .list(list))
         return first
     }
 
     /// Evaluate an expression and be sure it is a list.
-    func evaluateList(_ node: ParsedExpr, errMessage: String) throws -> List<ProgramValue> {
-        guard case let .list(list) = try evaluate(node) else {
-            throw RuntimeError.typeMismatch(errMessage, line: node.line)
+    private func evaluateList(_ expr: ParsedExpr, errMessage: String) throws -> List<ProgramValue> {
+        guard case let .list(list) = try evaluate(expr) else {
+            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
         }
         return list
     }
 }
 
 //forlist (LIST, ANY_V, INT_V) { } loop through all elements of list
-// CONSIDER APPEND AND PREPEND
 
+
+/// Structure that holds the programming language's List values.
 public struct List<Element> {
+
     private var elements: [Element] = []
 
     var count: Int { elements.count }
@@ -127,3 +146,40 @@ public struct List<Element> {
         elements.sort(by: areInIncreasingOrder)
     }
 }
+
+/// Needed to make List mappable.
+extension List: Sequence {
+    
+    public func makeIterator() -> IndexingIterator<[Element]> {
+        elements.makeIterator()
+    }
+}
+
+/// Require a parsed expression to be an identifier; return it as a string.
+//func evaluateIdent(_ expr: ParsedExpr, errMessage: String) throws -> String {
+//    guard case let .identifier(name) = expr.kind else {
+//        throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+//    }
+//    return name
+//}
+
+extension Program {
+
+    /// Convenience method for methods that need a modifiable list argument.
+    func requireListVariable(_ expr: ParsedExpr, errMessage: String )
+        throws -> (name: String, list: List<ProgramValue>) {
+
+        guard case let .identifier(name) = expr.kind else {
+            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+        }
+        guard let value = lookupSymbol(name) else {
+            throw RuntimeError.undefinedSymbol("undefined variable: \(name)", line: expr.line)
+        }
+        guard case let .list(list) = value else {
+            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+        }
+
+        return (name, list)
+    }
+}
+

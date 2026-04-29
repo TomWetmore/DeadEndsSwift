@@ -3,12 +3,10 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 21 April 2026.
+//  Last changed on 28 April 2026.
 //
 
 import Foundation
-
-public typealias SymbolTable = [String: ProgramValue?]
 
 /// Generalize program output.
 public protocol ProgramOutput {
@@ -39,20 +37,18 @@ final public class Program {
     let procTable: [String: Int]  // User defined procs.
     let funcTable: [String: Int]  // User defined funcs.
     var hasRun = false
-    private(set) var globalSymbolTable: SymbolTable = [:]  // Global symbols.
+    var globalSymbolTable: SymbolTable = [:]  // Global symbols.
     var database: Database  // Database.
     let output: ProgramOutput  // Output sink.
-    private var callStack: [SymbolTable] = [[:]]  // Runtime stack.
+    var callStack: [RuntimeFrame] = []  // Runtime stack.
 
     var recordIndex: RecordIndex { database.recordIndex }
 
-    /// Return the local symbol table, the current frame.
     var localSymbolTable: SymbolTable {
-        callStack.last ?? [:]
+        callStack.last?.symbols ?? [:]
     }
 
-    /// The current frame; frame and symbol table are synonymous.
-    private var currentFrame: SymbolTable {
+    var currentFrame: RuntimeFrame {
         get {
             guard let frame = callStack.last else { fatalError("No frame available") }
             return frame
@@ -69,9 +65,8 @@ final public class Program {
         self.parsedProgram = parsedProgram
         self.database = database
         self.output = output
-        self.callStack = [[:]]
+        self.callStack  = [RuntimeFrame]()
 
-        /// Set up the tables
         var procTable: [String: Int] = [:]
         var funcTable: [String: Int] = [:]
         var globals: SymbolTable = [:]
@@ -89,52 +84,7 @@ final public class Program {
         self.procTable = procTable
         self.funcTable = funcTable
         self.globalSymbolTable = globals
-
         setupBuiltins()
-    }
-
-    /// Push a new local frame when a procedure or fuction is called.
-    func pushCallFrame(_ frame: SymbolTable) {
-        callStack.append(frame)
-    }
-
-    /// Pop the current frame when a procedure or function returns.
-    func popCallFrame() {
-        precondition(callStack.count > 1, "Cannot pop the global frame")
-        callStack.removeLast()
-    }
-
-    /// Look up an identifier in the local symbol table, and if not
-    /// there, in the global table.
-    func lookupSymbol(_ name: String) -> ProgramValue? {
-
-        if let localValue = localSymbolTable[name] {
-            return localValue
-        }
-        if let globalValue = globalSymbolTable[name] {
-            return globalValue
-        }
-        return nil // Not found.
-    }
-
-    /// Assign a value to an identifier in the local symbol table.
-    func assignLocal(_ name: String, value: ProgramValue) {
-        currentFrame[name] = value
-    }
-
-    /// Update or add a new entry to the local or global symbol table.
-    /// If the identifier is in the local table, change its there, else
-    /// if it is in the global table change it there, else add it to
-    /// the local table.
-    func assignToSymbol(_ name: String, value: ProgramValue) {
-
-        if localSymbolTable[name] != nil {
-            currentFrame[name] = value  // Update in local.
-        } else if globalSymbolTable[name] != nil {
-            globalSymbolTable[name] = value  // Update in global.
-        } else {
-            currentFrame[name] = value  // Add to local.
-        }
     }
 }
 
@@ -153,8 +103,6 @@ public enum RuntimeError: Swift.Error, CustomStringConvertible {  // TODO: Remov
     case argumentCount(_ detail: String, line: Int)
     case typeError(_ detail: String, line: Int)
     case missingDatabase(_ detail: String, line: Int)
-    //case syntax(_ detail: String, line: Int)
-    //case io(_ detail: String, line: Int)
 
     public var description: String {
         switch self {
@@ -178,8 +126,7 @@ public enum RuntimeError: Swift.Error, CustomStringConvertible {  // TODO: Remov
 /// Interpreter for interpretProgram method.
 extension Program {
 
-    /// Run the program by calling the main proc. This is the method that starts running
-    /// a program.
+    /// Run a program by calling the main proc.
     @discardableResult
     public func interpretProgram() throws -> InterpResult {
         guard !hasRun else {
@@ -243,18 +190,23 @@ extension Program {
      list(alist)
      enqueue(ilist, indi)
      enqueue(alist, 1)
+showstack() nl()
+d(length(ilist)) nl()
      while(indi, dequeue(ilist)) {
          set(ahnen, dequeue(alist))
          d(ahnen) ". " name(indi) nl()
-         if (e, birth(indi)) { " if (e, death(indi)) { " if (par, father(indi)) {
+showstack() nl()
+d(length(alist)) nl()
+         if (e, birth(indi)) { “b. " long(e) nl() }
+         if (e, death(indi)) { “d. " long(e) nl() }
+         if (par,father(indi)) {
              enqueue(ilist, par)
              enqueue(alist, mul(2,ahnen))
-             “b. " long(e) nl() }
-             “d. " long(e) nl() }
          }
-     if (par,mother(indi)) {
-         enqueue(ilist, par)
+         if (par,mother(indi)) {
+             enqueue(ilist, par)
              enqueue(alist, add(1,mul(2,ahnen)))
+        }
      }
  }
 

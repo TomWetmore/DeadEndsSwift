@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 26 April 2026.
+//  Last changed on 28 April 2026.
 //
 
 import Foundation
@@ -57,6 +57,8 @@ extension Program {
             "surname": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSurname($0) },
             "birth" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinBirth($0) },
             "death": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDeath($0) },
+            "father": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinFather($0) },
+            "mother": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinMother($0) },
 
             // Event operations.
             "date":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDate($0) },
@@ -64,6 +66,7 @@ extension Program {
 
             // List operations.
             "list":    Builtin(minArgs: 1, maxArgs: 1) { try self.builtinList($0) },
+            "length":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinLength($0) },
             "append":  Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
             "prepend": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinPrepend($0) },
             "push":    Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
@@ -80,6 +83,10 @@ extension Program {
             "indiset": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndiset($0) },
             "addtoset" : Builtin(minArgs: 3, maxArgs: 3) { try self.builtinAddtoset($0) },
             // Lots of iterators are not yet implemented.
+
+            // Meta operations
+            "valueof": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinValueOf($0) },
+            "showstack": Builtin(minArgs: 0, maxArgs: 0) { try self.builtinShowStack($0) },
         ]
     }
 }

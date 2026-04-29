@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 24 April 2026.
+//  Last changed on 28 April 2026.
 //
 
 import Foundation
@@ -39,7 +39,7 @@ extension Program {
 
     /// Interpret an enumerated statement.
     func interpStatement(_ stmt: ParsedStatement) throws -> InterpResult {
-        
+
         switch stmt.kind {
         case .callStatement(let call):
             return try interpProcCall(call)
@@ -123,16 +123,33 @@ extension Program {
         let nArgs = procCall.args.count
         let nParams = procDef.params.count
 
-        guard nArgs == nParams else { // Check numbers of args and params.
-            throw RuntimeError.invalidArguments("\(name) expects \(nParams) args, got \(nArgs)", line: procCall.line)
+        guard nArgs == nParams else {
+            throw RuntimeError.invalidArguments(
+                "\(name) expects \(nParams) args, got \(nArgs)",
+                line: procCall.line
+            )
         }
-        var table: SymbolTable = [:] // Prepare the symbol table for the procedure.
+
+        var table: SymbolTable = [:]
+
+        // Evaluate arguments in the caller's context, then bind into callee frame.
         for (param, arg) in zip(procDef.params, procCall.args) {
             table[param] = try evaluate(arg)
         }
-        pushCallFrame(table)
+
+        let frame = RuntimeFrame(
+            name: name,
+            kind: .proc,
+            defnLine: procDef.line,
+            callLine: procCall.line,
+            params: procDef.params,
+            symbols: table
+        )
+
+        pushCallFrame(frame)
         defer { popCallFrame() }
-        return try interpStmtList(procDef.body) // Call user procedure.
+
+        return try interpStmtList(procDef.body)
     }
 }
 

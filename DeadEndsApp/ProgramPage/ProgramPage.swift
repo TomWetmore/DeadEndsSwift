@@ -50,6 +50,7 @@ struct ProgramPage: View {
                 Text(model.output.text)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
+                    .textSelection(.enabled)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 

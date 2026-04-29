@@ -94,7 +94,7 @@ extension Program {
     // builtinMother is the buitin function that returns a person's mother.
     func builtinMother(_ args: [ParsedExpr]) throws -> ProgramValue {
         // Get the person whose mother is to be found.
-        let person = try personFromParsedExpr(args[0], errorMessage: "mother() expects a person argument")
+        let person = try personFromParsedExpr(args[0], errorMessage: "mother; arg must be a person.")
         // Get the person's mother.
         if let mother = person.mother(in: self.recordIndex) {
             return .person(mother)
@@ -190,12 +190,25 @@ extension Program {
     }
 
     /// Look up a person in the database and return its root.
+//    func builtinIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
+//        let key = try evaluate(args[0])
+//        guard case let .string(key) = key, let node = recordIndex[key],
+//              node.tag == GedcomTag.INDI
+//        else { return .null }
+//        return .gnode(node)
+//    }
+
+    /// Look up a person in the database.
+    /// Look up a person in the database.
     func builtinIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let key = try evaluate(args[0])
-        guard case let .string(key) = key, let node = recordIndex[key],
-              node.tag == GedcomTag.INDI
-        else { return .null }
-        return .gnode(node)
+
+        let value = try evaluate(args[0])
+        guard case let .string(key) = value, let root = recordIndex[key],
+              root.tag == GedcomTag.INDI
+        else {
+            return .null
+        }
+        return .person(Person(root))
     }
 
     func builtinFirstIndi(_ args: [ParsedExpr]) throws -> ProgramValue {

@@ -20,7 +20,6 @@ extension Program {
         let list = List<ProgramValue>.init()
         assignToSymbol(varb, value: .list(list))
         return .null
-
     }
 
     // builtinEmpty returns whether a list is empty.
@@ -42,6 +41,7 @@ extension Program {
         list.append(try evaluate(args[1]))
         return .null
     }
+    
 
     // builtinPrepend prepends a ProgramValue to a list.
     // If the new element is a string PValue the list becomes the owner of that string.

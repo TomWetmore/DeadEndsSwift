@@ -1,0 +1,83 @@
+
+extension Program {
+
+    /// Interpret a procedure call statement.
+    func interpProcCall(_ procCall: ParsedCallStatement) throws -> InterpResult {
+
+        let name = procCall.name
+        let procDef = try procDefn(name, line: procCall.line)
+        let nArgs = procCall.args.count
+        let nParams = procDef.params.count
+
+        guard nArgs == nParams else { // Check numbers of args and params.
+            throw RuntimeError.invalidArguments("\(name) expects \(nParams) args, got \(nArgs)", line: procCall.line)
+        }
+        var table: SymbolTable = [:] // Prepare the symbol table for the procedure.
+        for (param, arg) in zip(procDef.params, procCall.args) {
+            table[param] = try evaluate(arg)
+        }
+        pushCallFrame(table)
+        defer { popCallFrame() }
+        return try interpStmtList(procDef.body) // Call user procedure.
+    }
+}
+
+For the C version, which uses the full frame concept the similar code is:
+
+// interpProcCall interprets a user-defined procedure call.
+extern void showFrame(Frame*);
+InterpType interpProcCall(PNode* pnode, Context* context, PValue* pval) {
+    // Get the procedure from the procedure table.
+    String name = pnode->procName;
+    if (callTracing) printf("calling: %s (line %d)\n", name, pnode->lineNumber);
+    PNode* proc = searchFunctionTable(context->program->procedures, name);
+    if (!proc) {
+        scriptError(pnode, "procedure %s is undefined", name);
+        return InterpError;
+    }
+
+    // Create the symbol table for the called procedure.
+    SymbolTable* table = createSymbolTable();
+
+    // Bind the arguments to the parameters. Important: the arguments are evaluated using the caller's symbol
+    // table, while the parameters and their values are put in the called procedure's symbol table.
+    PNode* arg = pnode->arguments;
+    PNode* parm = proc->parameters;
+    int argcount = 1;
+    while (arg && parm) {
+        bool errflg = false;
+        // Evaluate the argument values in the caller's context.
+        PValue value = evaluate(arg, context, &errflg);
+        if (errflg) {
+            scriptError(pnode, "could not evaluate argument %d of %s", argcount++, name);
+            return InterpError;
+        }
+        // Assign values to the parameters in the called procedure's symbol table.
+        assignValueToSymbolTable(table, parm->identifier, value);
+        arg = arg->next;
+        parm = parm->next;
+    }
+    if (arg || parm) { // Check for argument and parameter mismatch.
+        scriptError(pnode, "different numbers of arguments and parameters to %s", name);
+        return InterpError;
+    }
+
+    // Create the frame for the called procedure. Add the frame to the context. Call the procedure.
+    // Remove the frame from the context. Delete the frame which deletes the symbol table.
+    Frame* frame = createFrame(pnode, proc, table, context->frame);
+    context->frame = frame;
+    InterpType returnCode = interpret(proc->procBody, context, pval);
+    context->frame = frame->caller;
+    deleteFrame(frame);
+
+    switch (returnCode) {
+    case InterpReturn:
+    case InterpOkay: return InterpOkay;
+    case InterpBreak:
+    case InterpContinue:
+    case InterpError:
+    default: return InterpError;
+    }
+    return InterpError;
+}
+

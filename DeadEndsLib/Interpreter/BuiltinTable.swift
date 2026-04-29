@@ -3,13 +3,19 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 April 2026.
-//  Last changed on 26 April 2026.
+//  Last changed on 27 April 2026.
 //
 
 import Foundation
 
+/// Underlying dictionary used for the program value data type.
 final public class ProgramTable {
+    
     var elements: [String: ProgramValue] = [:]
+
+    var count: Int {
+        elements.count
+    }
 }
 
 extension Program {
@@ -54,5 +60,14 @@ extension Program {
                                          line: args[1].line)
         }
         return table.elements[key] ?? .null
+    }
+
+    func builtinTableLength(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let tableValue = try evaluate(args[0])
+        guard case let .table(table) = tableValue else {
+            throw RuntimeError.typeError("table-length: 1st arg must be a table",
+                                         line: args[0].line)
+        }
+        return .integer(table.elements.count)
     }
 }
