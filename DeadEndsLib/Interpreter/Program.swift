@@ -11,6 +11,8 @@ import Foundation
 /// Generalize program output.
 public protocol ProgramOutput {
     func write(_ text: String)
+
+    func clear()
 }
 
 public extension ProgramOutput {
@@ -22,11 +24,15 @@ public extension ProgramOutput {
 /// Program output for standard console output.
 public final class ConsoleOutput: ProgramOutput {
 
+    public var text: String = ""
+
     public func write(_ text: String) {
         print(text, terminator: "")
     }
 
     public init() {}  // Needed to make it public.
+
+    public func clear() {}  // Clear is a no-op for this meeter of the protocol.
 }
 
 /// DeadEnds program; combines static program parts with runtime parts.
@@ -182,23 +188,32 @@ extension Program {
     }
 }
 
+/// INFINITE LOOP DETECTION.
+nonisolated(unsafe) private var stepCount = 0
+private let maxSteps = 100_000
+
+func tick(line: Int) throws {
+    stepCount += 1
+    if stepCount > maxSteps {
+        throw RuntimeError.runtimeError(
+            "execution stopped: possible infinite loop",
+            line: line
+        )
+    }
+}
+
 /* TEST PROGRAM
- proc main ()
- {
+ proc main () {
      set(indi, indi(“@I1@“))
      list(ilist)
      list(alist)
      enqueue(ilist, indi)
      enqueue(alist, 1)
-showstack() nl()
-d(length(ilist)) nl()
      while(indi, dequeue(ilist)) {
          set(ahnen, dequeue(alist))
          d(ahnen) ". " name(indi) nl()
-showstack() nl()
-d(length(alist)) nl()
-         if (e, birth(indi)) { “b. " long(e) nl() }
-         if (e, death(indi)) { “d. " long(e) nl() }
+         if (e, birth(indi)) { “b. "  nl() }
+         if (e, death(indi)) { “d. "  nl() }
          if (par,father(indi)) {
              enqueue(ilist, par)
              enqueue(alist, mul(2,ahnen))
@@ -209,5 +224,54 @@ d(length(alist)) nl()
         }
      }
  }
+
+ proc main ()
+  {
+      set(indi, indi(“@I1@“))
+      list(ilist)
+      list(alist)
+      enqueue(ilist, indi)
+      enqueue(alist, 1)
+
+      while(indi, dequeue(ilist)) {
+          set(ahnen, dequeue(alist))
+          d(ahnen) ". " name(indi) nl()
+          if (e, birth(indi)) { “b. "  nl() }
+          if (e, death(indi)) { “d. "  nl() }
+          if (par,father(indi)) {
+              enqueue(ilist, par)
+              enqueue(alist, mul(2,ahnen))
+          }
+          if (par,mother(indi)) {
+              enqueue(ilist, par)
+              enqueue(alist, add(1,mul(2,ahnen)))
+         }
+      }
+  }
+
+
+ proc main ()
+  {
+      set(indi, indi(“@I1@“))
+      list(ilist)
+      list(alist)
+      enqueue(ilist, indi)
+      enqueue(alist, 1)
+
+      while(indi, dequeue(ilist)) {
+          set(ahnen, dequeue(alist))
+          d(ahnen) ". " name(indi) nl()
+          if (par,father(indi)) {
+              enqueue(ilist, par)
+              enqueue(alist, mul(2,ahnen))
+          }
+          if (par,mother(indi)) {
+              enqueue(ilist, par)
+              enqueue(alist, add(1,mul(2,ahnen)))
+         }
+      }
+  }
+
+ 
 
  */

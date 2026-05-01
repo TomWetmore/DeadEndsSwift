@@ -15,19 +15,19 @@ import Foundation
 
 extension Program {
 
-    func builtinShowFrame(_ args: [ParsedExpr]) -> ProgramValue {
+    /// Builtin  function that shows the current run time frame.
+    func builtinShowFrame(_ args: [ParsedExpr]) throws -> ProgramValue {
+        showFrame()
         return .null
     }
 
+    /// Builtin function that shows the full run times stack and the global symbol table.
     func builtinShowStack(_ args: [ParsedExpr]) throws -> ProgramValue {
         showRuntimeStack()
         return .null
     }
 
-    func builtInTypeOf(_ args: [ParsedExpr]) -> ProgramValue {
-        return .null
-    }
-
+    /// Builtin function that shows the type and value of a parsed expression.
     func builtinValueOf(_ args: [ParsedExpr]) throws -> ProgramValue {
         let value = try evaluate(args[0])
         return .string("\(value.typeName): \(value.displayValue)")
@@ -42,12 +42,15 @@ extension Program {
             output.writeln("Run Time Stack is empty")
             return
         }
-        output.writeln("Run Time Stack")
+
+        var buffer = ""
+        buffer += "Run Time Stack\n"
         for frame in callStack.reversed() {
-            output.writeln(formatFrame(frame))
+            buffer += formatFrame(frame) + "\n"
         }
-        output.writeln("Global symbols:")
-        output.writeln(formatSymbolTable(globalSymbolTable, indent: "    "))
+        buffer += "Global symbols:\n"
+        buffer += formatSymbolTable(globalSymbolTable, indent: "    ")
+        output.write(buffer)
     }
 
     /// Format the contents of a frame into a string.
@@ -87,5 +90,10 @@ extension Program {
     private func formatProgramValue(_ value: ProgramValue?) -> String {
         let v = value ?? .null
         return "\(v.typeName): \(v.displayValue)"
+    }
+
+    private func showFrame() {
+        guard let frame = callStack.last else { return }
+        output.write(formatFrame(frame))
     }
 }

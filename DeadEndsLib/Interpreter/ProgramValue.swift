@@ -89,8 +89,28 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
                 return "\(table.count) entries" // adjust to your table wrapper
             case .ident(_): return "ident"
             case .list(let list):
-                let elements = list.map { $0.displayValue }
-                return "[" + elements.joined(separator: ", ") + "]"
+                return "\(list.count) elements"
+            //case .list(let list):
+//            case .list(let list):
+//                let maxItems = 10
+//                var parts: [String] = []
+//                parts.reserveCapacity(maxItems)
+//
+//                var shown = 0
+//                for value in list {
+//                    if shown >= maxItems { break }
+//                    parts.append(value.displayValue)
+//                    shown += 1
+//                }
+//
+//                if list.count > maxItems {
+//                    return "[" + parts.joined(separator: ", ") + ", ... (\(list.count) total)]"
+//                } else {
+//                    return "[" + parts.joined(separator: ", ") + "]"
+//                }
+//                     ems.joined(separator: ", ") + suffix + "]"
+//                let elements = list.map { $0.displayValue }
+//                return "[" + elements.joined(separator: ", ") + "]"
             }
 
         }

@@ -12,10 +12,8 @@ extension Program {
 
     // builtinName returns the value of the first 1 NAME line in a person's record.
     func builtinName(_ args: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluateIndi(args[0]) else {
-            throw RuntimeError.typeError("name() expects a person parameter",
-                                         line: args[0].line)
-        }
+
+        let person = try evaluatePerson(args[0], errMessage: "name: arg must be a person")
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         return .string(name)
     }
@@ -57,33 +55,35 @@ extension Program {
         return .null
     }
 
-    // builtinBirth returns the first birth event for a person.
-    func builtinBirth(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluateIndi(arg[0]) else {
-            throw RuntimeError.typeError("birth() expects a person arg",
-                                         line: arg[0].line)
-        }
-        guard let birth = person.kid(withTag: "BIRT") else { return .null }
+    /// Returns the first birth event of a person.
+    func builtinBirth(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let person = try evaluatePerson(args[0], errMessage: "birth: arg must be a person")
+        guard let birth = person.kid(withTag: GedcomTag.BIRT) else { return .null }
         return .gnode(birth)
     }
 
+    /// Returns the first death event of a person
     func builtinDeath(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return try extractPersonEvent(from: args[0], tag: "DEAT", functionName: "death")
+        let person = try evaluatePerson(args[0], errMessage: "death: arg must be a person")
+        guard let birth = person.kid(withTag: GedcomTag.DEAT) else { return .null }
+        return .gnode(birth)
     }
 
+    /// Returns the first burial event of a person.
     func builtinBurial(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return try extractPersonEvent(from: args[0], tag: "BURI", functionName: "burial")
-    }
+        let person = try evaluatePerson(args[0], errMessage: "burial: arg must be a person")
+        guard let birth = person.kid(withTag: GedcomTag.BURI) else { return .null }
+        return .gnode(birth)    }
 
+    /// Returns the first baptims event of a person.
     func builtinBaptism(_ args: [ParsedExpr]) throws -> ProgramValue {
         return try extractPersonEvent(from: args[0], tag: "BAPM", functionName: "baptism")
     }
 
-    // builtinFather is the builtin function that returns a person's father.
+    /// Returns the first father of a person.
     func builtinFather(_ args: [ParsedExpr]) throws -> ProgramValue {
-        // Get the person whose father is to found.
-        let person = try personFromParsedExpr(args[0], errorMessage: "father() expects a person argument")
-        // Get the person's father.
+
+        let person = try personFromParsedExpr(args[0], errorMessage: "father: arg must be a person")
         if let father = person.father(in: self.recordIndex) {
             return .person(father)
         } else {
@@ -94,7 +94,7 @@ extension Program {
     // builtinMother is the buitin function that returns a person's mother.
     func builtinMother(_ args: [ParsedExpr]) throws -> ProgramValue {
         // Get the person whose mother is to be found.
-        let person = try personFromParsedExpr(args[0], errorMessage: "mother; arg must be a person.")
+        let person = try personFromParsedExpr(args[0], errorMessage: "mother: arg must be a person.")
         // Get the person's mother.
         if let mother = person.mother(in: self.recordIndex) {
             return .person(mother)
@@ -239,35 +239,29 @@ extension Program {
 
 extension Program {
     func builtinDate(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let event = try evaluateGedcomNode(arg[0]) else {
-            throw RuntimeError.runtimeError("date() requires an event argument",
-                                            line: arg[0].line)
+        let node = try evaluateGedcomNodeOpt(arg[0], errMessage: "date: arg must be a node")
+        if let node = node, let date = node.kid(withTag: GedcomTag.DATE) {
+            return .gnode(date)
         }
-        return ProgramValue.string(event.kidVal(forTag: GedcomTag.DEAT) ?? "")
+        return .null
     }
 
     func builtinPlace(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let event = try evaluateGedcomNode(arg[0]) else {
-            throw RuntimeError.runtimeError("place() requires an event argument",
-                                            line: arg[0].line)
+        let node = try evaluateGedcomNodeOpt(arg[0], errMessage: "place: arg must be a node")
+        if let node = node, let place = node.kid(withTag: GedcomTag.PLAC) {
+            return .gnode(place)
         }
-        return ProgramValue.string(event.kidVal(forTag: GedcomTag.PLAC) ?? "")
+        return .null
     }
 }
 
 extension Program {
 
-    // Evaluate a ProgramNode that refers to a Person, and return that Person (its root GNode).
+    /// Evaluates a parsed expression that should be a person.
     func personFromParsedExpr(_ expr: ParsedExpr, errorMessage: String) throws -> Person {
-        // Evaluate the ProgramNode and find its line number in the original program.
-        let pvalue = try evaluate(expr)
-        let line = 0 // pnode.line ?? 0
-        //TODO GET THE LINE NUMBER AS A PROPERTY OF PARSEDEXPR
-        //TODO: I DON'T THINK THAT EVALUATE IS GOING TO RETURN A PERSON; I THINK JUST A NODE!!!!!
-        // PValue must be a .gnode with a person root as associated value.
-        guard case let .person(person) = pvalue, person.tag == GedcomTag.INDI else {
-            throw RuntimeError.typeError("\(line): \(errorMessage)",
-                                         line: expr.line)
+        let value = try evaluate(expr)
+        guard case let .person(person) = value, person.tag == GedcomTag.INDI else {
+            throw RuntimeError.typeError(errorMessage, line: expr.line)
         }
         return person
     }

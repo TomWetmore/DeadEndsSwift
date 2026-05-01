@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 4 February 2026.
-//  Last changed on 24 February 2026.
+//  Last changed on 30 April 2026.
 //
 
 import Foundation
@@ -49,6 +49,8 @@ public extension GedcomTag {
     static let SEX  = GedcomTag.sex.rawValue
     static let BIRT = GedcomTag.birt.rawValue
     static let DEAT = GedcomTag.deat.rawValue
+    static let CHR  = GedcomTag.chr.rawValue
+    static let BURI = GedcomTag.buri.rawValue
     static let FAMS = GedcomTag.fams.rawValue
     static let FAMC = GedcomTag.famc.rawValue
     static let HUSB = GedcomTag.husb.rawValue
@@ -57,4 +59,5 @@ public extension GedcomTag {
     static let DATE = GedcomTag.date.rawValue
     static let PLAC = GedcomTag.plac.rawValue
     static let MARR = GedcomTag.marr.rawValue
+    static let DIV  = GedcomTag.div.rawValue
 }

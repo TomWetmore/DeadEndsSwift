@@ -3,14 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 28 April 2026.
+//  Last changed on 30 April 2026.
 //
 
 import Foundation
 
 extension Program {
 
-    /// Structure holding a builtin function. Unlike user functions the
+    /// Structure that hold builtin functions. Unlike user functions the
     /// arguments are not evaluated.
     struct Builtin {
         
@@ -50,12 +50,21 @@ extension Program {
             "or":  Builtin(minArgs: 1, maxArgs: 32) { try self.builtinOr($0) },
             "not": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinNot($0) },
 
+            // Gedcom node properties.
+            "key": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinKey($0) },
+            "tag": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinTag($0) },
+            "value": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinValue($0) },
+            "level": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinLevel($0) },
+            "child": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinChild($0) },
+            "sibling": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSibling($0) },
+            "parent": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinParent($0) },
+
             // Person operations.
             "indi": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndi($0) },
             "name": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinName($0) },
             "givens": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinGivens($0) },
             "surname": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSurname($0) },
-            "birth" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinBirth($0) },
+            "birth": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinBirth($0) },
             "death": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDeath($0) },
             "father": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinFather($0) },
             "mother": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinMother($0) },
@@ -64,8 +73,9 @@ extension Program {
             "date":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDate($0) },
             "place": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinPlace($0) },
 
-            // List operations.
+            // List operations; the length and empty builtins are generic.
             "list":    Builtin(minArgs: 1, maxArgs: 1) { try self.builtinList($0) },
+            "empty":   Builtin(minArgs: 1, maxArgs: 1) { try self.builtinEmpty($0) },
             "length":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinLength($0) },
             "append":  Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
             "prepend": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinPrepend($0) },
@@ -75,7 +85,7 @@ extension Program {
             "dequeue": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinRemoveFirst($0) },
 
             // Table operations.
-            "table": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinTable($0) },
+            "table":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinTable($0) },
             "insert": Builtin(minArgs: 3, maxArgs: 3) { try self.builtinInsert($0) },
             "lookup": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinLookup($0) },
 
@@ -84,9 +94,10 @@ extension Program {
             "addtoset" : Builtin(minArgs: 3, maxArgs: 3) { try self.builtinAddtoset($0) },
             // Lots of iterators are not yet implemented.
 
-            // Meta operations
-            "valueof": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinValueOf($0) },
+            // Meta operations.
+            "showframe": Builtin(minArgs: 0, maxArgs: 0) { try self.builtinShowFrame($0) },
             "showstack": Builtin(minArgs: 0, maxArgs: 0) { try self.builtinShowStack($0) },
+            "valueof": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinValueOf($0) },
         ]
     }
 }
@@ -116,5 +127,72 @@ extension Program {
         let value = try evaluate(args[1])
         assignToSymbol(name, value: value)
         return .null  // Side effect only.
+    }
+}
+
+/// Gedcom node properties.
+extension Program {
+
+    /// Builtin that returns the key of a node; retuns .null if node dones not have a key
+    func builtInKey(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let node = try evaluateGedcomNodeOpt(args[0], errMessage: "key: arg must be a node")
+        if let node = node, let key = node.key {
+            return .string(key)
+        }
+        return .null
+    }
+
+    /// Builtin that returns the tag of a node.
+    func builtinTag(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let node = try evaluateGedcomNodeOpt(args[0], errMessage: "tag: arg must be a node")
+        if let node = node {
+            return .string(node.tag)
+        }
+        return .null
+    }
+
+    /// Builtin that returns the value of a node; returns .nll
+    func builtinValue(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let node = try evaluateGedcomNodeOpt(args[0], errMessage: "value: arg must be a node")
+        if let node = node, let val = node.val {
+            return .string(val)
+        }
+        return .null
+    }
+
+    /// Builtin that returns the level of a node; returns .null if the node .null.
+    func builtinLevel(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let node = try evaluateGedcomNodeOpt(args[0], errMessage: "level: arg must be a node")
+        if let node = node {
+            return .integer(node.lev)
+        }
+        return .null
+    }
+
+    /// Builtin that returns the child of a node; returns .null if is null or has no chold.
+    func builtinChild(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let node = try evaluateGedcomNodeOpt(args[0], errMessage: "child: arg must be a node")
+        if let node = node, let kid = node.kid {
+            return .gnode(kid)
+        }
+        return .null
+    }
+
+    /// Builtin that returns the sibling of a node; returns .null of it is nil or has no sibling.
+    func builtinSibling(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let node = try evaluateGedcomNodeOpt(args[0], errMessage: "sibling: arg must be a node")
+        if let node = node, let sib = node.sib {
+            return .gnode(sib)
+        }
+        return .null
+    }
+
+    /// Builtin that returns the parent of a node; returns .null if it is nil or has no parent.
+    func builtinParent(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let node = try evaluateGedcomNodeOpt(args[0], errMessage: "parent: arg must be a node")
+        if let node = node, let par = node.dad {
+            return .gnode(par)
+        }
+        return .null
     }
 }

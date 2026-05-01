@@ -39,6 +39,7 @@ extension Program {
 
     /// Interpret an enumerated statement.
     func interpStatement(_ stmt: ParsedStatement) throws -> InterpResult {
+        try tick(line: stmt.line)  // Lazy man infinite loop protection.
 
         switch stmt.kind {
         case .callStatement(let call):

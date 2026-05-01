@@ -138,13 +138,28 @@ extension Program {
         return gnode
     }
 
+    /// Evaluate an expression for a person; throw error if not a person.
+    func evaluatePerson(_ expr: ParsedExpr, errMessage: String) throws -> Person {
 
-    func evaluateGedcomNode(_ expr: ParsedExpr) throws -> GedcomNode? {
         let pvalue = try evaluate(expr)
-        guard case .gnode(let gnode) = pvalue else {
-            return nil
+
+        guard case .person(let person) = pvalue else {
+            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
         }
-        return gnode
+        return person
+    }
+
+
+    func evaluateGedcomNodeOpt(_ expr: ParsedExpr, errMessage: String) throws -> GedcomNode? {
+
+        switch try evaluate(expr) {
+        case .gnode(let gnode):
+            return gnode
+        case .null:
+            return nil
+        default:
+            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+        }
     }
 }
 
