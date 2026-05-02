@@ -3,12 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 29 March 2026.
+//  Last changed on 2 May 2026.
 //
 
 import Foundation
 
 public enum SexType: String {
+
     case male = "M"
     case female = "F"
     case unknown = "U"
@@ -24,6 +25,11 @@ public struct Person: Record {
         guard root.tag == GedcomTag.INDI, root.key != nil
         else { fatalError("Root \(root) is not a valid 0 INDI node") }
         self.root = root
+    }
+
+    public var key: String {
+        guard let key = root.key else { fatalError("person must have a key") }
+        return key
     }
 }
 
@@ -305,6 +311,23 @@ public extension Person {
         }
         return result
     }
+}
+
+/// Extension for ancestors and descendants.
+public extension Person {
+
+    func ancestors(in index: RecordIndex) -> [Person] {
+        index.ancestors(ofPersonRoot: root).map { ancestorRoot in
+            Person(ancestorRoot)
+        }
+    }
+
+    func descendants(in index: RecordIndex) -> [Person] {
+        index.descendants(ofPersonRoot: root).map { descendantRoot in
+            Person(descendantRoot)
+        }
+    }
+
 }
 
 extension Database {

@@ -1,0 +1,25 @@
+/* Ahnentafel */
+
+proc main ()
+{
+    set(indi, indi(“@I1@“))
+    list(ilist)
+    list(alist)
+    enqueue(ilist, indi)
+    enqueue(alist, 1)
+
+    while(indi, dequeue(ilist)) {
+        set(ahnen, dequeue(alist))
+        d(ahnen) ". " name(indi) nl()
+        if (e, birth(indi)) { “b. "  nl() }
+        if (e, death(indi)) { “d. "  nl() }
+        if (par,father(indi)) {
+            enqueue(ilist, par)
+            enqueue(alist, mul(2,ahnen))
+        }
+        if (par,mother(indi)) {
+            enqueue(ilist, par)
+            enqueue(alist, add(1,mul(2,ahnen)))
+        }
+    }
+}

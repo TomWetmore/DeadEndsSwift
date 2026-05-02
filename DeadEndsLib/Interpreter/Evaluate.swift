@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 26 April 2026.
+//  Last changed on 2 May 2026.
 //
 
 import Foundation
@@ -130,20 +130,22 @@ extension Program {
 // TODO: THESE ARE NOT FINAL IMPLEMENTATIONS.
 extension Program {
 
-    /// Evaluate an expression that should return a person root node.
-    func evaluateIndi(_ pnode: ParsedExpr) throws -> GedcomNode? {
-        let pvalue = try evaluate(pnode)
-        /// Caller should check for nil and possibly throw an error.
-        guard case .gnode(let gnode) = pvalue, gnode.tag == GedcomTag.INDI else { return nil }
-        return gnode
-    }
-
-    /// Evaluate an expression for a person; throw error if not a person.
+    /// Evaluate an expression that should return a person.
     func evaluatePerson(_ expr: ParsedExpr, errMessage: String) throws -> Person {
 
-        let pvalue = try evaluate(expr)
+        let value = try evaluate(expr)
+        guard case .person(let person) = value else {
+            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+        }
+        return person
+    }
 
-        guard case .person(let person) = pvalue else {
+    /// Evaluate an expression for an optioanlaui person; throw error if not a person.
+    func evaluatePersonOpt(_ expr: ParsedExpr, errMessage: String) throws -> Person? {
+
+        let value = try evaluate(expr)
+        guard case .null = value else { return nil }
+        guard case .person(let person) = value else {
             throw RuntimeError.typeMismatch(errMessage, line: expr.line)
         }
         return person
@@ -163,5 +165,18 @@ extension Program {
     }
 }
 
+/// Evaluators for person sets.
+extension Program {
+
+    /// Evaluate a parsed expression to a person set.
+    func evaluatePersonSet(_ expr: ParsedExpr, errMessage: String)
+    throws -> PersonSet<ProgramValue> {
+
+        guard case .personset(let personset) = try evaluate(expr) else {
+            throw RuntimeError.runtimeError(errMessage, line: expr.line)
+        }
+        return personset
+    }
+}
 
 

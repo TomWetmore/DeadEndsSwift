@@ -54,6 +54,10 @@ extension Program {
             return .breaking
         case .continueStatement:
             return .continuing
+        case .forListStatement(let stmt):
+            return try interpForList(stmt)
+        case .forIndisetStatement(let stmt):
+            return try interpForIndiset(stmt)
         case .expressionStatement(let expr):
             let pvalue: ProgramValue = try evaluate(expr)
             if case let .string(string) = pvalue {

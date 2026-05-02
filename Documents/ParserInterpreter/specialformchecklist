@@ -1,0 +1,60 @@
+Checklist for adding a new special-form statement
+
+1. Lexer/token layer.  Add a token kind and keyword mapping:
+
+    case forlist
+    "forlist" -> .forlist
+
+2. Parsed AST layer.  Create a parsed statement struct:
+
+    struct ParsedForListStmt: Equatable, CustomStringConvertible {
+        let listExpr: ParsedExpr
+        let valueVar: String
+        let indexVar: String
+        let body: [ParsedStatement]
+        let line: Int
+    }
+Add it to ParsedStatement.Kind:
+    case forListStatement(ParsedForListStmt)
+
+3. Parser layer.  Write a parser:
+    struct ForListStmtParser: Parser { ... }
+Capture the line before consuming the keyword:
+    let line = input.first?.line ?? 0
+Parse identifier targets as identifiers, not expressions:
+    let valueVar = try IdentifierToken().parse(&input)
+    let indexVar = try IdentifierToken().parse(&input)
+Return a wrapped ParsedStatement.
+
+4. Statement dispatch layer.  Add the new parser to the main statement parser before the expression-statement fallback:
+    if let stmt = try? ForListStmtParser().parse(&input) { return stmt }
+
+5. Interpreter dispatch layer.  Add a case in statement interpretation:
+    `case .forListStatement(let stmt):
+        `return try interpForList(stmt)
+
+6. Interpreter implementation.  Write the interpreter method:
+    func interpForList(_ stmt: ParsedForListStmt) throws -> InterpResult
+Inside it:
+* evaluate the list expression
+* assign the element variable
+* assign the index variable
+* interpret the body
+* handle break, continue, return
+
+7. Control-flow handling Decide behavior:
+    case .continuing:
+        continue
+    case .breaking:
+        return .okay
+    case .returning:
+        return result
+
+8. Line-number handling Use:
+    * stmt.line for errors about the whole statement
+    * stmt.listExpr.line for errors in the list expression
+    * body statement lines for errors inside the body
+
+9. Test
+
+10. Clean build if behavior is weird

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 14 April 2026.
+//  Last changed on 2 May 2026.
 //
 
 /// The parsed structs and enums make up the "abstract syntax tree" of
@@ -95,6 +95,8 @@ struct ParsedStatement: Equatable, CustomStringConvertible {
         case returnStatement(ParsedReturnStmt)
         case breakStatement(ParsedBreakStmt)
         case continueStatement(ParsedContinueStmt)
+        case forListStatement(ParsedForListStmt)
+        case forIndisetStatement(ParsedForIndisetStmt)
         case expressionStatement(ParsedExpr)
     }
 
@@ -106,6 +108,8 @@ struct ParsedStatement: Equatable, CustomStringConvertible {
         case .returnStatement(let s): return s.description
         case .breakStatement(let s): return s.description
         case .continueStatement(let s): return s.description
+        case .forListStatement(let s): return s.description
+        case .forIndisetStatement(let s): return s.description
         case .expressionStatement(let e): return "EXPRSTMT(\(e))"
         }
     }
@@ -186,6 +190,38 @@ struct ParsedContinueStmt: Equatable, CustomStringConvertible {
     var description: String { "CONTINUE()" }
 }
 
+/// SPECIAL STATEMENT FORMS ///
+
+/// Parsed structure for a list statement -- forlist(list, var, var)
+struct ParsedForListStmt: Equatable, CustomStringConvertible {
+    
+    let listExpr: ParsedExpr
+    let elementVar: String
+    let indexVar: String
+    let body: [ParsedStatement]
+    let line: Int
+
+    var description: String {
+        "forlist(\(listExpr), \(elementVar), \(indexVar)) { ... }"
+    }
+}
+
+/// Parsed structure for an indiset statement -- forindiset(indiset, indi, any, index)
+struct ParsedForIndisetStmt: Equatable, CustomStringConvertible {
+
+    // What are the parts of a forindiset loop to we need?
+    let indisetExpr: ParsedExpr
+    let indiVar: String
+    let valueVar: String
+    let indexVar: String
+    let body: [ParsedStatement]
+    let line: Int
+
+    var description: String {
+        "forindiset(\(indisetExpr), \(indiVar), \(valueVar), \(indexVar)) { ... }"
+    }
+}
+
 /// Parsed conditional expression.
 enum ParsedCondition: Equatable, CustomStringConvertible {
 
@@ -225,7 +261,3 @@ struct ParsedExpr: Equatable, CustomStringConvertible {
     }
 }
 
-//struct SourceLocation: Equatable {
-//    var line = 0
-//    var column = 0
-//}

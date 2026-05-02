@@ -30,7 +30,7 @@ extension Program {
             return list.count == 0 ? .trueProgramValue : .falseProgramValue
         case .table(let table):
             return table.count == 0 ? .trueProgramValue : .falseProgramValue
-        case .indiset(let set):
+        case .personset(let set):
             return set.count == 0 ? .trueProgramValue : .falseProgramValue
         case .string(let string):
             return string.isEmpty ? .trueProgramValue : .falseProgramValue
@@ -50,7 +50,7 @@ extension Program {
             return .integer(list.count)
         case .table(let table):
             return .integer(table.count)
-        case .indiset(let set):
+        case .personset(let set):
             return .integer(set.count)
         case .string(let string):
             return .integer(string.count)
@@ -88,16 +88,13 @@ extension Program {
     }
 
     /// Evaluate an expression and be sure it is a list.
-    private func evaluateList(_ expr: ParsedExpr, errMessage: String) throws -> List<ProgramValue> {
+    func evaluateList(_ expr: ParsedExpr, errMessage: String) throws -> List<ProgramValue> {
         guard case let .list(list) = try evaluate(expr) else {
             throw RuntimeError.typeMismatch(errMessage, line: expr.line)
         }
         return list
     }
 }
-
-//forlist (LIST, ANY_V, INT_V) { } loop through all elements of list
-
 
 /// Structure that holds the programming language's List values.
 public struct List<Element> {

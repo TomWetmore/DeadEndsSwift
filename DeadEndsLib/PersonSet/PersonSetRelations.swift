@@ -13,35 +13,34 @@ extension PersonSet {
     /// Return the children person set of a person set.
     public func childrenSet(in index: RecordIndex) -> PersonSet<Payload> {
         
-        var seen: Set<RecordKey> = []
-        var roots: [Root] = []
+        var seen = Set<RecordKey>()
+        var children = [Person]()
 
         for element in elements {
-            for chilRoot in index.children(ofPersonRoot: element.root) {
-                let chilKey = requireKey(on: chilRoot)
-                if seen.insert(chilKey).inserted {
-                    roots.append(chilRoot)
+            for child in element.person.children(in: index) {
+                if seen.insert(child.key).inserted {
+                    children.append(child)
                 }
             }
         }
-        return PersonSet(roots: roots)
+        return PersonSet(persons: children)
     }
 
-    /// Return the parent person set of a person set. The result may
-    /// overlap with self.
+    /// Return the parent person set of a person set.
     public func parentsSet(in index: RecordIndex) -> PersonSet<Payload> {
 
         var seen = Set<RecordKey>()
-        let results = PersonSet<Payload>()
+        var parents = [Person]()
 
         for element in elements {
-            let keys = index.parentKeys(ofPersonKey: element.key)
-            for key in keys where seen.insert(key).inserted {
-                let root = index.requireRoot(from: key, tag: GedcomTag.INDI)
-                results.append(root)
+            for parent in element.person.parents(in: index) {
+                if seen.insert(parent.key).inserted {
+                    parents.append(parent)
+
+                }
             }
         }
-        return results
+        return PersonSet(persons: parents)
     }
 
     /// Return the set of all spouses of persons in this set.
@@ -49,65 +48,64 @@ extension PersonSet {
     public func spouseSet(in index: RecordIndex) -> PersonSet<Payload> {
 
         var seen = Set<RecordKey>()
-        let result = PersonSet<Payload>()
+        var spouses = [Person]()
 
         for element in elements {
-            let keys = index.spouseKeys(ofPersonKey: element.key)
-            for key in keys where seen.insert(key).inserted {
-                let root = index.requireRoot(from: key, tag: GedcomTag.INDI)
-                result.append(root)
+            for spouse in element.person.spouses(in: index) {
+                if seen.insert(spouse.key).inserted {
+                    spouses.append(spouse)
+                }
             }
         }
-        return result
+        return PersonSet(persons: spouses)
     }
 
     /// Return the sibling person set of a person set.
     public func siblingSet(in index: RecordIndex) -> PersonSet<Payload> {
 
         var seen = Set<RecordKey>()
-        let result = PersonSet<Payload>()
+        var siblings: [Person] = []
 
         for element in elements {
-            let keys = index.siblingKeys(ofPersonKey: element.key)
-            for key in keys where seen.insert(key).inserted {
-                let root = index.requireRoot(from: key, tag: GedcomTag.INDI)
-                result.append(root)
-
+            for sibling in element.person.siblings(in: index) {
+                if seen.insert(sibling.key).inserted {
+                    siblings.append(sibling)
+                }
             }
         }
-        return result
+        return PersonSet(persons: siblings)
     }
 
     /// Return the ancestors person set of a person set.
     public func ancestorSet(in index: RecordIndex) -> PersonSet<Payload> {
-        var visited: Set<RecordKey> = []
-        var roots: [Root] = []
+
+        var seen: Set<RecordKey> = []
+        var ancestors = [Person]()
 
         for element in elements {
-            for ancRoot in index.ancestors(of: element.root) {
-                let ancKey = requireKey(on: ancRoot)
-                if visited.insert(ancKey).inserted {
-                    roots.append(ancRoot)
+            for ancestor in element.person.ancestors(in: index) {
+                if seen.insert(ancestor.key).inserted {
+                    ancestors.append(ancestor)
                 }
             }
         }
-        return PersonSet(roots: roots)
+        return PersonSet(persons: ancestors)
     }
 
     /// Return the descendants person set of a person set.
     public func descendantSet(in index: RecordIndex) -> PersonSet<Payload> {
-        var visited: Set<RecordKey> = []
-        var roots: [Root] = []
+
+        var seen = Set<RecordKey>()
+        var descendants = [Person]()
 
         for element in elements {
-            for descRoot in index.descendants(of: element.root) {
-                let descKey = requireKey(on: descRoot)
-                if visited.insert(descKey).inserted {
-                    roots.append(descRoot)
+            for descendant in element.person.descendants(in: index) {
+                if seen.insert(descendant.key).inserted {
+                    descendants.append(descendant)
                 }
             }
         }
-        return PersonSet(roots: roots)
+        return PersonSet(persons: descendants)
     }
 }
 

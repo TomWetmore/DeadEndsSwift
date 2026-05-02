@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 17 April 2026.
+//  Last changed on 2 May 2026.
 //
 
 import Foundation
@@ -22,17 +22,17 @@ enum SortType {
 /// Element in a person set.
 public struct PersonSetElement<Payload>: Hashable, CustomStringConvertible {
 
-    let root: Root
-    let key: String  // Not optional.
+    let person: Person
+    let key: String
     let payload: Payload?
 
-    /// Create an element; replaces the default init.
-    public init(root: Root, payload: Payload? = nil) {
+    /// Create a person set element.
+    public init(_ person: Person, payload: Payload? = nil) {
 
-        guard root.tag == GedcomTag.INDI, let key = root.key
-        else { fatalError("root \(root) must be a keyed 0 INDI node") }
-        self.root = root
-        self.key = key
+        guard person.tag == GedcomTag.INDI
+        else { fatalError("person \(person.root) must be a keyed 0 INDI person") }
+        self.person = person
+        self.key = person.key
         self.payload = payload
     }
 
@@ -49,15 +49,15 @@ public struct PersonSetElement<Payload>: Hashable, CustomStringConvertible {
     /// Return the description of an element as a person's name.
     public var description: String {
 
-        let name = root.kid(withTag: "NAME")?.val ?? "<no name>"
+        let name = person.kid(withTag: "NAME")?.val ?? "<no name>"
         return "\(key): \(name)"
     }
     
     /// Compare two elements for name sorting.
     func nameSortsBefore(_ other: PersonSetElement) -> Bool {
 
-        let lhsName = GedcomName(from: root)
-        let rhsName = GedcomName(from: other.root)
+        let lhsName = GedcomName(from: person.root)
+        let rhsName = GedcomName(from: other.person.root)
 
         switch (lhsName, rhsName) {
         case let (lhs?, rhs?):
@@ -98,8 +98,8 @@ public class PersonSet<Payload>: Collection {
     }
 
     /// Append new a sequence element to the set.
-    func append(_ root: Root, payload: Payload? = nil) {
-        append(PersonSetElement(root: root, payload: payload))
+    func append(_ person: Person, payload: Payload? = nil) {
+        append(PersonSetElement(person, payload: payload))
     }
 
     /// Return deep copy of a set.
@@ -176,26 +176,16 @@ public class PersonSet<Payload>: Collection {
 /// Convenience initializers.
 extension PersonSet {
 
-    /// Create a person set from an array of Gedcom person roots.
-//    public convenience init(roots: [Root]) {
-//        self.init()
-//        roots.forEach { self.elements.append(PersonSetElement(root: $0)) }
-//    }
-//
-//    /// Create a person set from a single person root.
-//    public convenience init(root: Root) {
-//        self.init()
-//        self.elements.append(PersonSetElement(root: root))
-//    }
-
-    public convenience init(roots: [Root]) {
+    /// Create a person set from an array of person roots.
+    public convenience init(persons: [Person]) {
         self.init()
-        roots.forEach { self.elements.append(PersonSetElement<Payload>(root: $0)) }
+        persons.forEach { self.elements.append(PersonSetElement<Payload>($0)) }
     }
 
-    public convenience init(root: Root) {
+    /// Create a person set form a single person root.
+    public convenience init(person: Person) {
         self.init()
-        self.elements.append(PersonSetElement<Payload>(root: root))
+        self.elements.append(PersonSetElement<Payload>(person))
     }
 }
 
@@ -223,54 +213,4 @@ extension PersonSet {
         }
         sortType = .keySorted
     }
-}
-
-/// Some test code.
-
-/// Helper function to test person sets.
-func makeSequence(keys: [String]) -> PlainPersonSet {
-    let sequence = PlainPersonSet()
-    for key in keys {
-        let node = GedcomNode(key: key, tag: GedcomTag.INDI, val: nil)
-        sequence.append(node)
-    }
-    sequence.keySort()
-    sequence.removeDuplicates()
-    return sequence
-}
-
-// Run tests
-func testRecordSequenceOperations() {
-    print("Testing RecordSequence Set Operations...")
-
-    let seqA = makeSequence(keys: ["@I1@", "@I2@", "@I3@", "@I5@"])
-    let seqB = makeSequence(keys: ["@I2@", "@I4@", "@I5@", "@I6@"])
-
-    // Test Union
-    let unionSeq = seqA.unionSet(seqB)
-    assert(unionSeq.map { $0.key } == ["@I1@", "@I2@", "@I3@", "@I4@", "@I5@", "@I6@"],
-           "Union failed")
-
-    // Test Intersection
-    let intersectionSeq = seqA.intersection(seqB)
-    assert(intersectionSeq.map { $0.key } == ["@I2@", "@I5@"],
-           "Intersection failed")
-
-    // Test Difference (A - B)
-    let differenceSeq = seqA.difference(seqB)
-    assert(differenceSeq.map { $0.key } == ["@I1@", "@I3@"],
-           "Difference failed")
-
-    // Test Subset
-    let subA = makeSequence(keys: ["@I2@", "@I5@"])
-    assert(subA.isSubset(of: seqA), "Subset test failed")
-
-    // Test Superset
-    assert(seqA.isSuperset(of: subA), "Superset test failed")
-
-    // Negative Subset Test
-    let notSub = makeSequence(keys: ["@I2@", "@I7@"])
-    assert(!notSub.isSubset(of: seqA), "Negative subset test failed")
-
-    print("All RecordSequence Set Operation tests passed!")
 }

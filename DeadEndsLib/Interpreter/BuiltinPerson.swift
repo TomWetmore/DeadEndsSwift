@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 26 April 2026.
+//  Last changed on 2 May 2026.
 //
 
 import Foundation
@@ -25,10 +25,8 @@ extension Program {
 
     // builtinSurname returns the surname found on the first NAME line in a person' record.
     func builtinSurname(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluateIndi(arg[0]) else {
-            throw RuntimeError.typeError("surname() expects a person parameter",
-                                         line: arg[0].line)
-        }
+
+        let person = try evaluatePerson(arg[0], errMessage: "surname: arg must be a person")
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
         guard let surname = gedcomName.surname else { return .null }
@@ -37,22 +35,18 @@ extension Program {
 
     // builtinGivens returns the given names ...
     func builtinGivens(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        guard let person = try evaluateIndi(arg[0]) else {
-            throw RuntimeError.typeError("givens() expects a person parameter",
-                                         line: arg[0].line)
-        }
+
+        let person = try evaluatePerson(arg[0], errMessage: "givens: arg must be a person")
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
         return .string(gedcomName.parts.joined(separator: " "))
     }
 
+    /// Returns the trimmed name of a persons.
     func builtinTrimName(_ args: [ParsedExpr]) throws -> ProgramValue {
-        // Get the person whose name is to be trimmed.
-        let person = try personFromParsedExpr(args[0], errorMessage: "trimName() expects a person argument");
-        // Get the trim length.
-        person.displayName(limit: 40) // figure out what it should be.
-        print("builtinTrimName not implemented")
-        return .null
+
+        let person = try evaluatePerson(args[0], errMessage: "trimName: arg must be a person")
+        return .string(person.displayName(limit: 40))  // TODO: Get the length from the args.
     }
 
     /// Returns the first birth event of a person.
@@ -69,21 +63,21 @@ extension Program {
         return .gnode(birth)
     }
 
-    /// Returns the first burial event of a person.
+    /// Return the first burial event of a person.
     func builtinBurial(_ args: [ParsedExpr]) throws -> ProgramValue {
         let person = try evaluatePerson(args[0], errMessage: "burial: arg must be a person")
         guard let birth = person.kid(withTag: GedcomTag.BURI) else { return .null }
         return .gnode(birth)    }
 
-    /// Returns the first baptims event of a person.
+    /// Return the first baptims event of a person.
     func builtinBaptism(_ args: [ParsedExpr]) throws -> ProgramValue {
         return try extractPersonEvent(from: args[0], tag: "BAPM", functionName: "baptism")
     }
 
-    /// Returns the first father of a person.
+    /// Return the first father of a person.
     func builtinFather(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try personFromParsedExpr(args[0], errorMessage: "father: arg must be a person")
+        let person = try evaluatePerson(args[0], errMessage: "father: arg must be a person")
         if let father = person.father(in: self.recordIndex) {
             return .person(father)
         } else {
@@ -91,11 +85,10 @@ extension Program {
         }
     }
 
-    // builtinMother is the buitin function that returns a person's mother.
+    /// Return the first mother of a person.
     func builtinMother(_ args: [ParsedExpr]) throws -> ProgramValue {
-        // Get the person whose mother is to be found.
-        let person = try personFromParsedExpr(args[0], errorMessage: "mother: arg must be a person.")
-        // Get the person's mother.
+
+        let person = try evaluatePerson(args[0], errMessage: "mother: arg must be a person.")
         if let mother = person.mother(in: self.recordIndex) {
             return .person(mother)
         } else {
@@ -103,11 +96,10 @@ extension Program {
         }
     }
 
-    // builtinNextSibling ...
+    /// Return the next sibling of a person.
     func builtinNextSibling(_ args: [ParsedExpr]) throws -> ProgramValue {
-        // Get the person whose next sibling is needed.
-        let person = try personFromParsedExpr(args[0], errorMessage: "nextsib() expects a person argument")
-        // Get the next sibling of the person.
+
+        let person = try evaluatePerson(args[0], errMessage: "nextsib: arg must be a person")
         if let nextSibling = person.nextSibling(in: self.recordIndex) {
             return .person(nextSibling)
         } else {
@@ -115,10 +107,10 @@ extension Program {
         }
     }
 
+    /// Return the previous sibling of a person.
     func builtinPrevSibling(_ args: [ParsedExpr]) throws -> ProgramValue {
-        // Get the person whose previous sibling is needed.
-        let person = try personFromParsedExpr(args[0], errorMessage: "prevsib() expects a person argument")
-        // Get the previous sibling of the person.
+
+        let person = try evaluatePerson(args[0], errMessage: "prevsib: arg must be a person")
         if let previousSibling = person.previousSibling(in: self.recordIndex) {
             return .person(previousSibling)
         } else {
@@ -131,16 +123,19 @@ extension Program {
         return .null
     }
 
+    /// Return true if a person is male.
     func builtinMale(_ args: [ParsedExpr]) throws -> ProgramValue {
-        // Get the person to be checked for being male.
-        let person = try personFromParsedExpr(args[0], errorMessage: "male() expects a person argument")
+
+        let person = try evaluatePerson(args[0], errMessage: "male: arg must be a person")
         return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
+    /// Return true if a person is female.
     func builtinFemale(_ args: [ParsedExpr]) throws -> ProgramValue {
-        // Get the person to be checked for being female.
-        let person = try personFromParsedExpr(args[0], errorMessage: "female() expects a person argument")
-        return person.isFemale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
+
+        let person = try evaluatePerson(args[0], errMessage: "female: arg must be a person")
+        return person.isFemale ?
+            ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
     func builtinPronouns(_ args: [ParsedExpr]) throws -> ProgramValue {
@@ -189,16 +184,6 @@ extension Program {
         return .null
     }
 
-    /// Look up a person in the database and return its root.
-//    func builtinIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
-//        let key = try evaluate(args[0])
-//        guard case let .string(key) = key, let node = recordIndex[key],
-//              node.tag == GedcomTag.INDI
-//        else { return .null }
-//        return .gnode(node)
-//    }
-
-    /// Look up a person in the database.
     /// Look up a person in the database.
     func builtinIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
 
@@ -238,6 +223,7 @@ extension Program {
 }
 
 extension Program {
+
     func builtinDate(_ arg: [ParsedExpr]) throws -> ProgramValue {
         let node = try evaluateGedcomNodeOpt(arg[0], errMessage: "date: arg must be a node")
         if let node = node, let date = node.kid(withTag: GedcomTag.DATE) {
@@ -256,15 +242,6 @@ extension Program {
 }
 
 extension Program {
-
-    /// Evaluates a parsed expression that should be a person.
-    func personFromParsedExpr(_ expr: ParsedExpr, errorMessage: String) throws -> Person {
-        let value = try evaluate(expr)
-        guard case let .person(person) = value, person.tag == GedcomTag.INDI else {
-            throw RuntimeError.typeError(errorMessage, line: expr.line)
-        }
-        return person
-    }
 
     // Extract an event from a .gnode associated ProgramNode.
     func extractPersonEvent(from arg: ParsedExpr, tag: String, functionName: String) throws -> ProgramValue {

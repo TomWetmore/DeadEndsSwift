@@ -28,7 +28,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     //case other(GedcomNode)
     case list(List<ProgramValue>)  // List of any program values.
     case table(ProgramTable)  // Table of string to program value mappings.
-    case indiset(PersonSet<ProgramValue>)  // Person set.
+    case personset(PersonSet<ProgramValue>)  // Person set.
 
     /// Description of a program value.
     var description: String {
@@ -57,7 +57,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
             case .person: return "person"
             case .family: return "family"
             case .gnode: return "gnode"
-            case .indiset: return "indiset"
+            case .personset: return "indiset"
             case .table: return "table"
             case .ident(_): return "ident"
             case .list(_): return "list"
@@ -83,7 +83,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
                 return f.key
             case .gnode(let node):
                 return node.description
-            case .indiset(let set):
+            case .personset(let set):
                 return "\(set.count) persons"
             case .table(let table):
                 return "\(table.count) entries" // adjust to your table wrapper

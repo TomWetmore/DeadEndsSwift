@@ -1,0 +1,8 @@
+/* Program to test person sets */
+
+proc main () {
+    indiset(set)
+    set(me, indi("@I1@))
+    addtoset(set, me)
+    showframe()
+}
