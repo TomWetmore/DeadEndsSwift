@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 23 April 2026.
+//  Last changed on 3 May 2026.
 //
 
 import SwiftUI
@@ -30,7 +30,7 @@ struct DiagnosticsPane: View {
 
     private func format(_ diag: Diagnostic) -> String {
         if let line = diag.line {
-            return "Line \(line): \(diag.message)"
+            return "line \(line): \(diag.message)"
         } else {
             return diag.message
         }

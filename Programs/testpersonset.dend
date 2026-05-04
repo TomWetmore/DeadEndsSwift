@@ -2,7 +2,29 @@
 
 proc main () {
     indiset(set)
-    set(me, indi("@I1@))
-    addtoset(set, me)
+    set(me, indi("@I1@“))
+    addtoset(set, me, 0)
     showframe()
+    set(set, union(set, parentset(set)))
+    showframe()
+    set(set, union(set, parentset(set)))
+    showframe()
+    set(set, union(set, parentset(set)))
+    showframe()
+
+    “NOW LET’S TRY KIDS—REMEMBER--CEDAR IS NOT IN THE DATABASE\n”
+
+    clear(set)
+    addtoset(set, me, 0)
+    showframe()
+    set(set, union(set, childset(set)))
+    showframe()
+    set(set, union(set, childset(set)))
+    showframe()
+    set(set, union(set, childset(set)))
+    showframe()
+
+    forindiset(set, person, value, count) {
+        d(count) ". " name(person) "\n"
+    }
 }

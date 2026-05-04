@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 2 May 2026.
+//  Last changed on 3 May 2026.
 //
 
 import Foundation
@@ -148,6 +148,10 @@ public class PersonSet<Payload>: Collection {
         return false
     }
 
+    func clear() {
+        elements.removeAll(keepingCapacity: true)
+    }
+
     /// Sort a person set by name.
     func nameSort() {
         if sortType != .nameSorted {
@@ -155,8 +159,6 @@ public class PersonSet<Payload>: Collection {
         }
         sortType = .nameSorted
     }
-
-
 
     /// Remove duplicates from a person set.
     func removeDuplicates() {

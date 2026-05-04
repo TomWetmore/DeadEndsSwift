@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 28 April 2026.
+//  Last changed on 3 May 2026.
 //
 
 import Foundation
@@ -110,22 +110,44 @@ public enum RuntimeError: Swift.Error, CustomStringConvertible {  // TODO: Remov
     case typeError(_ detail: String, line: Int)
     case missingDatabase(_ detail: String, line: Int)
 
-    public var description: String {
+    public var message: String {
         switch self {
-        case let .typeMismatch(m, l),
-             let .invalidArguments(m, l),
-             let .runtimeError(m, l),
-             let .invalidSyntax(m, l),
-             let .undefinedProcedure(m, l),
-             let .undefinedFunction(m, l),
-             let .undefinedSymbol(m, l),
-             let .invalidControlFlow(m, l),
-             let .executionFailed(m, l),
-             let .argumentCount(m, l),
-             let .typeError(m, l),
-             let .missingDatabase(m, l):
-            return "line \(l): \(m)"
+        case let .typeMismatch(m, _),
+             let .invalidArguments(m, _),
+             let .runtimeError(m, _),
+             let .invalidSyntax(m, _),
+             let .undefinedProcedure(m, _),
+             let .undefinedFunction(m, _),
+             let .undefinedSymbol(m, _),
+             let .invalidControlFlow(m, _),
+             let .executionFailed(m, _),
+             let .argumentCount(m, _),
+             let .typeError(m, _),
+             let .missingDatabase(m, _):
+            return m
         }
+    }
+
+    public var line: Int {
+        switch self {
+        case let .typeMismatch(_, l),
+             let .invalidArguments(_, l),
+             let .runtimeError(_, l),
+             let .invalidSyntax(_, l),
+             let .undefinedProcedure(_, l),
+             let .undefinedFunction(_, l),
+             let .undefinedSymbol(_, l),
+             let .invalidControlFlow(_, l),
+             let .executionFailed(_, l),
+             let .argumentCount(_, l),
+             let .typeError(_, l),
+             let .missingDatabase(_, l):
+            return l
+        }
+    }
+
+    public var description: String {
+        line > 0 ? "line \(line): \(message)" : message
     }
 }
 
@@ -202,76 +224,3 @@ func tick(line: Int) throws {
     }
 }
 
-/* TEST PROGRAM
- proc main () {
-     set(indi, indi(“@I1@“))
-     list(ilist)
-     list(alist)
-     enqueue(ilist, indi)
-     enqueue(alist, 1)
-     while(indi, dequeue(ilist)) {
-         set(ahnen, dequeue(alist))
-         d(ahnen) ". " name(indi) nl()
-         if (e, birth(indi)) { “b. "  nl() }
-         if (e, death(indi)) { “d. "  nl() }
-         if (par,father(indi)) {
-             enqueue(ilist, par)
-             enqueue(alist, mul(2,ahnen))
-         }
-         if (par,mother(indi)) {
-             enqueue(ilist, par)
-             enqueue(alist, add(1,mul(2,ahnen)))
-        }
-     }
- }
-
- proc main ()
-  {
-      set(indi, indi(“@I1@“))
-      list(ilist)
-      list(alist)
-      enqueue(ilist, indi)
-      enqueue(alist, 1)
-
-      while(indi, dequeue(ilist)) {
-          set(ahnen, dequeue(alist))
-          d(ahnen) ". " name(indi) nl()
-          if (e, birth(indi)) { “b. "  nl() }
-          if (e, death(indi)) { “d. "  nl() }
-          if (par,father(indi)) {
-              enqueue(ilist, par)
-              enqueue(alist, mul(2,ahnen))
-          }
-          if (par,mother(indi)) {
-              enqueue(ilist, par)
-              enqueue(alist, add(1,mul(2,ahnen)))
-         }
-      }
-  }
-
-
- proc main ()
-  {
-      set(indi, indi(“@I1@“))
-      list(ilist)
-      list(alist)
-      enqueue(ilist, indi)
-      enqueue(alist, 1)
-
-      while(indi, dequeue(ilist)) {
-          set(ahnen, dequeue(alist))
-          d(ahnen) ". " name(indi) nl()
-          if (par,father(indi)) {
-              enqueue(ilist, par)
-              enqueue(alist, mul(2,ahnen))
-          }
-          if (par,mother(indi)) {
-              enqueue(ilist, par)
-              enqueue(alist, add(1,mul(2,ahnen)))
-         }
-      }
-  }
-
- 
-
- */

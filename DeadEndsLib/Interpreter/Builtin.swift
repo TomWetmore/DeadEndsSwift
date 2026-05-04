@@ -3,15 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 30 April 2026.
+//  Last changed on 3 May 2026.
 //
 
 import Foundation
 
 extension Program {
 
-    /// Structure that hold builtin functions. Unlike user functions the
-    /// arguments are not evaluated.
+    /// Structure that holds the builtin functions.
     struct Builtin {
         
         let minArgs: Int
@@ -19,6 +18,7 @@ extension Program {
         let function: ([ParsedExpr]) throws -> ProgramValue
     }
 
+    /// Build the array of built-in functions.
     func setupBuiltins() {
         builtins = [
             "d":    Builtin(minArgs: 1, maxArgs: 1) { try self.builtinD($0) },
@@ -73,10 +73,13 @@ extension Program {
             "date":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDate($0) },
             "place": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinPlace($0) },
 
+            // Generic functions on lists, tables and person sets.
+            "empty":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinEmpty($0) },
+            "length": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinLength($0) },
+            "clear":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinClear($0) },
+
             // List operations; the length and empty builtins are generic.
             "list":    Builtin(minArgs: 1, maxArgs: 1) { try self.builtinList($0) },
-            "empty":   Builtin(minArgs: 1, maxArgs: 1) { try self.builtinEmpty($0) },
-            "length":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinLength($0) },
             "append":  Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
             "prepend": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinPrepend($0) },
             "push":    Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
@@ -92,6 +95,9 @@ extension Program {
             // Person set operations.
             "indiset": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndiset($0) },
             "addtoset" : Builtin(minArgs: 3, maxArgs: 3) { try self.builtinAddtoset($0) },
+            "union"    : Builtin(minArgs: 2, maxArgs: 2) { try self.builtinUnion($0) },
+            "parentset" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinParentset($0) },
+            "childset" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinChildset($0) },
             // Lots of iterators are not yet implemented.
 
             // Meta operations.

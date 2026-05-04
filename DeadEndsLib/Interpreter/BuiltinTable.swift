@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 April 2026.
-//  Last changed on 27 April 2026.
+//  Last changed on 3 May 2026.
 //
 
 import Foundation
@@ -15,6 +15,10 @@ final public class ProgramTable {
 
     var count: Int {
         elements.count
+    }
+
+    func clear() {
+        elements.removeAll(keepingCapacity: true)
     }
 }
 
@@ -62,6 +66,7 @@ extension Program {
         return table.elements[key] ?? .null
     }
 
+    /// TODO: Isn't this redundant with the generic length builtin?
     func builtinTableLength(_ args: [ParsedExpr]) throws -> ProgramValue {
         let tableValue = try evaluate(args[0])
         guard case let .table(table) = tableValue else {

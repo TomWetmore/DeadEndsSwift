@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 28 April 2026.
+//  Last changed on 3 May 2026.
 //
 
 import Foundation
@@ -42,6 +42,40 @@ extension Program {
         }
     }
 
+    /// Clear the contents of list, table, or person set.
+    func builtinClear(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        guard case let .identifier(name) = args[0].kind else {
+            throw RuntimeError.typeMismatch(
+                "clear: arg must be a list, table, or indiset variable",
+                line: args[0].line
+            )
+        }
+        guard let value = lookupSymbol(name) else {
+            throw RuntimeError.undefinedSymbol(
+                "undefined variable: \(name)",
+                line: args[0].line
+            )
+        }
+        switch value {
+        case .list(var list):
+            list.clear()
+            assignToSymbol(name, value: .list(list))
+        case .table(let table):
+            table.clear()
+            assignToSymbol(name, value: .table(table))
+        case .personset(let personset):
+            personset.clear()
+            assignToSymbol(name, value: .personset(personset))
+        default:
+            throw RuntimeError.typeMismatch(
+                "clear: arg must be a list, table, or indiset variable",
+                line: args[0].line
+            )
+        }
+        return .null
+    }
+
     /// Return the length of a list, table, person set or string.
     func builtinLength(_ args: [ParsedExpr]) throws -> ProgramValue {
 
@@ -63,7 +97,7 @@ extension Program {
     /// Append a value to a list.
     func builtinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
         var (name, list) =
-            try requireListVariable(args[0],errMessage: "append: 1st arg must be a list variable")
+            try requireListVariable(args[0], errMessage: "append: 1st arg must be a list var")
         list.append(try evaluate(args[1]))
         assignToSymbol(name, value: .list(list))
         return .null
@@ -72,7 +106,7 @@ extension Program {
     /// Prepend a value to a list.
     func builtinPrepend(_ args: [ParsedExpr]) throws -> ProgramValue {
         var (name, list) =
-            try requireListVariable(args[0], errMessage: "prepend: 1st arg must be a list variable")
+            try requireListVariable(args[0], errMessage: "prepend: 1st arg must be a list var")
         list.prepend(try evaluate(args[1]))
         assignToSymbol(name, value: .list(list))
         return .null
@@ -81,7 +115,7 @@ extension Program {
     /// Remove the first value from a list.
     func builtinRemoveFirst(_ args: [ParsedExpr]) throws -> ProgramValue {
         var (name, list) =
-            try requireListVariable(args[0], errMessage: "removefirst: 1st arg must be a list variable")
+            try requireListVariable(args[0], errMessage: "removefirst: 1st arg must be a list var")
         guard let first = list.removeFirst() else { return .null }
         assignToSymbol(name, value: .list(list))
         return first
@@ -134,6 +168,10 @@ public struct List<Element> {
         return self.elements.removeFirst()
     }
 
+    mutating func clear() {
+        elements.removeAll(keepingCapacity: false)
+    }
+
     subscript(index: Int) -> Element {
         get { elements[index] }
         set { elements[index] = newValue }
@@ -151,14 +189,6 @@ extension List: Sequence {
         elements.makeIterator()
     }
 }
-
-/// Require a parsed expression to be an identifier; return it as a string.
-//func evaluateIdent(_ expr: ParsedExpr, errMessage: String) throws -> String {
-//    guard case let .identifier(name) = expr.kind else {
-//        throw RuntimeError.typeMismatch(errMessage, line: expr.line)
-//    }
-//    return name
-//}
 
 extension Program {
 
@@ -179,4 +209,3 @@ extension Program {
         return (name, list)
     }
 }
-

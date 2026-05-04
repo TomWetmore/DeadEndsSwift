@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 April 2026.
-//  Last changed on 28 April 2026.
+//  Last changed on 3 May 2026.
 //
 //  The built-ins in this file are used to inspect running
 //  programs. They are used to help users debug their programs
@@ -11,23 +11,21 @@
 
 import Foundation
 
-/* showframe, showstack, valueof, typeof, showexpr */
-
 extension Program {
 
-    /// Builtin  function that shows the current run time frame.
+    /// Builtin function that shows the run time frame.
     func builtinShowFrame(_ args: [ParsedExpr]) throws -> ProgramValue {
         showFrame()
         return .null
     }
 
-    /// Builtin function that shows the full run times stack and the global symbol table.
+    /// Builtin function that shows the run times stack and global symbol table.
     func builtinShowStack(_ args: [ParsedExpr]) throws -> ProgramValue {
         showRuntimeStack()
         return .null
     }
 
-    /// Builtin function that shows the type and value of a parsed expression.
+    /// Builtin function that shows the type and value of an expression.
     func builtinValueOf(_ args: [ParsedExpr]) throws -> ProgramValue {
         let value = try evaluate(args[0])
         return .string("\(value.typeName): \(value.displayValue)")
@@ -94,6 +92,6 @@ extension Program {
 
     private func showFrame() {
         guard let frame = callStack.last else { return }
-        output.write(formatFrame(frame))
+        output.writeln(formatFrame(frame))
     }
 }
