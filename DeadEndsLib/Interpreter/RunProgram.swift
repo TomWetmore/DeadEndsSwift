@@ -5,15 +5,19 @@
 //  Created by Thomas Wetmore on 12 April 2026.
 //  Last changed on 25 April 2026.
 //
-/// runProgram runs a DeadEnds program and sends the output to a
-/// ProgramOutput object. The program is passed in as a string.
-/// The function compiles the program (lexes and parses) the string,
-/// and then runs the resulting parsed program. If there are issues
-/// the function throws an error of various types.
+/// runProgram runs a DeadEnds program and sends its output to standard
+/// output. The program is passed in as a string. The function lexes and
+/// parses the program, building the program's internal parsed program
+/// abstract syntax tree. If there are no compile errors it then creates
+/// a runtime program from the parsed program and attempts to run it.
+/// Runtime time errors are thrown.
 ///
-/// This function is designed more for command line use than
-/// application use. There is another version of the programming code
-/// found in the programming page model.
+/// In current DeadEnds software programs are run in two ways. First using
+/// the run program function defined here. Second, programs are run from
+/// the program page of the SwiftUI app.
+///
+/// The version defined here is intended for use in command line programs
+/// and for debugging.
 ///
 
 import Foundation

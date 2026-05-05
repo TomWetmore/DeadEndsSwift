@@ -3,19 +3,20 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 3 May 2026.
+//  Last changed on 4 May 2026.
 //
 
 import Foundation
 
-/// Generalize program output.
+/// Generalize program output. Standard output, buffered output, and UI text view output
+/// are used in DeadEnds.
 public protocol ProgramOutput {
-    func write(_ text: String)
 
-    func clear()
+    func write(_ text: String)
 }
 
 public extension ProgramOutput {
+
     func writeln(_ text: String) {
         write(text + "\n")
     }
@@ -24,24 +25,22 @@ public extension ProgramOutput {
 /// Program output for standard console output.
 public final class ConsoleOutput: ProgramOutput {
 
-    public var text: String = ""
-
     public func write(_ text: String) {
         print(text, terminator: "")
     }
 
     public init() {}  // Needed to make it public.
-
-    public func clear() {}  // Clear is a no-op for this meeter of the protocol.
 }
 
 /// DeadEnds program; combines static program parts with runtime parts.
+/// To run a DeadEnds program/script a program object is created and its
+/// interpret program method is called.
 final public class Program {
 
     let parsedProgram: ParsedProgram  // Immutable program.
     var builtins: [String: Builtin] = [:]  // Builtin library.
-    let procTable: [String: Int]  // User defined procs.
-    let funcTable: [String: Int]  // User defined funcs.
+    let procTable: [String: ParsedProcDefn]  // User defined procs.
+    let funcTable: [String: ParsedFuncDefn]  // User defined funcs.
     var hasRun = false
     var globalSymbolTable: SymbolTable = [:]  // Global symbols.
     var database: Database  // Database.
@@ -50,10 +49,15 @@ final public class Program {
 
     var recordIndex: RecordIndex { database.recordIndex }
 
+    private var stepCount = 0
+    private let maxSteps = 750_000
+
+    /// Local symbol table, in the current frame.
     var localSymbolTable: SymbolTable {
         callStack.last?.symbols ?? [:]
     }
 
+    /// Current frame in the run time stack.
     var currentFrame: RuntimeFrame {
         get {
             guard let frame = callStack.last else { fatalError("No frame available") }
@@ -65,7 +69,7 @@ final public class Program {
         }
     }
 
-    /// Create a runnable program from a parsed program.
+    /// Create a runnable program from a parsed program, database, and output sink.
     public init(parsedProgram: ParsedProgram, database: Database, output: ProgramOutput) {
 
         self.parsedProgram = parsedProgram
@@ -73,16 +77,16 @@ final public class Program {
         self.output = output
         self.callStack  = [RuntimeFrame]()
 
-        var procTable: [String: Int] = [:]
-        var funcTable: [String: Int] = [:]
+        var procTable: [String: ParsedProcDefn] = [:]
+        var funcTable: [String: ParsedFuncDefn] = [:]
         var globals: SymbolTable = [:]
 
-        for (i, defn) in parsedProgram.defns.enumerated() {
+        for defn in parsedProgram.defns {
             switch defn {
             case .procDef(let procDef):
-                procTable[procDef.name] = i
+                procTable[procDef.name] = procDef
             case .funcDef(let funcDef):
-                funcTable[funcDef.name] = i
+                funcTable[funcDef.name] = funcDef
             case .global(let globalDef):
                 globals[globalDef.name] = .null
             }
@@ -90,12 +94,13 @@ final public class Program {
         self.procTable = procTable
         self.funcTable = funcTable
         self.globalSymbolTable = globals
+
         setupBuiltins()
     }
 }
 
 /// Run time errors that happen when a program is running.
-public enum RuntimeError: Swift.Error, CustomStringConvertible {  // TODO: Remove "Swift." after fixing incorrect use of Error.
+public enum RuntimeError: Swift.Error, CustomStringConvertible {  // TODO: Remove "Swift." after fixing use of Error.
 
     case typeMismatch(_ detail: String, line: Int)
     case invalidArguments(_ detail: String, line: Int)
@@ -154,73 +159,51 @@ public enum RuntimeError: Swift.Error, CustomStringConvertible {  // TODO: Remov
 /// Interpreter for interpretProgram method.
 extension Program {
 
-    /// Run a program by calling the main proc.
+    /// Run the program by calling its main procedure.
     @discardableResult
     public func interpretProgram() throws -> InterpResult {
-        guard !hasRun else {
-            throw RuntimeError.runtimeError("programs can only be run once",
-                                            line: 0)  // Line 0 okay.
+
+        guard !hasRun else {  // TODO: Rethink the 'has run' idea.
+            throw RuntimeError.runtimeError("programs can only be run once", line: 0)
         }
         hasRun = true
-        guard let mainIndex = procTable["main"] else {
-            throw RuntimeError.undefinedProcedure("no main proc found", line: 0)
-        }
-        guard case .procDef(let mainProc) = parsedProgram.defns[mainIndex] else {
-            fatalError("corrupt proc table for main")
-        }
+        let mainProc = try requireProcDefn("main", line: 0)
         if mainProc.params.count != 0 {
-            throw RuntimeError.argumentCount("main proc cannot have params",
-                                             line: mainProc.line)
+            throw RuntimeError.argumentCount("main: cannot have params", line: mainProc.line)
         }
         let mainCall = ParsedCallStatement(name: "main", args: [], line: 0)  // Bootstrap.
         return try interpProcCall(mainCall)
     }
 }
 
+/// Require methods for procedure and function definitions.
 extension Program {
 
-    /// Return a user proc definition. The proc table maps proc names to integers.
-    /// This method gets the number from the name and then gets the definitioin
-    /// by subscripting the defns list in the parsed program,
-    func procDefn(_ name: String, line: Int) throws -> ParsedProcDefn {
-
-        guard let index = procTable[name] else {
-            throw RuntimeError.undefinedSymbol("proc '\(name)' is not found",
-                                               line: line)
+    /// Return a procedure defn or throw an undefined error.
+    func requireProcDefn(_ name: String, line: Int) throws -> ParsedProcDefn {
+        guard let procDefn = procTable[name] else {
+            throw RuntimeError.undefinedProcedure("\(name): undefined procedure", line: line)
         }
-        guard case .procDef(let procDef) = parsedProgram.defns[index] else {
-            fatalError("corrupt proc table for \(name)")
-        }
-        return procDef
+        return procDefn
     }
 
-    /// Return a user func definition. The func table maps names to integers.
-    /// This method looks up the number from the name and then gets the
-    /// definition by subscripting the list of definitions in the parsed program.
-    func funcDefn(_ name: String, line: Int) throws -> ParsedFuncDefn {
-
-        guard let index = funcTable[name] else {
-            throw RuntimeError.undefinedSymbol("func '\(name)' not found",
-                                               line: line)
+    /// Return a function defn or throw an undefined error.
+    func requireFuncDefn(_ name: String, line: Int) throws -> ParsedFuncDefn {
+        guard let funcDefn = funcTable[name] else {
+            throw RuntimeError.undefinedFunction("\(name): undefined function", line: line)
         }
-        guard case .funcDef(let funcDef) = parsedProgram.defns[index] else {
-            fatalError("Corrupt func table for \(name)")
-        }
-        return funcDef
+        return funcDefn
     }
 }
 
-/// INFINITE LOOP DETECTION.
-nonisolated(unsafe) private var stepCount = 0
-private let maxSteps = 100_000
+/// Infinite loop protection.
+extension Program {
 
-func tick(line: Int) throws {
-    stepCount += 1
-    if stepCount > maxSteps {
-        throw RuntimeError.runtimeError(
-            "execution stopped: possible infinite loop",
-            line: line
-        )
+    /// Called when a statement is interpreted.
+    func tick(line: Int) throws {
+        stepCount += 1
+        if stepCount > maxSteps {
+            throw RuntimeError.runtimeError("run stopped: possible infinite loop", line: line)
+        }
     }
 }
-

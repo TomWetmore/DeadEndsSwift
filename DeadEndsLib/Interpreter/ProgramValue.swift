@@ -5,13 +5,13 @@
 //  Created by Thomas Wetmore on 7 April 2026.
 //  Last changed on 28 April 2026.
 //
-//  ProgramValue is the type used for expression values in the DeadEnds
-//  programming language. They are the values stored in symbol tables.
+//  ProgramValue is the type of the expressions in the DeadEnds
+//  programming language. It is an enumeration with associated types.
 //
 
 import Foundation
 
-/// Enumeration of the kinds of program values with their associated types.
+/// Values of DeadEnds program expressions.
 public enum ProgramValue: @unchecked Sendable, Equatable {
 
     case null
@@ -46,81 +46,83 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         }
     }
 
+    /// Type name strings for the program value kinds.
     var typeName: String {
 
-            switch self {
-            case .null: return "null"
-            case .boolean: return "boolean"
-            case .integer: return "integer"
-            case .double: return "double"
-            case .string: return "string"
-            case .person: return "person"
-            case .family: return "family"
-            case .gnode: return "gnode"
-            case .personset: return "indiset"
-            case .table: return "table"
-            case .ident(_): return "ident"
-            case .list(_): return "list"
-            }
-
+        switch self {
+        case .null: return "null"
+        case .boolean: return "boolean"
+        case .integer: return "integer"
+        case .double: return "double"
+        case .string: return "string"
+        case .person: return "person"
+        case .family: return "family"
+        case .gnode: return "gnode"
+        case .personset: return "indiset"
+        case .table: return "table"
+        case .ident(_): return "ident"
+        case .list(_): return "list"
         }
 
+    }
+
+    /// Value strings for the program vaue kinds.
     var displayValue: String {
-            switch self {
-            case .null:
-                return "null"
-            case .boolean(let b):
-                return b ? "true" : "false"
-            case .integer(let i):
-                return String(i)
-            case .double(let d):
-                return String(d)
-            case .string(let s):
-                return s
-            case .person(let p):
-                return p.displayName()
-            case .family(let f):
-                return f.key
-            case .gnode(let node):
-                return node.description
-            case .personset(let set):
-                return "\(set.count) persons"
-            case .table(let table):
-                return "\(table.count) entries" // adjust to your table wrapper
-            case .ident(_): return "ident"
-            case .list(let list):
-                return "\(list.count) elements"
+        switch self {
+        case .null:
+            return "null"
+        case .boolean(let b):
+            return b ? "true" : "false"
+        case .integer(let i):
+            return String(i)
+        case .double(let d):
+            return String(d)
+        case .string(let s):
+            return s
+        case .person(let p):
+            return p.displayName()
+        case .family(let f):
+            return f.key
+        case .gnode(let node):
+            return node.description
+        case .personset(let set):
+            return "\(set.count) persons"
+        case .table(let table):
+            return "\(table.count) entries" // adjust to your table wrapper
+        case .ident(_): return "ident"
+        case .list(let list):
+            return "\(list.count) elements"
             //case .list(let list):
-//            case .list(let list):
-//                let maxItems = 10
-//                var parts: [String] = []
-//                parts.reserveCapacity(maxItems)
-//
-//                var shown = 0
-//                for value in list {
-//                    if shown >= maxItems { break }
-//                    parts.append(value.displayValue)
-//                    shown += 1
-//                }
-//
-//                if list.count > maxItems {
-//                    return "[" + parts.joined(separator: ", ") + ", ... (\(list.count) total)]"
-//                } else {
-//                    return "[" + parts.joined(separator: ", ") + "]"
-//                }
-//                     ems.joined(separator: ", ") + suffix + "]"
-//                let elements = list.map { $0.displayValue }
-//                return "[" + elements.joined(separator: ", ") + "]"
-            }
-
+            //            case .list(let list):
+            //                let maxItems = 10
+            //                var parts: [String] = []
+            //                parts.reserveCapacity(maxItems)
+            //
+            //                var shown = 0
+            //                for value in list {
+            //                    if shown >= maxItems { break }
+            //                    parts.append(value.displayValue)
+            //                    shown += 1
+            //                }
+            //
+            //                if list.count > maxItems {
+            //                    return "[" + parts.joined(separator: ", ") + ", ... (\(list.count) total)]"
+            //                } else {
+            //                    return "[" + parts.joined(separator: ", ") + "]"
+            //                }
+            //                     ems.joined(separator: ", ") + suffix + "]"
+            //                let elements = list.map { $0.displayValue }
+            //                return "[" + elements.joined(separator: ", ") + "]"
         }
+
+    }
 
     /// Conform program values to equatable.
     public static func == (lhs: ProgramValue, rhs: ProgramValue) -> Bool {
 
         switch (lhs, rhs) {
-//        case (.null, .null), (.any, .any), (.list, .list), (.table, .table), (.sequence, .sequence):
-//            return true
+            //        case (.null, .null), (.any, .any), (.list, .list), (.table, .table), (.sequence, .sequence):
+            //            return true
         case let (.integer(i1), .integer(i2)):
             return i1 == i2
         case let (.double(f1), .double(f2)):
@@ -150,12 +152,12 @@ extension ProgramValue {
     func toBool() -> Bool {
 
         switch self {
-            case .boolean(let value): return value
-            case .integer(let value): return value != 0
-            case .double(let value): return value != 0.0
-            case .string(let value): return !value.isEmpty
-            case .null: return false
-            default: return true // TODO: Other types default to true.
+        case .boolean(let value): return value
+        case .integer(let value): return value != 0
+        case .double(let value): return value != 0.0
+        case .string(let value): return !value.isEmpty
+        case .null: return false
+        default: return true // TODO: Other types default to true.
         }
     }
 }
@@ -311,10 +313,10 @@ extension ProgramValue {
     /// Check that a program value is numeric (integer or double).
     static func isNumeric(_ value: ProgramValue) -> Bool {
         switch value {
-            case .integer, .double:
-                return true
-            default:
-                return false
+        case .integer, .double:
+            return true
+        default:
+            return false
         }
     }
 }

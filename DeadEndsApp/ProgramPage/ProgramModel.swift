@@ -11,7 +11,11 @@ import Observation
 import DeadEndsLib
 import Parsing
 
+/// Program output object that buffers the full output of a Deadends program
+/// into a string buffer while it is running. Output does no go to the output
+/// text view until the program finishes running.
 final class BufferedProgramOutput: ProgramOutput {
+
     private(set) var text: String = ""
 
     func write(_ s: String) {
@@ -44,7 +48,6 @@ final class ProgramModel {
 
     var diagnostics: [Diagnostic] = []
     var parsedProgram: ParsedProgram? = nil
-    var lastCompileSucceeded: Bool = false
 
     /// Create a program model with an unnamed empty source text.
     init(programName: String = "Untitled", source: String = "") {
@@ -53,16 +56,16 @@ final class ProgramModel {
     }
 
     /// Handle the compile button. This is the model operation that compiles
-    /// a DeadEnds program that either succeeds or displays diagnostics.
-    func compile() {
+    /// a DeadEnds program. It wil either succeed or display diagnostics.
+    func handleCompileButton() {
 
         diagnostics = []
         parsedProgram = nil
         output.clear()
 
         guard !source.isEmpty else { return }
-        do {  // In a do so we can get the diagnostics.
-            let normalized = normalizedSource(source)  // Hack to handle smart quotes.
+        do {
+            let normalized = normalizedSource(source)  // Smart quote hack.
             var lexer = Lexer(source: normalized)
             let tokens = lexer.tokenize()
             guard tokens.last?.kind == .eof else {
@@ -90,44 +93,39 @@ final class ProgramModel {
 
     /// Handles a run button press by interpreting the parsedProgram struct.
     /// Creates a Program object and runs it.
-    func run(database: Database) {
+    func handleRunButton(database: Database) {
         
         guard let parsedProgram else { return }  // Need a program to run.
 
         diagnostics = []
         output.clear()
 
-        let buffer = BufferedProgramOutput()  // Output goes to big string buffer.
+        let buffer = BufferedProgramOutput()  // Output goes to string buffer.
         let program = Program(parsedProgram: parsedProgram, database: database,
             output: buffer)
         do {
-            //print("before interpret") // DEBUG
             try program.interpretProgram()  // Interpret the program.
             print("after interpret, output size =", buffer.text.count)  // DEBUG
             output.text = displayableOutput(buffer.text)  // Move buffered output to view.
-//        } catch let error as RuntimeError {
-//            output.text = buffer.text
-//            diagnostics = [Diagnostic(message: error.description, line: 0)]
         } catch let error as RuntimeError {
             output.text = displayableOutput(buffer.text)
-            diagnostics = [Diagnostic(
-                message: error.message,
-                line: error.line > 0 ? error.line : nil
-            )]
+            diagnostics = [Diagnostic(message: error.message,
+                                      line: error.line > 0 ? error.line : nil)]
         } catch {
-            output.text = buffer.text
+            output.text = displayableOutput(buffer.text)
             diagnostics = [Diagnostic(message: String(describing: error), line: 0)]
         }
     }
 }
 
+/// Mechanism to limit the size of the output view.
 private let maxOutputChars = 100_000
 
 private func displayableOutput(_ text: String) -> String {
+
     if text.count <= maxOutputChars {
         return text
     }
-
     return String(text.prefix(maxOutputChars))
         + "\n\n[output truncated: \(text.count) characters total]"
 }
@@ -159,8 +157,7 @@ func convertFrontEndError(_ error: FrontEndError) -> Diagnostic {
     }
 }
 
-/// Required because TextEditor uses smart quotes that is
-/// hard to turn off.
+/// Required because TextEditor uses smart quotes that are hard to turn off.
 func normalizedSource(_ text: String) -> String {
     text
         .replacingOccurrences(of: "“", with: "\"")

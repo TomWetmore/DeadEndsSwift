@@ -28,13 +28,13 @@ struct ProgramPage: View {
 
             HStack {  // Button bar.
                 Button("Compile") {  // Button that compiles the program.
-                    model.compile()
+                    model.handleCompileButton()
                 }
                 .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                 Button("Run") {  // Button that runs the program.
                     if let db = appModel.database {
-                        model.run(database: db)
+                        model.handleRunButton(database: db)
                     }
                 }
                 .disabled(model.parsedProgram == nil || appModel.database == nil)

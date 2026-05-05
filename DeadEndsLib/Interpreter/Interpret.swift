@@ -124,7 +124,7 @@ extension Program {
     func interpProcCall(_ procCall: ParsedCallStatement) throws -> InterpResult {
 
         let name = procCall.name
-        let procDef = try procDefn(name, line: procCall.line)
+        let procDef = try requireProcDefn(name, line: procCall.line)
         let nArgs = procCall.args.count
         let nParams = procDef.params.count
 
