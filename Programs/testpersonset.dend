@@ -28,3 +28,13 @@ proc main () {
         d(count) ". " name(person) "\n"
     }
 }
+
+
+
+proc main () {
+
+    set(dvcw, indi(“I41”))
+    forlist(children(dvcw), kid, n) {
+        d(n) “. “ name(kid) nl()
+    }
+}

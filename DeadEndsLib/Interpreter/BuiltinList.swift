@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 3 May 2026.
+//  Last changed on 6 May 2026.
 //
 
 import Foundation
@@ -11,15 +11,9 @@ import Foundation
 /// Builtins are methods on Programs.
 extension Program {
 
-    /// Declare an identifier to have a .list type.
+    /// Return an empty list.
     func builtinList(_ args: [ParsedExpr]) throws -> ProgramValue {
-
-        guard case let .identifier(varb) = args[0].kind else {
-            throw RuntimeError.typeMismatch("list: arg to list must be an identifier", line: args[0].line)
-        }
-        let list = List<ProgramValue>()
-        assignToSymbol(varb, value: .list(list))
-        return .null
+        return .list(List())
     }
 
     /// Return whether a list, table, person set or string is empty.
@@ -36,13 +30,13 @@ extension Program {
             return string.isEmpty ? .trueProgramValue : .falseProgramValue
         default:
             throw RuntimeError.typeMismatch(
-                "empty: arg must be a list, table, indiset, or string",
+                "empty: arg must be a list, table, personset, or string",
                 line: args[0].line
             )
         }
     }
 
-    /// Clear the contents of list, table, or person set.
+    /// Clear the contents of a list, table, or person set.
     func builtinClear(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         guard case let .identifier(name) = args[0].kind else {
@@ -122,7 +116,7 @@ extension Program {
     }
 
     /// Evaluate an expression and be sure it is a list.
-    func evaluateList(_ expr: ParsedExpr, errMessage: String) throws -> List<ProgramValue> {
+    func evaluateList(_ expr: ParsedExpr, errMessage: String) throws -> List {
         guard case let .list(list) = try evaluate(expr) else {
             throw RuntimeError.typeMismatch(errMessage, line: expr.line)
         }
@@ -131,62 +125,66 @@ extension Program {
 }
 
 /// Structure that holds the programming language's List values.
-public struct List<Element> {
+public struct List {
 
-    private var elements: [Element] = []
+    private var values: [ProgramValue] = []
 
-    var count: Int { elements.count }
+    var count: Int { values.count }
 
-    mutating func push(_ element: Element) {
-        elements.insert(element, at: 0)
+    public init(_ values: [ProgramValue] = []) {
+        self.values = values
     }
 
-    mutating func pop() -> Element? {
-        guard !elements.isEmpty else { return nil }
-        return elements.removeFirst()
+    mutating func push(_ element: ProgramValue) {
+        values.insert(element, at: 0)
     }
 
-    mutating func enqueue(_ element: Element) {
-        elements.append(element)
+    mutating func pop() -> ProgramValue? {
+        guard !values.isEmpty else { return nil }
+        return values.removeFirst()
     }
 
-    mutating func dequeue() -> Element? {
-        guard !elements.isEmpty else { return nil }
-        return elements.removeFirst()
+    mutating func enqueue(_ element: ProgramValue) {
+        values.append(element)
     }
 
-    mutating func append(_ element: Element) {
-        elements.append(element)
+    mutating func dequeue() -> ProgramValue? {
+        guard !values.isEmpty else { return nil }
+        return values.removeFirst()
     }
 
-    mutating func prepend(_ element: Element) {
-        elements.insert(element, at: 0)
+    mutating func append(_ element: ProgramValue) {
+        values.append(element)
     }
 
-    mutating func removeFirst() -> Element? {
-        guard !elements.isEmpty else { return nil }
-        return self.elements.removeFirst()
+    mutating func prepend(_ element: ProgramValue) {
+        values.insert(element, at: 0)
+    }
+
+    mutating func removeFirst() -> ProgramValue? {
+        guard !values.isEmpty else { return nil }
+        return self.values.removeFirst()
     }
 
     mutating func clear() {
-        elements.removeAll(keepingCapacity: false)
+        values.removeAll(keepingCapacity: false)
     }
 
-    subscript(index: Int) -> Element {
-        get { elements[index] }
-        set { elements[index] = newValue }
+    subscript(index: Int) -> ProgramValue {
+        get { values[index] }
+        set { values[index] = newValue }
     }
 
-    mutating func sort(by areInIncreasingOrder: (Element, Element) -> Bool) {
-        elements.sort(by: areInIncreasingOrder)
+    mutating func sort(by areInIncreasingOrder: (ProgramValue, ProgramValue) -> Bool) {
+        values.sort(by: areInIncreasingOrder)
     }
 }
 
 /// Needed to make List mappable.
 extension List: Sequence {
     
-    public func makeIterator() -> IndexingIterator<[Element]> {
-        elements.makeIterator()
+    public func makeIterator() -> IndexingIterator<[ProgramValue]> {
+        values.makeIterator()
     }
 }
 
@@ -194,7 +192,7 @@ extension Program {
 
     /// Convenience method for methods that need a modifiable list argument.
     func requireListVariable(_ expr: ParsedExpr, errMessage: String )
-        throws -> (name: String, list: List<ProgramValue>) {
+        throws -> (name: String, list: List) {
 
         guard case let .identifier(name) = expr.kind else {
             throw RuntimeError.typeMismatch(errMessage, line: expr.line)

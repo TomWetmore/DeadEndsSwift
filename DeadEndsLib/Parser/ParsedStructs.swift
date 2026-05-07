@@ -97,6 +97,7 @@ struct ParsedStatement: Equatable, CustomStringConvertible {
         case continueStatement(ParsedContinueStmt)
         case forListStatement(ParsedForListStmt)
         case forIndisetStatement(ParsedForIndisetStmt)
+        case forSpousesStatement(ParsedForspousesStmt)
         case expressionStatement(ParsedExpr)
     }
 
@@ -110,6 +111,7 @@ struct ParsedStatement: Equatable, CustomStringConvertible {
         case .continueStatement(let s): return s.description
         case .forListStatement(let s): return s.description
         case .forIndisetStatement(let s): return s.description
+        case .forSpousesStatement(let s): return s.description
         case .expressionStatement(let e): return "EXPRSTMT(\(e))"
         }
     }
@@ -219,6 +221,21 @@ struct ParsedForIndisetStmt: Equatable, CustomStringConvertible {
 
     var description: String {
         "forindiset(\(indisetExpr), \(indiVar), \(valueVar), \(indexVar)) { ... }"
+    }
+}
+
+/// Parsed structure for a forspouses statement -- forspouses(indi, spouse, index)
+struct ParsedForspousesStmt: Equatable, CustomStringConvertible {
+
+    let personExpr: ParsedExpr
+    let spouseVar: String
+    let familyVar: String
+    let indexVar: String
+    let body: [ParsedStatement]
+    let line: Int
+
+    var description: String {
+        "forspouses(\(personExpr), \(spouseVar), \(indexVar)) { ... }"
     }
 }
 

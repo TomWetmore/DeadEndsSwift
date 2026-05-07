@@ -249,6 +249,24 @@ public extension Person {
         return out
     }
 
+    /// Return all unique (spouse, family) pairs for a person. This was written to support
+    /// the forspouses statement in the programming language.
+    func spousesWithFamilies(in index: RecordIndex) -> [(spouse: Person, family: Family)] {
+
+        var seen = Set<String>()
+        var results = [(spouse: Person, family: Family)]()
+
+        for family in spouseFamilies(in: index) {
+            for spouse in family.spouses(excluding: self, in: index) {
+                let pairKey = "\(spouse.key)|\(family.key)"
+                if seen.insert(pairKey).inserted {
+                    results.append((spouse, family))
+                }
+            }
+        }
+        return results
+    }
+
     /// Return all husbands of person, deduped and in order; person can be male or female.
     func husbands(in index: RecordIndex) -> [Person] {
         spouses(in: index, roles: [GedcomTag.HUSB])

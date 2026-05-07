@@ -93,6 +93,7 @@
 				Interpreter/BuiltinList.swift,
 				Interpreter/BuiltinMath.swift,
 				Interpreter/BuiltinMeta.swift,
+				Interpreter/BuiltinNewList.swift,
 				Interpreter/BuiltinPerson.swift,
 				Interpreter/BuiltinPersonSet.swift,
 				Interpreter/BuiltinTable.swift,

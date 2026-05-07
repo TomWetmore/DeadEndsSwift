@@ -69,6 +69,11 @@ extension Program {
             "father": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinFather($0) },
             "mother": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinMother($0) },
 
+            /// Generic functions on persons and families.
+            "husband": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinHusband($0) },
+            "wife": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinWife($0) },
+            "children": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinChildrenList($0) },
+
             // Event operations.
             "date":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDate($0) },
             "place": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinPlace($0) },
@@ -79,7 +84,7 @@ extension Program {
             "clear":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinClear($0) },
 
             // List operations; the length and empty builtins are generic.
-            "list":    Builtin(minArgs: 1, maxArgs: 1) { try self.builtinList($0) },
+            "list":    Builtin(minArgs: 0, maxArgs: 0) { try self.builtinList($0) },
             "append":  Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },
             "prepend": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinPrepend($0) },
             "push":    Builtin(minArgs: 2, maxArgs: 2) { try self.builtinAppend($0) },

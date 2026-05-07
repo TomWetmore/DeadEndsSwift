@@ -1,12 +1,11 @@
-/* Ahnentafel */
-
 proc main ()
 {
     set(indi, indi(“@I1@“))
-    list(ilist)
-    list(alist)
+    set(ilist, list())
+    set(alist, list())
     enqueue(ilist, indi)
     enqueue(alist, 1)
+showframe()
 
     while(indi, dequeue(ilist)) {
         set(ahnen, dequeue(alist))

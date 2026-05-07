@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 24 April 2026.
+//  Last changed on 5 May 2026.
 //
 
 import Foundation
@@ -242,7 +242,7 @@ public enum TokenKind: Equatable {
 
     case proc
     case funcTok
-    case children
+    //case children
     case spouses
     case ifTok
     case elseTok
@@ -251,6 +251,7 @@ public enum TokenKind: Equatable {
     case whileTok
     case call
     case forindiset
+    //case forspouses
     case forindi
     case fornotes
     case traverse
@@ -298,7 +299,7 @@ func keywordKind(for word: String) -> TokenKind? {
     switch word {
     case "break": return .breakTok
     case "call": return .call
-    case "children": return .children
+    //case "children": return .children
     case "continue": return .continueTok
     case "else": return .elseTok
     case "elsif": return .elsif
@@ -309,6 +310,7 @@ func keywordKind(for word: String) -> TokenKind? {
     case "forindiset": return .forindiset
     case "forindi": return .forindi
     case "forlist": return .forlist
+    //case "forspouses": return .forspouses
     case "fornodes": return .fornodes
     case "fornotes": return .fornotes
     case "forothr": return .forothr
@@ -338,7 +340,7 @@ extension TokenKind: CustomStringConvertible {
 
         case .proc: return "proc"
         case .funcTok: return "func"
-        case .children: return "children"
+        //case .children: return "children"
         case .spouses: return "spouses"
         case .ifTok: return "if"
         case .elseTok: return "else"
@@ -348,6 +350,7 @@ extension TokenKind: CustomStringConvertible {
         case .call: return "call"
         case .forindiset: return "forindiset"
         case .forindi: return "forindi"
+        //case .forspouses: return "forspouses"
         case .fornotes: return "fornotes"
         case .traverse: return "traverse"
         case .fornodes: return "fornodes"

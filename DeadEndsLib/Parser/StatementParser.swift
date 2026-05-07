@@ -81,6 +81,9 @@ struct StmtParser: Parser {
             return ParsedStatement(
                 kind: .forIndisetStatement(try ForIndisetStmtParser().parse(&input)),
                 line: line)
+//        case .forspouses:
+//            return ParsedStatement(
+//                kind: .forSpousesStatement(try ForSpousesStmtParser().parse(&input)), line: line)
         default:
             return ParsedStatement(
                 kind: .expressionStatement(try ExprParser().parse(&input)),

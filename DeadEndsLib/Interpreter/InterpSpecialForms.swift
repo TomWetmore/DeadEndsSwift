@@ -17,7 +17,7 @@ extension Program {
 
         for (i, value) in list.enumerated() {
             assignToSymbol(stmt.elementVar, value: value)
-            assignToSymbol(stmt.indexVar, value: .integer(i))
+            assignToSymbol(stmt.indexVar, value: .integer(i+1))
 
             let result = try interpStmtList(stmt.body)
 
@@ -66,34 +66,32 @@ extension Program {
 
         return .okay
     }
-}
 
-    /*
-     let indisetExpr: ParsedExpr (check!)
-     let indiVar: String
-     let valueVar: String
-     let indexVar: String
-     let body: [ParsedStatement]
-     let line: Int
-     */
+    func interpForspousesStmt(_ stmt: ParsedForspousesStmt) throws -> InterpResult {
+        
+        let person = try evaluatePerson(stmt.personExpr, errMessage: "forspouses: first arg must be a person")
+        let spouseFamilies = person.spousesWithFamilies(in: self.recordIndex)
+        var index = 1
+        for pair in spouseFamilies {
+            assignToSymbol(stmt.spouseVar, value: .person(pair.spouse))
+            assignToSymbol(stmt.familyVar, value: .family(pair.family))
+            assignToSymbol(stmt.indexVar, value: .integer(index))
+            index += 1
 
-/*
- proc main () {
-    list(list)
-    append(list, 1)
-    append(list, 2)
-    append(list, 3)
-    forlist
- (
- list
-
- ,
- v
- ,
- i
- )
- {
-        d(i) " " d(v) "\n"
+            let result = try interpStmtList(stmt.body)
+            switch result {
+            case .okay:
+                continue
+            case .continuing:
+                continue
+            case .breaking:
+                return .okay
+            case .returning:
+                return result
+            case .error:
+                return result
+            }
+        }
+        return .okay
     }
- }
- */
+}

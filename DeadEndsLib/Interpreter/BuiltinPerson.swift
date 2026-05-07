@@ -3,11 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 2 May 2026.
+//  Last changed on 5 May 2026.
 //
 
 import Foundation
 
+/// Name related built-ins.
 extension Program {
 
     // builtinName returns the value of the first 1 NAME line in a person's record.
@@ -48,6 +49,10 @@ extension Program {
         let person = try evaluatePerson(args[0], errMessage: "trimName: arg must be a person")
         return .string(person.displayName(limit: 40))  // TODO: Get the length from the args.
     }
+}
+
+/// Event realted built-ins.
+extension Program {
 
     /// Returns the first birth event of a person.
     func builtinBirth(_ args: [ParsedExpr]) throws -> ProgramValue {
@@ -73,28 +78,32 @@ extension Program {
     func builtinBaptism(_ args: [ParsedExpr]) throws -> ProgramValue {
         return try extractPersonEvent(from: args[0], tag: "BAPM", functionName: "baptism")
     }
+}
+
+/// Relationship reated built-ins.
+extension Program {
 
     /// Return the first father of a person.
-    func builtinFather(_ args: [ParsedExpr]) throws -> ProgramValue {
-
-        let person = try evaluatePerson(args[0], errMessage: "father: arg must be a person")
-        if let father = person.father(in: self.recordIndex) {
-            return .person(father)
-        } else {
-            return .null
-        }
-    }
-
-    /// Return the first mother of a person.
-    func builtinMother(_ args: [ParsedExpr]) throws -> ProgramValue {
-
-        let person = try evaluatePerson(args[0], errMessage: "mother: arg must be a person.")
-        if let mother = person.mother(in: self.recordIndex) {
-            return .person(mother)
-        } else {
-            return .null
-        }
-    }
+//    func builtinFather(_ args: [ParsedExpr]) throws -> ProgramValue {
+//
+//        let person = try evaluatePerson(args[0], errMessage: "father: arg must be a person")
+//        if let father = person.father(in: self.recordIndex) {
+//            return .person(father)
+//        } else {
+//            return .null
+//        }
+//    }
+//
+//    /// Return the first mother of a person.
+//    func builtinMother(_ args: [ParsedExpr]) throws -> ProgramValue {
+//
+//        let person = try evaluatePerson(args[0], errMessage: "mother: arg must be a person.")
+//        if let mother = person.mother(in: self.recordIndex) {
+//            return .person(mother)
+//        } else {
+//            return .null
+//        }
+//    }
 
     /// Return the next sibling of a person.
     func builtinNextSibling(_ args: [ParsedExpr]) throws -> ProgramValue {
@@ -118,8 +127,68 @@ extension Program {
         }
     }
 
+    func builtinFather(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let person = try evaluatePersonOpt(args[0], errMessage: "father: arg must be a person")
+        guard let father = person?.father(in: self.recordIndex) else {
+            return .null
+        }
+        return .person(father)
+    }
+
+    func builtinMother(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let person = try evaluatePersonOpt(args[0], errMessage: "mother: arg must be a person")
+        guard let mother = person?.mother(in: self.recordIndex) else {
+            return .null
+        }
+        return .person(mother)
+    }
+
+    /// Make it generic so it can run on persons and families.
+    func builtinHusband(_ args: [ParsedExpr]) throws -> ProgramValue {
+        
+        let value = try evaluate(args[0])
+        switch value {
+        case .person(let person):
+            return person.husband(in: recordIndex).map { .person($0) } ?? .null
+        case .family(let family):
+            return family.husband(in: recordIndex).map { .person($0) } ?? .null
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.typeMismatch(
+                "husband: arg must be a person or family",
+                line: args[0].line
+            )
+        }
+    }
+
+    /// Make it generic so it can run on persons and families.
+    func builtinWife(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let value = try evaluate(args[0])
+        switch value {
+        case .person(let person):
+            return person.wife(in: recordIndex).map { .person($0) } ?? .null
+        case .family(let family):
+            return family.wife(in: recordIndex).map { .person($0) } ?? .null
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.typeMismatch(
+                "wife: arg must be a person or family",
+                line: args[0].line
+            )
+        }
+    }
+}
+
+/// Sex and role related built-ins.
+extension Program {
+
     func builtinSex(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinSex not implemented")
+        print("TODO: builtinSex not implemented")
         return .null
     }
 
@@ -135,13 +204,17 @@ extension Program {
 
         let person = try evaluatePerson(args[0], errMessage: "female: arg must be a person")
         return person.isFemale ?
-            ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
+        ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
     func builtinPronouns(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtInPronouns not implemented")
         return .null
     }
+
+}
+
+extension Program {
 
     func builtinNSpouses(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtinNSpouses not implemented")
@@ -174,26 +247,32 @@ extension Program {
         return .null
     }
 
-    func builtinINode(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinINode not implemented")
-        return .null
-    }
-
     func builtinRoot(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtinRoot not implemented")
         return .null
     }
 
-    /// Look up a person in the database.
+    /// Look up a person in the database by its key; the @-signs may be omitted.
     func builtinIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
 
+        let line = args[0].line
         let value = try evaluate(args[0])
-        guard case let .string(key) = value, let root = recordIndex[key],
-              root.tag == GedcomTag.INDI
-        else {
-            return .null
+        guard case let .string(key) = value else {
+            throw RuntimeError.invalidArguments("indi: arg must be a person key", line: line)
+        }
+        let normalized = normalizeGedcomKey(key)
+        guard let root = recordIndex[normalized], root.tag == GedcomTag.INDI else {
+            throw RuntimeError.invalidArguments("indi: arg must be a person key", line: line)
         }
         return .person(Person(root))
+    }
+
+    /// Normalize a key (add @-signs if not present).
+    private func normalizeGedcomKey(_ key: String) -> String {
+        var k = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !k.hasPrefix("@") { k = "@" + k }
+        if !k.hasSuffix("@") { k = k + "@" }
+        return k
     }
 
     func builtinFirstIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
@@ -211,14 +290,7 @@ extension Program {
         return .null
     }
 
-    //spouses (INDI, INDI, FAM, INT) { }
-    //loop through all spouses of
-    //
-    //families (INDI, FAM, INDI, INT) { }
-    //loop through all families (as spouse) of
-    //
-    //forindi (INDI, INT) { }
-    //loop through all persons in database
+    
 
 }
 
@@ -253,3 +325,90 @@ extension Program {
         return .null
     }
 }
+
+
+/*
+ -----------------------------------
+ STRING name(INDI [,BOOL])
+ STRING fullname(INDI, BOOL, BOOL, INT)
+ STRING surname(INDI)
+ STRING givens(INDI)
+ STRING trimname(INDI,INT)
+
+ default name of
+ many name forms of
+ surname of
+ given names of
+ trimmed name of
+ -----------------------------------
+ EVENT birth(INDI)
+ EVENT death(INDI)
+ EVENT baptism(INDI)
+ EVENT burial(INDI)
+
+ first birth event of
+ first death event of
+ first baptism event of
+ first burial event of
+ -----------------------------------
+ INDI father(INDI)
+ INDI mother(INDI)
+ INDI nextsib(INDI)
+ INDI prevsib(INDI)
+
+ first father of
+ first mother of
+ next (younger) sibling of
+ previous (older) sibling of
+ -----------------------------------
+ STRING sex(INDI)
+ BOOL male(INDI)
+ BOOL female(INDI)
+ STRING pn(INDI, INT)
+
+ sex of
+ male predicate
+ female predicate
+ pronoun referring to
+ -----------------------------------
+ INT nspouses(INDI)
+ INT nfamilies(INDI)
+ FAM parents(INDI)
+
+ number of spouses of
+ number of families (as spouse/parent) of
+ first parents’ family of
+-----------------------------------
+ STRING title(INDI)
+ STRING key(INDI|FAM [,BOOL])
+ STRING soundex(INDI)
+ NODE inode(INDI)
+ NODE root(INDI)
+ 
+ first title of
+ internal key of (work for families also)
+ SOUNDEX code of
+ root GEDCOM node of
+ root GEDCOM node of
+ -----------------------------------
+ INDI indi(STRING)
+
+ find person with key value
+ -----------------------------------
+ INDI firstindi()
+ INDI nextindi(INDI)
+ INDI previndi(INDI)
+
+ first person in database in key order
+ next person in database in key order
+ previous person in database in key order
+ -----------------------------------
+ spouses (INDI, INDI, FAM, INT) { }
+ families (INDI, FAM, INDI, INT) { }
+ forindi (INDI, INT) { }
+
+ loop through all spouses of
+ loop through all families (as spouse) of
+ loop through all persons in database
+ -----------------------------------
+ */

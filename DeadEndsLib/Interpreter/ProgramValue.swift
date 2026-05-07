@@ -26,7 +26,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     //case source(GedcomNode)
     //case event(GedcomNode)
     //case other(GedcomNode)
-    case list(List<ProgramValue>)  // List of any program values.
+    case list(List)  // List program values.
     case table(ProgramTable)  // Table of string to program value mappings.
     case personset(PersonSet<ProgramValue>)  // Person set.
 
