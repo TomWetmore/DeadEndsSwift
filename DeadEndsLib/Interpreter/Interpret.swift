@@ -58,8 +58,8 @@ extension Program {
             return try interpForList(stmt)
         case .forIndisetStatement(let stmt):
             return try interpForIndiset(stmt)
-        case .forSpousesStatement(let stmt):
-            return try interpForspousesStmt(stmt)
+//        case .forSpousesStatement(let stmt):
+//            return try interpForspousesStmt(stmt)
         case .expressionStatement(let expr):
             let pvalue: ProgramValue = try evaluate(expr)
             if case let .string(string) = pvalue {

@@ -3,10 +3,10 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 2 May 2026.
+//  Last changed on 7 May 2026.
 //
 
-/// The parsed structs and enums make up the "abstract syntax tree" of
+/// The parsed structs and enums make up the abstract syntax tree of
 /// a DeadEnds program. They are value types so the syntax tree fully
 /// formed value object with no pointers. As abstract syntax trees
 /// these parsed objects are never changed. They represent the static
@@ -97,7 +97,6 @@ struct ParsedStatement: Equatable, CustomStringConvertible {
         case continueStatement(ParsedContinueStmt)
         case forListStatement(ParsedForListStmt)
         case forIndisetStatement(ParsedForIndisetStmt)
-        case forSpousesStatement(ParsedForspousesStmt)
         case expressionStatement(ParsedExpr)
     }
 
@@ -111,7 +110,6 @@ struct ParsedStatement: Equatable, CustomStringConvertible {
         case .continueStatement(let s): return s.description
         case .forListStatement(let s): return s.description
         case .forIndisetStatement(let s): return s.description
-        case .forSpousesStatement(let s): return s.description
         case .expressionStatement(let e): return "EXPRSTMT(\(e))"
         }
     }

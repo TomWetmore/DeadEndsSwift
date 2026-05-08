@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 5 May 2026.
+//  Last changed on 7 May 2026.
 //
 
 import Foundation
@@ -242,16 +242,12 @@ public enum TokenKind: Equatable {
 
     case proc
     case funcTok
-    //case children
-    case spouses
     case ifTok
     case elseTok
     case elsif
-    case families
     case whileTok
     case call
     case forindiset
-    //case forspouses
     case forindi
     case fornotes
     case traverse
@@ -299,18 +295,15 @@ func keywordKind(for word: String) -> TokenKind? {
     switch word {
     case "break": return .breakTok
     case "call": return .call
-    //case "children": return .children
     case "continue": return .continueTok
     case "else": return .elseTok
     case "elsif": return .elsif
-    case "families": return .families
     case "fathers": return .fathers
     case "foreven": return .foreven
     case "forfam": return .forfam
     case "forindiset": return .forindiset
     case "forindi": return .forindi
     case "forlist": return .forlist
-    //case "forspouses": return .forspouses
     case "fornodes": return .fornodes
     case "fornotes": return .fornotes
     case "forothr": return .forothr
@@ -318,10 +311,9 @@ func keywordKind(for word: String) -> TokenKind? {
     case "func": return .funcTok
     case "if": return .ifTok
     case "mothers": return .mothers
-    case "Parents": return .parents
+    //case "Parents": return .parents
     case "proc": return .proc
     case "return": return .returnTok
-    case "spouses": return .spouses
     case "traverse": return .traverse
     case "while": return .whileTok
     default: return nil
@@ -340,17 +332,13 @@ extension TokenKind: CustomStringConvertible {
 
         case .proc: return "proc"
         case .funcTok: return "func"
-        //case .children: return "children"
-        case .spouses: return "spouses"
         case .ifTok: return "if"
         case .elseTok: return "else"
         case .elsif: return "elsif"
-        case .families: return "families"
         case .whileTok: return "while"
         case .call: return "call"
         case .forindiset: return "forindiset"
         case .forindi: return "forindi"
-        //case .forspouses: return "forspouses"
         case .fornotes: return "fornotes"
         case .traverse: return "traverse"
         case .fornodes: return "fornodes"

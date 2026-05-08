@@ -140,14 +140,27 @@ extension Program {
     }
 
     /// Evaluate an expression for an optional person; throw error if not a person or null.
-    func evaluatePersonOpt(_ expr: ParsedExpr, errMessage: String) throws -> Person? {
+    func oldevaluatePersonOpt(_ expr: ParsedExpr, errMessage: String) throws -> Person? {
 
         let value = try evaluate(expr)
-        guard case .null = value else { return nil }
+        guard case .null = value else {
+            return nil }
         guard case .person(let person) = value else {
             throw RuntimeError.typeMismatch(errMessage, line: expr.line)
         }
         return person
+    }
+
+    func evaluatePersonOpt(_ expr: ParsedExpr, errMessage: String) throws -> Person? {
+
+        switch try evaluate(expr) {
+        case .person(let person):
+            return person
+        case .null:
+            return nil
+        default:
+            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+        }
     }
 
 

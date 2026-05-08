@@ -3,15 +3,15 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 5/5/26.
-//  Last changed on 5 May 2026.
+//  Last changed on 7 May 2026.
 //
 
 import Foundation
 
 extension Program {
 
-    /// Return the children of a person or family as a List<ProgramValue>.
-    func builtinChildrenList(_ args: [ParsedExpr]) throws -> ProgramValue {
+    /// Return the children of a person or family as a List.
+    func builtinChildList(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         let line = args[0].line
         var children = [Person]()
@@ -23,12 +23,84 @@ extension Program {
             children = family.children(in: recordIndex)
         case .null:
             return .null
-
         default:
             throw RuntimeError.invalidArguments("children: arg must be a person or family",
                                                 line: line)
         }
         let result = List(children.map { ProgramValue.person($0) })
+        return .list(result)
+    }
+
+    /// Return the list of siblings of a person.
+    func builtinSiblingList(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let line = args[0].line
+        var siblings = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            siblings = person.siblings(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("siblings: arg must be a person", line: line)
+        }
+        return .list(List(siblings.map { ProgramValue.person($0)}))
+    }
+
+    /// Return the list of spouses of a person or family.
+    func builtinSpouseList(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let line = args[0].line
+        var spouses = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            spouses = person.spouses(in: recordIndex)
+        case .family(let family):
+            spouses = family.spouses(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("spouses: arg must be a person or family",
+                                                line: line)
+        }
+        return .list(List(spouses.map { ProgramValue.person($0) }))
+    }
+
+    /// Return the list of parents of a person or family (the spouses).
+    func builtinParentList(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let line = args[0].line
+        var parents = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            parents = person.parents(in: recordIndex)
+        case .family(let family):
+            parents = family.spouses(in: recordIndex) // Define parents of a family and the spouses.
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidSyntax("parents: arg must be a person", line: line)
+        }
+        return .list(List(parents.map { ProgramValue.person($0) }))
+    }
+
+    /// Return the list of families a person is in as a spouse.
+    /// families(person) -> .list(Family)
+    func builtinFamilyList(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let line = args[0].line
+        var families = [Family]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            families = person.spouseFamilies(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("spouses: arg must be a person", line: line)
+        }
+        let result = List(families.map { ProgramValue.family($0)})
         return .list(result)
     }
 }

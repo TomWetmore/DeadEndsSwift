@@ -14,21 +14,22 @@ public typealias ProgramPersonSet = PersonSet<ProgramValue>
 extension Program {
 
     /// Create a new person set and put it in the symbol table.
-    /// indiset(VARB) -> VOID
-    func builtinIndiset(_ args: [ParsedExpr]) throws -> ProgramValue {
-        guard case let .identifier(name) = args[0].kind else {
-            throw RuntimeError.typeError("indiset() expects an identifier", line: args[0].line)
-        }
-        assignToSymbol(name, value: .personset(ProgramPersonSet()))
-        return .null
+    /// personset() -> PERSONSET
+    func builtinPersonset(_ args: [ParsedExpr]) throws -> ProgramValue {
+        return .personset(ProgramPersonSet())
+//        guard case let .identifier(name) = args[0].kind else {
+//            throw RuntimeError.typeError("personset: expects an identifier", line: args[0].line)
+//        }
+//        assignToSymbol(name, value: .personset(ProgramPersonSet()))
+//        return .null
     }
 
     /// Add an element to a person set
-    /// addtoset(IndiSet, Person, Any) -> Void
+    /// addtoset(PersonSet, Person, Any) -> Void
     func builtinAddtoset(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         let personSet = try evaluatePersonSet(args[0],
-                                errMessage: "addtoset: 1st arg must be an indiset")
+                                errMessage: "addtoset: 1st arg must be a personset")
         let person = try evaluatePerson(args[1],
                                         errMessage: "addtoset: 2nd arg must be a person")
         let any = try evaluate(args[2])
@@ -41,7 +42,7 @@ extension Program {
     /// the bool is to remove all elements with same person.
     func builtinDeleteFromSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         let set = try evaluatePersonSet(args[0],
-                            errMessage: "deletefromset: 1st arg must be an indiset")
+                            errMessage: "deletefromset: 1st arg must be a personset")
         let person = try evaluatePerson(args[1],
                             errMessage: "deletefromset: 2nd arg must be a person")
         // TODO: Worry about the third argument.
@@ -54,7 +55,7 @@ extension Program {
     func builtinNamesort(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeError("namesort() arg must be an indiset",
+            throw RuntimeError.typeError("namesort: arg must be a personset",
                                          line: args[0].line)
         }
         set.nameSort()
@@ -66,7 +67,7 @@ extension Program {
     func builtinKeysort(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeError("keysort: arg must be an indiset",
+            throw RuntimeError.typeError("keysort: arg must be a personset",
                                          line: args[0].line)
         }
         set.keySort()
@@ -76,7 +77,7 @@ extension Program {
     // Placeholder for valuesort.
 
     func builtinUniqueset(_ args: [ParsedExpr]) throws -> ProgramValue {
-        throw RuntimeError.typeError("uniqueset() not implemented",
+        throw RuntimeError.typeError("uniqueset: not implemented",
                                      line: args[0].line)
     }
 }
@@ -97,49 +98,49 @@ extension Program {
 /// Set operations
 extension Program {
 
-    /// Return the union of two indisets.
+    /// Return the union of two personsets.
     /// union(SET, SET) -> SET
     func builtinUnion(_ args: [ParsedExpr]) throws -> ProgramValue {
         let set1Value = try evaluate(args[0])
         guard case let .personset(set1) = set1Value else {
-            throw RuntimeError.typeMismatch("union: 1st arg must be an indiseq",
+            throw RuntimeError.typeMismatch("union: 1st arg must be a personset",
                                             line: args[0].line)
         }
         let set2Value = try evaluate(args[1])
         guard case let .personset(set2) = set2Value else {
-            throw RuntimeError.typeMismatch("union: 2nd arg must be an indiseq",
+            throw RuntimeError.typeMismatch("union: 2nd arg must be a personset",
                                             line: args[0].line)
         }
         return .personset(set1.unionSet(set2))
     }
 
-    /// Return the intersection of two indisets.
+    /// Return the intersection of two personsets.
     /// intersect(SET, SET) -> SET
     func builtinIntersect(_ args: [ParsedExpr]) throws -> ProgramValue {
         let set1Value = try evaluate(args[0])
         guard case let .personset(set1) = set1Value else {
-            throw RuntimeError.typeMismatch("intersect: 1st arg must be an indiset",
+            throw RuntimeError.typeMismatch("intersect: 1st arg must be a personset",
                                             line: args[0].line)
         }
         let set2Value = try evaluate(args[1])
         guard case let .personset(set2) = set2Value else {
-            throw RuntimeError.typeMismatch("intersect: 2nd arg must be an indiset",
+            throw RuntimeError.typeMismatch("intersect: 2nd arg must be a personset",
                                             line: args[1].line)
         }
         return .personset(set1.intersection(set2))
     }
 
-    /// Return the difference of two indisets.
+    /// Return the difference of two personsets.
     /// difference(SET, SET) -> SET
     func builtinDifference(_ args: [ParsedExpr]) throws -> ProgramValue {
         let set1Value = try evaluate(args[0])
         guard case let .personset(set1) = set1Value else {
-            throw RuntimeError.typeMismatch("difference: 1st arg must be an indiset",
+            throw RuntimeError.typeMismatch("difference: 1st arg must be a personset",
                                             line: args[0].line)
         }
         let set2Value = try evaluate(args[1])
         guard case let .personset(set2) = set2Value else {
-            throw RuntimeError.typeMismatch("difference: 2nd arg must be an indiset",
+            throw RuntimeError.typeMismatch("difference: 2nd arg must be a personset",
                                             line: args[1].line)
         }
         return .personset(set1.difference(set2))
@@ -149,83 +150,69 @@ extension Program {
 /// Genealogical
 extension Program {
 
-    /// Return the parent set of an indiset.
+    /// Return the parent set of a personset.
     /// parentset(SET) -> SET
     func builtinParentset(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeMismatch("parentset: arg must be an indiset",
+            throw RuntimeError.typeMismatch("parentset: arg must be a personset",
                                             line: args[0].line)
         }
         return .personset(set.parentsSet(in: recordIndex))
     }
 
-    /// Return the children set of an indiset.
+    /// Return the children set of a personset.
     /// childset(SET) -> SET
     func builtinChildset(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeMismatch("childset: arg must be an indiset",
+            throw RuntimeError.typeMismatch("childset: arg must be a personset",
                                             line: args[0].line)
         }
         return .personset(set.childrenSet(in: recordIndex))
     }
 
-    /// Return the sibling set of an indiset.
+    /// Return the sibling set of a personset.
     /// siblingset(SET) -> SET.
     func builtinSiblingset(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeMismatch("siblingset: arg must be an indiset",
+            throw RuntimeError.typeMismatch("siblingset: arg must be a personset",
                                             line:args[0].line)
         }
         return .personset(set.siblingSet(in: recordIndex))
     }
 
-    /// Return the spouse set of an indiset.
+    /// Return the spouse set of a personset.
     /// spouseset(SET) -> SET.
     func builtinSpouseset(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeMismatch("spouseset: arg must be an indiset",
+            throw RuntimeError.typeMismatch("spouseset: arg must be a personset",
                                             line: args[0].line)
         }
         return .personset(set.spouseSet(in: recordIndex))
     }
 
-    /// Return the ancestor set of an inidset.
+    /// Return the ancestor set of a personset.
     /// ancestorset(SET) -> SET.
     func builtinAncestorset(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeMismatch("ancestorset: arg must be an indiset",
+            throw RuntimeError.typeMismatch("ancestorset: arg must be a personset",
                                             line: args[0].line)
         }
         return .personset(set.ancestorSet(in: recordIndex))
     }
 
-    /// Return the descendant set of an indiset.
+    /// Return the descendant set of a personset.
     /// descend[a|e]ntset(SET) -> SET.
     func builtinDescendentset(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeMismatch("descendentset: arg must be an indiset",
+            throw RuntimeError.typeMismatch("descendentset: arg must be a personset",
                                             line: args[0].line)
         }
         return .personset(set.descendantSet(in: recordIndex))
     }
 }
-
-///*====================================================
-// * gengedcom -- Generate GEDCOM output from an INDISEQ
-// *   gengedcom(SET) -> VOID
-// *==================================================*/
-//WORD __gengedcom (node, stab, eflg)
-//INTERP node; TABLE stab; BOOLEAN *eflg;
-//{
-//    INDISEQ seq = (INDISEQ) evaluate(ielist(node), stab, eflg);
-//    if (*eflg || !seq) return NULL;
-//    gen_gedcom(seq);
-//    return NULL;
-//}
-//

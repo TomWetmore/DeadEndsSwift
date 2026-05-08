@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 3 May 2026.
+//  Last changed on 7 May 2026.
 //
 
 import Foundation
@@ -68,11 +68,15 @@ extension Program {
             "death": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDeath($0) },
             "father": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinFather($0) },
             "mother": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinMother($0) },
+            "families": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinFamilyList($0) },
 
             /// Generic functions on persons and families.
             "husband": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinHusband($0) },
             "wife": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinWife($0) },
-            "children": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinChildrenList($0) },
+            "children": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinChildList($0) },
+            "spouses": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSpouseList($0) },
+            "parents": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinParentList($0) },
+            "siblings": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinSiblingList($0) },
 
             // Event operations.
             "date":  Builtin(minArgs: 1, maxArgs: 1) { try self.builtinDate($0) },
@@ -98,12 +102,11 @@ extension Program {
             "lookup": Builtin(minArgs: 2, maxArgs: 2) { try self.builtinLookup($0) },
 
             // Person set operations.
-            "indiset": Builtin(minArgs: 1, maxArgs: 1) { try self.builtinIndiset($0) },
+            "personset": Builtin(minArgs: 0, maxArgs: 0) { try self.builtinPersonset($0) },
             "addtoset" : Builtin(minArgs: 3, maxArgs: 3) { try self.builtinAddtoset($0) },
             "union"    : Builtin(minArgs: 2, maxArgs: 2) { try self.builtinUnion($0) },
             "parentset" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinParentset($0) },
             "childset" : Builtin(minArgs: 1, maxArgs: 1) { try self.builtinChildset($0) },
-            // Lots of iterators are not yet implemented.
 
             // Meta operations.
             "showframe": Builtin(minArgs: 0, maxArgs: 0) { try self.builtinShowFrame($0) },

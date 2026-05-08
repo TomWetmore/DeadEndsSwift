@@ -226,11 +226,6 @@ extension Program {
         return .null
     }
 
-    func builtinParents(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinParents not implemented")
-        return .null
-    }
-
     func builtinTitle(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtinTitle not implemented")
         return .null

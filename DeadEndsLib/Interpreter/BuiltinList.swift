@@ -41,7 +41,7 @@ extension Program {
 
         guard case let .identifier(name) = args[0].kind else {
             throw RuntimeError.typeMismatch(
-                "clear: arg must be a list, table, or indiset variable",
+                "clear: arg must be a list, table, or personset variable",
                 line: args[0].line
             )
         }
@@ -63,7 +63,7 @@ extension Program {
             assignToSymbol(name, value: .personset(personset))
         default:
             throw RuntimeError.typeMismatch(
-                "clear: arg must be a list, table, or indiset variable",
+                "clear: arg must be a list, table, or personset variable",
                 line: args[0].line
             )
         }
@@ -83,7 +83,7 @@ extension Program {
         case .string(let string):
             return .integer(string.count)
         default:
-            throw RuntimeError.typeMismatch("length: arg must be a list, table, indiset, or string",
+            throw RuntimeError.typeMismatch("length: arg must be a list, table, personset, or string",
                                             line: args[0].line)
         }
     }
