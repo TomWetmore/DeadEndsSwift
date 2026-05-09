@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 2 May 2026.
+//  Last changed on 8 May 2026.
 //
 
 import Foundation
@@ -14,49 +14,37 @@ public typealias ProgramPersonSet = PersonSet<ProgramValue>
 extension Program {
 
     /// Create a new person set and put it in the symbol table.
-    /// personset() -> PERSONSET
-    func builtinPersonset(_ args: [ParsedExpr]) throws -> ProgramValue {
+    /// personset() -> PersonSet
+    func bltinPersonSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .personset(ProgramPersonSet())
-//        guard case let .identifier(name) = args[0].kind else {
-//            throw RuntimeError.typeError("personset: expects an identifier", line: args[0].line)
-//        }
-//        assignToSymbol(name, value: .personset(ProgramPersonSet()))
-//        return .null
     }
 
     /// Add an element to a person set
     /// addtoset(PersonSet, Person, Any) -> Void
-    func builtinAddtoset(_ args: [ParsedExpr]) throws -> ProgramValue {
-
-        let personSet = try evaluatePersonSet(args[0],
-                                errMessage: "addtoset: 1st arg must be a personset")
-        let person = try evaluatePerson(args[1],
-                                        errMessage: "addtoset: 2nd arg must be a person")
+    func bltinAddToSet(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let personSet = try evalPersonSet(args[0], errMsg: "addtoset: 1st arg must be a personset")
+        let person = try evalPerson(args[1], errMsg: "addtoset: 2nd arg must be a person")
         let any = try evaluate(args[2])
         personSet.append(person, payload: any)
         return .null
     }
 
     /// Delete an element from an indiseq.
-    /// deletefromset(SET, INDI, BOOL) -> VOID
+    /// deletefromset(PersonSet, Person) -> Void
     /// the bool is to remove all elements with same person.
-    func builtinDeleteFromSet(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let set = try evaluatePersonSet(args[0],
-                            errMessage: "deletefromset: 1st arg must be a personset")
-        let person = try evaluatePerson(args[1],
-                            errMessage: "deletefromset: 2nd arg must be a person")
-        // TODO: Worry about the third argument.
+    func bltinDeleteFromSet(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let set = try evalPersonSet(args[0], errMsg: "deletefromset: 1st arg must be a personset")
+        let person = try evalPerson(args[1], errMsg: "deletefromset: 2nd arg must be a person")
         set.remove(key: person.key)
         return .null
     }
 
-    /// Sort an indiseq by name.
-    /// namesort(SET) -> VOID
-    func builtinNamesort(_ args: [ParsedExpr]) throws -> ProgramValue {
+    /// Sort a person set by name.
+    /// namesort(PersonSet) -> Void
+    func bltinNameSort(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
-            throw RuntimeError.typeError("namesort: arg must be a personset",
-                                         line: args[0].line)
+            throw RuntimeError.typeError("namesort: arg must be a personset", line: args[0].line)
         }
         set.nameSort()
         return .null
@@ -64,7 +52,7 @@ extension Program {
 
     /// Sort an indiseq by key.
     /// keysort(SET) -> VOID
-    func builtinKeysort(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinKeySort(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
             throw RuntimeError.typeError("keysort: arg must be a personset",
@@ -100,7 +88,7 @@ extension Program {
 
     /// Return the union of two personsets.
     /// union(SET, SET) -> SET
-    func builtinUnion(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinUnion(_ args: [ParsedExpr]) throws -> ProgramValue {
         let set1Value = try evaluate(args[0])
         guard case let .personset(set1) = set1Value else {
             throw RuntimeError.typeMismatch("union: 1st arg must be a personset",
@@ -116,7 +104,7 @@ extension Program {
 
     /// Return the intersection of two personsets.
     /// intersect(SET, SET) -> SET
-    func builtinIntersect(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinIntersect(_ args: [ParsedExpr]) throws -> ProgramValue {
         let set1Value = try evaluate(args[0])
         guard case let .personset(set1) = set1Value else {
             throw RuntimeError.typeMismatch("intersect: 1st arg must be a personset",
@@ -132,7 +120,7 @@ extension Program {
 
     /// Return the difference of two personsets.
     /// difference(SET, SET) -> SET
-    func builtinDifference(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinDifference(_ args: [ParsedExpr]) throws -> ProgramValue {
         let set1Value = try evaluate(args[0])
         guard case let .personset(set1) = set1Value else {
             throw RuntimeError.typeMismatch("difference: 1st arg must be a personset",
@@ -152,7 +140,7 @@ extension Program {
 
     /// Return the parent set of a personset.
     /// parentset(SET) -> SET
-    func builtinParentset(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinParentSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
             throw RuntimeError.typeMismatch("parentset: arg must be a personset",
@@ -163,7 +151,7 @@ extension Program {
 
     /// Return the children set of a personset.
     /// childset(SET) -> SET
-    func builtinChildset(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinChildSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
             throw RuntimeError.typeMismatch("childset: arg must be a personset",
@@ -174,7 +162,7 @@ extension Program {
 
     /// Return the sibling set of a personset.
     /// siblingset(SET) -> SET.
-    func builtinSiblingset(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinSiblingSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
             throw RuntimeError.typeMismatch("siblingset: arg must be a personset",
@@ -185,7 +173,7 @@ extension Program {
 
     /// Return the spouse set of a personset.
     /// spouseset(SET) -> SET.
-    func builtinSpouseset(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinSpouseSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
             throw RuntimeError.typeMismatch("spouseset: arg must be a personset",
@@ -196,7 +184,7 @@ extension Program {
 
     /// Return the ancestor set of a personset.
     /// ancestorset(SET) -> SET.
-    func builtinAncestorset(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinAncestorSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
             throw RuntimeError.typeMismatch("ancestorset: arg must be a personset",
@@ -207,7 +195,7 @@ extension Program {
 
     /// Return the descendant set of a personset.
     /// descend[a|e]ntset(SET) -> SET.
-    func builtinDescendentset(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinDescendentSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         let setValue = try evaluate(args[0])
         guard case let .personset(set) = setValue else {
             throw RuntimeError.typeMismatch("descendentset: arg must be a personset",

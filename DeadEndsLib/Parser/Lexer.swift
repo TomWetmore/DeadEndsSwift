@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 7 May 2026.
+//  Last changed on 8 May 2026.
 //
 
 import Foundation
@@ -239,7 +239,6 @@ public enum TokenKind: Equatable {
     case intConst(Int)
     case floatConst(Double)
     case stringConst(String)
-
     case proc
     case funcTok
     case ifTok
@@ -247,23 +246,10 @@ public enum TokenKind: Equatable {
     case elsif
     case whileTok
     case call
-    case forindiset
-    case forindi
-    case fornotes
-    case traverse
-    case fornodes
-    case forlist
-    case forfam
-    case forsour
-    case foreven
-    case forothr
+    case foreach
     case breakTok
     case continueTok
     case returnTok
-    case fathers
-    case mothers
-    case parents
-
     case lParen
     case rParen
     case lBrace
@@ -273,7 +259,6 @@ public enum TokenKind: Equatable {
     case minus
     case period
     case unknown
-
     case eof
 }
 
@@ -298,28 +283,15 @@ func keywordKind(for word: String) -> TokenKind? {
     case "continue": return .continueTok
     case "else": return .elseTok
     case "elsif": return .elsif
-    case "fathers": return .fathers
-    case "foreven": return .foreven
-    case "forfam": return .forfam
-    case "forindiset": return .forindiset
-    case "forindi": return .forindi
-    case "forlist": return .forlist
-    case "fornodes": return .fornodes
-    case "fornotes": return .fornotes
-    case "forothr": return .forothr
-    case "forsour": return .forsour
+    case "foreach": return .foreach
     case "func": return .funcTok
     case "if": return .ifTok
-    case "mothers": return .mothers
-    //case "Parents": return .parents
     case "proc": return .proc
     case "return": return .returnTok
-    case "traverse": return .traverse
     case "while": return .whileTok
     default: return nil
     }
 }
-
 
 /// Implement custom string convertible for token kinds.
 extension TokenKind: CustomStringConvertible {
@@ -329,7 +301,6 @@ extension TokenKind: CustomStringConvertible {
         case .intConst(let i):    return "\(i))"
         case .floatConst(let d):  return "\(d))"
         case .stringConst(let s): return "\(String(reflecting: s))"
-
         case .proc: return "proc"
         case .funcTok: return "func"
         case .ifTok: return "if"
@@ -337,23 +308,10 @@ extension TokenKind: CustomStringConvertible {
         case .elsif: return "elsif"
         case .whileTok: return "while"
         case .call: return "call"
-        case .forindiset: return "forindiset"
-        case .forindi: return "forindi"
-        case .fornotes: return "fornotes"
-        case .traverse: return "traverse"
-        case .fornodes: return "fornodes"
-        case .forlist: return "forlist"
-        case .forfam: return "forfam"
-        case .forsour: return "forsour"
-        case .foreven: return "foreven"
-        case .forothr: return "forothr"
+        case .foreach: return "foreach"
         case .breakTok: return "break"
         case .continueTok: return "continue"
         case .returnTok: return "return"
-        case .fathers: return "fathers"
-        case .mothers: return "mothers"
-        case .parents: return "parents"
-
         case .lParen: return "()"
         case .rParen: return ")"
         case .lBrace: return "{"

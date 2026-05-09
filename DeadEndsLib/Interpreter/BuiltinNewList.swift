@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 5/5/26.
-//  Last changed on 7 May 2026.
+//  Last changed on 8 May 2026.
 //
 
 import Foundation
@@ -27,8 +27,44 @@ extension Program {
             throw RuntimeError.invalidArguments("children: arg must be a person or family",
                                                 line: line)
         }
-        let result = List(children.map { ProgramValue.person($0) })
-        return .list(result)
+        return .list(List(children.map { ProgramValue.person($0) }))
+    }
+
+    /// Return the list of husbands of a person or family.
+    func builtinHusbandList(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let line = args[0].line
+        var husbands = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            husbands = person.husbands(in: recordIndex)
+        case .family(let family):
+            husbands = family.husbands(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("husbands: arg must be a person or family", line: line)
+        }
+        return .list(List(husbands.map { ProgramValue.person($0)}))
+    }
+
+    /// Return the list of wives of a person or family.
+    func builtinWifeList(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let line = args[0].line
+        var wives = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            wives = person.wives(in: recordIndex)
+        case .family(let family):
+            wives = family.wives(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("wives: arg must be a person or family", line: line)
+        }
+        return .list(List(wives.map { ProgramValue.person($0)}))
     }
 
     /// Return the list of siblings of a person.
@@ -50,6 +86,7 @@ extension Program {
 
     /// Return the list of spouses of a person or family.
     func builtinSpouseList(_ args: [ParsedExpr]) throws -> ProgramValue {
+
         let line = args[0].line
         var spouses = [Person]()
 
@@ -144,34 +181,3 @@ extension Program {
         return .okay
     }
 }
-
-
-/*
- func interpForspousesStmt(_ stmt: ParsedForspousesStmt) throws -> InterpResult {
-
-     let person = try evaluatePerson(stmt.personExpr, errMessage: "forspouses: first arg must be a person")
-     let spouseFamilies = person.spousesWithFamilies(in: self.recordIndex)
-     var index = 1
-     for pair in spouseFamilies {
-         assignToSymbol(stmt.spouseVar, value: .person(pair.spouse))
-         assignToSymbol(stmt.familyVar, value: .family(pair.family))
-         assignToSymbol(stmt.indexVar, value: .integer(index))
-         index += 1
-
-         let result = try interpStmtList(stmt.body)
-         switch result {
-         case .okay:
-             continue
-         case .continuing:
-             continue
-         case .breaking:
-             return .okay
-         case .returning:
-             return result
-         case .error:
-             return result
-         }
-     }
-     return .okay
- }
- */

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 28 April 2026.
+//  Last changed on 8 May 2026.
 //
 
 import Foundation
@@ -54,12 +54,10 @@ extension Program {
             return .breaking
         case .continueStatement:
             return .continuing
-        case .forListStatement(let stmt):
-            return try interpForList(stmt)
-        case .forIndisetStatement(let stmt):
-            return try interpForIndiset(stmt)
-//        case .forSpousesStatement(let stmt):
-//            return try interpForspousesStmt(stmt)
+        case .forEachStatement(let stmt):
+            return try interpForEach(stmt)
+//        case .forIndisetStatement(let stmt):
+//            return try interpForIndiset(stmt)
         case .expressionStatement(let expr):
             let pvalue: ProgramValue = try evaluate(expr)
             if case let .string(string) = pvalue {

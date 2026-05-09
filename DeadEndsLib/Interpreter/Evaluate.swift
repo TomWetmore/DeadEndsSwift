@@ -69,7 +69,7 @@ extension Program {
             throw RuntimeError.undefinedSymbol("Unknown builtin function: \(name)",
                                                line: line)
         }
-        guard (builtin.minArgs...builtin.maxArgs).contains(args.count) else {
+        guard (builtin.min...builtin.max).contains(args.count) else {
             throw RuntimeError.invalidArguments(
                 "\(name)() expects \(expectedArgs(builtin)) args, got \(args.count)",
                 line: line)
@@ -77,10 +77,10 @@ extension Program {
         return try builtin.function(args)  // Call builtin.
 
         func expectedArgs(_ builtin: Builtin) -> String {
-            if builtin.minArgs == builtin.maxArgs {
-                return "\(builtin.minArgs)"
+            if builtin.min == builtin.max {
+                return "\(builtin.min)"
             } else {
-                return "\(builtin.minArgs)-\(builtin.maxArgs)"
+                return "\(builtin.min)-\(builtin.max)"
             }
         }
     }
@@ -130,11 +130,11 @@ extension Program {
 extension Program {
 
     /// Evaluate an expression that should return a person.
-    func evaluatePerson(_ expr: ParsedExpr, errMessage: String) throws -> Person {
+    func evalPerson(_ expr: ParsedExpr, errMsg: String) throws -> Person {
 
         let value = try evaluate(expr)
         guard case .person(let person) = value else {
-            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
         }
         return person
     }
@@ -164,7 +164,7 @@ extension Program {
     }
 
 
-    func evaluateGedcomNodeOpt(_ expr: ParsedExpr, errMessage: String) throws -> GedcomNode? {
+    func evaluateGedcomNodeOpt(_ expr: ParsedExpr, errMsg: String) throws -> GedcomNode? {
 
         switch try evaluate(expr) {
         case .gnode(let gnode):
@@ -172,7 +172,7 @@ extension Program {
         case .null:
             return nil
         default:
-            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
         }
     }
 }
@@ -181,11 +181,11 @@ extension Program {
 extension Program {
 
     /// Evaluate a parsed expression to a person set.
-    func evaluatePersonSet(_ expr: ParsedExpr, errMessage: String)
+    func evalPersonSet(_ expr: ParsedExpr, errMsg: String)
     throws -> PersonSet<ProgramValue> {
 
         guard case .personset(let personset) = try evaluate(expr) else {
-            throw RuntimeError.runtimeError(errMessage, line: expr.line)
+            throw RuntimeError.runtimeError(errMsg, line: expr.line)
         }
         return personset
     }

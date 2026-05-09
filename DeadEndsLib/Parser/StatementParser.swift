@@ -3,12 +3,11 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on8 April 2026.
-//  Last changed on 25 April 2026.
+//  Last changed on 8 May 2026.
 //
 
 import Foundation
 import Parsing
-
 
 /// Block parser.
 struct BlockParser: Parser {
@@ -73,17 +72,10 @@ struct StmtParser: Parser {
             return ParsedStatement(
                 kind: .continueStatement(try ContinueStmtParser().parse(&input)),
                 line: line)
-        case .forlist:
+        case .foreach:
             return ParsedStatement(
-                kind: .forListStatement(try ForListStmtParser().parse(&input)),
+                kind: .forEachStatement(try ForEachStmtParser().parse(&input)),
                 line: line)
-        case .forindiset:
-            return ParsedStatement(
-                kind: .forIndisetStatement(try ForIndisetStmtParser().parse(&input)),
-                line: line)
-//        case .forspouses:
-//            return ParsedStatement(
-//                kind: .forSpousesStatement(try ForSpousesStmtParser().parse(&input)), line: line)
         default:
             return ParsedStatement(
                 kind: .expressionStatement(try ExprParser().parse(&input)),
@@ -215,6 +207,7 @@ struct BreakStmtParser: Parser {
     }
 }
 
+/// Continue statement parser.
 struct ContinueStmtParser: Parser {
     func parse(_ input: inout TokStream) throws -> ParsedContinueStmt {
 

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 5 May 2026.
+//  Last changed on 8 May 2026.
 //
 
 import Foundation
@@ -14,7 +14,7 @@ extension Program {
     // builtinName returns the value of the first 1 NAME line in a person's record.
     func builtinName(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evaluatePerson(args[0], errMessage: "name: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "name: arg must be a person")
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         return .string(name)
     }
@@ -27,7 +27,7 @@ extension Program {
     // builtinSurname returns the surname found on the first NAME line in a person' record.
     func builtinSurname(_ arg: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evaluatePerson(arg[0], errMessage: "surname: arg must be a person")
+        let person = try evalPerson(arg[0], errMsg: "surname: arg must be a person")
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
         guard let surname = gedcomName.surname else { return .null }
@@ -37,7 +37,7 @@ extension Program {
     // builtinGivens returns the given names ...
     func builtinGivens(_ arg: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evaluatePerson(arg[0], errMessage: "givens: arg must be a person")
+        let person = try evalPerson(arg[0], errMsg: "givens: arg must be a person")
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
         return .string(gedcomName.parts.joined(separator: " "))
@@ -46,7 +46,7 @@ extension Program {
     /// Returns the trimmed name of a persons.
     func builtinTrimName(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evaluatePerson(args[0], errMessage: "trimName: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "trimName: arg must be a person")
         return .string(person.displayName(limit: 40))  // TODO: Get the length from the args.
     }
 }
@@ -56,21 +56,21 @@ extension Program {
 
     /// Returns the first birth event of a person.
     func builtinBirth(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let person = try evaluatePerson(args[0], errMessage: "birth: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "birth: arg must be a person")
         guard let birth = person.kid(withTag: GedcomTag.BIRT) else { return .null }
         return .gnode(birth)
     }
 
     /// Returns the first death event of a person
     func builtinDeath(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let person = try evaluatePerson(args[0], errMessage: "death: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "death: arg must be a person")
         guard let birth = person.kid(withTag: GedcomTag.DEAT) else { return .null }
         return .gnode(birth)
     }
 
     /// Return the first burial event of a person.
     func builtinBurial(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let person = try evaluatePerson(args[0], errMessage: "burial: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "burial: arg must be a person")
         guard let birth = person.kid(withTag: GedcomTag.BURI) else { return .null }
         return .gnode(birth)    }
 
@@ -108,7 +108,7 @@ extension Program {
     /// Return the next sibling of a person.
     func builtinNextSibling(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evaluatePerson(args[0], errMessage: "nextsib: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "nextsib: arg must be a person")
         if let nextSibling = person.nextSibling(in: self.recordIndex) {
             return .person(nextSibling)
         } else {
@@ -119,7 +119,7 @@ extension Program {
     /// Return the previous sibling of a person.
     func builtinPrevSibling(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evaluatePerson(args[0], errMessage: "prevsib: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "prevsib: arg must be a person")
         if let previousSibling = person.previousSibling(in: self.recordIndex) {
             return .person(previousSibling)
         } else {
@@ -195,14 +195,14 @@ extension Program {
     /// Return true if a person is male.
     func builtinMale(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evaluatePerson(args[0], errMessage: "male: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "male: arg must be a person")
         return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
     /// Return true if a person is female.
     func builtinFemale(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evaluatePerson(args[0], errMessage: "female: arg must be a person")
+        let person = try evalPerson(args[0], errMsg: "female: arg must be a person")
         return person.isFemale ?
         ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
@@ -231,10 +231,30 @@ extension Program {
         return .null
     }
 
-    // THIS ALSO WORKS FOR FAMIIES
+    /// Return the key of a record or a root node.
+    /// TODO: Extend to the other record types.
     func builtinKey(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinKey not implemented")
-        return .null
+
+        let line = args[0].line
+        let value = try evaluate(args[0])
+        let node: GedcomNode
+
+        switch value {
+        case .person(let person):
+            node = person.root
+        case .family(let family):
+            node = family.root
+        case .null:
+            return .null
+        case .gnode(let gnode):
+            node = gnode
+        default:
+            throw RuntimeError.invalidArguments("key: arg must be a record or root node", line: line)
+        }
+        guard let key = node.key else {
+            throw RuntimeError.invalidArguments("key: arg must be a record or root node", line: line)
+        }
+        return .string(key)
     }
 
     func builtinSoundex(_ args: [ParsedExpr]) throws -> ProgramValue {
@@ -242,9 +262,22 @@ extension Program {
         return .null
     }
 
+    /// Buitin that returns the root node of a record.
+    /// TODO: Extend to the other record types.
     func builtinRoot(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinRoot not implemented")
-        return .null
+
+        let line = args[0].line
+        let value = try evaluate(args[0])
+        switch value {
+        case .person(let person):
+            return .gnode(person.root)
+        case .family(let family):
+            return .gnode(family.root)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("root: arg must be a person or family", line: line)
+        }
     }
 
     /// Look up a person in the database by its key; the @-signs may be omitted.
@@ -292,7 +325,7 @@ extension Program {
 extension Program {
 
     func builtinDate(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        let node = try evaluateGedcomNodeOpt(arg[0], errMessage: "date: arg must be a node")
+        let node = try evaluateGedcomNodeOpt(arg[0], errMsg: "date: arg must be a node")
         if let node = node, let date = node.kid(withTag: GedcomTag.DATE) {
             return .gnode(date)
         }
@@ -300,7 +333,7 @@ extension Program {
     }
 
     func builtinPlace(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        let node = try evaluateGedcomNodeOpt(arg[0], errMessage: "place: arg must be a node")
+        let node = try evaluateGedcomNodeOpt(arg[0], errMsg: "place: arg must be a node")
         if let node = node, let place = node.kid(withTag: GedcomTag.PLAC) {
             return .gnode(place)
         }
