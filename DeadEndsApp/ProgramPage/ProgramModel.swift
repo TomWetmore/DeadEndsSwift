@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 3 May 2026.
+//  Last changed on 9 May 2026.
 //
 
 import Foundation
@@ -148,12 +148,6 @@ func convertFrontEndError(_ error: FrontEndError) -> Diagnostic {
             message: "Unexpected input after end of program",
             line: tokens.first?.line
         )
-        //    default:
-        //        return Diagnostic(
-        //            message: "\(error)",
-        //            line: nil
-        //        )
-        //    }
     }
 }
 

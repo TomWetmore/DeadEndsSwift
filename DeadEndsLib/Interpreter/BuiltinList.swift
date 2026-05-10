@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 6 May 2026.
+//  Last changed on 9 May 2026.
 //
 
 import Foundation
@@ -12,12 +12,12 @@ import Foundation
 extension Program {
 
     /// Return an empty list.
-    func builtinList(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinList(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .list(List())
     }
 
     /// Return whether a list, table, person set or string is empty.
-    func builtinEmpty(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinEmpty(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         switch try evaluate(args[0]) {
         case .list(let list):
@@ -37,7 +37,7 @@ extension Program {
     }
 
     /// Clear the contents of a list, table, or person set.
-    func builtinClear(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinClear(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         guard case let .identifier(name) = args[0].kind else {
             throw RuntimeError.typeMismatch(
@@ -71,7 +71,7 @@ extension Program {
     }
 
     /// Return the length of a list, table, person set or string.
-    func builtinLength(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinLength(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         switch try evaluate(args[0]) {
         case .list(let list):
@@ -89,38 +89,173 @@ extension Program {
     }
 
     /// Append a value to a list.
-    func builtinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
         var (name, list) =
-            try requireListVariable(args[0], errMessage: "append: 1st arg must be a list var")
+            try requireListVariable(args[0], errMsg: "append: 1st arg must be a list var")
         list.append(try evaluate(args[1]))
         assignToSymbol(name, value: .list(list))
         return .null
     }
 
     /// Prepend a value to a list.
-    func builtinPrepend(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinPrepend(_ args: [ParsedExpr]) throws -> ProgramValue {
         var (name, list) =
-            try requireListVariable(args[0], errMessage: "prepend: 1st arg must be a list var")
+            try requireListVariable(args[0], errMsg: "prepend: 1st arg must be a list var")
         list.prepend(try evaluate(args[1]))
         assignToSymbol(name, value: .list(list))
         return .null
     }
 
     /// Remove the first value from a list.
-    func builtinRemoveFirst(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinRemoveFirst(_ args: [ParsedExpr]) throws -> ProgramValue {
         var (name, list) =
-            try requireListVariable(args[0], errMessage: "removefirst: 1st arg must be a list var")
+            try requireListVariable(args[0], errMsg: "removefirst: 1st arg must be a list var")
         guard let first = list.removeFirst() else { return .null }
         assignToSymbol(name, value: .list(list))
         return first
     }
 
     /// Evaluate an expression and be sure it is a list.
-    func evaluateList(_ expr: ParsedExpr, errMessage: String) throws -> List {
+    func evaluateList(_ expr: ParsedExpr, errMsg: String) throws -> List {
         guard case let .list(list) = try evaluate(expr) else {
-            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
         }
         return list
+    }
+}
+
+/// Builtins that return lists of persons or families.
+extension Program {
+
+    /// Return the children of a person or family as a List.
+    func bltinChildren(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let line = args[0].line
+        var children = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            children = person.children(in: recordIndex)
+        case .family(let family):
+            children = family.children(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("children: arg must be a person or family",
+                                                line: line)
+        }
+        return .list(List(children.map { ProgramValue.person($0) }))
+    }
+
+    /// Return the list of husbands of a person or family.
+    func bltinHusbands(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let line = args[0].line
+        var husbands = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            husbands = person.husbands(in: recordIndex)
+        case .family(let family):
+            husbands = family.husbands(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("husbands: arg must be a person or family", line: line)
+        }
+        return .list(List(husbands.map { ProgramValue.person($0)}))
+    }
+
+    /// Return the list of wives of a person or family.
+    func bltinWives(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let line = args[0].line
+        var wives = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            wives = person.wives(in: recordIndex)
+        case .family(let family):
+            wives = family.wives(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("wives: arg must be a person or family", line: line)
+        }
+        return .list(List(wives.map { ProgramValue.person($0)}))
+    }
+
+    /// Return the list of siblings of a person.
+    func bltinSiblings(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let line = args[0].line
+        var siblings = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            siblings = person.siblings(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("siblings: arg must be a person", line: line)
+        }
+        return .list(List(siblings.map { ProgramValue.person($0)}))
+    }
+
+    /// Return the list of spouses of a person or family.
+    func bltinSpouses(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let line = args[0].line
+        var spouses = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            spouses = person.spouses(in: recordIndex)
+        case .family(let family):
+            spouses = family.spouses(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("spouses: arg must be a person or family",
+                                                line: line)
+        }
+        return .list(List(spouses.map { ProgramValue.person($0) }))
+    }
+
+    /// Return the list of parents of a person or family (the spouses).
+    func bltinParents(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let line = args[0].line
+        var parents = [Person]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            parents = person.parents(in: recordIndex)
+        case .family(let family):
+            parents = family.spouses(in: recordIndex) // Define parents of a family and the spouses.
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidSyntax("parents: arg must be a person", line: line)
+        }
+        return .list(List(parents.map { ProgramValue.person($0) }))
+    }
+
+    /// Return the list of families a person is in as a spouse.
+    /// families(person) -> .list(Family)
+    func builtinFamilyList(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let line = args[0].line
+        var families = [Family]()
+
+        switch try evaluate(args[0]) {
+        case .person(let person):
+            families = person.spouseFamilies(in: recordIndex)
+        case .null:
+            return .null
+        default:
+            throw RuntimeError.invalidArguments("spouses: arg must be a person", line: line)
+        }
+        let result = List(families.map { ProgramValue.family($0)})
+        return .list(result)
     }
 }
 
@@ -191,17 +326,17 @@ extension List: Sequence {
 extension Program {
 
     /// Convenience method for methods that need a modifiable list argument.
-    func requireListVariable(_ expr: ParsedExpr, errMessage: String )
+    func requireListVariable(_ expr: ParsedExpr, errMsg: String )
         throws -> (name: String, list: List) {
 
         guard case let .identifier(name) = expr.kind else {
-            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
         }
         guard let value = lookupSymbol(name) else {
             throw RuntimeError.undefinedSymbol("undefined variable: \(name)", line: expr.line)
         }
         guard case let .list(list) = value else {
-            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
         }
 
         return (name, list)

@@ -59,7 +59,7 @@ extension Program {
     }
 
     // UTILITIES
-    func evaluateList(_ node: ProgramNode, errMessage: String) throws -> List<ProgramValue> {
+    func evaluateList(_ node: ProgramNode, errMsg: String) throws -> List<ProgramValue> {
         guard case let .list(list) = try evaluate(node) else {
             throw RuntimeError.typeMismatch(errMessage)
         }

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed 26 April 2026.
+//  Last changed 9 May 2026.
 //
 //  This file has the builtin functions for add, sub, mul, div, mod, neg,
 //  eq, ne, lt, le, gt, ge, and, or, not, incr, decr.
@@ -15,7 +15,7 @@ import Foundation
 extension Program {
 
     /// Addition function.
-    func builtinAdd(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinAdd(_ args: [ParsedExpr]) throws -> ProgramValue {
         let arg1 = try self.evaluate(args[0])
         let arg2 = try self.evaluate(args[1])
         let result = ProgramValue.addPValues(arg1, arg2)
@@ -26,7 +26,7 @@ extension Program {
     }
 
     /// Subtraction function.
-    func builtinSub(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinSub(_ args: [ParsedExpr]) throws -> ProgramValue {
         let arg1 = try self.evaluate(args[0])
         let arg2 = try self.evaluate(args[1])
         let result = ProgramValue.subPValues(arg1, arg2)
@@ -38,7 +38,7 @@ extension Program {
     }
 
     /// Multiplication function.
-    func builtinMul(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinMul(_ args: [ParsedExpr]) throws -> ProgramValue {
         let arg1 = try self.evaluate(args[0])
         let arg2 = try self.evaluate(args[1])
         let result = ProgramValue.mulPValues(arg1, arg2)
@@ -50,7 +50,7 @@ extension Program {
     }
 
     /// Division function.
-    func builtinDiv(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinDiv(_ args: [ParsedExpr]) throws -> ProgramValue {
         let arg2 = try self.evaluate(args[1])
         if arg2 == .integer(0) || arg2 == .double(0.0) { // Check for zero divisor.
             throw RuntimeError.runtimeError("division by zero is not allowed",
@@ -66,32 +66,29 @@ extension Program {
     }
 
     /// Modulus function.
-    func builtinMod(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinMod(_ args: [ParsedExpr]) throws -> ProgramValue {
         let arg1 = try self.evaluate(args[0])
         let arg2 = try self.evaluate(args[1])
         guard case let .integer(left) = arg1, case let .integer(right) = arg2 else { // Only integers.
-            throw RuntimeError.typeMismatch("mod requires two integer arguments",
+            throw RuntimeError.typeMismatch("mod requires two integer args",
                                             line: args[0].line)
         }
         if right == 0 { // Check for zero.
-            throw RuntimeError.runtimeError("modulo by zero is not allowed",
-                                            line: args[0].line)
+            throw RuntimeError.runtimeError("modulo by zero not allowed", line: args[0].line)
         }
         return .integer(left % right)
     }
 
     /// Negation function.
-    func builtinNeg(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinNeg(_ args: [ParsedExpr]) throws -> ProgramValue {
         // Evaluate the argument and check that it's numeric.
         let arg = try self.evaluate(args[0])
         if !ProgramValue.isNumeric(arg) {
-            throw RuntimeError.typeMismatch("neg requires a numeric argument",
-                                            line: args[0].line)
+            throw RuntimeError.typeMismatch("neg requires a numeric arg", line: args[0].line)
         }
         let result = ProgramValue.negPValue(arg)
         if result == .null {
-            throw RuntimeError.typeMismatch("neg requires a numeric argument",
-                                            line: args[0].line)
+            throw RuntimeError.typeMismatch("neg requires a numeric arg", line: args[0].line)
         }
         return result
     }
@@ -101,42 +98,42 @@ extension Program {
 extension Program {
 
     /// Equal predicate.
-    func builtinEq(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinEq(_ args: [ParsedExpr]) throws -> ProgramValue {
         let a = try evaluate(args[0])
         let b = try evaluate(args[1])
         return .boolean(a == b)
     }
 
     /// Not equal predicate.
-    func builtinNe(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinNe(_ args: [ParsedExpr]) throws -> ProgramValue {
         let a = try evaluate(args[0])
         let b = try evaluate(args[1])
         return .boolean(a != b)
     }
 
     /// Less than predicate.
-    func builtinLt(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinLt(_ args: [ParsedExpr]) throws -> ProgramValue {
         let a = try evaluate(args[0])
         let b = try evaluate(args[1])
         return ProgramValue.compare(a, b, using: <)
     }
 
     /// Less than or equal predicate.
-    func builtinLe(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinLe(_ args: [ParsedExpr]) throws -> ProgramValue {
         let a = try evaluate(args[0])
         let b = try evaluate(args[1])
         return ProgramValue.compare(a, b, using: <=)
     }
 
     /// Greater than predicate.
-    func builtinGt(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinGt(_ args: [ParsedExpr]) throws -> ProgramValue {
         let a = try evaluate(args[0])
         let b = try evaluate(args[1])
         return ProgramValue.compare(a, b, using: >)
     }
 
     /// Greator than or equal predicate.
-    func builtinGe(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinGe(_ args: [ParsedExpr]) throws -> ProgramValue {
         let a = try evaluate(args[0])
         let b = try evaluate(args[1])
         return ProgramValue.compare(a, b, using: >=)
@@ -147,20 +144,17 @@ extension Program {
 extension Program {
 
     /// Increment function.
-    func builtinIncr(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinIncr(_ args: [ParsedExpr]) throws -> ProgramValue {
         // Argument must be an identifier.
         guard case let .identifier(name) = args[0].kind else {
-            throw RuntimeError.typeError("incr() expects a variable name",
-                                         line: args[0].line)
+            throw RuntimeError.typeError("incr: arg must be a variable", line: args[0].line)
         }
         // The identifer must be in a symbol table and have an integer value.
         guard let current = lookupSymbol(name) else {
-            throw RuntimeError.undefinedSymbol("incr(): variable '\(name)' is not defined",
-                                               line: args[0].line)
+            throw RuntimeError.undefinedSymbol("incr: '\(name)' is not defined", line: args[0].line)
         }
         guard case let .integer(i) = current else {
-            throw RuntimeError.typeMismatch("incr() requires an integer variable",
-                                            line: args[0].line)
+            throw RuntimeError.typeMismatch("incr: arg must be an integer variable", line: args[0].line)
         }
         // Store back the incremented value.
         let newVal = ProgramValue.integer(i + 1)
@@ -169,7 +163,7 @@ extension Program {
     }
 
     // Decrement function.
-    func builtinDecr(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinDecr(_ args: [ParsedExpr]) throws -> ProgramValue {
         // Argument must be an identifier.
         guard case let .identifier(name) = args[0].kind else {
             throw RuntimeError.typeError("decr() expects a variable name",
@@ -195,7 +189,7 @@ extension Program {
 extension Program {
 
     /// Logical and operation.
-    func builtinAnd(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinAnd(_ args: [ParsedExpr]) throws -> ProgramValue {
         for arg in args {
             if !(try evaluate(arg).toBool()) {
                 return .falseProgramValue
@@ -205,7 +199,7 @@ extension Program {
     }
 
     /// Logical or operation.
-    func builtinOr(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinOr(_ args: [ParsedExpr]) throws -> ProgramValue {
         for arg in args {
             if try evaluate(arg).toBool() {
                 return .trueProgramValue
@@ -215,7 +209,7 @@ extension Program {
     }
 
     /// Logical not operation.
-    func builtinNot(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinNot(_ args: [ParsedExpr]) throws -> ProgramValue {
         return try evaluate(args[0]).toBool() ? .falseProgramValue : .trueProgramValue
     }
 }

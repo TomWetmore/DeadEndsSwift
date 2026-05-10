@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 5 May 2026.
+//  Last changed on 9 May 2026.
 //
 
 import Foundation
@@ -140,18 +140,7 @@ extension Program {
     }
 
     /// Evaluate an expression for an optional person; throw error if not a person or null.
-    func oldevaluatePersonOpt(_ expr: ParsedExpr, errMessage: String) throws -> Person? {
-
-        let value = try evaluate(expr)
-        guard case .null = value else {
-            return nil }
-        guard case .person(let person) = value else {
-            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
-        }
-        return person
-    }
-
-    func evaluatePersonOpt(_ expr: ParsedExpr, errMessage: String) throws -> Person? {
+    func evaluatePersonOpt(_ expr: ParsedExpr, errMsg: String) throws -> Person? {
 
         switch try evaluate(expr) {
         case .person(let person):
@@ -159,7 +148,7 @@ extension Program {
         case .null:
             return nil
         default:
-            throw RuntimeError.typeMismatch(errMessage, line: expr.line)
+            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
         }
     }
 

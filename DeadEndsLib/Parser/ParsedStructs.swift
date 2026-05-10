@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 8 May 2026.
+//  Last changed on 9 May 2026.
 //
 
 /// The parsed structs and enums make up the abstract syntax tree of
@@ -24,8 +24,7 @@ public struct ParsedProgram: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed definition, holding the three definition types that
-/// make up a program.
+/// Parsed definition, holding the three definition types found in programs.
 enum ParsedDefn: Equatable, CustomStringConvertible {
     
     case procDef(ParsedProcDefn)  // Procedure definition.
@@ -41,8 +40,7 @@ enum ParsedDefn: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed procedure definition, holding the definition of a
-/// user procedure.
+/// Parsed procedure definition, the definition of a user procedure.
 struct ParsedProcDefn: Equatable, CustomStringConvertible {
 
     let name: String
@@ -55,8 +53,7 @@ struct ParsedProcDefn: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed function definition, holding the definition of a
-/// user function.
+/// Parsed function definition, the definition of a user function.
 struct ParsedFuncDefn: Equatable, CustomStringConvertible {
 
     let name: String
@@ -69,8 +66,7 @@ struct ParsedFuncDefn: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed global definition, holding the definition of a
-/// global variable.
+/// Parsed global definition, the definition of a global variable.
 struct ParsedGlobalDefn: Equatable, CustomStringConvertible {
 
     let name: String
@@ -135,9 +131,7 @@ struct ParsedWhileStmt: Equatable, CustomStringConvertible {
     let body: [ParsedStatement]
     let line: Int
 
-    var description: String {
-        "while(\(condition)) { \(body) }"
-    }
+    var description: String { "while(\(condition)) { \(body) }" }
 }
 
 /// Parsed if statement.
@@ -161,36 +155,29 @@ struct ParsedElseIf: Equatable, CustomStringConvertible {
     let body: [ParsedStatement]
     let line: Int
 
-    var description: String {
-        "elsif(\(condition)) \(body)"
-    }
+    var description: String { "elsif(\(condition)) \(body)" }
 }
 
 /// Parsed return statement.
 struct ParsedReturnStmt: Equatable, CustomStringConvertible {
     let values: [ParsedExpr]
 
-    var description: String {
-
-        "return(\(values))"
-    }
+    var description: String { "return(\(values))" }
 }
 
 /// Parsed break statement.
 struct ParsedBreakStmt: Equatable, CustomStringConvertible {
 
-    var description: String { "BREAK()" }
+    var description: String { "break()" }
 }
 
 /// Parse continue statement.
 struct ParsedContinueStmt: Equatable, CustomStringConvertible {
     
-    var description: String { "CONTINUE()" }
+    var description: String { "continue()" }
 }
 
-/// SPECIAL STATEMENT FORMS ///
-
-/// Parsed structure for a foreach statement -- foreach(list, var, var [,var])
+/// Parsed foreach statement -- foreach(ListExpr, var[, var], var)
 struct ParsedForEachStmt: Equatable, CustomStringConvertible {
     
     let listExpr: ParsedExpr
@@ -202,22 +189,6 @@ struct ParsedForEachStmt: Equatable, CustomStringConvertible {
 
     var description: String {
         "foreach(\(listExpr), \(elementVar), \(indexVar)) { ... }"
-    }
-}
-
-/// Parsed structure for an indiset statement -- forindiset(indiset, indi, any, index)
-/// TODO: DEPRECATED
-struct ParsedForIndisetStmt: Equatable, CustomStringConvertible {
-
-    let indisetExpr: ParsedExpr
-    let indiVar: String
-    let valueVar: String
-    let indexVar: String
-    let body: [ParsedStatement]
-    let line: Int
-
-    var description: String {
-        "forindiset(\(indisetExpr), \(indiVar), \(valueVar), \(indexVar)) { ... }"
     }
 }
 
@@ -259,4 +230,3 @@ struct ParsedExpr: Equatable, CustomStringConvertible {
         }
     }
 }
-

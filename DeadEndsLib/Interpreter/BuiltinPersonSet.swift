@@ -24,7 +24,10 @@ extension Program {
     func bltinAddToSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         let personSet = try evalPersonSet(args[0], errMsg: "addtoset: 1st arg must be a personset")
         let person = try evalPerson(args[1], errMsg: "addtoset: 2nd arg must be a person")
-        let any = try evaluate(args[2])
+        var any = ProgramValue.null
+        if args.count == 3 {
+            any = try evaluate(args[2])
+        }
         personSet.append(person, payload: any)
         return .null
     }

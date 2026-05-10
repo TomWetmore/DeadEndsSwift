@@ -9,53 +9,53 @@
 //  compose, edit, compile and run DeadEnds programs.
 //
 
-
 import SwiftUI
 
 struct ProgramPage: View {
-
+    
     @EnvironmentObject var appModel: AppModel
     @Bindable var model: ProgramModel
-
+    
     var body: some View {
         VStack(spacing: 0) {
-
+            
             TextEditor(text: $model.source)  // Editor for DeadEnds programs.
-                .font(.system(.body, design: .monospaced))
+                .font(.system(size: 16, design: .monospaced))
                 .padding(8)
-
+            
             Divider()
-
+            
             HStack {  // Button bar.
                 Button("Compile") {  // Button that compiles the program.
                     model.handleCompileButton()
                 }
                 .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
+                
                 Button("Run") {  // Button that runs the program.
                     if let db = appModel.database {
                         model.handleRunButton(database: db)
                     }
                 }
                 .disabled(model.parsedProgram == nil || appModel.database == nil)
-
+                
                 Spacer()
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-
+            
             Divider()
-
+            
             ScrollView {  // View that shows the program output.
                 Text(model.output.text)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
                     .textSelection(.enabled)
+                    .font(.system(size: 16, design: .monospaced))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
+            
             Divider()
-
+            
             DiagnosticsPane(diagnostics: model.diagnostics)  // Pane that shows errors.
                 .frame(minHeight: 120, idealHeight: 160)
                 .padding(8)
