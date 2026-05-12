@@ -21,20 +21,25 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         else { self.surnameIndex = nil }
     }
 
-    /// Create Gedcom name from Gedcom-formatted name string.
+    /// Create a Gedcom name from a Gedcom-formatted name string.
     public init?(string: String) {
         guard let (parts, sindex) = parseGedcomName(value: string) else { return nil }
         self.init(parts: parts, surnameIndex: sindex)
     }
 
-    /// Create Gedcom name from a 0 INDI or 1 NAME node.
+    /// Create a Gedcom name from a 0 INDI or 1 NAME node.
     public init?(from node: GedcomNode) {
         let nameNode: GedcomNode? = (node.tag == "NAME") ? node : node.kid(withTag: "NAME")
         guard let value = nameNode?.val else { return nil }
         self.init(string: value)
     }
 
-    /// Return description of Gedcom name showing struture.
+    /// Create a Gedcom name from a person.
+    public init?(from person: Person) {
+        self.init(from: person.root)
+    }
+
+    /// Return a description of a Gedcom name showing its struture.
     public var description: String {
         let parts = parts.enumerated()
             .map { idx, part in

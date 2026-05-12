@@ -65,19 +65,19 @@ extension ProgramValue {
     static let falseProgramValue: ProgramValue = .boolean(false)
 }
 
-extension ProgramValue {
-    // toBool converts any PValue to a .bool PValue using C-like rules.
-    func toBool() -> Bool {
-        switch self {
-            case .boolean(let value): return value
-            case .integer(let value): return value != 0
-            case .double(let value): return value != 0.0
-            case .string(let value): return !value.isEmpty
-            case .null: return false
-            default: return true // TODO: Other types default to true.
-        }
-    }
-}
+//extension ProgramValue {
+//    // toBool converts any PValue to a .bool PValue using C-like rules.
+//    func toBool() -> Bool {
+//        switch self {
+//            case .boolean(let value): return value
+//            case .integer(let value): return value != 0
+//            case .double(let value): return value != 0.0
+//            case .string(let value): return !value.isEmpty
+//            case .null: return false
+//            default: return true // TODO: Other types default to true.
+//        }
+//    }
+//}
 
 // ProgramValue extension for numeric string operations.
 extension ProgramValue {

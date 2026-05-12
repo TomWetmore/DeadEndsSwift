@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 9 May 2026.
+//  Last changed on 12 May 2026.
 //
 
 import Foundation
@@ -33,11 +33,11 @@ extension Program {
         switch cond {
         case .expr(let expr):
             let value = try evaluate(expr)
-            return value.toBool()
+            return value.toBool
         case .assign(let name, let expr):
             let value = try evaluate(expr)
             assignToSymbol(name, value: value)
-            return value.toBool()
+            return value.toBool
         }
     }
 
@@ -46,7 +46,7 @@ extension Program {
 
         guard let value = lookupSymbol(ident) else {
             // TODO: Set a line number for the identifier.
-            throw RuntimeError.undefinedSymbol("undefined variable: \(ident)", line: line)
+            throw RuntimeError("undefined variable: \(ident)", line: line)
         }
         return value
     }
@@ -66,11 +66,10 @@ extension Program {
     /// Evaluate a builtin function.
     private func evaluateBuiltin(_ name: String, args: [ParsedExpr], line: Int) throws -> ProgramValue {
         guard let builtin = builtins[name] else {  // Get builtin function.
-            throw RuntimeError.undefinedSymbol("Unknown builtin function: \(name)",
-                                               line: line)
+            throw RuntimeError("Unknown builtin function: \(name)", line: line)
         }
         guard (builtin.min...builtin.max).contains(args.count) else {
-            throw RuntimeError.invalidArguments(
+            throw RuntimeError(
                 "\(name)() expects \(expectedArgs(builtin)) args, got \(args.count)",
                 line: line)
         }
@@ -92,7 +91,7 @@ extension Program {
         let nParams = funcDefn.params.count
         let nArgs = args.count
         guard nParams == nArgs else {
-            throw RuntimeError.invalidArguments("func \(name): expects \(nParams) args, got \(nArgs)",
+            throw RuntimeError("func \(name): expects \(nParams) args, got \(nArgs)",
                                                 line: line)
         }
         var table: SymbolTable = [:]  // Create frame and bind the args to params.
@@ -119,9 +118,9 @@ extension Program {
         case .okay:
             return .null // Allow user functions to not return a value.
         case .breaking, .continuing:
-            throw RuntimeError.invalidControlFlow("break/continu statement outside of loop", line: line) // TODO: This line should be the line of the break/continue!!!
+            throw RuntimeError("break/continu statement outside of loop", line: line) // TODO: This line should be the line of the break/continue!!!
         case .error: // Probably not needed.
-            throw RuntimeError.executionFailed("Error during function execution", line: line)
+            throw RuntimeError("Error during function execution", line: line)
         }
     }
 }
@@ -130,11 +129,11 @@ extension Program {
 extension Program {
 
     /// Evaluate an expression that should return a person.
-    func evalPerson(_ expr: ParsedExpr, errMsg: String) throws -> Person {
+    func evaluatePerson(_ expr: ParsedExpr, errMsg: String) throws -> Person {
 
         let value = try evaluate(expr)
         guard case .person(let person) = value else {
-            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
+            throw RuntimeError(errMsg, line: expr.line)
         }
         return person
     }
@@ -148,7 +147,7 @@ extension Program {
         case .null:
             return nil
         default:
-            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
+            throw RuntimeError(errMsg, line: expr.line)
         }
     }
 
@@ -161,7 +160,7 @@ extension Program {
         case .null:
             return nil
         default:
-            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
+            throw RuntimeError(errMsg, line: expr.line)
         }
     }
 }
@@ -174,7 +173,7 @@ extension Program {
     throws -> PersonSet<ProgramValue> {
 
         guard case .personset(let personset) = try evaluate(expr) else {
-            throw RuntimeError.runtimeError(errMsg, line: expr.line)
+            throw RuntimeError(errMsg, line: expr.line)
         }
         return personset
     }

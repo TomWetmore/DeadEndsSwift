@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 8 May 2026.
+//  Last changed on 12 May 2026.
 //
 
 import Foundation
@@ -129,7 +129,7 @@ extension Program {
         let nParams = procDef.params.count
 
         guard nArgs == nParams else {
-            throw RuntimeError.invalidArguments(
+            throw RuntimeError(
                 "\(name) expects \(nParams) args, got \(nArgs)",
                 line: procCall.line
             )

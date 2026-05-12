@@ -10,6 +10,7 @@ import Foundation
 import Observation
 import DeadEndsLib
 import Parsing
+import AppKit
 
 /// Program output object that buffers the full output of a Deadends program
 /// into a string buffer while it is running. Output does no go to the output
@@ -48,6 +49,9 @@ final class ProgramModel {
 
     var diagnostics: [Diagnostic] = []
     var parsedProgram: ParsedProgram? = nil
+
+    var fileURL: URL? = nil
+    var isDirty: Bool = false
 
     /// Create a program model with an unnamed empty source text.
     init(programName: String = "Untitled", source: String = "") {
@@ -114,6 +118,59 @@ final class ProgramModel {
         } catch {
             output.text = displayableOutput(buffer.text)
             diagnostics = [Diagnostic(message: String(describing: error), line: 0)]
+        }
+    }
+
+    @MainActor
+    func openProgramFile() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+
+        if panel.runModal() == .OK, let url = panel.url {
+            do {
+                source = try String(contentsOf: url, encoding: .utf8)
+                fileURL = url
+                programName = url.lastPathComponent
+                parsedProgram = nil
+                diagnostics = []
+                output.clear()
+                isDirty = false
+            } catch {
+                diagnostics = [Diagnostic(message: "Could not open file: \(error.localizedDescription)", line: nil)]
+            }
+        }
+    }
+
+    @MainActor
+    func saveProgramFile() {
+        if let url = fileURL {
+            saveProgramFile(to: url)
+        } else {
+            saveProgramFileAs()
+        }
+    }
+
+    @MainActor
+    func saveProgramFileAs() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.nameFieldStringValue = programName == "Untitled" ? "Untitled.deadends" : programName
+
+        if panel.runModal() == .OK, let url = panel.url {
+            saveProgramFile(to: url)
+        }
+    }
+
+    private func saveProgramFile(to url: URL) {
+        do {
+            try source.write(to: url, atomically: true, encoding: .utf8)
+            fileURL = url
+            programName = url.lastPathComponent
+            isDirty = false
+        } catch {
+            diagnostics = [Diagnostic(message: "Could not save file: \(error.localizedDescription)", line: nil)]
         }
     }
 }

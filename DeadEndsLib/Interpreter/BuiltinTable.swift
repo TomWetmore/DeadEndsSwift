@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 April 2026.
-//  Last changed on 3 May 2026.
+//  Last changed on 12 May 2026.
 //
 
 import Foundation
@@ -27,8 +27,7 @@ extension Program {
     /// Create a program table and add it to the symbol table.
     func bltinTable(_ args: [ParsedExpr]) throws -> ProgramValue {
         guard case let .identifier(name) = args[0].kind else {
-            throw RuntimeError.typeError("table: arg must be identifier",
-                                         line: args[0].line)
+            throw RuntimeError("table: arg must be identifier", line: args[0].line)
         }
         assignToSymbol(name, value: .table(ProgramTable()))
         return .null
@@ -38,13 +37,11 @@ extension Program {
     func bltinInsert(_ args: [ParsedExpr]) throws -> ProgramValue {
         let tableValue = try evaluate(args[0])
         guard case let .table(table) = tableValue else {
-            throw RuntimeError.typeError("insert: 1st arg must be a table",
-                                         line:args[0].line)
+            throw RuntimeError("insert: 1st arg must be a table", line:args[0].line)
         }
         let keyValue = try evaluate(args[1])
         guard case let .string(key) = keyValue else {
-            throw RuntimeError.typeError("insert: 2nd arg must be a string",
-                                         line: args[1].line)
+            throw RuntimeError("insert: 2nd arg must be a string", line: args[1].line)
         }
         let value = try evaluate(args[2])
         table.elements[key] = value
@@ -55,13 +52,11 @@ extension Program {
     func bltinLookup(_ args: [ParsedExpr]) throws -> ProgramValue {
         let tableValue = try evaluate(args[0])
         guard case let .table(table) = tableValue else {
-            throw RuntimeError.typeError("lookup: 1st arg must be a table",
-                                         line: args[0].line)
+            throw RuntimeError("lookup: 1st arg must be a table", line: args[0].line)
         }
         let keyValue = try evaluate(args[1])
         guard case let .string(key) = keyValue else {
-            throw RuntimeError.typeError("lookup: 2nd arg must be a string",
-                                         line: args[1].line)
+            throw RuntimeError("lookup: 2nd arg must be a string", line: args[1].line)
         }
         return table.elements[key] ?? .null
     }
@@ -70,8 +65,7 @@ extension Program {
     func builtinTableLength(_ args: [ParsedExpr]) throws -> ProgramValue {
         let tableValue = try evaluate(args[0])
         guard case let .table(table) = tableValue else {
-            throw RuntimeError.typeError("table-length: 1st arg must be a table",
-                                         line: args[0].line)
+            throw RuntimeError("table-length: 1st arg must be a table", line: args[0].line)
         }
         return .integer(table.elements.count)
     }

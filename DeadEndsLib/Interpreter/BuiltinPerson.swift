@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 9 May 2026.
+//  Last changed on 12 May 2026.
 //
 
 import Foundation
@@ -12,71 +12,74 @@ import Foundation
 extension Program {
 
     // builtinName returns the value of the first 1 NAME line in a person's record.
+    // name(person [, bool]). bool for all caps on the surname
     func bltinName(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evalPerson(args[0], errMsg: "name: arg must be a person")
-        guard let name = person.kidVal(forTag: "NAME") else { return .null }
-        return .string(name)
-    }
-
-    func builtinFullName(_ args: [ProgramNode]) throws -> ProgramValue {
-        print("builtinFullName not implemented")
+        let value = try evaluatePersonOpt(args[0], errMsg: "name: arg must be a person")
+        if let person = value {
+            return .string(person.displayName(upSurname: false, surnameFirst: false, limit: 0))
+        }
         return .null
     }
 
-    // builtinSurname returns the surname found on the first NAME line in a person' record.
-    func bltinSurname(_ arg: [ParsedExpr]) throws -> ProgramValue {
+    /// Returns a person's name with processing.
+    /// fullname(person, bool, bool, int) -> string
+    func bltinFullName(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evalPerson(arg[0], errMsg: "surname: arg must be a person")
+        guard let person = try evaluatePersonOpt(args[0],
+                                    errMsg: "fullname: 1st arg must be a person") else {
+            return .null
+        }
+        let upSurname = try evaluate(args[1]).toBool
+        let surnameFirst = try evaluate(args[2]).toBool
+        let limit = try evaluate(args[3])
+        guard case let .integer(intvalue) = limit else {
+            throw RuntimeError("fullname: 4th arg must be an integer",
+                                line: args[3].line)
+        }
+        let name = person.displayName(upSurname: upSurname, surnameFirst: surnameFirst,
+                                        limit: intvalue)
+        return .string(name)
+
+    }
+
+    /// Returns a person's surname as found on the first 1 NAME line in the record.
+    func bltinSurname(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        guard let person = try evaluatePersonOpt(args[0],
+                                    errMsg: "surname: arg must be a person") else {
+            return .null
+        }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
         guard let surname = gedcomName.surname else { return .null }
         return .string(surname)
+
     }
 
-    // builtinGivens returns the given names ...
-    func bltinGivens(_ arg: [ParsedExpr]) throws -> ProgramValue {
+    /// Return the given names from the first NAME line in the record.
+    /// TODO -- THIS INCLUDES THE SURNAME -- MUST BE FIXED.
+    func bltinGivens(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evalPerson(arg[0], errMsg: "givens: arg must be a person")
+        guard let person = try evaluatePersonOpt(args[0],
+                                    errMsg: "givens: arg must be a person") else {
+            return .null
+        }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
         guard let gedcomName = GedcomName(string: name) else { return .null }
         return .string(gedcomName.parts.joined(separator: " "))
+
     }
 
-    /// Returns the trimmed name of a persons.
+    /// Returns the trimmed name of a person.
+    /// TODO: SHOULDN'T THIS HAVE A SECOND PARAMETER TO SET THE TRIM LENGTH?
     func builtinTrimName(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evalPerson(args[0], errMsg: "trimName: arg must be a person")
-        return .string(person.displayName(limit: 40))  // TODO: Get the length from the args.
-    }
-}
-
-/// Event realted built-ins.
-extension Program {
-
-    /// Returns the first birth event of a person.
-    func bltinBirth(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let person = try evalPerson(args[0], errMsg: "birth: arg must be a person")
-        guard let birth = person.kid(withTag: GedcomTag.BIRT) else { return .null }
-        return .gnode(birth)
-    }
-
-    /// Returns the first death event of a person
-    func bltinDeath(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let person = try evalPerson(args[0], errMsg: "death: arg must be a person")
-        guard let birth = person.kid(withTag: GedcomTag.DEAT) else { return .null }
-        return .gnode(birth)
-    }
-
-    /// Return the first burial event of a person.
-    func builtinBurial(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let person = try evalPerson(args[0], errMsg: "burial: arg must be a person")
-        guard let birth = person.kid(withTag: GedcomTag.BURI) else { return .null }
-        return .gnode(birth)    }
-
-    /// Return the first baptims event of a person.
-    func builtinBaptism(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return try extractPersonEvent(from: args[0], tag: "BAPM", functionName: "baptism")
+        guard let person = try evaluatePersonOpt(args[0],
+                                    errMsg: "trimName: arg must be a person") else {
+            return .null
+        }
+        return .string(person.displayName(limit: 40))
     }
 }
 
@@ -84,9 +87,13 @@ extension Program {
 extension Program {
 
     /// Return the next sibling of a person.
+    /// nextsibling(person) -> .person or .null
     func builtinNextSibling(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evalPerson(args[0], errMsg: "nextsib: arg must be a person")
+        guard let person = try evaluatePersonOpt(args[0],
+                                           errMsg: "nextsib: arg must be a person") else {
+            return .null
+        }
         if let nextSibling = person.nextSibling(in: self.recordIndex) {
             return .person(nextSibling)
         } else {
@@ -97,7 +104,10 @@ extension Program {
     /// Return the previous sibling of a person.
     func builtinPrevSibling(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evalPerson(args[0], errMsg: "prevsib: arg must be a person")
+        guard let person = try evaluatePersonOpt(args[0],
+                                    errMsg: "prevsib: arg must be a person") else {
+            return .null
+        }
         if let previousSibling = person.previousSibling(in: self.recordIndex) {
             return .person(previousSibling)
         } else {
@@ -125,7 +135,7 @@ extension Program {
         return .person(mother)
     }
 
-    /// Make it generic so it can run on persons and families.
+    /// Made generic so it can run on persons and families.
     func bltinHusband(_ args: [ParsedExpr]) throws -> ProgramValue {
         
         let value = try evaluate(args[0])
@@ -137,14 +147,12 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.typeMismatch(
-                "husband: arg must be a person or family",
-                line: args[0].line
-            )
+            throw RuntimeError("husband: arg must be a person or family",
+                               line: args[0].line)
         }
     }
 
-    /// Make it generic so it can run on persons and families.
+    /// Made generic so it can run on persons and families.
     func bltinWife(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         let value = try evaluate(args[0])
@@ -156,10 +164,8 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.typeMismatch(
-                "wife: arg must be a person or family",
-                line: args[0].line
-            )
+            throw RuntimeError("wife: arg must be a person or family",
+                               line: args[0].line)
         }
     }
 }
@@ -175,23 +181,27 @@ extension Program {
     /// Return true if a person is male.
     func builtinMale(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evalPerson(args[0], errMsg: "male: arg must be a person")
-        return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
+        guard let person = try evaluatePersonOpt(args[0],
+                                errMsg: "male: arg must be a person") else { return .null }
+        return person.isMale
+            ? ProgramValue.trueProgramValue
+            : ProgramValue.falseProgramValue
     }
 
     /// Return true if a person is female.
     func builtinFemale(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        let person = try evalPerson(args[0], errMsg: "female: arg must be a person")
-        return person.isFemale ?
-        ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
+        guard let person = try evaluatePersonOpt(args[0],
+                                errMsg: "female: arg must be a person") else { return .null }
+        return person.isFemale
+            ? ProgramValue.trueProgramValue
+            : ProgramValue.falseProgramValue
     }
 
     func builtinPronouns(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtInPronouns not implemented")
         return .null
     }
-
 }
 
 extension Program {
@@ -229,10 +239,10 @@ extension Program {
         case .gnode(let gnode):
             node = gnode
         default:
-            throw RuntimeError.invalidArguments("key: arg must be a record or root node", line: line)
+            throw RuntimeError("key: arg must be a record or root node", line: line)
         }
         guard let key = node.key else {
-            throw RuntimeError.invalidArguments("key: arg must be a record or root node", line: line)
+            throw RuntimeError("key: arg must be a record or root node", line: line)
         }
         return .string(key)
     }
@@ -256,7 +266,7 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.invalidArguments("root: arg must be a person or family", line: line)
+            throw RuntimeError("root: arg must be a person or family", line: line)
         }
     }
 
@@ -266,11 +276,11 @@ extension Program {
         let line = args[0].line
         let value = try evaluate(args[0])
         guard case let .string(key) = value else {
-            throw RuntimeError.invalidArguments("indi: arg must be a person key", line: line)
+            throw RuntimeError("indi: arg must be a person key", line: line)
         }
         let normalized = normalizeGedcomKey(key)
         guard let root = recordIndex[normalized], root.tag == GedcomTag.INDI else {
-            throw RuntimeError.invalidArguments("indi: arg must be a person key", line: line)
+            throw RuntimeError("indi: arg must be a person key", line: line)
         }
         return .person(Person(root))
     }
@@ -298,28 +308,17 @@ extension Program {
         return .null
     }
 
-    
-
-}
-
-extension Program {
-
-    func bltinDate(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        let node = try evaluateGedcomNodeOpt(arg[0], errMsg: "date: arg must be a node")
-        if let node = node, let date = node.kid(withTag: GedcomTag.DATE) {
-            return .gnode(date)
-        }
-        return .null
+    /// Return the all persons program value.
+    func bltinAllPersons(_ args: [ParsedExpr]) throws -> ProgramValue {
+        return .allPersons
     }
 
-    func bltinPlace(_ arg: [ParsedExpr]) throws -> ProgramValue {
-        let node = try evaluateGedcomNodeOpt(arg[0], errMsg: "place: arg must be a node")
-        if let node = node, let place = node.kid(withTag: GedcomTag.PLAC) {
-            return .gnode(place)
-        }
-        return .null
+    /// Return the all families program value.
+    func bltinAllFamilies(_ args: [ParsedExpr]) throws -> ProgramValue {
+        return .allFamilies
     }
 }
+
 
 extension Program {
 

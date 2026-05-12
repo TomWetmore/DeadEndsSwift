@@ -44,11 +44,19 @@ extension RecordIndex: Sequence {
 /// Extension for record retrieval from indexes.
 extension RecordIndex {
 
-    /// Create a person record from its root node.
-    public func person(for key: String) -> Person? { self[key].flatMap(Person.init) }
+    /// Create a person record from its root node. Fatal error if fails.
+    public func person(for key: String) -> Person? { self[key].map(Person.init) }
 
-    /// Create a family record from its root node.
-    public func family(for key: String) -> Family? { self[key].flatMap(Family.init) }
+    /// Create a family record from its root node. Fatal error if fails.
+    public func family(for key: String) -> Family? { self[key].map(Family.init) }
+}
+
+extension Root {
+
+    /// Return a person with the root self.
+    var asPerson: Person {
+        return Person(self)
+    }
 }
 
 extension RecordIndex {

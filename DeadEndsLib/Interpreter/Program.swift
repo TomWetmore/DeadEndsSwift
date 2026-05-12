@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 4 May 2026.
+//  Last changed on 12 May 2026.
 //
 
 import Foundation
@@ -99,56 +99,15 @@ final public class Program {
     }
 }
 
-/// Run time errors that happen when a program is running.
-public enum RuntimeError: Swift.Error, CustomStringConvertible {  // TODO: Remove "Swift." after fixing use of Error.
+/// Run time errors.
+public struct RuntimeError: Error, CustomStringConvertible {
 
-    case typeMismatch(_ detail: String, line: Int)
-    case invalidArguments(_ detail: String, line: Int)
-    case runtimeError(_ detail: String, line: Int)
-    case invalidSyntax(_ detail: String, line: Int)
-    case undefinedProcedure(_ detail: String, line: Int)
-    case undefinedFunction(_ detail: String, line: Int)
-    case undefinedSymbol(_ detail: String, line: Int)
-    case invalidControlFlow(_ detail: String, line: Int)
-    case executionFailed(_ detail: String, line: Int)
-    case argumentCount(_ detail: String, line: Int)
-    case typeError(_ detail: String, line: Int)
-    case missingDatabase(_ detail: String, line: Int)
+    public let message: String
+    public let line: Int
 
-    public var message: String {
-        switch self {
-        case let .typeMismatch(m, _),
-             let .invalidArguments(m, _),
-             let .runtimeError(m, _),
-             let .invalidSyntax(m, _),
-             let .undefinedProcedure(m, _),
-             let .undefinedFunction(m, _),
-             let .undefinedSymbol(m, _),
-             let .invalidControlFlow(m, _),
-             let .executionFailed(m, _),
-             let .argumentCount(m, _),
-             let .typeError(m, _),
-             let .missingDatabase(m, _):
-            return m
-        }
-    }
-
-    public var line: Int {
-        switch self {
-        case let .typeMismatch(_, l),
-             let .invalidArguments(_, l),
-             let .runtimeError(_, l),
-             let .invalidSyntax(_, l),
-             let .undefinedProcedure(_, l),
-             let .undefinedFunction(_, l),
-             let .undefinedSymbol(_, l),
-             let .invalidControlFlow(_, l),
-             let .executionFailed(_, l),
-             let .argumentCount(_, l),
-             let .typeError(_, l),
-             let .missingDatabase(_, l):
-            return l
-        }
+    public init(_ message: String, line: Int = 0) {
+        self.message = message
+        self.line = line
     }
 
     public var description: String {
@@ -164,12 +123,12 @@ extension Program {
     public func interpretProgram() throws -> InterpResult {
 
         guard !hasRun else {  // TODO: Rethink the 'has run' idea.
-            throw RuntimeError.runtimeError("programs can only be run once", line: 0)
+            throw RuntimeError("programs can only be run once", line: 0)
         }
         hasRun = true
         let mainProc = try requireProcDefn("main", line: 0)
         if mainProc.params.count != 0 {
-            throw RuntimeError.argumentCount("main: cannot have params", line: mainProc.line)
+            throw RuntimeError("main: cannot have params", line: mainProc.line)
         }
         let mainCall = ParsedCallStatement(name: "main", args: [], line: 0)  // Bootstrap.
         return try interpProcCall(mainCall)
@@ -182,7 +141,7 @@ extension Program {
     /// Return a procedure defn or throw an undefined error.
     func requireProcDefn(_ name: String, line: Int) throws -> ParsedProcDefn {
         guard let procDefn = procTable[name] else {
-            throw RuntimeError.undefinedProcedure("\(name): undefined procedure", line: line)
+            throw RuntimeError("\(name): undefined procedure", line: line)
         }
         return procDefn
     }
@@ -190,7 +149,7 @@ extension Program {
     /// Return a function defn or throw an undefined error.
     func requireFuncDefn(_ name: String, line: Int) throws -> ParsedFuncDefn {
         guard let funcDefn = funcTable[name] else {
-            throw RuntimeError.undefinedFunction("\(name): undefined function", line: line)
+            throw RuntimeError("\(name): undefined function", line: line)
         }
         return funcDefn
     }
@@ -203,7 +162,7 @@ extension Program {
     func tick(line: Int) throws {
         stepCount += 1
         if stepCount > maxSteps {
-            throw RuntimeError.runtimeError("run stopped: possible infinite loop", line: line)
+            throw RuntimeError("run stopped: possible infinite loop", line: line)
         }
     }
 }

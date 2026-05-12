@@ -177,7 +177,7 @@ extension Program {
     // builtinAnd implements the logical and operation; takes any number of arguments.
     func builtinAnd(_ args: [ProgramNode]) throws -> ProgramValue {
         for arg in args {
-            if !(try evaluate(arg).toBool()) {
+            if !(try evaluate(arg).toBool) {
                 return .falseProgramValue
             }
         }
@@ -187,7 +187,7 @@ extension Program {
     // builtinOr implements the logical or operation; takes any number of arguments.
     func builtinOr(_ args: [ProgramNode]) throws -> ProgramValue {
         for arg in args {
-            if try evaluate(arg).toBool() {
+            if try evaluate(arg).toBool {
                 return .trueProgramValue
             }
         }
@@ -196,6 +196,6 @@ extension Program {
 
     // builtinNot implemements the logical not operation.
     func builtinNot(_ args: [ProgramNode]) throws -> ProgramValue {
-        return try evaluate(args[0]).toBool() ? .falseProgramValue : .trueProgramValue
+        return try evaluate(args[0]).toBool ? .falseProgramValue : .trueProgramValue
     }
 }

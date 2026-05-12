@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 2 May 2026.
+//  Last changed on 11 May 2026.
 //
 
 import Foundation
@@ -41,6 +41,13 @@ extension Person {
               let gedcomName = GedcomName(from: nameNode)
         else { return "no name" }
         return gedcomName.displayName()
+    }
+
+    /// Return a formatted name string of a person.
+    public func formattedName(_: Person, surnameCaps: Bool = false, surnameFirst: Bool = false, maxLength: Int = 68) {
+        // Get the Gedcom name
+        let name = GedcomName(from: self)
+
     }
 }
 

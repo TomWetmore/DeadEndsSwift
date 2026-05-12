@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 9 May 2026.
+//  Last changed on 12 May 2026.
 //
 
 import Foundation
@@ -64,6 +64,7 @@ extension Program {
             // Person operations.
             "person":   Builtin(min: 1, max: 1) { try self.bltinPerson($0)},
             "name":     Builtin(min: 1, max: 1) { try self.bltinName($0)},
+            "fullname": Builtin(min: 4, max: 4) { try self.bltinFullName($0)},
             "givens":   Builtin(min: 1, max: 1) { try self.bltinGivens($0)},
             "surname":  Builtin(min: 1, max: 1) { try self.bltinSurname($0)},
             "birth":    Builtin(min: 1, max: 1) { try self.bltinBirth($0)},
@@ -71,6 +72,9 @@ extension Program {
             "father":   Builtin(min: 1, max: 1) { try self.bltinFather($0)},
             "mother":   Builtin(min: 1, max: 1) { try self.bltinMother($0)},
             "families": Builtin(min: 1, max: 1) { try self.builtinFamilyList($0)},
+            "allpersons":  Builtin(min: 0, max: 0) { try self.bltinAllPersons($0)},
+
+            "allfamilies": Builtin(min: 0, max: 0) { try self.bltinAllFamilies($0)},
 
             /// Generic operations on persons and families.
             "husband":  Builtin(min: 1, max: 1) { try self.bltinHusband($0)},
@@ -90,6 +94,9 @@ extension Program {
             "empty":  Builtin(min: 1, max: 1) { try self.bltinEmpty($0)},
             "length": Builtin(min: 1, max: 1) { try self.bltinLength($0)},
             "clear":  Builtin(min: 1, max: 1) { try self.bltinClear($0)},
+
+
+            "traverse":  Builtin(min: 1, max: 1) { try self.bltinNodes($0)},
 
             // List operations; the length and empty builtins are generic.
             "list":    Builtin(min: 0, max: 0) { try self.bltinList($0)},
@@ -135,7 +142,7 @@ extension Program {
     func bltinD(_ args: [ParsedExpr]) throws -> ProgramValue {
         let value = try self.evaluate(args[0])
         guard case let .integer(integer) = value else {
-            throw RuntimeError.typeMismatch("d: arg must be an integer", line: args[0].line)
+            throw RuntimeError("d: arg must be an integer", line: args[0].line)
         }
         return .string(String(integer))
     }
@@ -148,7 +155,7 @@ extension Program {
     /// Assignment 'statement' of the scripting language; side effect only.
     func bltinSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         guard case let .identifier(name) = args[0].kind else {
-            throw RuntimeError.typeError("set() expects a variable as its first argument", line: args[0].line)
+            throw RuntimeError("set() expects a variable as its first argument", line: args[0].line)
         }
         let value = try evaluate(args[1])
         assignToSymbol(name, value: value)

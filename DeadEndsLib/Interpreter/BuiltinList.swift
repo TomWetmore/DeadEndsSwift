@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 9 May 2026.
+//  Last changed on 12 May 2026.
 //
 
 import Foundation
@@ -29,7 +29,7 @@ extension Program {
         case .string(let string):
             return string.isEmpty ? .trueProgramValue : .falseProgramValue
         default:
-            throw RuntimeError.typeMismatch(
+            throw RuntimeError(
                 "empty: arg must be a list, table, personset, or string",
                 line: args[0].line
             )
@@ -40,16 +40,13 @@ extension Program {
     func bltinClear(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         guard case let .identifier(name) = args[0].kind else {
-            throw RuntimeError.typeMismatch(
+            throw RuntimeError(
                 "clear: arg must be a list, table, or personset variable",
                 line: args[0].line
             )
         }
         guard let value = lookupSymbol(name) else {
-            throw RuntimeError.undefinedSymbol(
-                "undefined variable: \(name)",
-                line: args[0].line
-            )
+            throw RuntimeError("undefined variable: \(name)", line: args[0].line)
         }
         switch value {
         case .list(var list):
@@ -62,10 +59,8 @@ extension Program {
             personset.clear()
             assignToSymbol(name, value: .personset(personset))
         default:
-            throw RuntimeError.typeMismatch(
-                "clear: arg must be a list, table, or personset variable",
-                line: args[0].line
-            )
+            throw RuntimeError("clear: arg must be a list, table, or personset variable",
+                line: args[0].line)
         }
         return .null
     }
@@ -83,7 +78,7 @@ extension Program {
         case .string(let string):
             return .integer(string.count)
         default:
-            throw RuntimeError.typeMismatch("length: arg must be a list, table, personset, or string",
+            throw RuntimeError("length: arg must be a list, table, personset, or string",
                                             line: args[0].line)
         }
     }
@@ -118,7 +113,7 @@ extension Program {
     /// Evaluate an expression and be sure it is a list.
     func evaluateList(_ expr: ParsedExpr, errMsg: String) throws -> List {
         guard case let .list(list) = try evaluate(expr) else {
-            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
+            throw RuntimeError(errMsg, line: expr.line)
         }
         return list
     }
@@ -141,8 +136,7 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.invalidArguments("children: arg must be a person or family",
-                                                line: line)
+            throw RuntimeError("children: arg must be a person or family", line: line)
         }
         return .list(List(children.map { ProgramValue.person($0) }))
     }
@@ -161,7 +155,7 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.invalidArguments("husbands: arg must be a person or family", line: line)
+            throw RuntimeError("husbands: arg must be a person or family", line: line)
         }
         return .list(List(husbands.map { ProgramValue.person($0)}))
     }
@@ -179,7 +173,7 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.invalidArguments("wives: arg must be a person or family", line: line)
+            throw RuntimeError("wives: arg must be a person or family", line: line)
         }
         return .list(List(wives.map { ProgramValue.person($0)}))
     }
@@ -196,7 +190,7 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.invalidArguments("siblings: arg must be a person", line: line)
+            throw RuntimeError("siblings: arg must be a person", line: line)
         }
         return .list(List(siblings.map { ProgramValue.person($0)}))
     }
@@ -215,7 +209,7 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.invalidArguments("spouses: arg must be a person or family",
+            throw RuntimeError("spouses: arg must be a person or family",
                                                 line: line)
         }
         return .list(List(spouses.map { ProgramValue.person($0) }))
@@ -235,7 +229,7 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.invalidSyntax("parents: arg must be a person", line: line)
+            throw RuntimeError("parents: arg must be a person", line: line)
         }
         return .list(List(parents.map { ProgramValue.person($0) }))
     }
@@ -252,10 +246,20 @@ extension Program {
         case .null:
             return .null
         default:
-            throw RuntimeError.invalidArguments("spouses: arg must be a person", line: line)
+            throw RuntimeError("spouses: arg must be a person", line: line)
         }
         let result = List(families.map { ProgramValue.family($0)})
         return .list(result)
+    }
+
+    /// TO: FIND  BETTER PLACE
+    /// Return...
+    func bltinNodes(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let value = try evaluate(args[0])
+        guard case .gnode(let gedcomNode) = value else {
+            throw RuntimeError("nodes: arg must be a gnode", line: args[0].line)
+        }
+        return .traverse(gedcomNode)
     }
 }
 
@@ -330,13 +334,13 @@ extension Program {
         throws -> (name: String, list: List) {
 
         guard case let .identifier(name) = expr.kind else {
-            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
+            throw RuntimeError(errMsg, line: expr.line)
         }
         guard let value = lookupSymbol(name) else {
-            throw RuntimeError.undefinedSymbol("undefined variable: \(name)", line: expr.line)
+            throw RuntimeError("undefined variable: \(name)", line: expr.line)
         }
         guard case let .list(list) = value else {
-            throw RuntimeError.typeMismatch(errMsg, line: expr.line)
+            throw RuntimeError(errMsg, line: expr.line)
         }
 
         return (name, list)

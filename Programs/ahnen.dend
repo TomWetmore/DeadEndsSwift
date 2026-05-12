@@ -21,3 +21,17 @@ proc main ()
         }
     }
 }
+
+proc showvitals(person) {
+    call dateAndPlace(“b. “, birth(person))
+    call dateAndPlace(“d. “, death(person))
+}
+
+proc dateAndPlace(head, event) {
+    set(date, date(event))
+    set(place, place(event))
+    if (and(date, place)) { head date “, “ place }
+    if (and(date, not(place))) { head date }
+    if (and(not(date), place)) { head place }
+    nl()
+}

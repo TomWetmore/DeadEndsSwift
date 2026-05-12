@@ -37,7 +37,21 @@ struct ProgramPage: View {
                     }
                 }
                 .disabled(model.parsedProgram == nil || appModel.database == nil)
-                
+
+                Button("Open") {
+                    model.openProgramFile()
+                }
+
+                Button("Save") {
+                    model.saveProgramFile()
+                }
+                .disabled(model.source.isEmpty)
+
+                Button("Save As") {
+                    model.saveProgramFileAs()
+                }
+                .disabled(model.source.isEmpty)
+
                 Spacer()
             }
             .padding(.horizontal)

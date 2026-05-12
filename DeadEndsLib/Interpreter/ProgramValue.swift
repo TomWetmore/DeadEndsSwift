@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 28 April 2026.
+//  Last changed on 11 May 2026.
 //
 //  ProgramValue is the type of the expressions in the DeadEnds
 //  programming language. It is an enumeration with associated types.
@@ -26,9 +26,12 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     //case source(GedcomNode)
     //case event(GedcomNode)
     //case other(GedcomNode)
-    case list(List)  // List program values.
-    case table(ProgramTable)  // Table of string to program value mappings.
-    case personset(PersonSet<ProgramValue>)  // Person set.
+    case list(List)
+    case table(ProgramTable)
+    case personset(PersonSet<ProgramValue>)
+    case traverse(GedcomNode)
+    case allPersons
+    case allFamilies
 
     /// Description of a program value.
     var description: String {
@@ -62,6 +65,9 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         case .table: return "table"
         case .ident(_): return "ident"
         case .list(_): return "list"
+        case .traverse(_): return "traverse"
+        case .allPersons: return "allPersons"
+        case .allFamilies: return "allFamilies"
         }
 
     }
@@ -90,6 +96,9 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         case .table(let table):
             return "\(table.count) entries" // adjust to your table wrapper
         case .ident(_): return "ident"
+        case .traverse(_): return "traverse"
+        case .allPersons: return "allPersons"
+        case .allFamilies: return "allFamilies"
         case .list(let list):
             return "\(list.count) elements"
             //case .list(let list):
@@ -148,8 +157,8 @@ extension ProgramValue {
 
 extension ProgramValue {
 
-    /// Convert any ProgramValue to a boolean progran value using C rules.
-    func toBool() -> Bool {
+    /// Convert any ProgramValue to a boolean program value using C rules.
+    var toBool: Bool {
 
         switch self {
         case .boolean(let value): return value
@@ -157,7 +166,7 @@ extension ProgramValue {
         case .double(let value): return value != 0.0
         case .string(let value): return !value.isEmpty
         case .null: return false
-        default: return true // TODO: Other types default to true.
+        default: return true // TODO: Other types now default to true; this needs work.
         }
     }
 }
