@@ -25,6 +25,7 @@ extension Program {
             "d":    Builtin(min: 1, max: 1) { try self.bltinD($0)},
             "nl":   Builtin(min: 0, max: 0) { try self.bltinNl($0)},
             "set":  Builtin(min: 2, max: 2) { try self.bltinSet($0)},
+            "ord":  Builtin(min: 1, max: 1) { try self.bltinOrd($0)},
 
             // Arithmetic operators.
             "add":  Builtin(min: 2, max: 2) { try self.bltinAdd($0)},
@@ -73,6 +74,8 @@ extension Program {
             "mother":   Builtin(min: 1, max: 1) { try self.bltinMother($0)},
             "families": Builtin(min: 1, max: 1) { try self.builtinFamilyList($0)},
             "allpersons":  Builtin(min: 0, max: 0) { try self.bltinAllPersons($0)},
+            "male":     Builtin(min: 1, max: 1) { try self.bltinMale($0)},
+            "female":   Builtin(min: 1, max: 1) { try self.bltinWife($0)},
 
             "allfamilies": Builtin(min: 0, max: 0) { try self.bltinAllFamilies($0)},
 
@@ -108,7 +111,7 @@ extension Program {
             "dequeue": Builtin(min: 1, max: 1) { try self.bltinRemoveFirst($0)},
 
             // Table operations.
-            "table":  Builtin(min: 1, max: 1) { try self.bltinTable($0)},
+            "table":  Builtin(min: 0, max: 0) { try self.bltinTable($0)},
             "insert": Builtin(min: 3, max: 3) { try self.bltinInsert($0)},
             "lookup": Builtin(min: 2, max: 2) { try self.bltinLookup($0)},
 
@@ -127,6 +130,9 @@ extension Program {
             "descendentset": Builtin(min: 1, max: 1) { try self.bltinDescendentSet($0)},
             "namesort":      Builtin(min: 1, max: 1) { try self.bltinNameSort($0)},
             "keysort":       Builtin(min: 1, max: 1) { try self.bltinKeySort($0)},
+
+            // String operations.
+            "strcmp": Builtin(min: 2, max: 2) { try self.bltinStrcmp($0)},
 
             // Meta operations.
             "showframe": Builtin(min: 0, max: 0) { try self.bltinShowFrame($0)},

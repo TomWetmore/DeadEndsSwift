@@ -179,22 +179,19 @@ extension Program {
     }
 
     /// Return true if a person is male.
-    func builtinMale(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinMale(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         guard let person = try evaluatePersonOpt(args[0],
                                 errMsg: "male: arg must be a person") else { return .null }
-        return person.isMale
-            ? ProgramValue.trueProgramValue
-            : ProgramValue.falseProgramValue
+        return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
     /// Return true if a person is female.
-    func builtinFemale(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinFemale(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         guard let person = try evaluatePersonOpt(args[0],
                                 errMsg: "female: arg must be a person") else { return .null }
-        return person.isFemale
-            ? ProgramValue.trueProgramValue
+        return person.isFemale ? ProgramValue.trueProgramValue
             : ProgramValue.falseProgramValue
     }
 

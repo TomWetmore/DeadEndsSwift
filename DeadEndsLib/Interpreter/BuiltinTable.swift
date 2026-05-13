@@ -26,11 +26,7 @@ extension Program {
 
     /// Create a program table and add it to the symbol table.
     func bltinTable(_ args: [ParsedExpr]) throws -> ProgramValue {
-        guard case let .identifier(name) = args[0].kind else {
-            throw RuntimeError("table: arg must be identifier", line: args[0].line)
-        }
-        assignToSymbol(name, value: .table(ProgramTable()))
-        return .null
+        return .table(ProgramTable())
     }
 
     /// Insert a new entry in a program table.

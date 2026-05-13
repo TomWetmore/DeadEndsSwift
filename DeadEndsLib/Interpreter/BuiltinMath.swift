@@ -215,3 +215,42 @@ extension Program {
     }
 }
 
+extension Program {
+    func bltinOrd(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        let value = try evaluate(args[0])
+
+        guard case let .integer(n) = value else {
+            return .null
+        }
+
+        let words = [
+            "first", "second", "third", "fourth",
+            "fifth", "sixth", "seventh", "eighth",
+            "ninth", "tenth", "eleventh", "twelfth"
+        ]
+
+        if n < 1 {
+            return .string(String(n))
+        }
+
+        if n <= words.count {
+            return .string(words[n - 1])
+        }
+
+        let suffix: String
+        if (11...13).contains(n % 100) {
+            suffix = "th"
+        } else {
+            switch n % 10 {
+            case 1: suffix = "st"
+            case 2: suffix = "nd"
+            case 3: suffix = "rd"
+            default: suffix = "th"
+            }
+        }
+
+        return .string("\(n)\(suffix)")
+    }
+}
+

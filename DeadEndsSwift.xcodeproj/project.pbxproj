@@ -96,6 +96,7 @@
 				Interpreter/BuiltinMeta.swift,
 				Interpreter/BuiltinPerson.swift,
 				Interpreter/BuiltinPersonSet.swift,
+				Interpreter/BuiltinString.swift,
 				Interpreter/BuiltinTable.swift,
 				Interpreter/Evaluate.swift,
 				Interpreter/InterpForEach.swift,
