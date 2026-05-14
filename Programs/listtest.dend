@@ -1,0 +1,15 @@
+
+proc main () {
+
+    set(outerlist, list())
+
+    append(outerlist, list())
+    append(outerlist, list())
+    append(outerlist, list())
+
+    append(subscript(outerlist, 1), person(“I41”))
+
+
+
+
+}

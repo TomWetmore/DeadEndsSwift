@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 12 May 2026.
+//  Last changed on 13 May 2026.
 //
 
 import Foundation
@@ -49,7 +49,7 @@ extension Program {
             throw RuntimeError("undefined variable: \(name)", line: args[0].line)
         }
         switch value {
-        case .list(var list):
+        case .list(let list):
             list.clear()
             assignToSymbol(name, value: .list(list))
         case .table(let table):
@@ -83,18 +83,28 @@ extension Program {
         }
     }
 
-    /// Append a value to a list.
-    func bltinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
-        var (name, list) =
+    /// Append a value to a list. This method requires the first argument to be a
+    /// variable with a list value in the symbol table.
+    func oldbltinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
+        let (name, list) =
             try requireListVariable(args[0], errMsg: "append: 1st arg must be a list var")
         list.append(try evaluate(args[1]))
         assignToSymbol(name, value: .list(list))
         return .null
     }
 
+    func bltinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        guard let list = try evaluateListOpt(args[0], errMsg: "append: 1st arg must be a list") else {
+            return .null
+        }
+        list.append(try evaluate(args[1]))
+        return .null
+    }
+
     /// Prepend a value to a list.
     func bltinPrepend(_ args: [ParsedExpr]) throws -> ProgramValue {
-        var (name, list) =
+        let (name, list) =
             try requireListVariable(args[0], errMsg: "prepend: 1st arg must be a list var")
         list.prepend(try evaluate(args[1]))
         assignToSymbol(name, value: .list(list))
@@ -103,7 +113,7 @@ extension Program {
 
     /// Remove the first value from a list.
     func bltinRemoveFirst(_ args: [ParsedExpr]) throws -> ProgramValue {
-        var (name, list) =
+        let (name, list) =
             try requireListVariable(args[0], errMsg: "removefirst: 1st arg must be a list var")
         guard let first = list.removeFirst() else { return .null }
         assignToSymbol(name, value: .list(list))
@@ -112,6 +122,13 @@ extension Program {
 
     /// Evaluate an expression and be sure it is a list.
     func evaluateList(_ expr: ParsedExpr, errMsg: String) throws -> List {
+        guard case let .list(list) = try evaluate(expr) else {
+            throw RuntimeError(errMsg, line: expr.line)
+        }
+        return list
+    }
+
+    func evaluateListOpt(_ expr: ParsedExpr, errMsg: String) throws -> List? {
         guard case let .list(list) = try evaluate(expr) else {
             throw RuntimeError(errMsg, line: expr.line)
         }
@@ -261,10 +278,26 @@ extension Program {
         }
         return .traverse(gedcomNode)
     }
+
+    /// bltinSubscript returns the ith (relative one) element of a sequence.
+    /// subscript(sequence, i) -> value
+    /// TODO: Calling the list a sequence, anticipating making this a generic.
+    func bltinSubscript(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        guard let sequence = try evaluateListOpt(args[0], errMsg: "subscript: 1st arg must be a sequence") else {
+            return .null
+        }
+        let index = try evaluateInteger(args[1], errMsg: "subscript: 2nd arg must be an integer")
+        let internalIndex = index - 1
+        guard internalIndex >= 0 && internalIndex < sequence.count else {
+            throw RuntimeError("subscript: index \(index) is out of range", line: args[1].line)
+        }
+        return sequence[internalIndex]
+    }
 }
 
 /// Structure that holds the programming language's List values.
-public struct List {
+public class List {
 
     private var values: [ProgramValue] = []
 
@@ -274,38 +307,38 @@ public struct List {
         self.values = values
     }
 
-    mutating func push(_ element: ProgramValue) {
+    func push(_ element: ProgramValue) {
         values.insert(element, at: 0)
     }
 
-    mutating func pop() -> ProgramValue? {
+    func pop() -> ProgramValue? {
         guard !values.isEmpty else { return nil }
         return values.removeFirst()
     }
 
-    mutating func enqueue(_ element: ProgramValue) {
+    func enqueue(_ element: ProgramValue) {
         values.append(element)
     }
 
-    mutating func dequeue() -> ProgramValue? {
+    func dequeue() -> ProgramValue? {
         guard !values.isEmpty else { return nil }
         return values.removeFirst()
     }
 
-    mutating func append(_ element: ProgramValue) {
+    func append(_ element: ProgramValue) {
         values.append(element)
     }
 
-    mutating func prepend(_ element: ProgramValue) {
+    func prepend(_ element: ProgramValue) {
         values.insert(element, at: 0)
     }
 
-    mutating func removeFirst() -> ProgramValue? {
+    func removeFirst() -> ProgramValue? {
         guard !values.isEmpty else { return nil }
         return self.values.removeFirst()
     }
 
-    mutating func clear() {
+    func clear() {
         values.removeAll(keepingCapacity: false)
     }
 
@@ -314,7 +347,7 @@ public struct List {
         set { values[index] = newValue }
     }
 
-    mutating func sort(by areInIncreasingOrder: (ProgramValue, ProgramValue) -> Bool) {
+    func sort(by areInIncreasingOrder: (ProgramValue, ProgramValue) -> Bool) {
         values.sort(by: areInIncreasingOrder)
     }
 }

@@ -100,28 +100,25 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         case .allPersons: return "allPersons"
         case .allFamilies: return "allFamilies"
         case .list(let list):
-            return "\(list.count) elements"
-            //case .list(let list):
-            //            case .list(let list):
-            //                let maxItems = 10
-            //                var parts: [String] = []
-            //                parts.reserveCapacity(maxItems)
-            //
-            //                var shown = 0
-            //                for value in list {
-            //                    if shown >= maxItems { break }
-            //                    parts.append(value.displayValue)
-            //                    shown += 1
-            //                }
-            //
-            //                if list.count > maxItems {
-            //                    return "[" + parts.joined(separator: ", ") + ", ... (\(list.count) total)]"
-            //                } else {
-            //                    return "[" + parts.joined(separator: ", ") + "]"
-            //                }
-            //                     ems.joined(separator: ", ") + suffix + "]"
-            //                let elements = list.map { $0.displayValue }
-            //                return "[" + elements.joined(separator: ", ") + "]"
+            let maxItems = 10
+            var parts: [String] = []
+            parts.reserveCapacity(maxItems)
+
+            var shown = 0
+            for value in list {
+                if shown >= maxItems { break }
+                parts.append(value.displayValue)
+                shown += 1
+            }
+
+            if list.count > maxItems {
+                return "[" + parts.joined(separator: ", ") + ", ... (\(list.count) total)]"
+            } else {
+                return "[" + parts.joined(separator: ", ") + "]"
+            }
+//            ems.joined(separator: ", ") + suffix + "]"
+//            let elements = list.map { $0.displayValue }
+//            return "[" + elements.joined(separator: ", ") + "]"
         }
 
     }

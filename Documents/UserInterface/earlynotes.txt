@@ -1,0 +1,90 @@
+Now for a very important built-in method. The LifeLines language has a number of builtins that provide the user interface. Probably the most important one is the builtin that asks the user to provide a person. The way the LifeLines version worked that it took a name string, found all the persons who matched that name in the database, presented that list to the user as a menu, which the user checked from. I need the same method for DeadEnds. I'd been avoiding it, but it really is time to address it now. Can you provide some advice?
+
+This is a bigger design step than an ordinary builtin, because it crosses from the interpreter into interactive UI. The key is to make the interpreter request a person, not directly present SwiftUI.
+
+Yes. I would treat this as an interactive builtin, not an ordinary builtin.
+
+The builtin should not itself know about SwiftUI menus. It should ask an interface object:
+
+protocol ProgramInteraction {
+    func choosePerson(matching pattern: String) throws -> Person?
+}
+
+
+
+Then Program gets one more dependency:
+
+let interaction: ProgramInteraction?
+
+The builtin becomes conceptually:
+
+	func builtinGetPerson(_ args: [ParsedExpr]) throws -> ProgramValue {
+    let pattern = try evaluateString(args[0], errMsg: "getperson: arg must be a string")
+
+    guard let interaction else {
+        throw RuntimeError("getperson: no interactive UI available", line: args[0].line)
+    }
+
+    guard let person = try interaction.choosePerson(matching: pattern) else {
+        return .null
+    }
+
+    return .person(person)
+}
+
+But here is the hard part: SwiftUI selection is asynchronous. The old LifeLines version could block in curses. In SwiftUI, you probably do not want the interpreter freezing while waiting for a panel.
+
+So there are two design paths.
+
+The simple first implementation: make getperson("wetmore") search and return the first/best match, or throw if ambiguous. This tests the builtin plumbing but does not solve UI.
+
+The real implementation: make the interpreter capable of suspending at an interactive builtin, show a selection panel, then resume when the user chooses. That is a bigger project.
+
+A very practical intermediate approach:
+
+1. Add a ProgramPage side panel/modal for “pending person request.”
+2. When getperson() runs, it throws or returns a special result like .needsPersonSelection(request).
+3. ProgramModel stores that request and shows the picker.
+4. After the user chooses, ProgramModel resumes or reruns with the selected value.
+
+Given your current interpreter is synchronous, I would not try full suspend/resume immediately.
+
+My suggested staged plan:
+
+First add a noninteractive helper builtin:
+
+person("I41")
+
+already done.
+
+Then add:
+
+findpersons("wetmore") -> list of persons
+
+This avoids interaction and works beautifully with foreach:
+
+foreach(findpersons("wetmore"), p, n) {
+    d(n) ". " name(p) nl()
+}
+
+Then later add true interactive:
+
+chooseperson("wetmore") -> person/null
+
+with SwiftUI picker support.
+
+So my advice: implement findpersons(pattern) first. It gives you 80% of the utility and fits the new list/foreach model perfectly. Then make chooseperson the UI-aware version later.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

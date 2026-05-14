@@ -58,6 +58,8 @@ extension Program {
         return first
     }
 
+    
+
     // UTILITIES
     func evaluateList(_ node: ProgramNode, errMsg: String) throws -> List<ProgramValue> {
         guard case let .list(list) = try evaluate(node) else {

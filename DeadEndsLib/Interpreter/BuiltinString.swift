@@ -2,7 +2,8 @@
 //  BuiltinString.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 5/12/26.
+//  Created by Thomas Wetmore on 12 May 2026.
+//  Last changed on 13 May 2026.
 //
 
 import Foundation
@@ -17,23 +18,13 @@ extension Program {
 
         let value1 = try evaluate(args[0])
         guard case let .string(str1) = value1 else {
-            throw RuntimeError(
-                "strcmp: first arg must be a string",
-                line: args[0].line
-            )
+            throw RuntimeError("strcmp: 1st arg must be a string", line: args[0].line)
         }
-
         let value2 = try evaluate(args[1])
         guard case let .string(str2) = value2 else {
-            throw RuntimeError(
-                "strcmp: second arg must be a string",
-                line: args[1].line
-            )
+            throw RuntimeError("strcmp: second arg must be a string", line: args[1].line)
         }
-
-        let result = str1.compare(str2)
-
-        switch result {
+        switch str1.compare(str2) {
         case .orderedAscending:
             return .integer(-1)
         case .orderedSame:

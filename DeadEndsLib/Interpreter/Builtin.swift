@@ -97,7 +97,7 @@ extension Program {
             "empty":  Builtin(min: 1, max: 1) { try self.bltinEmpty($0)},
             "length": Builtin(min: 1, max: 1) { try self.bltinLength($0)},
             "clear":  Builtin(min: 1, max: 1) { try self.bltinClear($0)},
-
+            "subscript": Builtin(min: 2, max: 2) { try self.bltinSubscript($0)},
 
             "traverse":  Builtin(min: 1, max: 1) { try self.bltinNodes($0)},
 

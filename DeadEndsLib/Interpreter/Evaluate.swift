@@ -3,14 +3,23 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 12 May 2026.
+//  Last changed on 13 May 2026.
 //
 
 import Foundation
 
 extension Program {
 
-    // Evaluate an enumerated parsed expression.
+    /// Evaluate a parsed expression that must be an integer.
+    func evaluateInteger(_ expr: ParsedExpr, errMsg: String) throws -> Int {
+
+        guard case let .integer(integer) = try evaluate(expr) else {
+            throw RuntimeError(errMsg, line: expr.line)
+        }
+        return integer
+    }
+
+    // Evaluate a parsed expression.
     func evaluate(_ expr: ParsedExpr) throws -> ProgramValue {
 
         switch expr.kind {
