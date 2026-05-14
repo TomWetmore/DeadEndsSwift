@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed on 7 March 2026.
+//  Last changed on 13 May 2026.
 
 /// PersonSelectionView is used on the RootView to get a list of persons
 /// from a name pattern that the user selects an member of. The person chosen

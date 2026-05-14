@@ -201,7 +201,86 @@ One thing I don't like about this setup is that the sorting doesn't happen until
 
 So I think this has the first part of your advice for me.
 
+Yes — I agree with that change.
 
+The sorted result is not really a SwiftUI concern. It is part of the semantic operation:
+
+database.persons(withName: pattern)
+
+should probably mean:
+
+return matching persons in useful display/search order
+
+So I’d move the sorting into Database.persons(withName:):
+
+public func persons(withName pattern: String) -> [Person] {
+    personKeys(forName: pattern)
+        .compactMap { recordIndex.person(for: $0) }
+        .sorted { lhs, rhs in
+            switch lhs.compare(to: rhs, in: recordIndex) {
+            case .orderedAscending:
+                return true
+            case .orderedDescending:
+                return false
+            case .orderedSame:
+                return lhs.key < rhs.key
+            }
+        }
+}
+
+Then PersonSelectionView becomes simpler:
+
+results = database.persons(withName: namePattern)
+    .map { PersonMatch(id: $0.key, person: $0) }
+
+That is cleaner layering. The UI asks for search results; the database/search layer decides what “good order” means.
+
+Okay, so I now have this function that returns the persons that would be shown in a choose person picker:
+
+/// Return array of all persons with names that match a pattern. This uses
+    /// the results from personKeys, converting them to persons while also putting
+    /// them into a name and event-based sort order.
+    public func persons(withName pattern: String) -> [Person] {
+        personKeys(forName: pattern)
+            .compactMap { recordIndex.person(for: $0) }
+            .sorted { lhs, rhs in
+                switch lhs.compare(to: rhs, in: recordIndex) {
+                case .orderedAscending:
+                    return true
+                case .orderedDescending:
+                    return false
+                case .orderedSame:
+                    return lhs.key < rhs.key
+                }
+            }
+    }
+
+Yes — that’s exactly the right shape.
+
+Now both the SwiftUI picker and the interpreter builtin can share the same source of truth:
+
+database.persons(withName: pattern)
+
+Next natural builtin:
+
+func builtinFindPersons(_ args: [ParsedExpr]) throws -> ProgramValue {
+    let pattern = try evaluateString(args[0], errMsg: "findpersons: arg must be a string")
+    var list = List()
+
+    for person in database.persons(withName: pattern) {
+        list.append(.person(person))
+    }
+
+    return .list(list)
+}
+
+Then you can test immediately:
+
+foreach(findpersons("wetmore"), p, n) {
+    d(n) ". " name(p) nl()
+}
+
+That gives you the noninteractive half of chooseperson.
 
 
 
