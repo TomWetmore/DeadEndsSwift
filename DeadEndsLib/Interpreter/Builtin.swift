@@ -138,6 +138,9 @@ extension Program {
             "showframe": Builtin(min: 0, max: 0) { try self.bltinShowFrame($0)},
             "showstack": Builtin(min: 0, max: 0) { try self.bltinShowStack($0)},
             "valueof":   Builtin(min: 1, max: 1) { try self.bltinValueOf($0)},
+
+            // User interface.
+            "chooseperson": Builtin(min: 1, max: 1) { try self.bltinChoosePerson($0)},
         ]
     }
 }

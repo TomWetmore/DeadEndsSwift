@@ -1,10 +1,10 @@
-Now for a very important built-in method. The LifeLines language has a number of builtins that provide the user interface. Probably the most important one is the builtin that asks the user to provide a person. The way the LifeLines version worked that it took a name string, found all the persons who matched that name in the database, presented that list to the user as a menu, which the user checked from. I need the same method for DeadEnds. I'd been avoiding it, but it really is time to address it now. Can you provide some advice?
+The LifeLines language has a number of builtins that provide the user interface. An important one asks the user to provide a person. Can you provide some advice?
 
 This is a bigger design step than an ordinary builtin, because it crosses from the interpreter into interactive UI. The key is to make the interpreter request a person, not directly present SwiftUI.
 
-Yes. I would treat this as an interactive builtin, not an ordinary builtin.
+I would treat this as an interactive builtin, not an ordinary builtin.
 
-The builtin should not itself know about SwiftUI menus. It should ask an interface object:
+The builtin should not know about SwiftUI menus. It should ask an interface object:
 
 protocol ProgramInteraction {
     func choosePerson(matching pattern: String) throws -> Person?
@@ -16,21 +16,19 @@ let interaction: ProgramInteraction?
 
 The builtin becomes conceptually:
 
-	func builtinGetPerson(_ args: [ParsedExpr]) throws -> ProgramValue {
+func builtinGetPerson(_ args: [ParsedExpr]) throws -> ProgramValue {
     let pattern = try evaluateString(args[0], errMsg: "getperson: arg must be a string")
 
     guard let interaction else {
         throw RuntimeError("getperson: no interactive UI available", line: args[0].line)
     }
-
     guard let person = try interaction.choosePerson(matching: pattern) else {
         return .null
     }
-
     return .person(person)
 }
 
-But here is the hard part: SwiftUI selection is asynchronous. The old LifeLines version could block in curses. In SwiftUI, you probably do not want the interpreter freezing while waiting for a panel.
+Here is the hard part: SwiftUI selection is asynchronous. The old LifeLines version could block in curses. In SwiftUI, you probably do not want the interpreter freezing while waiting for a panel.
 
 So there are two design paths.
 
@@ -282,8 +280,570 @@ foreach(findpersons("wetmore"), p, n) {
 
 That gives you the noninteractive half of chooseperson.
 
+I wrote this builtin:
+
+extension Program {
+
+    func bltinChoosePerson(_ args: [ParsedExpr]) throws -> ProgramValue {
+
+        // 1. Evaluate the argument to get a string.
+        // 2. Treat that string as name pattern and get all the persons who match.
+        // 3. First for testing just return the list and let the calling program show it.
+        // 4. Later, interaction with choose one of the persons and a .person(person) will be returned.
+
+        guard let pattern = try evaluateStringOpt(args[0],
+                                    errMsg: "chooseperson: arg must be a name pattern") else {
+            return .null
+        }
+        return .list(List(database.persons(withName: pattern).map { ProgramValue.person($0) }))
+    }
+}
+
+I wrote this test program:
+
+proc main () {
+
+    set(list, chooseperson(“thomas t/wetmore”))
+
+    showframe()
+
+    foreach(list, person, n) {
+        d(n) “. “ name(person) nl()
+    }
+}
+
+I got these results:
+
+Frame: main: defined: 1 called: 0
+  parameters:
+  automatics:
+    list: list: [Thomas Townsend Wetmore, Thomas Trask Wetmore, Thomas Trask Wetmore III, Thomas Trask Wetmore IV, Thomas Trask Wetmore Jr, Thomas Trask Wetmore Sr, Thomas Trask Wetmore V]
+1. Thomas Townsend Wetmore
+2. Thomas Trask Wetmore
+
+That’s a perfect first-stage chooseperson.
+
+You now have the hard reusable part working:
+
+name pattern -> sorted candidate list -> ProgramValue list
+
+And the test proves:
+
+* evaluateStringOpt works
+* database.persons(withName:) gives a useful sorted order
+* List(...) initialization works
+* foreach handles the returned list cleanly
+* the output is exactly picker-ready
+
+Later, the true interactive version can reuse the same candidate list and replace:
+
+return .list(...)
+
+with
+
+return .person(chosenPerson)
+
+For now, this is a very good stepping stone.
+
+I forgot that in a picker list we need more than just the name. It may just be a simple design issue as to whether the list created here should be list of persons, or a list of strings, showing the names and other info.
+
+For the programming language, return a list of persons.
+
+For the picker UI, display each Person using a richer label.
+
+That keeps the data semantic:
+
+chooseperson("thomas t/wetmore") -> list/person candidates
+
+not:
+
+chooseperson(...) -> preformatted strings
+
+The picker can render each person with something like:
+
+struct PersonChoiceRow: View {
+    let person: Person
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(person.displayName())
+            Text(person.lifeSummary())   // birth/death/date/place/key, etc.
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+So I’d add a display helper on Person, maybe:
+
+var pickerSubtitle: String {
+    "\(birthSummary) — \(deathSummary)   \(key)"
+}
+
+Then your current list of .person values remains correct. The UI decides how to show them.
+
+This is the same good layering you’ve been moving toward:
+
+runtime value: Person
+UI representation: name + dates + places + key
+
+So I should be providing a list of persons in the order they should be seen in the picker, but the picker shows the extra info (which, of course, was already used to get the proper sort order)
+
+Exactly.
+
+The search layer should provide:
+
+[Person]
+
+already sorted in useful picker order.
+
+The picker layer should render each Person with richer context:
+
+Thomas Trask Wetmore IV
+b. 1949, New London, Connecticut — key @I1@
+
+So the split is:
+
+Database/search: find and order persons
+UI picker: display persons clearly
+Interpreter: receives the chosen Person
+
+That keeps the language value semantic and the UI informative.
+
+Okay, sounds excellent. Here is how the list is ordered:
+
+public func persons(withName pattern: String) -> [Person] {
+        personKeys(forName: pattern)
+            .compactMap { recordIndex.person(for: $0) }
+            .sorted { lhs, rhs in
+                switch lhs.compare(to: rhs, in: recordIndex) {
+                case .orderedAscending:
+                    return true
+                case .orderedDescending:
+                    return false
+                case .orderedSame:
+                    return lhs.key < rhs.key
+                }
+            }
+    }
+}
+
+and here is the compare function being used:
+
+/// Compare persons by name, birth year, death year, and record key.
+    public func compare(to other: Person, in index: RecordIndex) -> ComparisonResult {
+
+        if let nameOne = GedcomName(from: self.root), let nameTwo = GedcomName(from: other.root) {
+            let relation = nameOne.compare(to: nameTwo)
+            if relation != .orderedSame { return relation }
+        }
+        let birthOne = self.birthEvent?.year
+        let birthTwo = other.birthEvent?.year
+        if let relation = compareOptionalInts(birthOne, birthTwo), relation != .orderedSame { return relation }
+
+        let deathOne = self.deathEvent?.year
+        let deathTwo = other.deathEvent?.year
+        if let relation = compareOptionalInts(deathOne, deathTwo), relation != .orderedSame { return relation }
+
+        if self.key == other.key { return .orderedSame }
+        return self.key < other.key ? .orderedAscending : .orderedDescending
+    }
+
+    That ordering looks very reasonable for a picker:
+
+    name → birth year → death year → key
+
+    That should put people with the same or similar names into a human-helpful order.
+
+The only policy choice is how compareOptionalInts treats missing dates. For picker use, I’d usually want known years before unknown years, with unknowns at the end.
+
+So the ideal behavior is:
+
+Thomas Wetmore, b
+
+The current PersonSelectionView that runs at the start of the DeadEnds app is a good object lesson in some of the picker issues I believe. Here is that view so you can contrast with the current set of ideas. Note the PersonMatch object that holds the parts of a person needed for the display. Right now PersonMatch is a type that exists on the UI side. I guess it could stay that way. Anyway for your consideration:
+
+//
+//  PersonSelectionView.swift
+//  DisplayPerson
+//
+//  Created by Thomas Wetmore on 28 June 2025.
+//  Last changed on 13 May 2026.
+
+/// PersonSelectionView is used on the RootView to get a list of persons
+/// from a name pattern that the user selects an member of. The person chosen
+/// is then opened in the PersonPage view.
+///
+/// Currently only used on the RootView.
+
+import SwiftUI
+import DeadEndsLib
+
+/// PersonMatch is a struct with a Gedcom key for id, and a Person record.
+struct PersonMatch: Identifiable {
+    let id: String // Person key.
+    let person: Person
+
+    var displayLine: String {
+        let name = person.displayName()
+        let birth = person.birthEvent?.summary
+        let death = person.deathEvent?.summary
+        switch (birth, death) {
+        case let (b?, d?): return "\(name) (born \(b) — died \(d))"
+        case let (b?, nil): return "\(name) (born \(b))"
+        case let (nil, d?): return "\(name) (died \(d))"
+        default: return name
+        }
+    }
+}
+
+/// A View that shows a list of Persons from a Database who have names that match
+/// a pattern and allows the user to select one.
+struct PersonSelectionView: View {
+    @EnvironmentObject var model: AppModel
+
+    This fits the new picker idea very well.I would keep PersonMatch on the UI side, or rename it to something like PersonChoice. It is not part of the database/search layer; it is a presentation wrapper.
+
+The clean split is:
+
+database.persons(withName:) -> [Person]
+
+then UI does:
+
+.map { PersonMatch(id: $0.key, person: $0) }
+
+That is right.
+
+For reuse, I’d pull out the row formatting into a shared view or PersonMatch helper, so both PersonSelectionView and future chooseperson picker use the same display:
+
+struct PersonChoiceRow: View {
+    let person: Person
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(person.displayName())
+                .font(.title3)
+
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var subtitle: String {
+        let birth = person.birthEvent?.summary
+        let death = person.deathEvent?.summary
+
+        switch (birth, death) {
+        case let (b?, d?): return "born \(b) — died \(d)   \(person.key)"
+        case let (b?, nil): return "born \(b)   \(person.key)"
+        case let (nil, d?): return "died \(d)   \(person.key)"
+        default: return person.key
+        }
+    }
+}
+
+Then your list becomes:
+
+List(results) { match in
+    Button {
+        model.path.append(Route.person(match.person))
+    } label: {
+        PersonChoiceRow(person: match.person)
+    }
+    .buttonStyle(.plain)
+}
+
+The future interpreter picker can reuse the same PersonChoiceRow, but instead of navigating, it returns the selected Person.
+
+So yes: PersonMatch/display formatting belongs in the UI world, while the sorted [Person] belongs in the database/search world.
+
+Here is how I would draw out my current situtation.
+
+Interpreter space:
+    1. the chooseperson builtin is called with a name pattern.
+    2. a name key is created for that pattern.
+    3. a list of all record keys whose person records have names that match the key are formed.
+       (This is done with the name index that is part of the database.)
+    4. the list of record keys is processed to only keep the keys of persons with names that match the original pattern.
+    5. the list of record keys is mapped to a list of persons which put into a good order for presentation.
+
+Transition to user interface space:
+    1. The sorted list of persons now passes through "some magic interface" to the user interface.
+    2. The Interpreter space has nothing to do for the time being.
+    3. Each person gets a string generated for use in the picker.
+    3. The string contains the person's name and when possible condensed birth and death info.
+    4. The strings are presented to the user in a picker view.
+    5. The user either picks a person from the list or cancels the operation.
+
+Transition back to Interpreter space.
+    1. The chosen person or "null" passes back across the magic interface to the interpreter.
+    2. The interpreter continues from the point where the choose operation occurred, with the chosen person.
+
+How do I organize these two "spaces" and make this work.
 
 
+    You have drawn the problem exactly right. The hard part is the “magic interface,” and in SwiftUI that means suspend the program, show UI, then resume.
+
+I would organize it with three pieces.
+
+1. Interpreter returns a “waiting for user” result
+
+Instead of chooseperson directly returning a ProgramValue, it should create a request:
+
+struct PersonChoiceRequest {
+    let candidates: [Person]
+    let line: Int
+}
+
+Then the interpreter stops with something like:
+
+enum InterpResult {
+    case okay
+    case returning(ProgramValue?)
+    case breaking
+    case continuing
+    case error
+    case waitingForPersonChoice(PersonChoiceRequest)
+}
+
+ So chooseperson(...) says:
+
+I cannot finish now. I need the UI to choose from these persons.
+
+2. ProgramModel owns the pending request
+
+ProgramModel gets:
+
+var pendingPersonChoice: PersonChoiceRequest?
+var isChoosingPerson: Bool { pendingPersonChoice != nil }
+
+When the interpreter returns .waitingForPersonChoice(request), the model stores it:
+
+pendingPersonChoice = request
+
+Then ProgramPage shows a .sheet.
+
+3. The picker sends the chosen person back
+
+The picker view receives candidates:
+
+PersonChoiceSheet(
+    candidates: request.candidates,
+    onChoose: { person in
+        model.resumeProgram(with: .person(person))
+    },
+    onCancel: {
+        model.resumeProgram(with: .null)
+    }
+)
+
+Then the model resumes the interpreter.
+
+The catch: your interpreter is currently not resumable. Once it returns from interpretProgram(), the Swift call stack is gone. So you have two choices.
+
+Practical first version
+
+Do not suspend/resume yet. Instead, make chooseperson temporarily return the candidate list, as you already did. Then use this to build the picker UI separately.
+
+Real version
+
+You need to make the interpreter resumable. That means one of:
+
+1. Implement an explicit interpreter continuation state.
+2. Run the program in an async context and make chooseperson await the picker result.
+3. Throw a special “need input” signal and later rerun/replay with stored answer.
+
+For SwiftUI, the cleanest long-term approach is probably async:
+
+protocol ProgramInteraction {
+    func choosePerson(from candidates: [Person]) async -> Person?
+}
+
+Then:
+
+func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue
+
+But this means the interpreter becomes async all the way up:
+
+try await program.interpretProgram()
+
+That is a big change.
+
+So my advice is staged:
+
+First build:
+
+chooseperson(pattern) -> list of candidates
+
+or rename it:
+
+findpersons(pattern) -> list
+
+Then build the SwiftUI picker using the same [Person].
+
+Then, when ready, convert the interpreter to async and make the real:
+
+chooseperson(pattern) -> person/null
+
+Async is probably the clean “magic interface.” It lets the interpreter pause naturally while SwiftUI asks the user.
+
+How hard is it to integrate async "all the way up"?
+
+Moderately hard, but very mechanical.
+
+The change is conceptually simple:
+
+try program.interpretProgram()
+
+becomes:
+
+try await program.interpretProgram()
+
+But then every function that might eventually call an interactive builtin must become async.
+
+That probably means adding async to:
+
+interpretProgram()
+interpProcCall(...)
+interpStmtList(...)
+interpStmt(...)
+evaluate(...)
+evaluateFunction(...)
+evaluateBuiltin(...)
+
+and many builtin function signatures.
+
+The hard part is not understanding it; the hard part is touching a lot of files and chasing compiler errors.
+
+A likely shape:
+
+typealias BuiltinFunction = ([ParsedExpr]) async throws -> ProgramValue
+
+Then:
+
+func evaluate(_ expr: ParsedExpr) async throws -> ProgramValue
+
+and:
+
+func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    let candidates = ...
+    let person = await interaction.choosePerson(from: candidates)
+    return person.map { .person($0) } ?? .null
+}
+
+Your ProgramPage run button would become:
+
+Task {
+    await model.handleRunButton(database: db)
+}
+
+and the model method:
+
+func handleRunButton(database: Database) async
+
+The good news: most existing code just gets async and await sprinkled in. Logic does not change.
+
+The bad news: it is a broad refactor. I would only do it when you are ready for a “compiler-guided slog.”
+
+My recommendation: finish the noninteractive findpersons/picker pieces first. Then make a Git commit. Then do the async conversion on a clean branch/checkpoint.
+
+I need the mental model of what happens vis a vis async keywords in the code. What would the interface look like where the "magical interfaces" occur in my description.
+
+Think of async as meaning:
+
+this function is allowed to pause here, let the UI run, and later continue from the same point.
+
+The “magic interface” would be a protocol owned by the interpreter side, implemented by the UI side:
+
+protocol ProgramInteraction {
+    func choosePerson(from candidates: [Person], prompt: String) async -> Person?
+}
+
+Then Program has:
+
+let interaction: ProgramInteraction
+
+The builtin becomes:
+
+func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    guard let pattern = try await evaluateStringOpt(
+        args[0],
+        errMsg: "chooseperson: arg must be a name pattern"
+    ) else {
+        return .null
+    }
+
+    let candidates = database.persons(withName: pattern)
+
+    guard let person = await interaction.choosePerson(
+        from: candidates,
+        prompt: pattern
+    ) else {
+        return .null
+    }
+
+    return .person(person)
+}
+
+The important line is:
+
+let person = await interaction.choosePerson(...)
+
+That means:
+
+stop this DeadEnds program right here, ask the UI for a person, and resume when the UI supplies one.
+
+Then everything above it must also be async because it might eventually reach that pause point:
+
+func evaluate(...) async throws -> ProgramValue
+func evaluateBuiltin(...) async throws -> ProgramValue
+func interpretProgram() async throws -> InterpResult
+
+On the UI side, ProgramModel implements the protocol by showing a sheet and waiting:
+
+@MainActor
+final class ProgramModel: ProgramInteraction {
+    var pendingPersonChoices: [Person] = []
+    var isShowingPersonPicker = false
+
+    private var personContinuation: CheckedContinuation<Person?, Never>?
+
+    func choosePerson(from candidates: [Person], prompt: String) async -> Person? {
+        pendingPersonChoices = candidates
+        isShowingPersonPicker = true
+
+        return await withCheckedContinuation { continuation in
+            personContinuation = continuation
+        }
+    }
+
+    func choose(_ person: Person?) {
+        isShowingPersonPicker = false
+        personContinuation?.resume(returning: person)
+        personContinuation = nil
+    }
+}
+
+The sheet calls:
+
+model.choose(nil)
+
+So the full flow is:
+
+DeadEnds program calls chooseperson()
+→ builtin makes candidate list
+→ await interaction.choosePerson(...)
+→ ProgramModel shows picker sheet
+→ interpreter is paused, UI remains alive
+→ user chooses/cancels
+→ continuation resumes
+→ builtin returns .person or .null
+→ interpreter continues
+
+That is the mental model. await is the suspension point; the continuation is the little bridge that lets SwiftUI hand the answer back.
 
 
 
