@@ -3,7 +3,7 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 13 March 2026.
+//  Last changed on 13 May 2026.
 //
 
 import Foundation
@@ -169,6 +169,7 @@ extension GedcomName {
 extension Database {
 
     /// Return array of record keys of all persons with names that match a pattern.
+    /// Keys are in no particular order. Method Database.persons(withName:) does the sort.
     public func personKeys(forName pattern: String) -> [RecordKey] {
 		
         var matchingKeys: [String] = []
@@ -182,7 +183,7 @@ extension Database {
                     let squeezedPersonName = squeeze(nameValue)
                     if exactMatch(partial: squeezedPattern, complete: squeezedPersonName) {
                         matchingKeys.append(recordKey)
-                        break // No need to check other names of this Person.
+                        break // No need to check other names.
                     }
                 }
             }
@@ -190,8 +191,21 @@ extension Database {
         return matchingKeys
     }
 
-    /// Return array of all persons with names that match a pattern.
+    /// Return array of all persons with names that match a pattern. This uses
+    /// the results from personKeys, converting them to persons while also putting
+    /// them into a name and event-based sort order.
     public func persons(withName pattern: String) -> [Person] {
-        personKeys(forName: pattern).compactMap { recordIndex.person(for: $0) }
+        personKeys(forName: pattern)
+            .compactMap { recordIndex.person(for: $0) }
+            .sorted { lhs, rhs in
+                switch lhs.compare(to: rhs, in: recordIndex) {
+                case .orderedAscending:
+                    return true
+                case .orderedDescending:
+                    return false
+                case .orderedSame:
+                    return lhs.key < rhs.key
+                }
+            }
     }
 }

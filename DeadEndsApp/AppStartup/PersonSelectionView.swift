@@ -77,19 +77,7 @@ struct PersonSelectionView: View {
     /// user event dates to improve the order.
     private func doNameSearch() {
         guard let database = model.database else { return }
-        let index = database.recordIndex
-
         results = database.persons(withName: namePattern)
             .map { PersonMatch(id: $0.key, person: $0) }
-            .sorted { lhs, rhs in
-                switch lhs.person.compare(to: rhs.person, in: index) {
-                case .orderedAscending:
-                    return true
-                case .orderedDescending:
-                    return false
-                case .orderedSame:
-                    return lhs.id < rhs.id
-                }
-            }
     }
 }
