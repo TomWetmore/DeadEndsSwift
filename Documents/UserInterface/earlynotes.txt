@@ -1,36 +1,27 @@
 The LifeLines language has a number of builtins that provide the user interface. An important one asks the user to provide a person. Can you provide some advice?
 
-This is a bigger design step than an ordinary builtin, because it crosses from the interpreter into interactive UI. The key is to make the interpreter request a person, not directly present SwiftUI.
-
-I would treat this as an interactive builtin, not an ordinary builtin.
-
-The builtin should not know about SwiftUI menus. It should ask an interface object:
+This is a bigger design step than an ordinary builtin, because it crosses from the interpreter into interactive UI. The key is to make the interpreter request a person, not directly present SwiftUI. I would treat this as an interactive builtin, not an ordinary builtin. The builtin should not know about SwiftUI menus. It should ask an interface object:
 
 protocol ProgramInteraction {
     func choosePerson(matching pattern: String) throws -> Person?
 }
 
 Then Program gets one more dependency:
-
-let interaction: ProgramInteraction?
+	let interaction: ProgramInteraction?
 
 The builtin becomes conceptually:
-
-func builtinGetPerson(_ args: [ParsedExpr]) throws -> ProgramValue {
-    let pattern = try evaluateString(args[0], errMsg: "getperson: arg must be a string")
-
-    guard let interaction else {
-        throw RuntimeError("getperson: no interactive UI available", line: args[0].line)
+    func builtinGetPerson(_ args: [ParsedExpr]) throws -> ProgramValue {
+       let pattern = try evaluateString(args[0], errMsg: "getperson: arg must be a string")
+    	guard let interaction else {
+            throw RuntimeError("getperson: no interactive UI available", line: args[0].line)
+    	}
+    	guard let person = try interaction.choosePerson(matching: pattern) else {
+            return .null
+    	}
+        return .person(person)
     }
-    guard let person = try interaction.choosePerson(matching: pattern) else {
-        return .null
-    }
-    return .person(person)
-}
 
-Here is the hard part: SwiftUI selection is asynchronous. The old LifeLines version could block in curses. In SwiftUI, you probably do not want the interpreter freezing while waiting for a panel.
-
-So there are two design paths.
+Here is the hard part: SwiftUI selection is asynchronous. The old LifeLines version could block in curses. In SwiftUI, you probably do not want the interpreter freezing while waiting for a panel. So there are two design paths.
 
 The simple first implementation: make getperson("wetmore") search and return the first/best match, or throw if ambiguous. This tests the builtin plumbing but does not solve UI.
 
@@ -43,31 +34,17 @@ A very practical intermediate approach:
 3. ProgramModel stores that request and shows the picker.
 4. After the user chooses, ProgramModel resumes or reruns with the selected value.
 
-Given your current interpreter is synchronous, I would not try full suspend/resume immediately.
+Given your current interpreter is synchronous, I would not try full suspend/resume immediately.  My suggested staged plan:
 
-My suggested staged plan:
-
-First add a noninteractive helper builtin:
-
-person("I41")
-
-already done.
-
-Then add:
-
-findpersons("wetmore") -> list of persons
+First add a noninteractive helper builtin: 'person("I41")', already done. Then add:
+    findpersons("wetmore") -> list of persons
 
 This avoids interaction and works beautifully with foreach:
+    foreach(findpersons("wetmore"), p, n) {
+        d(n) ". " name(p) nl()
+    }
 
-foreach(findpersons("wetmore"), p, n) {
-    d(n) ". " name(p) nl()
-}
-
-Then later add true interactive:
-
-chooseperson("wetmore") -> person/null
-
-with SwiftUI picker support.
+Then later add true interactive: 'chooseperson("wetmore") -> person/null' with SwiftUI picker support.
 
 So my advice: implement findpersons(pattern) first. It gives you 80% of the utility and fits the new list/foreach model perfectly. Then make chooseperson the UI-aware version later.
 
@@ -463,45 +440,6 @@ Thomas Wetmore, b
 
 The current PersonSelectionView that runs at the start of the DeadEnds app is a good object lesson in some of the picker issues I believe. Here is that view so you can contrast with the current set of ideas. Note the PersonMatch object that holds the parts of a person needed for the display. Right now PersonMatch is a type that exists on the UI side. I guess it could stay that way. Anyway for your consideration:
 
-//
-//  PersonSelectionView.swift
-//  DisplayPerson
-//
-//  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed on 13 May 2026.
-
-/// PersonSelectionView is used on the RootView to get a list of persons
-/// from a name pattern that the user selects an member of. The person chosen
-/// is then opened in the PersonPage view.
-///
-/// Currently only used on the RootView.
-
-import SwiftUI
-import DeadEndsLib
-
-/// PersonMatch is a struct with a Gedcom key for id, and a Person record.
-struct PersonMatch: Identifiable {
-    let id: String // Person key.
-    let person: Person
-
-    var displayLine: String {
-        let name = person.displayName()
-        let birth = person.birthEvent?.summary
-        let death = person.deathEvent?.summary
-        switch (birth, death) {
-        case let (b?, d?): return "\(name) (born \(b) — died \(d))"
-        case let (b?, nil): return "\(name) (born \(b))"
-        case let (nil, d?): return "\(name) (died \(d))"
-        default: return name
-        }
-    }
-}
-
-/// A View that shows a list of Persons from a Database who have names that match
-/// a pattern and allows the user to select one.
-struct PersonSelectionView: View {
-    @EnvironmentObject var model: AppModel
-
     This fits the new picker idea very well.I would keep PersonMatch on the UI side, or rename it to something like PersonChoice. It is not part of the database/search layer; it is a presentation wrapper.
 
 The clean split is:
@@ -516,34 +454,7 @@ That is right.
 
 For reuse, I’d pull out the row formatting into a shared view or PersonMatch helper, so both PersonSelectionView and future chooseperson picker use the same display:
 
-struct PersonChoiceRow: View {
-    let person: Person
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(person.displayName())
-                .font(.title3)
-
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(4)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var subtitle: String {
-        let birth = person.birthEvent?.summary
-        let death = person.deathEvent?.summary
-
-        switch (birth, death) {
-        case let (b?, d?): return "born \(b) — died \(d)   \(person.key)"
-        case let (b?, nil): return "born \(b)   \(person.key)"
-        case let (nil, d?): return "died \(d)   \(person.key)"
-        default: return person.key
-        }
-    }
-}
+struct PersonChoiceRow: View  -- >> Added to PickerSupport.swift
 
 Then your list becomes:
 
@@ -585,13 +496,10 @@ Transition back to Interpreter space.
 How do I organize these two "spaces" and make this work.
 
 
-    You have drawn the problem exactly right. The hard part is the “magic interface,” and in SwiftUI that means suspend the program, show UI, then resume.
+You have drawn the problem right. The hard part is the magic interface, and in SwiftUI that means suspend the program, show UI, then resume.
 
 I would organize it with three pieces.
-
-1. Interpreter returns a “waiting for user” result
-
-Instead of chooseperson directly returning a ProgramValue, it should create a request:
+1. Interpreter returns a “waiting for user” result. Instead of chooseperson directly returning a ProgramValue, it should create a request:
 
 struct PersonChoiceRequest {
     let candidates: [Person]
@@ -845,9 +753,584 @@ DeadEnds program calls chooseperson()
 
 That is the mental model. await is the suspension point; the continuation is the little bridge that lets SwiftUI hand the answer back.
 
+I am inexperienced in writing async code of any type in any language! I see that Swift has things like async, await, try, task, and so forth. Do you have recommendations for a good, basic, introduction to these concepts in Swift. I really want to understand the issues.
+
+Yes. And I think your instinct to first understand the mental model is exactly right. Swift concurrency is actually much easier once the conceptual picture clicks.
+
+For you specifically — an experienced systems programmer coming from C and explicit control flow — I would avoid “high-level productivity tutorials” at first. You want material that explains what is actually happening.
+
+I would start in this order:
+
+1. Apple’s WWDC videos introducing Swift concurrency.
+2. The Swift book’s concurrency chapter.
+3. Small experiments in a Swift playground or tiny command-line target.
+4. Only later: actors, advanced cancellation, task groups, etc.
+
+The single most important mental shift is:
+
+async does NOT mean “runs in parallel”
+
+It means:
+
+this function may suspend and later resume
+
+That is the key idea for your interpreter.
+
+You already understand call stacks deeply. Swift async is basically:
+
+“The compiler transforms the call stack into resumable state machines.”
+
+That is why your chooseperson() example is such a perfect async use case.
+
+The second major concept:
+
+await does NOT create concurrency
+
+It means:
+
+pause here until the async operation completes
+
+So:
+
+let person = await choosePerson(...)
+
+is conceptually much closer to a blocking call in old LifeLines than to multithreaded programming — except the UI remains responsive while waiting.
+
+The third major concept:
+
+Task { ... }
+
+means:
+
+start an asynchronous execution context.
+
+For example:
+
+Button("Run") {
+    Task {
+        await model.runProgram()
+    }
+}
+
+means:
 
 
 
+start running the interpreter asynchronously so the UI does not freeze.
+
+The fourth major concept:
+
+@MainActor
+
+means:
+
+this code must run on the UI thread.
+
+Your SwiftUI models are already mostly living there conceptually.
+
+For your learning style, I would strongly recommend tiny experiments like:
+
+func test() async {
+    print("before")
+    try? await Task.sleep(for: .seconds(3))
+    print("after")
+}
+
+and:
+
+Task {
+    await test()
+}
+
+because you will feel the suspension/resume behavior directly.
+
+I think once you experiment with a few small async examples, the design for interactive builtins will suddenly feel much less mysterious.
+
+I've read the Swift Programming book and the Advanced Swift book about concurrency. It seems that the async world is in my near future. Here are a few issues I will be contending with. First, I've never made a git branch. I think I'll want to do that in case I really mess things up. Second, I've never used async or its ilk, so that will be new.
+
+Let me start with a couple questions. I am assuming it is true that there is no way a synchronous streak of code can cross from the interpreter to the user interface to get the UI actions done -- that is, no way, to make things similar to ncurses, where the full thread is just waiting for UI to happen.
+
+Second, reading the books seems to indicates that it really isn't all "that hard" to move to the async world. But I did want to confirm a few things. Say a method is marked with async. All callers to that method must use an await? And callers to those callers? All the way up. But other methods called by these now async methods and functions that are not async don't have to be made async? For example, builtins that just do something directly in the interpreter world doesn;t have to be marked async.
+
+Third, say I am experiemented to chec on the ramifications of things. Say to see the effects of making a method async, I declare it async, even though, at the time, it doesn't have to be. Will the code still work, probably after I make the full call chain async?
+
+You’re asking exactly the right questions before doing the branch-wide refactor. The good news is that this is mostly a compiler-guided change, but it is worth doing behind a Git branch.
+
+1. Can synchronous interpreter code “wait for SwiftUI” like ncurses?
+
+Not cleanly. In SwiftUI, you should not block the main thread waiting for UI input. The ncurses model was:
+
+call getperson()
+block until user chooses
+continue
+
+The SwiftUI model should be:
+
+call chooseperson()
+await user choice
+UI remains alive
+continue
+
+So yes: async/await is the right tool. It gives you the logical feel of blocking, without freezing the UI.
+
+⸻
+
+2. If a method is async, must callers use await?
+
+Yes.
+
+func choosePerson() async -> Person?
+
+must be called as:
+
+let person = await choosePerson()
+
+And the caller must itself be async, unless it starts a new task:
+
+Task {
+    let person = await choosePerson()
+}
+
+So the “async infection” travels upward through the call chain.
+
+But this part is important:
+
+Functions called by async functions do not need to become async unless they themselves suspend.
+
+So an async function can call ordinary synchronous helpers freely:
+
+func evaluate(...) async throws -> ProgramValue {
+    let name = person.displayName()   // ordinary sync call, fine
+    return .string(name)
+}
+
+Your ordinary builtins do not have to become individually async unless the builtin function type requires it. But if your builtin dispatch table stores all builtins under one type, the easiest implementation may be:
+
+typealias BuiltinFunction = ([ParsedExpr]) async throws -> ProgramValue
+
+Then even simple builtins are declared async, though they do not use await.
+
+That is okay.
+
+⸻
+
+3. Can you mark a method async experimentally even if it doesn’t await?
+
+Yes. This works:
+
+func foo() async -> Int {
+    return 42
+}
+
+It just means callers must now say:
+
+let x = await foo()
+
+Even though foo does not actually suspend.
+
+So you can absolutely migrate by making key functions async first, then let the compiler tell you where await is needed.
+
+⸻
+
+Git branch advice
+
+Before starting:
+
+git status
+git add .
+git commit -m "Checkpoint before async interpreter refactor"
+git branch async-interpreter
+git switch async-interpreter
+
+Then experiment freely.
+
+If things go badly:
+
+git switch main
+
+Your old working version is safe.
+
+⸻
+
+Likely async chain in your interpreter
+
+Expect these to become async:
+
+interpretProgram() async throws
+interpProcCall(...) async throws
+interpStmtList(...) async throws
+interpStmt(...) async throws
+evaluate(...) async throws
+evaluateFunction(...) async throws
+evaluateBuiltin(...) async throws
+
+Possibly:
+
+Builtin.function
+
+becomes async too.
+
+But many low-level helpers remain synchronous:
+
+Person.children(...)
+Person.displayName(...)
+Database.persons(withName:)
+ProgramValue.displayValue
+
+The mental model:
+
+async marks functions that may pass through an interaction point.
+await marks the actual call sites where suspension might happen.
+ordinary synchronous helpers can still be called normally from async code.
+
+That is the whole core idea.
+
+Okay, I will get there. I'm even a little excited about have to go way beyond my comfort level.
+
+That excitement is a very good sign.
+
+You are not “starting over”; you are extending a system that is already working. That makes the async transition much safer than it might feel right now.
+
+And honestly, your background is unusually well suited for understanding what async/await is really doing under the hood. You already understand:
+
+* call stacks
+* interpreter control flow
+* continuations in spirit
+* blocking vs nonblocking interaction
+* explicit runtime state
+
+So once the syntax settles in, I suspect the conceptual model will click pretty hard.
+
+Also, the DeadEnds interpreter is actually a beautiful candidate for async because:
+
+most interpreter work is synchronous
+only a few interaction points suspend
+
+That is exactly the sweet spot for Swift concurrency.
+
+I would say it's not a given that I will take the async/await path.
+
+There is obviously the lowest "rung" of software on the interpreter side of the interface where those lowest layer of await calls are made. You have already said a few things about this layer, metnionting a protocol, but I'm not sure I am following that part very well. Now now given that I will take that path can you more fully describe what the bottom calls with await will be?
+
+Yes. The bottom await call would be at the exact point where the interpreter says:
+
+I need the outside world to answer this question before I can continue.
+
+For chooseperson, that lowest layer would be inside the builtin itself.Something like:
+
+Something like:
+
+protocol ProgramInteraction {
+    func choosePerson(prompt: String, candidates: [Person]) async -> Person?
+}
+
+Then Program owns one:
+
+let interaction: ProgramInteraction?
+
+The builtin:
+
+func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+    guard let pattern = try await evaluateStringOpt(
+        args[0],
+        errMsg: "chooseperson: arg must be a name pattern"
+    ) else {
+        return .null
+    }
+
+    let candidates = database.persons(withName: pattern)
+
+    guard let interaction else {
+        throw RuntimeError("chooseperson: no user interaction available", line: args[0].line)
+    }
+
+    let chosen = await interaction.choosePerson(
+        prompt: pattern,
+        candidates: candidates
+    )
+
+    return chosen.map { .person($0) } ?? .null
+}
+
+The important line is:
+
+let chosen = await interaction.choosePerson(...)
+
+That is the bottom await.
+
+Everything below that belongs to the UI side. The interpreter does not know whether the UI uses a sheet, a popover, a window, or a command-line prompt. It just says:
+
+Here are candidates. Give me back a Person? eventually.
+
+On the UI side, ProgramModel might implement the protocol:
+
+@MainActor
+extension ProgramModel: ProgramInteraction {
+
+    func choosePerson(prompt: String, candidates: [Person]) async -> Person? {
+        self.personChoiceRequest = PersonChoiceRequest(
+            prompt: prompt,
+            candidates: candidates
+        )
+
+        return await withCheckedContinuation { continuation in
+            self.personChoiceContinuation = continuation
+        }
+    }
+
+    func finishPersonChoice(_ person: Person?) {
+        personChoiceRequest = nil
+        personChoiceContinuation?.resume(returning: person)
+        personChoiceContinuation = nil
+    }
+}
+
+Then the sheet calls:
+
+model.finishPersonChoice(selectedPerson)
+
+So the boundary is:
+
+Interpreter side:
+    await interaction.choosePerson(...)
+
+UI side:
+    show picker
+    user chooses/cancels
+    resume continuation with Person?
+
+    That protocol is the “magic interface.” It keeps the interpreter pure-ish and prevents SwiftUI details from leaking into Program.
+
+=======================================================================================
+The ProgramPage is a "junior IDE", a page that holds source code and program output. Editing of the code is done in the SwiftUI world. When the compile button or run button is hit, the model handles the compile and run buttons. So the
+compiling and interpretation now run on the UI thread. This seems not the right way to go.
+=======================================================================================
+Yes: if ProgramModel is marked @MainActor (it currently is), then its button handlers run on the main actor, which is effectively the UI thread for SwiftUI work. So currently the parsing and interpretation occur on the main thread when the buttons are pushed. That means compile and interpretation are not different right now. They are both synchronous work being done from the UI model on the main actor. The difference is only practical: compile is usually short and interpretation may run longer or ask for interaction. So a short compile feels harmless. A long interpretation can freeze the UI.
+
+The current shape is:
+SwiftUI view
+  Button
+    calls @MainActor ProgramModel method
+      runs compiler/interpreter synchronously
+      updates @Observable model state
+
+If you later make run async, you probably get:
+Button
+  Task {
+      await model.handleRunButton(...)
+  }
+
+But if handleRunButton remains @MainActor and does the interpreter work directly, it can still occupy the main actor. To really free the UI, either:
+
+1. the interpreter must suspend at await points, or
+2. the heavy interpreter work must run off the main actor, while UI updates happen back on the main actor.
+
+For chooseperson, the useful async behavior is not mainly “run faster.” It is:
+
+interpreter reaches chooseperson
+await picker result
+main actor is free while waiting
+user uses UI
+interpreter resumes
+
+So your mental model can be:
+
+ProgramPage / ProgramModel = UI world, main actor
+Program / interpreter = computation world
+Interactive builtin = bridge between them''
+
+Right now the computation world is being called directly from the UI world. That works for short runs. Async introduces a way for the computation world to pause and let the UI world act.
+
+So you suggest that the running be done on a different task. Now I sense another problem. When running interactive builtins, the output window should be up to date with all that has happened in the program so far. I don't undertand how that mechanism will work if the program is being run as another thread.
+
+Yes — that is exactly the next design issue.
+
+The clean model is:
+
+interpreter task → buffered output → ProgramModel.output.text on MainActor
+
+The interpreter should not write directly to the SwiftUI text view. It writes to an output sink. That sink periodically “publishes” accumulated text to the UI.
+
+For interactive builtins, the sequence would be:
+
+program runs
+program writes output
+chooseperson() is reached
+flush output to UI
+show picker
+wait for user
+resume program
+
+So the key operation is: flush before interaction.
+
+Conceptually:
+
+protocol ProgramOutput {
+    func write(_ text: String)
+    func flush() async
+}
+
+Then chooseperson does:
+
+await output.flush()
+let person = await interaction.choosePerson(...)
+
+The output sink might internally buffer text off-main-actor, but flush() hops to the main actor:
+
+await MainActor.run {
+    model.output.text = buffer
+}
+
+So the user sees all output produced so far before the picker appears.
+
+The mental model:
+
+write() = cheap, interpreter-side buffering
+flush() = update visible UI
+interactive builtin = flush, then ask UI
+
+You do not need live character-by-character output. You need output to be current at interaction points, plus at program end. That is much easier and probably exactly right for DeadEnds.
+
+It always get more compicated before it goes simple again. Looks like I am facing the real "issues" that arrive with this kind of software and I've go to learn to deal with them.
+
+Yes — but these are the real issues of interactive language/runtime design, not signs that anything is going wrong.
+
+You have now crossed from:
+
+writing an interpreter
+
+into:
+
+writing an interactive programming environment
+
+That boundary is exactly where concepts like:
+
+* continuations
+* event loops
+* UI/main-thread ownership
+* buffering
+* suspension/resumption
+* concurrency models
+
+suddenly become unavoidable.
+
+And the reason it feels more complicated before simpler is that you are temporarily seeing both models at once:
+
+old synchronous mental model
+new event-driven async model
+
+Eventually the async model becomes simpler again because the pieces line up naturally:
+
+run program
+output accumulates
+interactive builtin flushes output
+await user choice
+continue
+
+At that point the architecture becomes cleaner than trying to fake ncurses-style blocking inside SwiftUI.
 
 
+Given that the compile and run buttons now cause compiling and interpretation to be done on the main thread, how would you recommend I change things?
 
+I’d change Run first, and leave Compile alone for now.
+
+Compile is usually short and has no user interaction, so keeping it on @MainActor is acceptable until it proves otherwise.
+
+For Run, I’d move toward this shape:
+
+Button("Run") {
+    if let db = appModel.database {
+        Task {
+            await model.handleRunButton(database: db)
+        }
+    }
+}
+
+Then in ProgramModel:
+
+@MainActor
+func handleRunButton(database: Database) async {
+    guard let parsedProgram else { return }
+
+    diagnostics = []
+    output.clear()
+
+    let buffer = BufferedProgramOutput()
+
+    let program = Program(
+        parsedProgram: parsedProgram,
+        database: database,
+        output: buffer,
+        interaction: self
+    )
+
+    do {
+        let result = try await program.interpretProgram()
+        output.text = displayableOutput(buffer.text)
+        // handle result if needed
+    } catch let error as RuntimeError {
+        output.text = displayableOutput(buffer.text)
+        diagnostics = [Diagnostic(
+            message: error.message,
+            line: error.line > 0 ? error.line : nil
+        )]
+    } catch {
+        output.text = displayableOutput(buffer.text)
+        diagnostics = [Diagnostic(message: String(describing: error), line: nil)]
+    }
+}
+
+But the big change is inside Program:
+
+public func interpretProgram() async throws -> InterpResult
+
+and then the call chain below it becomes async as needed:
+
+interpProcCall(...) async throws
+interpStmtList(...) async throws
+interpStmt(...) async throws
+evaluate(...) async throws
+evaluateBuiltin(...) async throws
+
+The first real interactive builtin would look like:
+
+func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    guard let pattern = try await evaluateStringOpt(
+        args[0],
+        errMsg: "chooseperson: arg must be a name pattern"
+    ) else {
+        return .null
+    }
+
+    let candidates = database.persons(withName: pattern)
+
+    await output.flush()
+
+    guard let person = await interaction.choosePerson(
+        prompt: pattern,
+        candidates: candidates
+    ) else {
+        return .null
+    }
+
+    return .person(person)
+}
+
+The practical staged plan:
+
+1. Make a Git branch.
+2. Convert interpretProgram and the interpreter call chain to async.
+3. Leave most noninteractive builtins simple; they can be async but contain no await.
+4. Add ProgramInteraction.
+5. Make chooseperson the first builtin that actually awaits.
+6. Add output flushing before interaction.
+
+So the architectural rule becomes:
+
+Compile: stays on MainActor for now.
+Run: async interpreter.
+UI updates: MainActor only.
+Interactive builtins: flush output, await UI answer, resume.
+
+That is the clean path.
