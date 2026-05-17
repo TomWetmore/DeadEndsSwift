@@ -1334,3 +1334,433 @@ UI updates: MainActor only.
 Interactive builtins: flush output, await UI answer, resume.
 
 That is the clean path.
+
+I have several questions, in no particular order. Let's start with the following. Here is the suggested code for user hitting the run button on the Program Page:
+
+@MainActor
+func handleRunButton(database: Database) async {
+    guard let parsedProgram else { return }
+
+    diagnostics = []
+    output.clear()
+
+    let buffer = BufferedProgramOutput()
+
+    let program = Program(
+        parsedProgram: parsedProgram,
+        database: database,
+        output: buffer,
+        interaction: self
+    )
+
+    do {
+        let result = try await program.interpretProgram()
+        output.text = displayableOutput(buffer.text)
+        // handle result if needed
+    } catch let error as RuntimeError {
+        output.text = displayableOutput(buffer.text)
+        diagnostics = [Diagnostic(
+            message: error.message,
+            line: error.line > 0 ? error.line : nil
+        )]
+    } catch {
+        output.text = displayableOutput(buffer.text)
+        diagnostics = [Diagnostic(message: String(describing: error), line: nil)]
+    }
+}
+
+Here is what I learn from this:
+
+1. @MainActor -- means this is to run on the main (which must also be the UI) thread.
+2. guard let parsedProgram else { return } -- I assume this is checkoing the existence of the parsed program.
+3. let result = try await program.interpretProgram() -- I need clarification on this one -- how does this specifiy that program.interpretProgram is to be run on another thread? I guess that my current key question. How does jumping to another thread happen? Is it simply the use of await that does it?
+
+await by itself does not mean “run this on another thread.”
+
+It means:
+
+this call may suspend here, and this function can resume later.
+
+So in your example:
+
+@MainActor
+func handleRunButton(database: Database) async {
+    ...
+    let result = try await program.interpretProgram()
+    ...
+}
+
+because handleRunButton is @MainActor, execution starts on the main actor.
+
+If program.interpretProgram() is not actor-isolated and does CPU work synchronously before it ever suspends, that work may still effectively run on the current executor/main actor. So simply adding await does not automatically move interpretation off the UI thread.
+
+To explicitly run the interpreter away from the main actor, you would start it in a task that is not main-actor isolated. For example, one rough shape is:
+
+let result = try await Task.detached {
+    try await program.interpretProgram()
+}.value
+
+But then you must be careful: that detached task must not touch SwiftUI state or main-actor-only objects directly.
+
+So the better mental model is:
+
+async/await = suspension/resumption mechanism
+Task = creates asynchronous work
+Task.detached = creates work not tied to the current actor
+@MainActor = UI/main-thread isolation
+
+Your point 1 is right:
+
+@MainActor
+
+means this method runs on the main actor, which is where SwiftUI state must be touched.
+
+Your point 2 is right:
+
+guard let parsedProgram else { return }
+
+means: if there is no compiled program, do nothing. It also unwraps parsedProgram so below that line it is non-optional.
+
+Your point 3 needs the correction:
+
+try await program.interpretProgram()
+
+does not specify another thread. It only says:
+
+call an async throwing function and wait for its result without blocking the current task.
+
+If you want actual off-main execution, you need to create that explicitly, probably with a task boundary.
+
+A clearer architecture may be:
+
+@MainActor
+func handleRunButton(database: Database) async {
+    guard let parsedProgram else { return }
+
+    diagnostics = []
+    output.clear()
+
+    let buffer = BufferedProgramOutput()
+    let program = Program(
+        parsedProgram: parsedProgram,
+        database: database,
+        output: buffer,
+        interaction: self
+    )
+
+    do {
+        let result = try await Task.detached {
+            try await program.interpretProgram()
+        }.value
+
+        output.text = displayableOutput(buffer.text)
+    } catch let error as RuntimeError {
+        output.text = displayableOutput(buffer.text)
+        diagnostics = [Diagnostic(message: error.message, line: error.line > 0 ? error.line : nil)]
+    } catch {
+        output.text = displayableOutput(buffer.text)
+        diagnostics = [Diagnostic(message: String(describing: error), line: nil)]
+    }
+}
+
+But this raises the next big issue: interaction: self is main-actor UI world. The detached interpreter must call it only through async @MainActor methods, not directly mutate UI.
+
+So the answer to your key question is:
+
+No, await does not jump to another thread. Task/Task.detached creates asynchronous work; actor isolation determines where code is allowed to run.
+
+Okay, so what exactly does
+
+'et result = try await Task.detached {
+            try await program.interpretProgram()
+        }.value
+
+do?
+
+This:
+
+let result = try await Task.detached {
+    try await program.interpretProgram()
+}.value
+
+means:
+
+create a new asynchronous task that is not tied to the current actor (in particular, not tied to the MainActor/UI thread), run the closure there, then wait for its final result.
+
+Let’s unwrap it piece by piece.
+
+⸻
+
+1. Task.detached { ... }
+
+Creates a brand new asynchronous task.
+
+“Detached” means:
+
+do not inherit the current actor
+
+So if you call it from @MainActor, the new task is not forced onto the UI thread.
+
+Inside the closure:
+
+    {
+    try await program.interpretProgram()
+}
+
+the interpreter can now run independently of the UI actor.
+
+The result of Task.detached is not the interpreter result itself. It returns a Task object.
+
+Conceptually:
+
+let task = Task.detached {
+    ...
+}
+
+2. .value
+
+The Task object has a property:
+
+
+task.value
+
+which means:
+
+wait for the task to finish and give me its result.
+
+Since waiting is asynchronous, accessing .value requires await.
+
+So:
+
+await task.value
+
+means:
+
+suspend here until the detached task completes.
+
+3. try
+
+Because the interpreter can throw:
+
+try await task.value
+
+means:
+
+wait for the detached task, and if it threw an error, rethrow it here.
+
+⸻
+
+4. let result =
+
+Stores the final return value of:
+
+program.interpretProgram()
+
+So the whole thing means:
+
+Start the interpreter running outside the MainActor.
+Do not block the UI while it runs.
+Wait asynchronously for the interpreter to finish.
+If it throws, propagate the error.
+When done, store the result.
+
+That is the full mental model.
+
+So if I do this:
+
+     do {
+        let result = try await Task.detached {
+            try await program.interpretProgram()
+        }.value
+
+in handleRunButton, a new task is created which begins life by having the interpretProgram method called on it. The program object was created for it to "run on" in the main thread, but, I assume this is not a problem. I now understand what await means in the context of calling the interpretProgram method; what does it mean in the context of the Task.deleted context.
+
+Is this form of the handleRunButton a good one for me to work with?
+
+Once this new task is running, let's consider the choose person case. Two user interactions are required. The first is to let the UI know what the prompt for the picker is, second is the data for the picker. I assume both can be handled at once. So this seems to mean, in terms of thread interactions, is that the main thread creates the thread that runs the interpreter, and the the interpreter's thread has to then interact with the UI thread to get things done.
+
+How does the new thread die? Does it happen when interpretProgram returns?
+
+Yes, you have the shape mostly right, with one important vocabulary correction:
+
+Swift Task does not necessarily mean “new thread.” It means “new unit of asynchronous work.” The Swift runtime may run it on some worker thread, suspend it, resume it later, possibly on a different worker thread. So think task, not thread.
+
+This:
+
+let result = try await Task.detached {
+    try await program.interpretProgram()
+}.value
+
+means:
+
+1. Main actor creates program.
+2. Main actor creates a detached task.
+3. Detached task runs program.interpretProgram().
+4. Main actor suspends at .value while waiting.
+5. UI remains free.
+6. When the detached task finishes, .value resumes.
+7. The result or thrown error comes back to handleRunButton.
+
+The await before program.interpretProgram() means:
+
+try await program.interpretProgram()
+
+“this interpreter call may itself suspend.”
+
+The await before .value means:
+
+try await detachedTask.value
+
+“wait for the detached task to finish.”
+
+So there are two possible suspension points: inside the interpreter, and in the caller waiting for the whole task.
+
+For chooseperson, yes: the interpreter task will need to ask the main actor/UI for help. The clean way is one async call that carries both prompt and candidates:
+
+protocol ProgramInteraction {
+    func choosePerson(prompt: String, candidates: [Person]) async -> Person?
+}
+
+Inside the builtin:
+
+let candidates = database.persons(withName: pattern)
+
+await output.flush()
+
+let chosen = await interaction.choosePerson(
+    prompt: pattern,
+    candidates: candidates
+)
+
+return chosen.map { .person($0) } ?? .null
+
+The UI implementation of choosePerson would be @MainActor, so when the detached interpreter calls it, Swift hops to the main actor:
+
+@MainActor
+func choosePerson(prompt: String, candidates: [Person]) async -> Person? {
+    // store prompt/candidates in model
+    // show sheet
+    // suspend with continuation
+    // return selected person or nil
+}
+
+So the flow is:
+
+MainActor: Run button creates Program
+Detached task: interpreter runs
+Detached task: reaches chooseperson
+MainActor: picker is shown
+Detached task: suspended waiting
+MainActor: user chooses/cancels
+Detached task: resumes with chosen Person?
+Detached task: interpreter continues
+MainActor: handleRunButton resumes when task.value completes
+
+The task “dies” when the closure finishes. So yes: when interpretProgram() returns or throws, the detached task completes. Then .value returns or rethrows in handleRunButton.
+
+Is this a good form to work with? Yes, with one caution: anything shared with the detached task must be safe to use off the main actor. The Program object is fine if it is self-contained. The database should be treated as read-only while the program runs. UI state must only be touched through @MainActor methods.
+======================================================
+Could you explain what the ProgramInteraction is for:
+======================================================
+
+protocol ProgramInteraction {
+    func choosePerson(prompt: String, candidates: [Person]) async -> Person?
+}
+
+ProgramInteraction is the abstraction layer — the “magic interface” — between the Interpreter world and the SwiftUI world. The interpreter should not know about sheets, buttons, SwiftUI, windows, text fields, or about how users choose persons. It should only know “I need a person from this candidate list.”
+
+So ProgramInteraction is a contract saying: If someone can provide user interaction services, here are the operations the interpreter may request.
+
+The protocol:
+
+protocol ProgramInteraction {
+    func choosePerson(
+        prompt: String,
+        candidates: [Person]
+    ) async -> Person?
+}
+
+
+means that anny object conforming to this protocol must know how to ask a user to choose a person. The interpreter only talks to the protocol:
+
+let chosen = await interaction.choosePerson(
+    prompt: pattern,
+    candidates: candidates
+)
+
+It does not know how the interaction happens.
+
+Without the protocol, your interpreter would directly depend on SwiftUI:
+    showSheet(...)
+    waitForButton(...)
+
+which would entangle the language runtime and UI implementation.The protocol keeps them separate.
+
+Who implements the protocol? Probably ProgramModel. Example:
+
+@MainActor
+final class ProgramModel: ProgramInteraction {
+    ...
+}
+
+which means that ProgramModel promises it knows how to do interactive operations for the interpreter.
+
+Think of it as a virtual terminal device for the interpreter. Old LifeLines had:
+
+getperson()
+ask()
+menuchoose()
+
+hardwired into ncurses.
+
+Now you are saying:
+
+Interpreter requests interaction
+UI implementation supplies it
+
+That is a much cleaner architecture.
+
+⸻
+
+Why async appears here
+
+Because user interaction takes time.
+
+The protocol method:
+
+func choosePerson(...) async -> Person?
+
+This means this request may suspend while the human thinks. That is right semantically.
+
+Important insight: The protocol itself does not create threads/tasks/UI. It only defines the boundary between two worlds.
+==============================================================
+There will be a number of other builtins that need info from the user (entering dates, numbers, places, strings, ...). Should each have its own protocol or should there be a way of combining them into a single protocol?
+==============================================================
+
+Use one protocol for the interpreter’s interaction needs. Something like:
+
+protocol ProgramInteraction {
+    func choosePerson(prompt: String, candidates: [Person]) async -> Person?
+    func askString(prompt: String, defaultValue: String?) async -> String?
+    func askInteger(prompt: String, defaultValue: Int?) async -> Int?
+    func askDate(prompt: String, defaultValue: String?) async -> String?
+    func choosePlace(prompt: String, candidates: [String]) async -> String?
+}
+
+This protocol represents the outside world services the interpreter may ask for. I would not make one protocol per builtin. That would scatter the “interaction boundary” into too many little pieces.
+
+Later, if it gets large, you can split it by category:
+    protocol PersonChoosingInteraction { ... }
+    protocol TextInputInteraction { ... }
+    protocol DateInputInteraction { ... }
+
+and then compose them:
+
+    typealias ProgramInteraction =
+        PersonChoosingInteraction
+        & TextInputInteraction
+        & DateInputInteraction
+
+ But I would not start there. Start with one ProgramInteraction. It will be much easier to understand and wire into Program.
+
+

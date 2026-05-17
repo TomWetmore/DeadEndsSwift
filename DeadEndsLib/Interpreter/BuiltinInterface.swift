@@ -42,3 +42,16 @@ extension Program {
         }
     }
 }
+
+/// Evaluate an expression that must be a string
+/// TODO: MOVE TO THE RIGHT PLACE
+extension Program {
+
+    func evaluateString(_ expr: ParsedExpr, errMsg: String) throws -> String {
+        switch try evaluate(expr) {
+        case .string(let string):
+            return string
+        default: throw RuntimeError(errMsg, line: expr.line)
+        }
+    }
+}
