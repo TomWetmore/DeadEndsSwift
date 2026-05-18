@@ -1763,4 +1763,151 @@ and then compose them:
 
  But I would not start there. Start with one ProgramInteraction. It will be much easier to understand and wire into Program.
 
+I think I understand ProgramInteraction now. I think I would call it the abstract user interface between the interpreter and any different UI system. There could be one for ncurses, one for SwiftUI, one for a logging terminal, and so on.
 
+Exactly.
+
+That is precisely what it is.
+
+ProgramInteraction is not “SwiftUI support.” It is:
+
+the abstract user interaction interface required by the interpreter.
+
+So the interpreter becomes independent of the actual UI technology.
+
+You could implement it with:
+
+* SwiftUI
+* ncurses
+* command-line stdin/stdout
+* a web UI
+* a testing harness
+* a scripted/batch responder
+* even an AI assistant someday
+
+The interpreter only knows:
+
+show a SwiftUI sheet
+wait for a button
+
+That is a very important architectural boundary.
+
+At one point you mentioned continuations in the context of the SwiftUI side of the interface. From what I have been reading continuations have to do with pre-async/await Swift. Were you implying that the SwiftUI side of the user interface would not use tha await/synch approach?
+
+Excellent question.
+
+No — I was not suggesting abandoning async/await. Quite the opposite.
+
+In modern Swift, continuations are one of the mechanisms used inside async/await systems to bridge older event/callback-style APIs into async functions.
+
+In your case, the interpreter side would use beautiful clean async/await:
+
+let chosen = await interaction.choosePerson(...)
+
+But the SwiftUI side is fundamentally event-driven:
+
+show sheet
+user clicks button later
+button action fires
+
+There is no natural synchronous “return value” from a button click.
+
+So the continuation is the little bridge that lets you temporarily pause the async function until the UI event occurs.
+
+Conceptually:
+
+func choosePerson(...) async -> Person? {
+    showSheet()
+
+    return await withCheckedContinuation { continuation in
+        self.savedContinuation = continuation
+    }
+}
+
+Then later, when the user clicks:
+
+savedContinuation.resume(returning: chosenPerson)
+
+That resumes the suspended async function.
+
+So continuations are not “pre-async Swift.” They are one of the low-level plumbing tools underneath async/await.
+
+The important thing is:
+
+Interpreter code uses async/await naturally.
+SwiftUI remains event-driven.
+Continuation bridges the two.
+
+Without the continuation, your choosePerson(...) async -> Person? function would have no way to “pause until the button is clicked.”
+======================================================================================
+Thanks. I am trying to build a "tool box" of all the concepts I need to understand what's going on. I have a file where I'm gathering all the "pieces". I'll share that with you soon. Can you explain the idea of a continuation a bit more. From what I gather it is a code that is called once async activity ends.
+======================================================================================
+
+A continuation is deeper and more fundamental than “code called when async activity ends,” though that is part of the effect.
+
+The core idea is: A continuation represents “the rest of the computation from this point onward.”
+
+In old terms: where do we continue execution after this pause?
+
+In synchronous C code, the continuation is implicit in the call stack and CPU instruction pointer. For example:
+
+x = getchar();
+printf("%c\n", x);
+
+When getchar() blocks, the machine/runtime already knows: after getchar returns, resume at printf. That “resume point” is the continuation.
+
+In Swift async code:
+    let person = await choosePerson(...)
+    print(person)
+
+Swift transforms this into a resumable state machine. At the await, Swift effectively says: pause here; later continue with: print(person)
+That suspended “rest of the function” is the continuation.
+
+Now consider SwiftUI. When you show a picker sheet: show UI; wait for human. the async function cannot literally sit on the stack for minutes. So Swift stores the continuation somewhere.
+
+withCheckedContinuation gives you access to it:
+
+return await withCheckedContinuation { continuation in
+    self.savedContinuation = continuation
+}
+
+Meaning:
+
+Swift:
+    here is the suspended remainder of this async function
+
+You:
+    store it somewhere
+    resume it later
+
+    Then later:
+
+savedContinuation.resume(returning: person)
+
+means:
+
+continue execution as if
+choosePerson(...) had just returned person
+
+So continuations are not merely callbacks. They are resumable suspended computations.
+
+For your interpreter, this becomes:
+
+interpreter task:
+    chooseperson(...)
+    await interaction.choosePerson(...)
+
+Swift:
+    suspend interpreter task
+    preserve continuation
+
+SwiftUI:
+    user clicks person
+
+ProgramModel:
+    continuation.resume(returning: chosenPerson)
+
+Swift:
+    interpreter resumes exactly where it stopped
+
+That is the real magic of async/await.

@@ -12,9 +12,9 @@ import Foundation
 public struct GedcomName: Comparable, CustomStringConvertible {
 
     var parts: [String]  // Name parts.
-    var surnameIndex: Int?  // Surname index if exists.
+    var surnameIndex: Int?  // Index of surname in name parts, if it exists.
 
-    /// Create Gedcom name from precomputed properties.
+    /// Create a Gedcom name from precomputed properties.
     private init(parts: [String], surnameIndex: Int?) {
         self.parts = parts
         if let s = surnameIndex, s >= 0, s < parts.count { self.surnameIndex = s }
@@ -49,16 +49,15 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         return "GedcomName(parts: \(parts), surnameIndex: \(surnameIndex?.description ?? "nil"))"
     }
 
-    /// Return length of Gedcom name.
+    /// Return the length of a Gedcom name.
     public var length: Int {
         return parts.count - 1 + parts.reduce(0) { $0 + $1.count }
     }
 
-    /// Return display version of name; surname can be capitalized and/or appear
-    /// first; name can be limited in length.
+    /// Return the display form of a name; the surname can be capitalized and/or appear
+    /// first; the name can be limited in length.
     public func displayName(upSurname: Bool = false, surnameFirst: Bool = false,
                             limit: Int = 0) -> String {
-
         var work = self
         if upSurname { work.uppercaseSurname() }
         if limit > 0 { work.shortened(to: limit) }
@@ -76,22 +75,22 @@ public struct GedcomName: Comparable, CustomStringConvertible {
             let rest = (before + after).joined(separator: " ")  // Join givens and suffixes.
             return rest.isEmpty ? surname : "\(surname), \(rest)"
         } else {
-            return parts.joined(separator: " ")  // Normal surname placement format.
+            return parts.joined(separator: " ")  // Normal surname placement.
         }
     }
 
-    /// Return first initial (uppercased) of the first given name.
+    /// Return the first initial (uppercased) of the first given name.
     var firstInitial: Character? {
         return parts.first?.first(where: \.isLetter)?.uppercased().first
     }
 
-    /// Return surname of Gedcom name if it exists.
+    /// Return the surname of a Gedcom name if it exists.
     var surname: String? {
         if surnameIndex == nil { return nil }
         return parts[surnameIndex!]
     }
 
-    /// Return array of name parts, excluding surname, in lower case.
+    /// Return the array of name parts, excluding the surname, in lower case.
     var lowercaseGivens: [String] {
         parts.enumerated()
             .compactMap { (i, part) in
@@ -105,7 +104,7 @@ public struct GedcomName: Comparable, CustomStringConvertible {
         parts[i] = parts[i].uppercased()
     }
 
-    /// Convert given name to an initial with period in situ.
+    /// Convert a given name to an initial with period in situ.
     mutating func initialiseGiven(at i: Int) {
         guard i >= 0 && i < parts.count && i != surnameIndex else { return }
         if let c = parts[i].first { parts[i] = "\(c)." }

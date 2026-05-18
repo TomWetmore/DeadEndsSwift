@@ -44,6 +44,7 @@ extension Person {
     }
 
     /// Return a formatted name string of a person.
+    /// TODO: FINISH WRITING THIS METHOD.
     public func formattedName(_: Person, surnameCaps: Bool = false, surnameFirst: Bool = false, maxLength: Int = 68) {
         // Get the Gedcom name
         let name = GedcomName(from: self)
