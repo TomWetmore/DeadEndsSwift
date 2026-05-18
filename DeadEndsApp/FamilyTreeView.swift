@@ -4,13 +4,14 @@
 //
 //  Created by Thomas Wetmore on 8/8/25.
 //  Coalesced by ChatGPT on 8/8/25.
-//
+//  Last changed on 18 May 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
 struct FamilyTreeView: View {
+
     @EnvironmentObject var model: AppModel
     let person: Person
 
@@ -33,23 +34,6 @@ struct FamilyTreeView: View {
         if b.isEmpty && d.isEmpty { return nil }
         return "b. \(b)\(d.isEmpty ? "" : " – d. \(d)")"
     }
-
-//    private func ospouseNames(_ person: Person) -> [String] {
-//        guard let index = model.database?.recordIndex else { return [] }
-//        // For each FAMS family, find the spouse (the other partner) and return displayName.
-//        let families: [Family] = person.kids(withTag: "FAMS")
-//            .compactMap { $0.val.flatMap { index.family(for: $0) } }
-//
-//        func spouseInFamily(_ family: Family) -> Person? {
-//            // Return the partner who is not person.
-//            let candidates = family.kids(withTag: "HUSB") + family.kids(withTag: "WIFE")
-//            let spouseKeys: [String] = candidates.compactMap { $0.val }
-//            let spousePersons = spouseKeys.compactMap { index.person(for: $0) }
-//            return spousePersons.first { $0 != person }
-//        }
-//
-//        return families.compactMap { spouseInFamily($0)?.displayName() }
-//    }
 
     private func spouseNames(_ person: Person) -> [String] {
         print("spouseNames")

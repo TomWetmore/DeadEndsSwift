@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 25 April 2026.
+//  Last changed on 18 May 2026.
 //
 
 import Foundation
@@ -37,7 +37,7 @@ struct DefnParser: Parser {
         let line = input.first?.line ?? 0
 
         guard let tok = input.first else {
-            throw ParseError.syntax("expecting a definition", line: line)
+            throw ParseError("expecting a definition", line: line)
         }
         switch tok.kind {
         case .proc:
@@ -47,7 +47,7 @@ struct DefnParser: Parser {
         case .identifier("global"):
             return .global(try GlobalDefParser().parse(&input))
         default:
-            throw ParseError.syntax("expecting a definiton", line: line)
+            throw ParseError("expecting a definiton", line: line)
         }
     }
 }
@@ -100,7 +100,7 @@ struct GlobalDefParser: Parser {
         let name = try IdentifierToken().parse(&input)
 
         guard name == "global" else {
-            throw ParseError.syntax("expected \"global\"", line: line)
+            throw ParseError("expected \"global\"", line: line)
         }
         try ExactToken(kind: .lParen).parse(&input)
         let globalName = try IdentifierToken().parse(&input)

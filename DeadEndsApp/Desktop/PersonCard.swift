@@ -3,13 +3,13 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 25 October 2025.
-//  Last changed on 18 February 2026.
+//  Last changed on 18 May 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Person card view used on Desktop view. 
+/// Person card view used on Desktop views.
 struct PersonCard: View {
 
     let model: DesktopModel
@@ -18,7 +18,7 @@ struct PersonCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(person.name ?? "Unknown Person")
+            Text(person.name)
                 .font(.headline)
             if let birth = person.birthEvent?.summary {
                 Text("b. \(birth)").foregroundColor(.secondary)
@@ -50,10 +50,10 @@ struct PersonContextMenu: View {
             if spouseList.isEmpty {
                 Button("No known spouse") {}.disabled(true)
             } else {
-                // Check person's spouses against persons now in card array.
+                // Check the person's spouses against the persons in the cards.
                 ForEach(spouseList, id: \.root.key) { spouse in
                     if !(model?.contains(person: spouse) ?? false) {
-                        Button("Add \(spouse.name ?? "no name")") {
+                        Button("Add \(spouse.name)") {
                             model?.addCard(  // Add spouse to desktop.
                                 kind: .person(spouse),
                                 position: CGPoint(x: 200, y: 200),
@@ -66,7 +66,7 @@ struct PersonContextMenu: View {
 
             Divider()
 
-            Button("Remove \(person.name ?? "no name")") {
+            Button("Remove \(person.name)") {
                 model?.removeCard(kind: .person(person))  // Remove person from desktop.
             }
         }

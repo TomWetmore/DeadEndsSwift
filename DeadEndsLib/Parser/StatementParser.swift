@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on8 April 2026.
-//  Last changed on 8 May 2026.
+//  Last changed on 18 May 2026.
 //
 
 import Foundation
@@ -45,7 +45,7 @@ struct StmtParser: Parser {
 
         let line = input.first?.line ?? 0
         guard let tok = input.first else {
-            throw ParseError.syntax("expecting statement", line: line)
+            throw ParseError("expecting statement", line: line)
         }
         switch tok.kind {
         case .whileTok:
