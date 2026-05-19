@@ -104,6 +104,7 @@
 				Interpreter/InterpForEach.swift,
 				Interpreter/Interpret.swift,
 				Interpreter/Program.swift,
+				Interpreter/ProgramInterface.swift,
 				Interpreter/ProgramValue.swift,
 				Interpreter/RunProgram.swift,
 				Interpreter/RuntimeFrame.swift,

@@ -1007,61 +1007,34 @@ most interpreter work is synchronous
 only a few interaction points suspend
 
 That is exactly the sweet spot for Swift concurrency.
+===================================================================
+I will take the async/await path. There is obviously the lowest rung of software on the interpreter side of the interface where the lowest layer of await calls are made. You have already said a few things about this layer, mentionting a protocol, but I'm not following that part yet. Can you more fully describe what the bottom calls with await will be?
+====================================================================
+The bottom await call are at the  points where the interpreter says, "I need the outside world to answer this question before I can continue." For chooseperson, that is  inside the builtin itself. Something like:
 
-I would say it's not a given that I will take the async/await path.
-
-There is obviously the lowest "rung" of software on the interpreter side of the interface where those lowest layer of await calls are made. You have already said a few things about this layer, metnionting a protocol, but I'm not sure I am following that part very well. Now now given that I will take that path can you more fully describe what the bottom calls with await will be?
-
-Yes. The bottom await call would be at the exact point where the interpreter says:
-
-I need the outside world to answer this question before I can continue.
-
-For chooseperson, that lowest layer would be inside the builtin itself.Something like:
-
-Something like:
-
-protocol ProgramInteraction {
-    func choosePerson(prompt: String, candidates: [Person]) async -> Person?
-}
-
-Then Program owns one:
-
-let interaction: ProgramInteraction?
-
-The builtin:
-
-func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-    guard let pattern = try await evaluateStringOpt(
-        args[0],
-        errMsg: "chooseperson: arg must be a name pattern"
-    ) else {
-        return .null
+    protocol ProgramInteraction {
+        func choosePerson(prompt: String, candidates: [Person]) async -> Person?
     }
 
-    let candidates = database.persons(withName: pattern)
+Then Program owns one: "let interaction: ProgramInteraction?". An example for the builtin:
 
+func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    guard let pattern = try await evaluateStringOpt(args[0],
+        errMsg: "chooseperson: arg must be a name pattern")
+    else {
+        return .null
+    }
+    let candidates = database.persons(withName: pattern)
     guard let interaction else {
         throw RuntimeError("chooseperson: no user interaction available", line: args[0].line)
     }
-
-    let chosen = await interaction.choosePerson(
-        prompt: pattern,
-        candidates: candidates
-    )
-
+    let chosen = await interaction.choosePerson(prompt: pattern, candidates: candidates)
     return chosen.map { .person($0) } ?? .null
 }
 
-The important line is:
+The important line is: "let chosen = await interaction.choosePerson(...)". That is the bottom await.
 
-let chosen = await interaction.choosePerson(...)
-
-That is the bottom await.
-
-Everything below that belongs to the UI side. The interpreter does not know whether the UI uses a sheet, a popover, a window, or a command-line prompt. It just says:
-
-Here are candidates. Give me back a Person? eventually.
+Everything below that belongs to the UI. The interpreter does not know whether the UI uses a sheet, a popover, a window, or a command-line prompt. It just says: Here are candidates. Give me back a Person? eventually.
 
 On the UI side, ProgramModel might implement the protocol:
 
@@ -1073,12 +1046,10 @@ extension ProgramModel: ProgramInteraction {
             prompt: prompt,
             candidates: candidates
         )
-
         return await withCheckedContinuation { continuation in
             self.personChoiceContinuation = continuation
         }
     }
-
     func finishPersonChoice(_ person: Person?) {
         personChoiceRequest = nil
         personChoiceContinuation?.resume(returning: person)
@@ -1086,27 +1057,20 @@ extension ProgramModel: ProgramInteraction {
     }
 }
 
-Then the sheet calls:
-
-model.finishPersonChoice(selectedPerson)
+A then the sheet calls: "model.finishPersonChoice(selectedPerson)".
 
 So the boundary is:
 
-Interpreter side:
-    await interaction.choosePerson(...)
+Interpreter side: await interaction.choosePerson(...)
 
-UI side:
-    show picker
-    user chooses/cancels
-    resume continuation with Person?
+UI side: show picker; user chooses/cancels; resume continuation with Person?
 
-    That protocol is the “magic interface.” It keeps the interpreter pure-ish and prevents SwiftUI details from leaking into Program.
+The protocol is the interface that keeps the interpreter clean and prevents SwiftUI details from leaking into Program.
 
 =======================================================================================
-The ProgramPage is a "junior IDE", a page that holds source code and program output. Editing of the code is done in the SwiftUI world. When the compile button or run button is hit, the model handles the compile and run buttons. So the
-compiling and interpretation now run on the UI thread. This seems not the right way to go.
+The ProgramPage is a mini IDE, a page that holds source code and program output. Editing of the code is done in the SwiftUI world. When the compile button or run button is hit, the model handles the compile and run buttons. So the compiling and interpreting are now on the UI thread. Not right.
 =======================================================================================
-Yes: if ProgramModel is marked @MainActor (it currently is), then its button handlers run on the main actor, which is effectively the UI thread for SwiftUI work. So currently the parsing and interpretation occur on the main thread when the buttons are pushed. That means compile and interpretation are not different right now. They are both synchronous work being done from the UI model on the main actor. The difference is only practical: compile is usually short and interpretation may run longer or ask for interaction. So a short compile feels harmless. A long interpretation can freeze the UI.
+Yes: the ProgramModel is marked @MainActor so its button handlers run on the main actor, which is the UI thread for SwiftUI work. So parsing and interpretation occur on the main thread. They are both synchronous work being done from the UI model on the main actor. Compile is usually short and interpretation may run longer or ask for interaction. So a short compile feels harmless. A long interpretation can freeze the UI.
 
 The current shape is:
 SwiftUI view
@@ -1122,7 +1086,6 @@ Button
   }
 
 But if handleRunButton remains @MainActor and does the interpreter work directly, it can still occupy the main actor. To really free the UI, either:
-
 1. the interpreter must suspend at await points, or
 2. the heavy interpreter work must run off the main actor, while UI updates happen back on the main actor.
 
@@ -1141,12 +1104,10 @@ Program / interpreter = computation world
 Interactive builtin = bridge between them''
 
 Right now the computation world is being called directly from the UI world. That works for short runs. Async introduces a way for the computation world to pause and let the UI world act.
-
-So you suggest that the running be done on a different task. Now I sense another problem. When running interactive builtins, the output window should be up to date with all that has happened in the program so far. I don't undertand how that mechanism will work if the program is being run as another thread.
-
-Yes — that is exactly the next design issue.
-
-The clean model is:
+====================================================================================
+You suggest that the running be done on a different task. I sense another problem. When running interactive builtins, the output window should be up to date with all that has happened in the program so far. I don't undertand how that mechanism will work if the program is being run as another thread.
+================================================================================
+Yes, that is exactly the next design issue. The clean model is:
 
 interpreter task → buffered output → ProgramModel.output.text on MainActor
 
@@ -1911,3 +1872,288 @@ Swift:
     interpreter resumes exactly where it stopped
 
 That is the real magic of async/await.
+
+============================================
+Here is my first attempt to bring together in once place snippets of code that will handle the user interaction. The will not be in the same file. Would you review this?
+
+//  PickerSupport.swift
+//  DeadEndsApp
+//
+//  Created by Thomas Wetmore on 15 May 2026.
+//  Last changed on 16 May 2026.
+
+import SwiftUI
+import DeadEndsLib
+
+/// View for a single line of a person choosing view.
+struct PersonChoiceRow: View {
+    let person: Person
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(person.displayName())
+                .font(.title3)
+
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var subtitle: String {
+        let birth = person.birthEvent?.summary
+        let death = person.deathEvent?.summary
+
+        switch (birth, death) {
+        case let (b?, d?): return "born \(b) — died \(d)   \(person.key)"
+        case let (b?, nil): return "born \(b)   \(person.key)"
+        case let (nil, d?): return "died \(d)   \(person.key)"
+        default: return person.key
+        }
+==============================================================
+
+This is a good “concept map.” A few important fixes/clarifications:
+
+1. You have two handleRunButton versions. Keep the Task.detached version if you want interpreter work off the main actor:
+
+    let result = try await Task.detached {
+        try await program.interpretProgram()
+    }.value
+
+The later version:
+
+let result = try await program.interpretProgram()
+
+ may still run interpreter work on the main actor if called from a @MainActor method.
+
+2. bltinChoosePerson has syntax issues. The two guards need else blocks or if lets.
+
+This:
+
+guard let prompt = try evaluateString(...)
+guard let pattern = try evaluateString(...)
+
+needs else blocks, unless evaluateString returns a non-optional String.
+
+If evaluateString is non-optional:
+    let prompt = try await evaluateString(args[0],
+        errMsg: "chooseperson: 1st arg must be a prompt message")
+    let pattern = try await evaluateString(args[1],
+        errMsg: "chooseperson: 2nd arg must be a name pattern")
+
+If optional:
+    guard let prompt = try await evaluateStringOpt(...) else { return .null }
+    guard let pattern = try await evaluateStringOpt(...) else { return .null }
+
+Also, if evaluateString... becomes async, it needs await.
+
+3. output.flush() needs design
+
+Your current BufferedProgramOutput probably does not have flush(). You’ll need either:
+
+protocol ProgramOutput {
+    func write(_ text: String)
+    func flush() async
+}
+
+or handle flushing through a separate UI output coordinator.
+
+4. ProgramInteraction should live in the library/interpreter side
+
+Probably in DeadEndsLib, near Program, because Program depends on it.
+
+The SwiftUI implementation:
+
+extension ProgramModel: ProgramInteraction
+
+belongs in the app target.
+
+5. You need stored state in ProgramModel
+
+The continuation code assumes these properties exist:
+
+var personChoiceRequest: PersonChoiceRequest?
+var personChoiceContinuation: CheckedContinuation<Person?, Never>?
+
+and:struct PersonChoiceRequest {
+    let prompt: String
+    let candidates: [Person]
+}
+
+6. Only define ProgramInteraction once
+
+Start with the larger version if you know more requests are coming:
+
+protocol ProgramInteraction {
+    func choosePerson(prompt: String, candidates: [Person]) async -> Person?
+    func askString(prompt: String, defaultValue: String?) async -> String?
+    func askInteger(prompt: String, defaultValue: Int?) async -> Int?
+    func askDate(prompt: String, defaultValue: String?) async -> String?
+    func choosePlace(prompt: String, candidates: [String]) async -> String?
+}
+
+You can stub unimplemented ones later.
+
+7. The sheet is the missing UI piece
+
+choosePerson(...) sets personChoiceRequest; ProgramPage needs something like:
+
+.sheet(item: $model.personChoiceRequest) { request in
+    PersonChoiceSheet(
+        request: request,
+        onChoose: { model.finishPersonChoice($0) },
+        onCancel: { model.finishPersonChoice(nil) }
+    )
+}
+
+Overall: the architecture is right. The main pieces are ProgramInteraction, ProgramModel storing a pending request + continuation, ProgramPage showing a sheet, and the detached interpreter awaiting the UI answer.
+
+You say:  Keep the Task.detached version only if you really want interpreter work off the main actor:
+
+I was under the impression that it was important to run the interpreter on another thread in order to keep the UI responsive (though I wonder why the UI needs to be responsive when a program is running, unless, I guess, it it's a long running program and we want to let the user to do something else in the user interface while it is running.
+
+Yes, that’s the reason.
+
+There are two separate goals:
+
+1. Allow interactive builtins.
+For chooseperson, async/await is enough. The interpreter can pause at:
+
+await interaction.choosePerson(...)
+
+and SwiftUI can show the picker.
+
+2. Keep UI responsive during long noninteractive computation.
+For that, the interpreter should not monopolize the main actor. That’s where Task.detached helps.
+
+So the choice is:
+
+try await program.interpretProgram()
+
+Good if programs are short and only need async for user interaction.
+
+try await Task.detached {
+    try await program.interpretProgram()
+}.value
+
+Better if programs may run long and you want the UI responsive while they run.
+
+Given you have already seen infinite loops and output-heavy programs, I’d lean toward detached/background execution eventually.
+
+But for first async experiments, it is reasonable to start simpler without detached, get chooseperson working, then move interpretation off-main once the interaction bridge is understood.
+
+========================================
+So I'm learning more. It is still confusing. I was thinking that the detached task was mandatory to get the interaction to work. You are pointing out this is not true. The interaction can be done one thread using the await/async. This was my conceptual problem. For me async seemed to need mutiple threads, but this is not the case.
+==============================================
+
+Yes that is the key conceptual shift. async/await is fundamentally about suspension, not about multiple threads. You can have: single thread, single task, and async/await perfectly validly.
+
+The async system says: this computation may pause here and continue later; not: this computation runs simultaneously elsewhere. Those are different ideas.
+
+Here is the simplest mental picture.
+
+In the blocking world the entire thread blocks waiting for user input. Nothing else can happen on that thread.
+
+    person = chooseperson();
+    printf("%s\n", person.name);
+
+In the async world: at await, Swift says: pause this computation for now, allow other work to happen, and later resume here. No extra thread is required.
+
+    let person = await choosePerson()
+    print(person.name)
+
+The same thread can go off and process UI events, timers, redraws, etc., and later resume the suspended computation.
+
+Key distinction. Concurrency is multiple independent computations. Parallelism is multiple computations literally running simultaneously
+
+Async/await is structured suspension/resumption. Swift async often uses concurrency infrastructure, but conceptually the important thing is suspension.
+
+Why your chooseperson case works without detached tasks
+
+Imagine:
+
+let person = await interaction.choosePerson(...)
+
+Interpreter reaches this line.
+
+Swift stores the continuation and suspends the interpreter task.
+
+Now the UI event loop keeps running.
+
+User clicks a button.
+
+Continuation resumes.
+
+Interpreter continues.
+
+All this could happen on one thread.
+
+⸻
+
+So why use detached tasks at all?
+
+Not for correctness.
+
+Only for responsiveness during heavy computation.
+
+Example:
+
+long BFS through 100,000 personsIf that runs on the main actor synchronously, the UI may freeze during computation.
+
+Detached/background execution solves that problem.
+
+But your async interaction model itself does not require background execution.
+
+That is the conceptual breakthrough.
+
+---------------------------------------------------
+I'm slowly getting it. I will review this a few more times tonight. Thanks. So what keeps the UI blocked would be that the interpreter is using the main thread and the UI must run on the main thread. So I do think I will have to go to the detached task approach, but I agree, I shoul just get the simpler asynch on the same thread implementation working firswt.
+
+
+Exactly.
+
+The UI blocks when:
+
+MainActor/main thread is busy running interpreter code
+
+because SwiftUI needs that same main actor to redraw, respond to buttons, show sheets, etc.
+
+Your staged plan is right:
+
+1. First: make interpreter async, still conceptually same-thread/main-actor enough to understand await chooseperson.
+2. Then: move actual interpretation into Task.detached once the interaction bridge works.
+3. Then: add output flushing before interactive requests.
+
+That keeps the learning curve manageable instead of changing every moving part at once.
+
+============================
+Good plan. I hope to start it tomorrow. Today was all kinds of non-software errands, so didn't get far. Tomorrow I will be able to get a little more serious.
+
+
+That sounds like exactly the right pace for this transition.
+
+You’ve already done the hardest conceptual part: realizing that:
+
+async/await ≠ “threads”
+
+and that suspension/resumption is the real foundation.
+
+Tomorrow you can probably make real progress by doing only a few focused things:
+
+1. Create the Git branch.
+2. Make interpretProgram() async.
+3. Propagate async upward through a small portion of the call chain.
+4. Do not worry yet about detached tasks.
+5. Stub a tiny fake async builtin if needed:
+
+func testPause() async {
+    try? await Task.sleep(for: .seconds(2))
+}
+
+just to feel the suspension/resume behavior.
+
+Once you see the interpreter pause and resume correctly, the rest of the architecture will likely become much less mysterious.
+
+

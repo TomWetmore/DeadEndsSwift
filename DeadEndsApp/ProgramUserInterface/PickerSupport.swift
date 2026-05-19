@@ -69,20 +69,83 @@ func handleRunButton(database: Database) async {
 /// chooseperson(msg: String, pattern: String) -> Person?
 func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-    guard let prompt = try evaluateString(args[0],
+    let prompt = try evaluateString(args[0],
                                 errMsg:"chooseperson: 1st arg must be a prompt message")
-    guard let pattern = try evaluateString(args[1],
+    let pattern = try evaluateString(args[1],
                                 errMsg: "chooseperson: 2nd arg must be a name pattern")
-
     let candidates = database.persons(withName: pattern)
 
     await output.flush()
 
-    guard let person = await interaction.choosePerson(
-        prompt: prompt,
-        candidates: candidates
-    ) else {
-        return .null
-    }
+    guard let person = await interaction.choosePerson(prompt: prompt, candidates: candidates)
+    else { return .null }
     return .person(person)
+}
+
+/// Part of the Program Model that implementes the SwiftUI "version" of the choosePerson interface.
+/// Notice the use of continuations.
+@MainActor
+extension ProgramModel: ProgramInteraction {
+
+    func choosePerson(prompt: String, candidates: [Person]) async -> Person? {
+        self.personChoiceRequest = PersonChoiceRequest(
+            prompt: prompt,
+            candidates: candidates
+        )
+        return await withCheckedContinuation { continuation in
+            self.personChoiceContinuation = continuation
+        }
+    }
+
+    func finishPersonChoice(_ person: Person?) {
+        personChoiceRequest = nil
+        personChoiceContinuation?.resume(returning: person)
+        personChoiceContinuation = nil
+    }
+}
+
+// On the interpreter side: await interaction.choosePerson(...)
+// On the UI side: show picker; user chooses/cancels; resume continuation with Person?
+
+// On the program page:
+Button("Run") {
+    if let db = appModel.database {
+        Task {
+            await model.handleRunButton(database: db)
+        }
+    }
+}
+
+// Then in ProgramModel:
+
+@MainActor
+func handleRunButton(database: Database) async {
+    guard let parsedProgram else { return }
+
+    diagnostics = []
+    output.clear()
+
+    let buffer = BufferedProgramOutput()
+
+    let program = Program(
+        parsedProgram: parsedProgram,
+        database: database,
+        output: buffer,
+        interaction: self
+    )
+
+    do {
+        let result = try await program.interpretProgram()
+        output.text = displayableOutput(buffer.text)
+        // handle result if needed
+    } catch let error as RuntimeError {
+        output.text = displayableOutput(buffer.text)
+        diagnostics = [Diagnostic(
+            message: error.message,
+            line: error.line > 0 ? error.line : nil
+        )]
+    } catch {
+        output.text = displayableOutput(buffer.text)
+        diagnostics = [Diagnostic(message: String(describing: error), line: nil)]
+    }
 }

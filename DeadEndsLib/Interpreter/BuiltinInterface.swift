@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 14 May 2026.
-//  Last changed on 14 May 2026.
+//  Last changed on 19 May 2026.
 //
 
 import Foundation
@@ -29,6 +29,7 @@ extension Program {
 
 
 /// Evaluate an expression for an optional person; throw error if not a person or null.
+/// TODO: MOVE TO THE RIGHT PLACE.
 extension Program {
     func evaluateStringOpt(_ expr: ParsedExpr, errMsg: String) throws -> String? {
 
@@ -47,6 +48,7 @@ extension Program {
 /// TODO: MOVE TO THE RIGHT PLACE
 extension Program {
 
+    /// Evaluate an expression to a non-optional string.
     func evaluateString(_ expr: ParsedExpr, errMsg: String) throws -> String {
         switch try evaluate(expr) {
         case .string(let string):
