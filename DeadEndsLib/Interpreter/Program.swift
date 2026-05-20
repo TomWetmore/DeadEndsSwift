@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 12 May 2026.
+//  Last changed on 20 May 2026.
 //
 
 import Foundation
@@ -13,6 +13,8 @@ import Foundation
 public protocol ProgramOutput {
 
     func write(_ text: String)
+
+    func flush() async  // Ensure buffered output is visible.
 }
 
 public extension ProgramOutput {
@@ -28,6 +30,8 @@ public final class ConsoleOutput: ProgramOutput {
     public func write(_ text: String) {
         print(text, terminator: "")
     }
+
+    public func flush() async {}  // Nother needed.
 
     public init() {}  // Needed to make it public.
 }
@@ -46,6 +50,7 @@ final public class Program {
     var database: Database  // Database.
     let output: ProgramOutput  // Output sink.
     var callStack: [RuntimeFrame] = []  // Runtime stack.
+    let userInterface: UserInterface
 
     var recordIndex: RecordIndex { database.recordIndex }
 
@@ -70,12 +75,14 @@ final public class Program {
     }
 
     /// Create a runnable program from a parsed program, database, and output sink.
-    public init(parsedProgram: ParsedProgram, database: Database, output: ProgramOutput) {
+    public init(parsedProgram: ParsedProgram, database: Database, output: ProgramOutput,
+                userInterface: UserInterface) {
 
         self.parsedProgram = parsedProgram
         self.database = database
         self.output = output
         self.callStack  = [RuntimeFrame]()
+        self.userInterface = userInterface
 
         var procTable: [String: ParsedProcDefn] = [:]
         var funcTable: [String: ParsedFuncDefn] = [:]
@@ -120,7 +127,7 @@ extension Program {
 
     /// Run the program by calling its main procedure.
     @discardableResult
-    public func interpretProgram() throws -> InterpResult {
+    public func interpretProgram() async throws -> InterpResult {
 
         guard !hasRun else {  // TODO: Rethink the 'has run' idea.
             throw RuntimeError("programs can only be run once", line: 0)
@@ -131,7 +138,7 @@ extension Program {
             throw RuntimeError("main: cannot have params", line: mainProc.line)
         }
         let mainCall = ParsedCallStatement(name: "main", args: [], line: 0)  // Bootstrap.
-        return try interpProcCall(mainCall)
+        return try await interpProcCall(mainCall)
     }
 }
 

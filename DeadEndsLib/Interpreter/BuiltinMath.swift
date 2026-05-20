@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed 12 May 2026.
+//  Last changed 20 May 2026.
 //
 //  This file has the builtin functions for add, sub, mul, div, mod, neg,
 //  eq, ne, lt, le, gt, ge, and, or, not, incr, decr.
@@ -15,9 +15,9 @@ import Foundation
 extension Program {
 
     /// Addition function.
-    func bltinAdd(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let arg1 = try self.evaluate(args[0])
-        let arg2 = try self.evaluate(args[1])
+    func bltinAdd(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let arg1 = try await self.evaluate(args[0])
+        let arg2 = try await self.evaluate(args[1])
         let result = ProgramValue.addPValues(arg1, arg2)
         if result == .null {
             throw RuntimeError("add requires two integers, two floats, or two strings",
@@ -27,9 +27,9 @@ extension Program {
     }
 
     /// Subtraction function.
-    func bltinSub(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let arg1 = try self.evaluate(args[0])
-        let arg2 = try self.evaluate(args[1])
+    func bltinSub(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let arg1 = try await self.evaluate(args[0])
+        let arg2 = try await self.evaluate(args[1])
         let result = ProgramValue.subPValues(arg1, arg2)
         guard result != .null else {
             throw RuntimeError("sub requires two integers or two floats",
@@ -39,9 +39,9 @@ extension Program {
     }
 
     /// Multiplication function.
-    func bltinMul(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let arg1 = try self.evaluate(args[0])
-        let arg2 = try self.evaluate(args[1])
+    func bltinMul(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let arg1 = try await self.evaluate(args[0])
+        let arg2 = try await self.evaluate(args[1])
         let result = ProgramValue.mulPValues(arg1, arg2)
         guard result != .null else {
             throw RuntimeError("mul requires two integers or two floats",
@@ -51,13 +51,13 @@ extension Program {
     }
 
     /// Division function.
-    func bltinDiv(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let arg2 = try self.evaluate(args[1])
+    func bltinDiv(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let arg2 = try await self.evaluate(args[1])
         if arg2 == .integer(0) || arg2 == .double(0.0) { // Check for zero divisor.
             throw RuntimeError("division by zero is not allowed",
                                             line: args[1].line)
         }
-        let arg1 = try self.evaluate(args[0])
+        let arg1 = try await self.evaluate(args[0])
         let result = ProgramValue.divPValues(arg1, arg2)
         guard result != .null else {
             throw RuntimeError("div requires two integers or two floats",
@@ -67,9 +67,9 @@ extension Program {
     }
 
     /// Modulus function.
-    func bltinMod(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let arg1 = try self.evaluate(args[0])
-        let arg2 = try self.evaluate(args[1])
+    func bltinMod(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let arg1 = try await self.evaluate(args[0])
+        let arg2 = try await self.evaluate(args[1])
         guard case let .integer(left) = arg1, case let .integer(right) = arg2 else { // Only integers.
             throw RuntimeError("mod requires two integer args",
                                             line: args[0].line)
@@ -81,9 +81,9 @@ extension Program {
     }
 
     /// Negation function.
-    func bltinNeg(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinNeg(_ args: [ParsedExpr]) async throws -> ProgramValue {
         // Evaluate the argument and check that it's numeric.
-        let arg = try self.evaluate(args[0])
+        let arg = try await self.evaluate(args[0])
         if !ProgramValue.isNumeric(arg) {
             throw RuntimeError("neg requires a numeric arg", line: args[0].line)
         }
@@ -99,44 +99,44 @@ extension Program {
 extension Program {
 
     /// Equal predicate.
-    func bltinEq(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let a = try evaluate(args[0])
-        let b = try evaluate(args[1])
+    func bltinEq(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let a = try await evaluate(args[0])
+        let b = try await evaluate(args[1])
         return .boolean(a == b)
     }
 
     /// Not equal predicate.
-    func bltinNe(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let a = try evaluate(args[0])
-        let b = try evaluate(args[1])
+    func bltinNe(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let a = try await evaluate(args[0])
+        let b = try await evaluate(args[1])
         return .boolean(a != b)
     }
 
     /// Less than predicate.
-    func bltinLt(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let a = try evaluate(args[0])
-        let b = try evaluate(args[1])
+    func bltinLt(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let a = try await evaluate(args[0])
+        let b = try await evaluate(args[1])
         return ProgramValue.compare(a, b, using: <)
     }
 
     /// Less than or equal predicate.
-    func bltinLe(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let a = try evaluate(args[0])
-        let b = try evaluate(args[1])
+    func bltinLe(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let a = try await evaluate(args[0])
+        let b = try await evaluate(args[1])
         return ProgramValue.compare(a, b, using: <=)
     }
 
     /// Greater than predicate.
-    func bltinGt(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let a = try evaluate(args[0])
-        let b = try evaluate(args[1])
+    func bltinGt(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let a = try await evaluate(args[0])
+        let b = try await evaluate(args[1])
         return ProgramValue.compare(a, b, using: >)
     }
 
     /// Greator than or equal predicate.
-    func bltinGe(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let a = try evaluate(args[0])
-        let b = try evaluate(args[1])
+    func bltinGe(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let a = try await evaluate(args[0])
+        let b = try await evaluate(args[1])
         return ProgramValue.compare(a, b, using: >=)
     }
 }
@@ -190,9 +190,9 @@ extension Program {
 extension Program {
 
     /// Logical and operation.
-    func bltinAnd(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinAnd(_ args: [ParsedExpr]) async throws -> ProgramValue {
         for arg in args {
-            if !(try evaluate(arg).toBool) {
+            if await !(try evaluate(arg).toBool) {
                 return .falseProgramValue
             }
         }
@@ -200,9 +200,9 @@ extension Program {
     }
 
     /// Logical or operation.
-    func bltinOr(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinOr(_ args: [ParsedExpr]) async throws -> ProgramValue {
         for arg in args {
-            if try evaluate(arg).toBool {
+            if try await evaluate(arg).toBool {
                 return .trueProgramValue
             }
         }
@@ -210,15 +210,15 @@ extension Program {
     }
 
     /// Logical not operation.
-    func bltinNot(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return try evaluate(args[0]).toBool ? .falseProgramValue : .trueProgramValue
+    func bltinNot(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        return try await evaluate(args[0]).toBool ? .falseProgramValue : .trueProgramValue
     }
 }
 
 extension Program {
-    func bltinOrd(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinOrd(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let value = try evaluate(args[0])
+        let value = try await evaluate(args[0])
 
         guard case let .integer(n) = value else {
             return .null

@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 9 May 2026.
+//  Last changed on 20 May 2026.
 //
 
 import Foundation
@@ -23,6 +23,8 @@ final class BufferedProgramOutput: ProgramOutput {
         text += s
     }
 
+    func flush() async {}  // Nothing to do.
+
     func clear() {
         text = ""
     }
@@ -41,7 +43,9 @@ final class UIProgramOutput {
 /// Program page model.
 @MainActor
 @Observable
-final class ProgramModel {
+final class ProgramModel: UserInterface {
+
+
 
     var programName: String
     var source: String = ""  // Program source.
@@ -97,7 +101,7 @@ final class ProgramModel {
 
     /// Handles a run button press by interpreting the parsedProgram struct.
     /// Creates a Program object and runs it.
-    func handleRunButton(database: Database) {
+    func handleRunButton(database: Database) async {
         
         guard let parsedProgram else { return }  // Need a program to run.
 
@@ -106,9 +110,9 @@ final class ProgramModel {
 
         let buffer = BufferedProgramOutput()  // Output goes to string buffer.
         let program = Program(parsedProgram: parsedProgram, database: database,
-            output: buffer)
+                              output: buffer, userInterface: self)
         do {
-            try program.interpretProgram()  // Interpret the program.
+            try await program.interpretProgram()  // Interpret the program.
             print("after interpret, output size =", buffer.text.count)  // DEBUG
             output.text = displayableOutput(buffer.text)  // Move buffered output to view.
         } catch let error as RuntimeError {
@@ -172,6 +176,19 @@ final class ProgramModel {
         } catch {
             diagnostics = [Diagnostic(message: "Could not save file: \(error.localizedDescription)", line: nil)]
         }
+    }
+}
+
+extension ProgramModel {
+
+    func getPerson(prompt: String?) async -> Person? { return nil }
+
+    func choosePerson(from set: DeadEndsLib.PersonSet<DeadEndsLib.ProgramValue>) async -> DeadEndsLib.Person? {
+        return nil
+    }
+
+    func menuChoose(from list: DeadEndsLib.List, prompt: String?) async -> Int? {
+        return nil
     }
 }
 

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 5/1/26.
-//  Last changed on 12 May 2026.
+//  Last changed on 20 May 2026.
 //
 
 import Foundation
@@ -11,21 +11,21 @@ import Foundation
 extension Program {
 
     /// Interpret a foreach statement.
-    func interpForEach(_ stmt: ParsedForEachStmt) throws -> InterpResult {
+    func interpForEach(_ stmt: ParsedForEachStmt) async throws -> InterpResult {
 
         let line = stmt.listExpr.line
 
-        switch try evaluate(stmt.listExpr) {
+        switch try await evaluate(stmt.listExpr) {
         case .list(let list):
             for (i, value) in list.enumerated() {
-                let result = try interpBody(stmt, element: value, payload: .null, index: i + 1)
+                let result = try await interpBody(stmt, element: value, payload: .null, index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
                 }
             }
         case .personset(let set):
             for (i, element) in set.enumerated() {
-                let result = try interpBody(stmt, element: .person(element.person),
+                let result = try await interpBody(stmt, element: .person(element.person),
                                         payload: element.payload ?? .null, index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
@@ -33,7 +33,7 @@ extension Program {
             }
         case .allPersons:
             for (i, element) in database.persons.enumerated() {
-                let result = try interpBody(stmt, element: .person(Person(element)),
+                let result = try await interpBody(stmt, element: .person(Person(element)),
                                         payload: .null, index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
@@ -41,7 +41,7 @@ extension Program {
             }
         case .allFamilies:
             for (i, element) in database.families.enumerated() {
-                let result = try interpBody(stmt, element: .family(Family(element)),
+                let result = try await interpBody(stmt, element: .family(Family(element)),
                                             payload: .null, index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
@@ -50,7 +50,7 @@ extension Program {
         case .traverse(let node):
             let nodes = node.preorderNodes()
             for (i, node) in nodes.enumerated() {
-                let result = try interpBody(stmt, element: .gnode(node),
+                let result = try await interpBody(stmt, element: .gnode(node),
                                         payload: .null, index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
@@ -66,7 +66,7 @@ extension Program {
 
     /// Interpret the body of an iteration.
     private func interpBody(_ stmt: ParsedForEachStmt, element: ProgramValue,
-                            payload: ProgramValue, index: Int) throws -> InterpResult {
+                            payload: ProgramValue, index: Int) async throws -> InterpResult {
 
         assignToSymbol(stmt.elementVar, value: element)
         if let valueVar = stmt.valueVar {
@@ -74,7 +74,7 @@ extension Program {
         }
         assignToSymbol(stmt.indexVar, value: .integer(index))
 
-        let result = try interpStmtList(stmt.body)
+        let result = try await interpStmtList(stmt.body)
         return result
     }
 

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 12 May 2026.
+//  Last changed on 20 May 2026.
 //
 
 import Foundation
@@ -22,9 +22,9 @@ public enum InterpResult {
 extension Program {
 
     /// Interpret a list of statements.
-    func interpStmtList(_ stmts: [ParsedStatement]) throws -> InterpResult {
+    func interpStmtList(_ stmts: [ParsedStatement]) async throws -> InterpResult {
         for stmt in stmts {
-            let result = try interpStatement(stmt)
+            let result = try await interpStatement(stmt)
             switch result {
             case .okay:
                 continue
@@ -38,28 +38,28 @@ extension Program {
     }
 
     /// Interpret an enumerated statement.
-    func interpStatement(_ stmt: ParsedStatement) throws -> InterpResult {
+    func interpStatement(_ stmt: ParsedStatement) async throws -> InterpResult {
         try tick(line: stmt.line)  // Lazy man infinite loop protection.
 
         switch stmt.kind {
         case .callStatement(let call):
-            return try interpProcCall(call)
+            return try await interpProcCall(call)
         case .whileStatement(let whileStmt):
-            return try interpWhile(whileStmt)
+            return try await interpWhile(whileStmt)
         case .ifStatement(let ifStmt):
-            return try interpIf(ifStmt)
+            return try await interpIf(ifStmt)
         case .returnStatement(let ret):
-            return try interpReturn(ret)
+            return try await interpReturn(ret)
         case .breakStatement:
             return .breaking
         case .continueStatement:
             return .continuing
         case .forEachStatement(let stmt):
-            return try interpForEach(stmt)
+            return try await interpForEach(stmt)
 //        case .forIndisetStatement(let stmt):
 //            return try interpForIndiset(stmt)
         case .expressionStatement(let expr):
-            let pvalue: ProgramValue = try evaluate(expr)
+            let pvalue: ProgramValue = try await evaluate(expr)
             if case let .string(string) = pvalue {
                 self.output.write(string)
             }
@@ -72,10 +72,10 @@ extension Program {
 extension Program {
 
     /// Interpret a while statement.
-    func interpWhile(_ whileStmt: ParsedWhileStmt) throws -> InterpResult {
+    func interpWhile(_ whileStmt: ParsedWhileStmt) async throws -> InterpResult {
         while true {
-            if !(try evalCondition(whileStmt.condition)) { break }
-            let result = try interpStmtList(whileStmt.body)
+            if await !(try evalCondition(whileStmt.condition)) { break }
+            let result = try await interpStmtList(whileStmt.body)
             switch result {
             case .breaking:
                 return .okay
@@ -91,17 +91,17 @@ extension Program {
     }
 
     /// Interpret an if statement.
-    func interpIf(_ ifStmt: ParsedIfStmt) throws -> InterpResult {
-        if try evalCondition(ifStmt.condition) {
-            return try interpStmtList(ifStmt.thenBody)
+    func interpIf(_ ifStmt: ParsedIfStmt) async throws -> InterpResult {
+        if try await evalCondition(ifStmt.condition) {
+            return try await interpStmtList(ifStmt.thenBody)
         }
         for elseIf in ifStmt.elseIfs {
-            if try evalCondition(elseIf.condition) {
-                return try interpStmtList(elseIf.body)
+            if try await evalCondition(elseIf.condition) {
+                return try await interpStmtList(elseIf.body)
             }
         }
         if let elseBody = ifStmt.elseBody {
-            return try interpStmtList(elseBody)
+            return try await interpStmtList(elseBody)
         }
         return .okay
     }
@@ -111,9 +111,9 @@ extension Program {
 extension Program {
 
     /// Interpret a return statement.
-    func interpReturn(_ stmt: ParsedReturnStmt) throws -> InterpResult {
+    func interpReturn(_ stmt: ParsedReturnStmt) async throws -> InterpResult {
         if stmt.values.isEmpty { return .returning(nil) }
-        return try .returning(evaluate(stmt.values[0]))
+        return try await .returning(evaluate(stmt.values[0]))
     }
 }
 
@@ -121,7 +121,7 @@ extension Program {
 extension Program {
 
     /// Interpret a procedure call statement.
-    func interpProcCall(_ procCall: ParsedCallStatement) throws -> InterpResult {
+    func interpProcCall(_ procCall: ParsedCallStatement) async throws -> InterpResult {
 
         let name = procCall.name
         let procDef = try requireProcDefn(name, line: procCall.line)
@@ -139,7 +139,7 @@ extension Program {
 
         // Evaluate arguments in the caller's context, then bind into callee frame.
         for (param, arg) in zip(procDef.params, procCall.args) {
-            table[param] = try evaluate(arg)
+            table[param] = try await evaluate(arg)
         }
 
         let frame = RuntimeFrame(
@@ -154,7 +154,7 @@ extension Program {
         pushCallFrame(frame)
         defer { popCallFrame() }
 
-        return try interpStmtList(procDef.body)
+        return try await interpStmtList(procDef.body)
     }
 }
 

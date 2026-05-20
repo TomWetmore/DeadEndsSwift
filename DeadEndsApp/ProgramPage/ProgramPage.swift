@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 23 April 2026.
+//  Last changed on 20 May 2026.
 //
 //  This is the programming page of the app. It allows users to
 //  compose, edit, compile and run DeadEnds programs.
@@ -31,9 +31,11 @@ struct ProgramPage: View {
                 }
                 .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 
-                Button("Run") {  // Button that runs the program.
+                Button("Run") {
                     if let db = appModel.database {
-                        model.handleRunButton(database: db)
+                        Task {
+                            await model.handleRunButton(database: db)
+                        }
                     }
                 }
                 .disabled(model.parsedProgram == nil || appModel.database == nil)

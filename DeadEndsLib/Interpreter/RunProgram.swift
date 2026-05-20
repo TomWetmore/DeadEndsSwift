@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2026.
-//  Last changed on 25 April 2026.
+//  Last changed on 20 May 2026.
 //
 /// runProgram runs a DeadEnds program and sends its output to standard
 /// output. The program is passed in as a string. The function lexes and
@@ -39,7 +39,7 @@ public enum FrontEndError: Error, CustomStringConvertible {
 
 /// Run a program encoded in a string.
 public func runProgram(source: String, database: Database,
-                       output: ProgramOutput) throws -> InterpResult {
+                       output: ProgramOutput) async throws -> InterpResult {
 
     var lexer = Lexer(source: source)  // Create lexer and get the tokens.
     let tokens = lexer.tokenize()
@@ -57,6 +57,16 @@ public func runProgram(source: String, database: Database,
     }
 
     let program = Program(parsedProgram: parsedProgram, database: database,
-                          output: ConsoleOutput())  // Build runtime program object.
-    return try program.interpretProgram()  // Interpret the program.
+                          output: ConsoleOutput(), userInterface: Patch())
+    return try await program.interpretProgram()
+}
+
+public struct Patch: UserInterface {
+
+    public func getPerson(prompt: String?) async -> Person? { return nil }
+
+    public func choosePerson(from set: PersonSet<ProgramValue>) async -> Person? { return nil }
+
+    public func menuChoose(from list: List, prompt: String?) async -> Int? { return nil }
+
 }

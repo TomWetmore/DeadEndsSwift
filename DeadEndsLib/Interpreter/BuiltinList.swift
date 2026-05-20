@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 13 May 2026.
+//  Last changed on 20 May 2026.
 //
 
 import Foundation
@@ -17,9 +17,9 @@ extension Program {
     }
 
     /// Return whether a list, table, person set or string is empty.
-    func bltinEmpty(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinEmpty(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .list(let list):
             return list.count == 0 ? .trueProgramValue : .falseProgramValue
         case .table(let table):
@@ -66,9 +66,9 @@ extension Program {
     }
 
     /// Return the length of a list, table, person set or string.
-    func bltinLength(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinLength(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .list(let list):
             return .integer(list.count)
         case .table(let table):
@@ -85,28 +85,28 @@ extension Program {
 
     /// Append a value to a list. This method requires the first argument to be a
     /// variable with a list value in the symbol table.
-    func oldbltinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func oldbltinAppend(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let (name, list) =
             try requireListVariable(args[0], errMsg: "append: 1st arg must be a list var")
-        list.append(try evaluate(args[1]))
+        await list.append(try evaluate(args[1]))
         assignToSymbol(name, value: .list(list))
         return .null
     }
 
-    func bltinAppend(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinAppend(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let list = try evaluateListOpt(args[0], errMsg: "append: 1st arg must be a list") else {
+        guard let list = try await evaluateListOpt(args[0], errMsg: "append: 1st arg must be a list") else {
             return .null
         }
-        list.append(try evaluate(args[1]))
+        await list.append(try evaluate(args[1]))
         return .null
     }
 
     /// Prepend a value to a list.
-    func bltinPrepend(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinPrepend(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let (name, list) =
             try requireListVariable(args[0], errMsg: "prepend: 1st arg must be a list var")
-        list.prepend(try evaluate(args[1]))
+        await list.prepend(try evaluate(args[1]))
         assignToSymbol(name, value: .list(list))
         return .null
     }
@@ -121,15 +121,15 @@ extension Program {
     }
 
     /// Evaluate an expression and be sure it is a list.
-    func evaluateList(_ expr: ParsedExpr, errMsg: String) throws -> List {
-        guard case let .list(list) = try evaluate(expr) else {
+    func evaluateList(_ expr: ParsedExpr, errMsg: String) async throws -> List {
+        guard case let .list(list) = try await evaluate(expr) else {
             throw RuntimeError(errMsg, line: expr.line)
         }
         return list
     }
 
-    func evaluateListOpt(_ expr: ParsedExpr, errMsg: String) throws -> List? {
-        guard case let .list(list) = try evaluate(expr) else {
+    func evaluateListOpt(_ expr: ParsedExpr, errMsg: String) async throws -> List? {
+        guard case let .list(list) = try await evaluate(expr) else {
             throw RuntimeError(errMsg, line: expr.line)
         }
         return list
@@ -140,12 +140,12 @@ extension Program {
 extension Program {
 
     /// Return the children of a person or family as a List.
-    func bltinChildren(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinChildren(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
         var children = [Person]()
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .person(let person):
             children = person.children(in: recordIndex)
         case .family(let family):
@@ -159,12 +159,12 @@ extension Program {
     }
 
     /// Return the list of husbands of a person or family.
-    func bltinHusbands(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinHusbands(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
         var husbands = [Person]()
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .person(let person):
             husbands = person.husbands(in: recordIndex)
         case .family(let family):
@@ -178,11 +178,11 @@ extension Program {
     }
 
     /// Return the list of wives of a person or family.
-    func bltinWives(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinWives(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let line = args[0].line
         var wives = [Person]()
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .person(let person):
             wives = person.wives(in: recordIndex)
         case .family(let family):
@@ -196,12 +196,12 @@ extension Program {
     }
 
     /// Return the list of siblings of a person.
-    func bltinSiblings(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinSiblings(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
         var siblings = [Person]()
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .person(let person):
             siblings = person.siblings(in: recordIndex)
         case .null:
@@ -213,12 +213,12 @@ extension Program {
     }
 
     /// Return the list of spouses of a person or family.
-    func bltinSpouses(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinSpouses(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
         var spouses = [Person]()
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .person(let person):
             spouses = person.spouses(in: recordIndex)
         case .family(let family):
@@ -233,12 +233,12 @@ extension Program {
     }
 
     /// Return the list of parents of a person or family (the spouses).
-    func bltinParents(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinParents(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
         var parents = [Person]()
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .person(let person):
             parents = person.parents(in: recordIndex)
         case .family(let family):
@@ -253,11 +253,11 @@ extension Program {
 
     /// Return the list of families a person is in as a spouse.
     /// families(person) -> .list(Family)
-    func builtinFamilyList(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func builtinFamilyList(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let line = args[0].line
         var families = [Family]()
 
-        switch try evaluate(args[0]) {
+        switch try await evaluate(args[0]) {
         case .person(let person):
             families = person.spouseFamilies(in: recordIndex)
         case .null:
@@ -271,8 +271,8 @@ extension Program {
 
     /// TO: FIND  BETTER PLACE
     /// Return...
-    func bltinNodes(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let value = try evaluate(args[0])
+    func bltinNodes(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let value = try await evaluate(args[0])
         guard case .gnode(let gedcomNode) = value else {
             throw RuntimeError("nodes: arg must be a gnode", line: args[0].line)
         }
@@ -282,12 +282,12 @@ extension Program {
     /// bltinSubscript returns the ith (relative one) element of a sequence.
     /// subscript(sequence, i) -> value
     /// TODO: Calling the list a sequence, anticipating making this a generic.
-    func bltinSubscript(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinSubscript(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let sequence = try evaluateListOpt(args[0], errMsg: "subscript: 1st arg must be a sequence") else {
+        guard let sequence = try await evaluateListOpt(args[0], errMsg: "subscript: 1st arg must be a sequence") else {
             return .null
         }
-        let index = try evaluateInteger(args[1], errMsg: "subscript: 2nd arg must be an integer")
+        let index = try await evaluateInteger(args[1], errMsg: "subscript: 2nd arg must be an integer")
         let internalIndex = index - 1
         guard internalIndex >= 0 && internalIndex < sequence.count else {
             throw RuntimeError("subscript: index \(index) is out of range", line: args[1].line)

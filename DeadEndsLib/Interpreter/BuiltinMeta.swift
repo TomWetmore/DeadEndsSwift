@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 April 2026.
-//  Last changed on 9 May 2026.
+//  Last changed on 20 May 2026.
 //
 //  The built-ins in this file are used to inspect running
 //  programs. They are used to help users debug their programs
@@ -26,8 +26,8 @@ extension Program {
     }
 
     /// Builtin function that shows the type and value of an expression.
-    func bltinValueOf(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let value = try evaluate(args[0])
+    func bltinValueOf(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let value = try await evaluate(args[0])
         return .string("\(value.typeName): \(value.displayValue)")
     }
 }

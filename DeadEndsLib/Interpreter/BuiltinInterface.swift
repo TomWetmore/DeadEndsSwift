@@ -3,37 +3,51 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 14 May 2026.
-//  Last changed on 19 May 2026.
+//  Last changed on 20 May 2026.
 //
 
 import Foundation
 
 extension Program {
 
-    /// 
-    func bltinChoosePerson(_ args: [ParsedExpr]) throws -> ProgramValue {
-
-        // 1. Evaluate the argument to get a string.
-        // 2. Treat that string as name pattern and get all the persons who match.
-        // 3. First for testing just return the list and let the calling program show it.
-        // 4. Later, interaction with choose one of the persons and a .person(person) will be returned.
-
-        guard let pattern = try evaluateStringOpt(args[0],
-                                    errMsg: "chooseperson: arg must be a name pattern") else {
-            return .null
+    /// Get the user to identify a single person.
+    /// getperson(message: string) -> person?
+    func bltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        // 1. There is one string argument: the prompt message.
+        let prompt = try await evaluateString(args[0],
+                            errMsg: "getperson: 1st arg must be a prompt message")
+        // 2. Call the userInterface function: getPerson.
+        let person = await userInterface.getPerson(prompt: prompt)
+        // 3. Return either a .person or .null program value.
+        if let person {
+            return .person(person)
         }
-        return .list(List(database.persons(withName: pattern).map { ProgramValue.person($0) }))
+        return .null
     }
+
+    /// chooseperson(msg: String, pattern: String) -> Person?
+//    func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//
+//        let prompt = try evaluateString(args[0],
+//                                    errMsg:"chooseperson: 1st arg must be a prompt message")
+//        let pattern = try evaluateString(args[1],
+//                                    errMsg: "chooseperson: 2nd arg must be a name pattern")
+//        let candidates = database.persons(withName: pattern)
+//
+//        await output.flush()
+//
+//        guard let person = await userInterface.choosePerson(prompt: prompt, candidates: candidates)
+//        else { return .null }
+//        return .person(person)
+//    }
 }
-
-
 
 /// Evaluate an expression for an optional person; throw error if not a person or null.
 /// TODO: MOVE TO THE RIGHT PLACE.
 extension Program {
-    func evaluateStringOpt(_ expr: ParsedExpr, errMsg: String) throws -> String? {
+    func evaluateStringOpt(_ expr: ParsedExpr, errMsg: String) async throws -> String? {
 
-        switch try evaluate(expr) {
+        switch try await evaluate(expr) {
         case .string(let string):
             return string
         case .null:
@@ -49,8 +63,8 @@ extension Program {
 extension Program {
 
     /// Evaluate an expression to a non-optional string.
-    func evaluateString(_ expr: ParsedExpr, errMsg: String) throws -> String {
-        switch try evaluate(expr) {
+    func evaluateString(_ expr: ParsedExpr, errMsg: String) async throws -> String {
+        switch try await evaluate(expr) {
         case .string(let string):
             return string
         default: throw RuntimeError(errMsg, line: expr.line)
