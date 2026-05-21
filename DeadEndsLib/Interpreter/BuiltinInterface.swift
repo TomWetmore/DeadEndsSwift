@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 14 May 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 21 May 2026.
 //
 
 import Foundation
@@ -13,12 +13,9 @@ extension Program {
     /// Get the user to identify a single person.
     /// getperson(message: string) -> person?
     func bltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        // 1. There is one string argument: the prompt message.
         let prompt = try await evaluateString(args[0],
-                            errMsg: "getperson: 1st arg must be a prompt message")
-        // 2. Call the userInterface function: getPerson.
+                            errMsg: "getperson: arg must be a prompt message")
         let person = await userInterface.getPerson(prompt: prompt)
-        // 3. Return either a .person or .null program value.
         if let person {
             return .person(person)
         }

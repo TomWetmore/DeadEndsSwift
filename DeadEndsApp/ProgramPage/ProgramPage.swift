@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 21 May 2026.
 //
 //  This is the programming page of the app. It allows users to
 //  compose, edit, compile and run DeadEnds programs.
@@ -24,14 +24,13 @@ struct ProgramPage: View {
                 .padding(8)
             
             Divider()
-            
             HStack {  // Button bar.
-                Button("Compile") {  // Button that compiles the program.
+                Button("Compile") {  // Compile program button.
                     model.handleCompileButton()
                 }
                 .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 
-                Button("Run") {
+                Button("Run") {  // Run program button.
                     if let db = appModel.database {
                         Task {
                             await model.handleRunButton(database: db)
@@ -40,16 +39,14 @@ struct ProgramPage: View {
                 }
                 .disabled(model.parsedProgram == nil || appModel.database == nil)
 
-                Button("Open") {
+                Button("Open") {  // Open program file button.
                     model.openProgramFile()
                 }
-
-                Button("Save") {
+                Button("Save") {  // Save program file button.
                     model.saveProgramFile()
                 }
                 .disabled(model.source.isEmpty)
-
-                Button("Save As") {
+                Button("Save As") {  // Save program for first time button.
                     model.saveProgramFileAs()
                 }
                 .disabled(model.source.isEmpty)
@@ -60,7 +57,6 @@ struct ProgramPage: View {
             .padding(.vertical, 8)
             
             Divider()
-            
             ScrollView {  // View that shows the program output.
                 Text(model.output.text)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -71,11 +67,24 @@ struct ProgramPage: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
             Divider()
-            
             DiagnosticsPane(diagnostics: model.diagnostics)  // Pane that shows errors.
                 .frame(minHeight: 120, idealHeight: 160)
                 .padding(8)
         }
         .navigationTitle(model.programName)
+        .sheet(item: $model.personRequest) { request in
+            if let database = appModel.database {
+                GetPersonSheet(
+                    request: request,
+                    database: database,
+                    onChoose: { person in
+                        model.finishGetPerson(person)
+                    },
+                    onCancel: {
+                        model.finishGetPerson(nil)
+                    }
+                )
+            }
+        }
     }
 }

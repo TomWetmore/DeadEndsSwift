@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 21 May 2026.
 //
 
 import Foundation
@@ -15,7 +15,7 @@ extension Program {
         
         let min: Int
         let max: Int
-        let function: ([ParsedExpr]) async throws -> ProgramValue
+        let function: @MainActor ([ParsedExpr]) async throws -> ProgramValue
     }
 
     /// Build the array of built-in functions.
@@ -140,7 +140,7 @@ extension Program {
             "valueof":   Builtin(min: 1, max: 1) { try await self.bltinValueOf($0)},
 
             // User interface.
-            "getPerson": Builtin(min: 1, max: 1) { try await self.bltinGetPerson($0)},
+            "getperson": Builtin(min: 1, max: 1) { try await self.bltinGetPerson($0)},
             //"chooseperson": Builtin(min: 1, max: 1) { try self.bltinChoosePerson($0)},
         ]
     }

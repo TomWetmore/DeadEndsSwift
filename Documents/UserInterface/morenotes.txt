@@ -1,0 +1,124 @@
+It is time to implement the getPerson user interface method for the interpreter for the SwiftUI application. Based on what I have learned I believe that a continuation approach is needed.
+========================================================
+This is the point where the async conversion starts paying off: getPerson becomes the suspension point, and the SwiftUI view resumes it after selection.
+
+You want ProgramModel.getPerson to:
+1. store a request object,
+2. show a sheet,
+3. suspend with a continuation,
+4. resume when the user chooses/cancels.
+
+A possible request object.
+
+struct PersonRequest: Identifiable {
+    let id = UUID()
+    let prompt: String
+}
+
+In ProgramModel:
+
+@MainActor
+@Observable
+final class ProgramModel {
+    var personRequest: PersonRequest?
+    var personContinuation: CheckedContinuation<Person?, Never>?
+
+    // existing properties...
+}
+
+Then:
+
+@MainActor
+extension ProgramModel: UserInterface {
+
+    func getPerson(prompt: String?) async -> Person? {
+        personRequest = PersonRequest(
+            prompt: prompt ?? "Enter a person"
+        )
+
+        return await withCheckedContinuation { continuation in
+            personContinuation = continuation
+        }
+    }
+
+    func finishGetPerson(_ person: Person?) {
+        personRequest = nil
+        personContinuation?.resume(returning: person)
+        personContinuation = nil
+    }
+}
+
+Then in ProgramPage:
+
+.sheet(item: $model.personRequest) { request in
+    GetPersonSheet(
+        prompt: request.prompt,
+        database: appModel.database,
+        onChoose: { person in
+            model.finishGetPerson(person)
+        },
+        onCancel: {
+            model.finishGetPerson(nil)
+        }
+    )
+}
+
+The sheet can contain:
+
+struct GetPersonSheet: View {
+    let prompt: String
+    let database: Database?
+    let onChoose: (Person) -> Void
+    let onCancel: () -> Void
+
+    @State private var pattern = ""
+    @State private var results: [Person] = []
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(prompt).font(.headline)
+
+            HStack {
+                TextField("Name pattern", text: $pattern)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit(search)
+
+                Button("Search") {
+                    search()
+                }
+            }
+
+            List(results, id: \.key) { person in
+                Button {
+                    onChoose(person)
+                } label: {
+                    PersonChoiceRow(person: person)
+                }
+                .buttonStyle(.plain)
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel") {
+                    onCancel()
+                }
+            }
+        }
+        .padding()
+        .frame(minWidth: 500, minHeight: 400)
+    }
+
+    private func search() {
+        guard let database else { return }
+        results = database.persons(withName: pattern)
+    }
+}
+
+The interpreter-side builtin then does:
+
+let person = await userInterface.getPerson(prompt: prompt)
+return person.map { .person($0) } ?? .null
+
+That is the whole bridge. The continuation is the paused interpreter waiting for finishGetPerson to supply the selected Person?.
+
+

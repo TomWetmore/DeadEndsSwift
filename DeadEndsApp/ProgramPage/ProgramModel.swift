@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 21 May 2026.
 //
 
 import Foundation
@@ -40,12 +40,17 @@ final class UIProgramOutput {
     }
 }
 
+/// Current approach to user interface requests. This only handles the
+/// getperson() request. A more general approach will be added later.
+struct PersonRequest: Identifiable {
+    let id = UUID()
+    let prompt: String
+}
+
 /// Program page model.
 @MainActor
 @Observable
-final class ProgramModel: UserInterface {
-
-
+final class ProgramModel {
 
     var programName: String
     var source: String = ""  // Program source.
@@ -57,14 +62,18 @@ final class ProgramModel: UserInterface {
     var fileURL: URL? = nil
     var isDirty: Bool = false
 
+    /// Properties that handle the getperson interface.
+    var personRequest: PersonRequest?
+    var personContinuation: CheckedContinuation<Person?, Never>?
+
     /// Create a program model with an unnamed empty source text.
     init(programName: String = "Untitled", source: String = "") {
         self.source = source
         self.programName = programName
     }
 
-    /// Handle the compile button. This is the model operation that compiles
-    /// a DeadEnds program. It wil either succeed or display diagnostics.
+    /// Handle the compile button. The action tries to compile a program.
+    /// It will either succeed or display a diagnostic message.
     func handleCompileButton() {
 
         diagnostics = []
@@ -99,12 +108,11 @@ final class ProgramModel: UserInterface {
         }
     }
 
-    /// Handles a run button press by interpreting the parsedProgram struct.
-    /// Creates a Program object and runs it.
+    /// Handles the run button. The action creates a program object from the
+    /// current parsed program and tries to interpret it.
     func handleRunButton(database: Database) async {
         
         guard let parsedProgram else { return }  // Need a program to run.
-
         diagnostics = []
         output.clear()
 
@@ -181,7 +189,7 @@ final class ProgramModel: UserInterface {
 
 extension ProgramModel {
 
-    func getPerson(prompt: String?) async -> Person? { return nil }
+    //func getPerson(prompt: String?) async -> Person? { return nil }
 
     func choosePerson(from set: DeadEndsLib.PersonSet<DeadEndsLib.ProgramValue>) async -> DeadEndsLib.Person? {
         return nil
@@ -233,3 +241,49 @@ func normalizedSource(_ text: String) -> String {
         .replacingOccurrences(of: "‘", with: "'")
         .replacingOccurrences(of: "’", with: "'")
 }
+
+@MainActor
+extension ProgramModel: UserInterface {
+
+    /// Protocol method for the getperson() operation.
+    func getPerson(prompt: String?) async -> Person? {
+        personRequest = PersonRequest(prompt: prompt ?? "Enter a person")
+        ///// TODO: ASK CHATGPT WHAT THIS DOES /////
+        return await withCheckedContinuation { continuation in
+            personContinuation = continuation
+        }
+    }
+
+    /// Continuation for the get person method.
+    func finishGetPerson(_ person: Person?) {
+        personRequest = nil
+        personContinuation?.resume(returning: person)
+        personContinuation = nil
+    }
+}
+
+/*
+ /// Part of the Program Model that implementes the SwiftUI "version" of the choosePerson interface.
+ /// Notice the use of continuations.
+ @MainActor
+ extension ProgramModel: ProgramInteraction {
+
+     func choosePerson(prompt: String, candidates: [Person]) async -> Person? {
+         self.personChoiceRequest = PersonChoiceRequest(
+             prompt: prompt,
+             candidates: candidates
+         )
+         return await withCheckedContinuation { continuation in
+             self.personChoiceContinuation = continuation
+         }
+     }
+
+     func finishPersonChoice(_ person: Person?) {
+         personChoiceRequest = nil
+         personChoiceContinuation?.resume(returning: person)
+         personChoiceContinuation = nil
+     }
+ }
+
+ */
+

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 21 May 2026.
 //
 
 import Foundation
@@ -39,6 +39,7 @@ public final class ConsoleOutput: ProgramOutput {
 /// DeadEnds program; combines static program parts with runtime parts.
 /// To run a DeadEnds program/script a program object is created and its
 /// interpret program method is called.
+@MainActor
 final public class Program {
 
     let parsedProgram: ParsedProgram  // Immutable program.

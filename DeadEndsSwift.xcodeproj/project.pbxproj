@@ -60,7 +60,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Merging/CenterMergePane.swift,
-				ProgramUserInterface/PickerSupport.swift,
+				ProgramUserInterface/PersonChoiceRow.swift,
 			);
 			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
 		};

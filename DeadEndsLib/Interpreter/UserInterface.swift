@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 May 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 21 May 2026.
 //
 
 import Foundation
@@ -17,6 +17,7 @@ import Foundation
 ///
 /// The first implementation of this protocol uses SwiftUI for the macOS and
 /// iPadOS versions of DeadEnds.
+@MainActor
 public protocol UserInterface {
 
     // Direct prompts

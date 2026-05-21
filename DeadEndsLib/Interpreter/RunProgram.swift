@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 21 May 2026.
 //
 /// runProgram runs a DeadEnds program and sends its output to standard
 /// output. The program is passed in as a string. The function lexes and
@@ -38,6 +38,7 @@ public enum FrontEndError: Error, CustomStringConvertible {
 }
 
 /// Run a program encoded in a string.
+@MainActor
 public func runProgram(source: String, database: Database,
                        output: ProgramOutput) async throws -> InterpResult {
 
