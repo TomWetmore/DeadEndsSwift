@@ -3,20 +3,18 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 May 2026.
-//  Last changed on 21 May 2026.
+//  Last changed on 22 May 2026.
 //
 
 import Foundation
 
-/// The DeadEnds programming language includes sevenal built-in functions
-/// that interact with users while programs are running. The details of user
-/// interface technologies are not encoded in these built-ins.
-/// Instead, the built-ins call functions defined by the UserInterface
-/// protocol. This allows different user interface implementations to be written
-/// without changing the core interpreter.
-///
-/// The first implementation of this protocol uses SwiftUI for the macOS and
-/// iPadOS versions of DeadEnds.
+/// The DeadEnds programming language includes some built-in functions that
+/// interact with users while programs are running. The details of user
+/// interface technologies are not included in those built-ins. Instead, the
+/// built-ins call functions that conform to the UserInterface protocol
+/// defined here. Different interface implementations can be written without
+/// changing the core interpreter.
+
 @MainActor
 public protocol UserInterface {
 

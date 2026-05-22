@@ -1,8 +1,8 @@
 /* Program to test person sets */
 
 proc main () {
-    indiset(set)
-    set(me, indi("@I1@“))
+    set(set, personset())
+    set(me, person(“@I1@“))
     addtoset(set, me, 0)
     showframe()
     set(set, union(set, parentset(set)))
@@ -24,17 +24,7 @@ proc main () {
     set(set, union(set, childset(set)))
     showframe()
 
-    forindiset(set, person, value, count) {
+    foreach(set, person, value, count) {
         d(count) ". " name(person) "\n"
-    }
-}
-
-
-
-proc main () {
-
-    set(dvcw, indi(“I41”))
-    forlist(children(dvcw), kid, n) {
-        d(n) “. “ name(kid) nl()
     }
 }
