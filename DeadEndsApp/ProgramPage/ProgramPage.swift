@@ -12,24 +12,24 @@
 import SwiftUI
 
 struct ProgramPage: View {
-    
+
     @EnvironmentObject var appModel: AppModel
     @Bindable var model: ProgramModel
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            
+
             TextEditor(text: $model.source)  // Editor for DeadEnds programs.
                 .font(.system(size: 16, design: .monospaced))
                 .padding(8)
-            
+
             Divider()
             HStack {  // Button bar.
                 Button("Compile") {  // Compile program button.
                     model.handleCompileButton()
                 }
                 .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                
+
                 Button("Run") {  // Run program button.
                     if let db = appModel.database {
                         Task {
@@ -55,7 +55,8 @@ struct ProgramPage: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-            
+
+
             Divider()
             ScrollView {  // View that shows the program output.
                 Text(model.output.text)
@@ -65,7 +66,7 @@ struct ProgramPage: View {
                     .font(.system(size: 16, design: .monospaced))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
+
             Divider()
             DiagnosticsPane(diagnostics: model.diagnostics)  // Pane that shows errors.
                 .frame(minHeight: 120, idealHeight: 160)

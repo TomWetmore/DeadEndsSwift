@@ -14,6 +14,7 @@ public protocol ProgramOutput {
 
     func write(_ text: String)
 
+    @MainActor
     func flush() async  // Ensure buffered output is visible.
 }
 
@@ -31,7 +32,7 @@ public final class ConsoleOutput: ProgramOutput {
         print(text, terminator: "")
     }
 
-    public func flush() async {}  // Nother needed.
+    @MainActor public func flush() async {}
 
     public init() {}  // Needed to make it public.
 }

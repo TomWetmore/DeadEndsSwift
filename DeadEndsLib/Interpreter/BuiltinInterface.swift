@@ -15,6 +15,9 @@ extension Program {
     func bltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let prompt = try await evaluateString(args[0],
                             errMsg: "getperson: arg must be a prompt message")
+        // Make pending output visible before interaction.
+
+        await output.flush()
         let person = await userInterface.getPerson(prompt: prompt)
         if let person {
             return .person(person)

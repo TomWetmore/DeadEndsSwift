@@ -16,8 +16,8 @@ global(numb)    /* number of persons considered so far */
 /* main -- set the two persons and call relate. */
 proc main () {
     "This program finds the relationship between two persons.\n\n"
-    set(from, person("I15871"))
-    set(to, person("I404"))
+    set(from, getperson("enter first person"))
+    set(to, getperson("enter seconf person"))
     "Searching for relationships between:\n\t"
     name(from) " and " name(to) ".\n\nThis may take a while -- "
     "each dot is 25 persons considered.\n"
@@ -220,7 +220,7 @@ proc foundpath (key) {
 /* showancs -- Show a direct ancestry relationp. */
 proc showancs (one, two, len)
 {
-    set(indi, indi(one))
+    set(indi, person(one))
     if (male(indi))         { set(pword, "father ") }
     elsif (female(indi)) { set(pword, "mother ") }
     else             { set(pword, "parent ") }
@@ -233,12 +233,12 @@ proc showancs (one, two, len)
     elsif (lt(3, len)) {
         "great(" d(sub(len, 2)) ") grand"
     }
-    pword "of\n  " name(indi(two)) ".\n"
+    pword "of\n  " name(person(two)) ".\n"
 }
 
 /* showdesc -- Show a direct descendency relation. */
 proc showdesc (one, two, len) {
-    set(indi, indi(one))
+    set(indi, person(one))
     if (male(indi))         { set(pword, "son ") }
     elsif (female(indi)) { set(pword, "daughter ") }
     else             { set(pword, "child ") }
@@ -249,7 +249,7 @@ proc showdesc (one, two, len) {
     elsif (lt(3, len)) {
         "great(" d(sub(len, 2)) ") grand"
     }
-    pword "of\n  " name(indi(two)) ".\n"
+    pword "of\n  " name(person(two)) ".\n"
 }
 
 /* showcous -- Show a cousin relation; sibs, uncles, aunts, nieces, nephews are special cases. */

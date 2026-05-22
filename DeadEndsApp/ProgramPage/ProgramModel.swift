@@ -11,19 +11,29 @@ import Observation
 import DeadEndsLib
 import Parsing
 import AppKit
+import UniformTypeIdentifiers
 
-/// Program output object that buffers the full output of a Deadends program
-/// into a string buffer while it is running. Output does no go to the output
+/// Program output object that buffers the output of a Deadends program
+/// into a string while it is running. Output does not go to the output
 /// text view until the program finishes running.
 final class BufferedProgramOutput: ProgramOutput {
+    private(set) var text = ""
+    let publish: @MainActor (String) -> Void
 
-    private(set) var text: String = ""
+    init(publish: @escaping @MainActor (String) -> Void) {
+        self.publish = publish
+    }
 
     func write(_ s: String) {
         text += s
     }
 
-    func flush() async {}  // Nothing to do.
+    @MainActor func flush() async {
+        let current = text
+        await MainActor.run {
+            publish(displayableOutput(current))
+        }
+    }
 
     func clear() {
         text = ""
@@ -116,7 +126,8 @@ final class ProgramModel {
         diagnostics = []
         output.clear()
 
-        let buffer = BufferedProgramOutput()  // Output goes to string buffer.
+        //let buffer = BufferedProgramOutput()  // Output goes to string buffer.
+        let buffer = BufferedProgramOutput { [weak self] text in self?.output.text = text }
         let program = Program(parsedProgram: parsedProgram, database: database,
                               output: buffer, userInterface: self)
         do {
@@ -133,10 +144,19 @@ final class ProgramModel {
         }
     }
 
+
+    /// Handles the open button on the program page.
     @MainActor
     func openProgramFile() {
+        
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.plainText]
+
+        panel.allowedContentTypes = [
+            .plainText,
+            UTType(filenameExtension: "ll")!,
+            UTType(filenameExtension: "dend")!
+        ]
+
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
 
@@ -150,7 +170,12 @@ final class ProgramModel {
                 output.clear()
                 isDirty = false
             } catch {
-                diagnostics = [Diagnostic(message: "Could not open file: \(error.localizedDescription)", line: nil)]
+                diagnostics = [
+                    Diagnostic(
+                        message: "Could not open file: \(error.localizedDescription)",
+                        line: nil
+                    )
+                ]
             }
         }
     }
