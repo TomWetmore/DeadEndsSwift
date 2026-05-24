@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 22 May 2026.
+//  Last changed on 24 May 2026.
 //
 //  This is the programming page of the app. It allows users to
 //  compose, edit, compile and run DeadEnds programs.
@@ -35,17 +35,21 @@ struct ProgramPage: View {
         }
         .padding(8)
         .navigationTitle(model.programName)
-        .sheet(item: $model.personRequest) { request in
-            if let database = appModel.database {
+        .sheet(item: $model.programRequest) { request in
+            switch request {
+            case .getPerson(let request):
                 GetPersonSheet(
                     request: request,
-                    database: database,
-                    onChoose: { person in
-                        model.finishGetPerson(person)
-                    },
-                    onCancel: {
-                        model.finishGetPerson(nil)
-                    }
+                    database: appModel.database!,
+                    onChoose: { model.finishGetPerson($0) },
+                    onCancel: { model.finishGetPerson(nil) }
+                )
+
+            case .getInteger(let request):
+                GetIntegerSheet(
+                    request: request,
+                    onChoose: { model.finishGetInteger($0) },
+                    onCancel: { model.finishGetInteger(nil) }
                 )
             }
         }

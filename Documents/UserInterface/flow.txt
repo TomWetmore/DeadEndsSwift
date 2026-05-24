@@ -1,0 +1,24 @@
+Explanation of how the user iterface builtins work.
+
+Basics. There are builtins programmers can put in DeadEnds programs that cause a SwiftUI based user interface to interact with the user to get information that is then provided back to the builtin which then continues with the program.
+
+BUILTIN LAYER. Here is an example built-in for asking the user to identify a person needed by the program:
+
+    func bltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let prompt = try await evaluateString(args[0], errMsg: "getperson: ...")
+        await output.flush()
+        let person = await userInterface.getPerson(prompt: prompt)
+        if let person { return .person(person) }
+        return .null
+    }
+
+The key line is the "await userinterface.getPerson(prompt: prompt)". What is happening here?
+    o userInterface is a property of the ProgramModel defined by:
+        let userInterface: UserInterface
+    o UserInterface in a protocol defined in UserInterface.swift as:
+
+        public protocol UserInterface {
+            func getPerson(prompt: String?) async -> Person?
+            func getInteger(prompt: String?) async -> Int?
+            ... with more to come ...
+        }

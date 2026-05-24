@@ -143,7 +143,7 @@ extension Program {
 
             // User interface.
             "getperson": Builtin(min: 1, max: 1) { try await self.bltinGetPerson($0)},
-            //"chooseperson": Builtin(min: 1, max: 1) { try self.bltinChoosePerson($0)},
+            "getinteger": Builtin(min: 1, max: 1) { try await self.bltinGetInteger($0)},
         ]
     }
 }

@@ -11,51 +11,7 @@ import DeadEndsLib
 import AppKit
 import UniformTypeIdentifiers
 
-/// Conformance that buffers DeadEnds program output to a string while the
-/// program is running. Output is periodically sent to the text view.
-final class BufferedOutput: ProgramOutput {
 
-    private(set) var text = ""
-    let publish: @MainActor (String) -> Void
-
-    init(publish: @escaping @MainActor (String) -> Void) {
-        self.publish = publish
-    }
-
-    /// Append a string to the buffer.
-    func write(_ s: String) {
-        text += s
-    }
-
-    /// Flush the string.
-    @MainActor func flush() async {
-        let current = text
-        await MainActor.run {
-            publish(displayableOutput(current))
-        }
-    }
-
-    func clear() {
-        text = ""
-    }
-}
-
-@Observable
-@MainActor
-final class UIProgramOutput {
-    var text: String = ""
-
-    func clear() {
-        text = ""
-    }
-}
-
-/// Current approach to user interface requests. This only handles the
-/// getperson() request. A more general approach may be added later.
-struct GetPersonRequest: Identifiable {
-    let id = UUID()
-    let prompt: String
-}
 
 /// Program page model.
 @MainActor
@@ -72,9 +28,10 @@ final class ProgramModel {
     var fileURL: URL? = nil
     var isDirty: Bool = false
 
-    /// Get person interface.
-    var personRequest: GetPersonRequest?
+    var programRequest: ProgramRequest?
+
     var personContinuation: CheckedContinuation<Person?, Never>?
+    var integerContinuation: CheckedContinuation<Int?, Never>?
 
     /// Create a program model with unnamed, empty source text.
     init(programName: String = "Untitled", source: String = "") {
@@ -207,18 +164,6 @@ final class ProgramModel {
     }
 }
 
-/// Mechanism to limit the size of the output view.
-private let maxOutputChars = 100_000
-
-private func displayableOutput(_ text: String) -> String {
-
-    if text.count <= maxOutputChars {
-        return text
-    }
-    return String(text.prefix(maxOutputChars))
-        + "\n\n[output truncated: \(text.count) characters total]"
-}
-
 /// Simple diagnostic to start with.
 struct Diagnostic: Identifiable {
 
@@ -255,17 +200,35 @@ extension ProgramModel: UserInterface {
 
     /// Protocol method for the getperson() operation.
     func getPerson(prompt: String?) async -> Person? {
-        personRequest = GetPersonRequest(prompt: prompt ?? "Enter a person")
+        programRequest = .getPerson(GetPersonRequest(
+            prompt: prompt ?? "Enter a person"
+        ))
+
         return await withCheckedContinuation { continuation in
             personContinuation = continuation
         }
     }
 
-    /// Continuation for the get person method.
     func finishGetPerson(_ person: Person?) {
-        personRequest = nil
+        programRequest = nil
         personContinuation?.resume(returning: person)
         personContinuation = nil
     }
 
+    /// Protocol method for the getinteger() built-in.
+    func getInteger(prompt: String?) async -> Int? {
+        programRequest = .getInteger(GetIntegerRequest(
+            prompt: prompt ?? "Enter an integer"
+        ))
+
+        return await withCheckedContinuation { continuation in
+            integerContinuation = continuation
+        }
+    }
+
+    func finishGetInteger(_ value: Int?) {
+        programRequest = nil
+        integerContinuation?.resume(returning: value)
+        integerContinuation = nil
+    }
 }

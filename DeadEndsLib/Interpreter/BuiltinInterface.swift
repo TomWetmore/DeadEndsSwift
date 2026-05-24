@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 14 May 2026.
-//  Last changed on 21 May 2026.
+//  Last changed on 24 May 2026.
 //
 
 import Foundation
@@ -25,30 +25,18 @@ extension Program {
         return .null
     }
 
-//    func bltinGetInteger(_ args: [ParsedExpr]) async throws -> ProgramValue {
-//
-//        let prompt = try await evaluateString(args[0], errMsg: "getinteger: arg must be a prompt")
-//        await output.flush()
-//        let result = await userInterface.getInteger(prompt: prompt)
-//        return .integer(result)
-//        throw RuntimeError("not implemented")
-//    }
+    /// Get user to enter an integer.
+    /// getinteger(messagte: String) -> Int?
+    func bltinGetInteger(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-    /// chooseperson(msg: String, pattern: String) -> Person?
-//    func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
-//
-//        let prompt = try evaluateString(args[0],
-//                                    errMsg:"chooseperson: 1st arg must be a prompt message")
-//        let pattern = try evaluateString(args[1],
-//                                    errMsg: "chooseperson: 2nd arg must be a name pattern")
-//        let candidates = database.persons(withName: pattern)
-//
-//        await output.flush()
-//
-//        guard let person = await userInterface.choosePerson(prompt: prompt, candidates: candidates)
-//        else { return .null }
-//        return .person(person)
-//    }
+        let prompt = try await evaluateString(args[0], errMsg: "getinteger: arg must be a prompt")
+        await output.flush()
+        let result = await userInterface.getInteger(prompt: prompt)
+        if let result {
+            return .integer(result)
+        }
+        return .null
+    }
 }
 
 /// Evaluate an expression for an optional person; throw error if not a person or null.
