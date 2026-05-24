@@ -1,5 +1,5 @@
 
-/* cousins 6.0 —- Last chaged on 23 May 2026. */
+/* cousins 6.0 —- Last changed on 24 May 2026. */
 /* Finds the relationship between two persons in a DeadEnds database.  If there is no common ancestor or
    descendent, the program tries to find a sequence of genetic relations that link the two persons. If the
    two persons are genetically related (have a common ancestor) that relationship is shown. If the two
@@ -8,9 +8,7 @@
    grandmothers as a sequence of two genetic relations with a grandchild as the link between.  Two persons
    may be related to each other in many ways; this program finds shortest ones.  */
 
-/* cousins 6.0 -- Last changed on 23 May 2026.
-
-   Find and describe the relationship between two persons in a DeadEnds
+/* Find and describe the relationship between two persons in a DeadEnds
    database.
 
    The program first searches for a direct blood relationship: ancestor,
@@ -29,12 +27,12 @@
 */
 
 
-global(links)   /* table of links back one person */
-global(rels)    /* table showing direction of the links */
+global(links)   /* table of links back one person -- elements are record keys or 0 */
+global(rels)    /* table showing direction of the links —- keys are record keys */
 global(klist)   /* queue of found persons not linked back to yet */
 global(numb)    /* number of persons considered so far */
 
-/* main -- Gets the two persons and calls the relate procedure. */
+/* main -- Get the two persons and call the relate procedure. */
 
 proc main () {
 
@@ -62,12 +60,11 @@ proc relate (fkey, tkey) {
 
     /* Handle case where they are the same person. */
     if (eq(0, strcmp(fkey, tkey))) {
-        name(person(fkey)) " and " name(person(tkey))
-        " are the same person.\n"
+        name(person(fkey)) " and " name(person(tkey)) " are the same person.\n"
         return()
     }
 
-    /* Note the same person. */
+    /* They are not the same person. */
     set(links, table())
     set(rels, table())
     set(klist, list())
@@ -77,31 +74,32 @@ proc relate (fkey, tkey) {
     set(numb, 0)
     set(pathlength, 0)
     set(toolong, 10)
-    set(found, 0)
 
-        /* Link first person to him/herself with no direction, and make him/her the first entry in the
-           list of unlinked back to persons.  A "zero" person marks the start of next-longer paths. */
+    /* Link the first person to him/herself with no direction, and make
+       him/her the first entry in the list of unlinked persons.  A 0
+       person marks the start of next-longer paths. */
+
     insert(links, fkey, fkey)
     insert(rels, fkey, 0)
     enqueue(klist, fkey)
     enqueue(klist, 0)
 
-/* Iterate through the list of unlinked back to persons; remove them one by one; link their parents
-   and children back to them; add their parents and children to the unlinked back to list; check each
-   iteration to see if one of the new parents or children is the searched for person; if so quit the
-   iteration and call foundpath; else continue iterating. */
+    /* Iterate the list of unlinked persons; remove them one by one; link
+       their parents and children back to them; add their parents and
+       children to the unlinked list; check after each iteration to see if
+       one of the new parents or children is the searched for person; if
+       so quit the iteration and call foundpath; else continue iterating. */
 
-    while (gt(length(klist), 1)) {
+    while (gt(length(klist), 1)) { /* the last element of klist is always a 0 mark. */
         set(key, dequeue(klist))
-/*key "\n" /* DEBUG */
-        if(not(key)) {
+        if(not(key)) {  /* zero marks spots where the path gets a link longer. */
+/*“got in there: key is “ valueof(key) nl() /* DEBUG */
             set(pathlength, add(1,pathlength))
             if(gt(pathlength,toolong)) { break() }
             enqueue(klist, 0)
             continue()
         }
-        set(indi, person(key))
-        set(dir, lookup(rels, key))
+        set(indi, person(key))  /* need to get person in order to call father and mother. */
         call include(key, father(indi), down)
         call include(key, mother(indi), down)
         foreach(families(indi), fam, spouse, num1) {
@@ -109,26 +107,16 @@ proc relate (fkey, tkey) {
                 call include(key, child, up)
             }
         }
-        if (key, lookup(links, tkey)) {
-            if(found) {
-                "\n\nAlternate relationship"
-            } else {
-                "Relationship from " name(person(tkey))
-                " to " name(person(fkey))
-            }
-            ":\n"
-            set(found, 1)
+        if (lookup(links, tkey)) {
+            "Relationship from " name(person(tkey))
+            " to " name(person(fkey)) ":\n"
+
             call foundpath(tkey)
             call fullpath(tkey)
-            set(toolong, add(1,pathlength))
-            insert(links, tkey, 0)
+            return()
         }
     }
-
-/* Check for a relation between the persons, and if there is none let the user know and quit. */
-    if (not(found)) {
-        "They are not blood-related to one another."
-    }
+    "They are not blood-related to one another."
 }
 
  /* include -- Links a newly discovered person (indi) back to another person (key), with a specified
@@ -347,7 +335,7 @@ proc showcous (one, two, three, up, down) {
     ", through their ancestor,\n  " name(person(two)) ".\n"
 }
 
-/*fullpath -- Show the full path between the two persons. */
+/* fullpath -- Show the full path between the two persons. */
 proc fullpath (key) {
     "\nThe full relationship path between them is:\n\n"
     set(again, 1)

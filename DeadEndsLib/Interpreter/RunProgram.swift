@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2026.
-//  Last changed on 21 May 2026.
+//  Last changed on 24 May 2026.
 //
 /// runProgram runs a DeadEnds program and sends its output to standard
 /// output. The program is passed in as a string. The function lexes and
@@ -65,6 +65,8 @@ public func runProgram(source: String, database: Database,
 public struct Patch: UserInterface {
 
     public func getPerson(prompt: String?) async -> Person? { return nil }
+
+    public func getInteger(prompt: String?) async -> Int? { return nil }
 
     public func choosePerson(from set: PersonSet<ProgramValue>) async -> Person? { return nil }
 

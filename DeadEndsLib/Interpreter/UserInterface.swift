@@ -22,7 +22,7 @@ public protocol UserInterface {
     func getPerson(prompt: String?) async -> Person?
 //    func getPersonSet(prompt: String?) async -> PersonSet<ProgramValue>?
 //    func getFamily(prompt: String?) async -> Family?
-//    func getInteger(prompt: String?) async -> Int?
+ //   func getInteger(prompt: String?) async -> Int?
 //    func getString(prompt: String?) async -> String?
 
     // Choose from existing relationship/data context
@@ -51,3 +51,25 @@ public protocol UserInterface {
 
  INT menuchoose(LIST [,STRING])
  */
+
+//enum ProgramRequest: Identifiable {
+//    case getPerson(GetPersonRequest)
+//    case getInteger(GetIntegerRequest)
+//
+//    var id: UUID {
+//        switch self {
+//        case .getPerson(let request): return request.id
+//        case .getInteger(let request): return request.id
+//        }
+//    }
+//}
+//
+//struct GetPersonRequest: Identifiable {
+//    let id = UUID()
+//    let prompt: String
+//}
+//
+//struct GetIntegerRequest: Identifiable {
+//    let id = UUID()
+//    let prompt: String
+//}

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 21 May 2026.
+//  Last changed on 24 May 2026.
 //
 
 import Foundation
@@ -26,6 +26,8 @@ extension Program {
             "nl":   Builtin(min: 0, max: 0) { try self.bltinNl($0)},
             "set":  Builtin(min: 2, max: 2) { try await self.bltinSet($0)},
             "ord":  Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
+            "card":  Builtin(min: 1, max: 1) { try await self.bltinCard($0) },
+            "roman": Builtin(min: 1, max: 1) { try await self.bltinRoman($0) },
 
             // Arithmetic operators.
             "add":  Builtin(min: 2, max: 2) { try await self.bltinAdd($0)},

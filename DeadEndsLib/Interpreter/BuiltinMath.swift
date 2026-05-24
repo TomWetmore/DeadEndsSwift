@@ -218,26 +218,18 @@ extension Program {
 extension Program {
     func bltinOrd(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let value = try await evaluate(args[0])
-
-        guard case let .integer(n) = value else {
-            return .null
-        }
-
+        let n = try await evaluateInteger(args[0], errMsg: "ord: arg must be an integer")
         let words = [
             "first", "second", "third", "fourth",
             "fifth", "sixth", "seventh", "eighth",
             "ninth", "tenth", "eleventh", "twelfth"
         ]
-
         if n < 1 {
             return .string(String(n))
         }
-
         if n <= words.count {
             return .string(words[n - 1])
         }
-
         let suffix: String
         if (11...13).contains(n % 100) {
             suffix = "th"
@@ -249,8 +241,56 @@ extension Program {
             default: suffix = "th"
             }
         }
-
         return .string("\(n)\(suffix)")
+    }
+}
+
+extension Program {
+
+    /// card(INT) -> STRING
+    /// Convert 0...20 to English cardinal words; otherwise fall back to d(INT).
+    func bltinCard(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let n = try await evaluateInteger(args[0], errMsg: "card: arg must be an integer")
+        let cardinals = [
+            "zero", "one", "two", "three", "four", "five",
+            "six", "seven", "eight", "nine", "ten",
+            "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+            "sixteen", "seventeen", "eighteen", "nineteen", "twenty"
+        ]
+
+        if n >= 0 && n <= 20 {
+            return .string(cardinals[Int(n)])
+        }
+
+        // Out of range becomes d(INT).
+        return try await bltinD(args)
+    }
+
+    /// roman(INT) -> STRING
+    /// Convert an integer to a lowercase Roman numeral; values above 3999
+    /// or less or equal to zero fall back to d(INT).
+    func bltinRoman(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let n = try await evaluateInteger(args[0], errMsg: "roman: arg must be an integer")
+        if n > 3999 || n <= 0 { return try await bltinD(args) }
+
+        var num = Int(n)
+        var result = ""
+
+        let symbols: [(value: Int, symbol: String)] = [
+            (1000, "m"), (900, "cm"), (500, "d"), (400, "cd"),
+            (100, "c"),  (90, "xc"),  (50, "l"),  (40, "xl"),
+            (10, "x"),   (9, "ix"),   (5, "v"),   (4, "iv"),
+            (1, "i")
+        ]
+        for entry in symbols {
+            while num >= entry.value {
+                result += entry.symbol
+                num -= entry.value
+            }
+        }
+        return .string(result)
     }
 }
 

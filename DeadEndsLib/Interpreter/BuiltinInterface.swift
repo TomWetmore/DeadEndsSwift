@@ -25,6 +25,15 @@ extension Program {
         return .null
     }
 
+//    func bltinGetInteger(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//
+//        let prompt = try await evaluateString(args[0], errMsg: "getinteger: arg must be a prompt")
+//        await output.flush()
+//        let result = await userInterface.getInteger(prompt: prompt)
+//        return .integer(result)
+//        throw RuntimeError("not implemented")
+//    }
+
     /// chooseperson(msg: String, pattern: String) -> Person?
 //    func bltinChoosePerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
 //
