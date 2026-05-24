@@ -3,12 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 23 May 2026.
 //
 
 import Foundation
 
-/// Result values from the  interpreter methods.
+/// Result values from interpreter methods.
 public enum InterpResult {
 
     case okay  // Normal end.
@@ -39,7 +39,7 @@ extension Program {
 
     /// Interpret an enumerated statement.
     func interpStatement(_ stmt: ParsedStatement) async throws -> InterpResult {
-        try tick(line: stmt.line)  // Lazy man infinite loop protection.
+        try await tick(line: stmt.line)  // Lazy man infinite loop protection.
 
         switch stmt.kind {
         case .callStatement(let call):
@@ -56,8 +56,6 @@ extension Program {
             return .continuing
         case .forEachStatement(let stmt):
             return try await interpForEach(stmt)
-//        case .forIndisetStatement(let stmt):
-//            return try interpForIndiset(stmt)
         case .expressionStatement(let expr):
             let pvalue: ProgramValue = try await evaluate(expr)
             if case let .string(string) = pvalue {
@@ -134,26 +132,17 @@ extension Program {
                 line: procCall.line
             )
         }
-
+        // Eval the args in the caller's context; add their values to a symbol table.
         var table: SymbolTable = [:]
-
-        // Evaluate arguments in the caller's context, then bind into callee frame.
         for (param, arg) in zip(procDef.params, procCall.args) {
             table[param] = try await evaluate(arg)
         }
-
-        let frame = RuntimeFrame(
-            name: name,
-            kind: .proc,
-            defnLine: procDef.line,
-            callLine: procCall.line,
-            params: procDef.params,
-            symbols: table
-        )
-
+        // Create the run time frame for the callee.
+        let frame = RuntimeFrame(name: name, kind: .proc, defnLine: procDef.line,
+            callLine: procCall.line, params: procDef.params, symbols: table)
         pushCallFrame(frame)
         defer { popCallFrame() }
-
+        // Interpret the body of the proc.
         return try await interpStmtList(procDef.body)
     }
 }

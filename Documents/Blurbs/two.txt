@@ -1,3 +1,5 @@
+========================
+I think a good example of a DeadEnds program that can demonstrate some of the power of the idea is the cousins program I wrote a long time ago. I would like to get better comments inserted into the program before I show it around. I think the comments I have put in are basically okay, but maybe you could tighten them up or make them easier to understand. Here is the starting point. Would you see what you can come up with?
 
 /* cousins 6.0 —- Last chaged on 23 May 2026. */
 /* Finds the relationship between two persons in a DeadEnds database.  If there is no common ancestor or
@@ -8,69 +10,32 @@
    grandmothers as a sequence of two genetic relations with a grandchild as the link between.  Two persons
    may be related to each other in many ways; this program finds shortest ones.  */
 
-/* cousins 6.0 -- Last changed on 23 May 2026.
-
-   Find and describe the relationship between two persons in a DeadEnds
-   database.
-
-   The program first searches for a direct blood relationship: ancestor,
-   descendant, sibling, aunt/uncle, niece/nephew, cousin, or cousin removed.
-   More generally, it looks for the shortest path between the two persons
-   using only parent/child links.
-
-   If the persons do not share a common ancestor, they may still be connected
-   by a chain of blood relationships through other persons. For example, your
-   two grandmothers are not blood relatives of each other, but they can be
-   connected through you: each is your grandparent. This program can find and
-   display that kind of relationship path too.
-
-   Because two persons may be related in more than one way, the program reports
-   the shortest relationship paths it finds.
-*/
-
-
 global(links)   /* table of links back one person */
 global(rels)    /* table showing direction of the links */
 global(klist)   /* queue of found persons not linked back to yet */
 global(numb)    /* number of persons considered so far */
 
-/* main -- Gets the two persons and calls the relate procedure. */
-
+/* main -- gets the two persons and calls the relate proc. */
 proc main () {
-
     "This program finds the relationship between two persons.\n\n"
     set(from, getperson("enter the first person"))
     set(to, getperson("enter the second person"))
-
     "Searching for the relationship between:\n\t"
     name(from) " and " name(to) ".\n\nThis may take a while -- "
     "each dot is 25 persons considered.\n"
     "\n"
-
     set(fkey, key(from))
     set(tkey, key(to))
     call relate(tkey, fkey)
 }
 
-/* relate -- Search for the shortest parent/child path between two persons.
-   The search begins at fkey and expands outward through parents and children.
-   Each newly found person is linked back to the person from which they were
-   found.  When tkey is reached, those back-links describe the relationship
-   path, which foundpath and fullpath then display. */
-
+/* relate -- Attempt to find a relation between two persons by constructing a path of parent and/or
+   child links between them; if a path is found, call foundpath to display the results; else report
+   that there is no relation between the persons. */
 proc relate (fkey, tkey) {
-
-    /* Handle case where they are the same person. */
-    if (eq(0, strcmp(fkey, tkey))) {
-        name(person(fkey)) " and " name(person(tkey))
-        " are the same person.\n"
-        return()
-    }
-
-    /* Note the same person. */
-    set(links, table())
+    set(links, table())    /* links back one person */
     set(rels, table())
-    set(klist, list())
+    set(klist, list())    /* keys of persons not linked back to yet */
 
     set(up, 1)
     set(down, neg(1))
@@ -135,12 +100,12 @@ proc relate (fkey, tkey) {
 direction (rel); the new person is then put on the list of unlinked back to persons. */
 
 proc include (key, indi, rel) {
-    /* Include the person if he/she has not been found before. */
+        /* Include the person if he/she has not been found before. */
     if (and(indi, not(lookup(links, key(indi))))) {
         set(numb, add(numb, 1))
         if (eq(0, mod(numb, 25))) { "." }
 
-        /* Update the data structures. */
+                /* Update the data structures. */
         set(new, key(indi))
         insert(links, new, key)
         insert(rels, new, rel)
@@ -149,21 +114,19 @@ proc include (key, indi, rel) {
 }
 
 /* foundpath -- Show the relationship path between two persons. */
-
 proc foundpath (key) {
     "\n"
     set(nexkeys, list())
     set(nexlens, list())
 
-    /* Init the nexus person from the first (to) person. */
-
+        /* Init the nexus person from the first (to) person. */
     set(nexus, key)
     set(dir, lookup(rels, key))
     set(len, dir)
     set(again, 1)
 
-    /* Create the nexus list, the persons where relationships change direction; a nexus person is
-       the first person, last person, or common ancestor or descendent of two other nexus persons. */
+        /* Create the nexus list, the persons where relationships change direction; a nexus person is
+           the first person, last person, or common ancestor or descendent of two other nexus persons. */
 
     while (again) {
                 /* Get the next person from the path. */
@@ -331,7 +294,6 @@ proc showcous (one, two, three, up, down) {
             set(rem, sub(down, up))
         }
 
-
         " " ord(sub(gen,1)) " cousin "
         if (ne(rem, 0)) {
             if (eq(rem,1)) { "once"}
@@ -369,4 +331,64 @@ proc fullpath (key) {
         }
     }
 }
+
+(Oh, and by the way, there is a bug in here. If the two persons are the same person, the program recognizes this fact as a special edge case, though none the less seems to go into an infinite loop after discovering it)
+========================
+
+I’ll treat this as two jobs: first, make the comments explain the algorithm clearly to a genealogist/programmer reader; second, point out the likely same-person loop and a clean fix.
+
+Yes. I’d tighten the wording around blood relationship, relationship path, and shortest path. I would avoid saying the two grandmothers are “genetically related” to each other; better: they are connected by a chain of blood relationships through a shared descendant.
+
+Here is a revised opening comment:
+
+/* cousins 6.0 -- Last changed on 23 May 2026.
+
+   Find and describe the relationship between two persons in a DeadEnds
+   database.
+
+   The program first searches for a direct blood relationship: ancestor,
+   descendant, sibling, aunt/uncle, niece/nephew, cousin, or cousin removed.
+   More generally, it looks for the shortest path between the two persons
+   using only parent/child links.
+
+   If the persons do not share a common ancestor, they may still be connected
+   by a chain of blood relationships through other persons. For example, your
+   two grandmothers are not blood relatives of each other, but they can be
+   connected through you: each is your grandparent. This program can find and
+   display that kind of relationship path too.
+
+   Because two persons may be related in more than one way, the program reports
+   the shortest relationship paths it finds.
+*/
+
+I would also revise the globals like this:
+
+global(links)   /* table: each found person -> previous person in path */
+global(rels)    /* table: each found person -> direction from previous person */
+global(klist)   /* queue of found persons whose relatives still need testing */
+global(numb)    /* number of persons examined during the search */
+
+And the relate comment:
+
+/* relate -- Search for the shortest parent/child path between two persons.
+   The search begins at fkey and expands outward through parents and children.
+   Each newly found person is linked back to the person from which they were
+   found.  When tkey is reached, those back-links describe the relationship
+   path, which foundpath and fullpath then display. */
+
+For the same-person bug, I’d handle it immediately at the top of relate, before building the search queue:
+
+proc relate (fkey, tkey) {
+    if (eq(0, strcmp(fkey, tkey))) {
+        name(person(fkey)) " and " name(person(tkey))
+        " are the same person.\n"
+        return()
+    }
+
+    set(links, table())
+    ...
+}
+
+That is the safest fix. The current code discovers the edge case only after initializing the breadth-first search machinery, so it can still leave the queue/path logic in a strange state. Early return is cleaner and easier to explain.
+
 

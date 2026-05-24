@@ -3,20 +3,18 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 21 May 2026.
+//  Last changed on 23 May 2026.
 //
 
 import Foundation
-import Observation
 import DeadEndsLib
-import Parsing
 import AppKit
 import UniformTypeIdentifiers
 
-/// Program output object that buffers the output of a Deadends program
-/// into a string while it is running. Output does not go to the output
-/// text view until the program finishes running.
-final class BufferedProgramOutput: ProgramOutput {
+/// Conformance that buffers DeadEnds program output to a string while the
+/// program is running. Output is periodically sent to the text view.
+final class BufferedOutput: ProgramOutput {
+
     private(set) var text = ""
     let publish: @MainActor (String) -> Void
 
@@ -24,10 +22,12 @@ final class BufferedProgramOutput: ProgramOutput {
         self.publish = publish
     }
 
+    /// Append a string to the buffer.
     func write(_ s: String) {
         text += s
     }
 
+    /// Flush the string.
     @MainActor func flush() async {
         let current = text
         await MainActor.run {
@@ -51,8 +51,8 @@ final class UIProgramOutput {
 }
 
 /// Current approach to user interface requests. This only handles the
-/// getperson() request. A more general approach will be added later.
-struct PersonRequest: Identifiable {
+/// getperson() request. A more general approach may be added later.
+struct GetPersonRequest: Identifiable {
     let id = UUID()
     let prompt: String
 }
@@ -72,17 +72,17 @@ final class ProgramModel {
     var fileURL: URL? = nil
     var isDirty: Bool = false
 
-    /// Properties that handle the getperson interface.
-    var personRequest: PersonRequest?
+    /// Get person interface.
+    var personRequest: GetPersonRequest?
     var personContinuation: CheckedContinuation<Person?, Never>?
 
-    /// Create a program model with an unnamed empty source text.
+    /// Create a program model with unnamed, empty source text.
     init(programName: String = "Untitled", source: String = "") {
         self.source = source
         self.programName = programName
     }
 
-    /// Handle the compile button. The action tries to compile a program.
+    /// Handle the compile button; tries to compile a program.
     /// It will either succeed or display a diagnostic message.
     func handleCompileButton() {
 
@@ -98,7 +98,7 @@ final class ProgramModel {
             guard tokens.last?.kind == .eof else {
                 throw FrontEndError.missingEOF
             }
-            var input = tokens[...]  // Parse the tokens into a parsed program syntax tree.
+            var input = tokens[...]  // Parse the tokens into a parsed program.
             parsedProgram = try ProgramParser().parse(&input)
             if let first = input.first, first.kind == .eof {
                 input.removeFirst()
@@ -118,21 +118,19 @@ final class ProgramModel {
         }
     }
 
-    /// Handles the run button. The action creates a program object from the
-    /// current parsed program and tries to interpret it.
+    /// Handle the run button; create a program and try to interpret it.
     func handleRunButton(database: Database) async {
         
-        guard let parsedProgram else { return }  // Need a program to run.
+        guard let parsedProgram else { return }
         diagnostics = []
         output.clear()
 
-        //let buffer = BufferedProgramOutput()  // Output goes to string buffer.
-        let buffer = BufferedProgramOutput { [weak self] text in self?.output.text = text }
+        let buffer = BufferedOutput { [weak self] text in self?.output.text = text }
         let program = Program(parsedProgram: parsedProgram, database: database,
                               output: buffer, userInterface: self)
         do {
-            try await program.interpretProgram()  // Interpret the program.
-            print("after interpret, output size =", buffer.text.count)  // DEBUG
+            try await program.interpretProgram()
+            //print("after interpret, output size =", buffer.text.count)  // DEBUG
             output.text = displayableOutput(buffer.text)  // Move buffered output to view.
         } catch let error as RuntimeError {
             output.text = displayableOutput(buffer.text)
@@ -144,19 +142,16 @@ final class ProgramModel {
         }
     }
 
-
-    /// Handles the open button on the program page.
+    /// Handle the open button; read a DeadEnds program from the file system.
     @MainActor
     func openProgramFile() {
         
         let panel = NSOpenPanel()
-
         panel.allowedContentTypes = [
             .plainText,
             UTType(filenameExtension: "ll")!,
             UTType(filenameExtension: "dend")!
         ]
-
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
 
@@ -212,19 +207,6 @@ final class ProgramModel {
     }
 }
 
-extension ProgramModel {
-
-    //func getPerson(prompt: String?) async -> Person? { return nil }
-
-    func choosePerson(from set: DeadEndsLib.PersonSet<DeadEndsLib.ProgramValue>) async -> DeadEndsLib.Person? {
-        return nil
-    }
-
-    func menuChoose(from list: DeadEndsLib.List, prompt: String?) async -> Int? {
-        return nil
-    }
-}
-
 /// Mechanism to limit the size of the output view.
 private let maxOutputChars = 100_000
 
@@ -267,13 +249,13 @@ func normalizedSource(_ text: String) -> String {
         .replacingOccurrences(of: "’", with: "'")
 }
 
+/// Conformance of the user interface protocol for SwiftUI.
 @MainActor
 extension ProgramModel: UserInterface {
 
     /// Protocol method for the getperson() operation.
     func getPerson(prompt: String?) async -> Person? {
-        personRequest = PersonRequest(prompt: prompt ?? "Enter a person")
-        ///// TODO: ASK CHATGPT WHAT THIS DOES /////
+        personRequest = GetPersonRequest(prompt: prompt ?? "Enter a person")
         return await withCheckedContinuation { continuation in
             personContinuation = continuation
         }
@@ -286,29 +268,3 @@ extension ProgramModel: UserInterface {
         personContinuation = nil
     }
 }
-
-/*
- /// Part of the Program Model that implementes the SwiftUI "version" of the choosePerson interface.
- /// Notice the use of continuations.
- @MainActor
- extension ProgramModel: ProgramInteraction {
-
-     func choosePerson(prompt: String, candidates: [Person]) async -> Person? {
-         self.personChoiceRequest = PersonChoiceRequest(
-             prompt: prompt,
-             candidates: candidates
-         )
-         return await withCheckedContinuation { continuation in
-             self.personChoiceContinuation = continuation
-         }
-     }
-
-     func finishPersonChoice(_ person: Person?) {
-         personChoiceRequest = nil
-         personChoiceContinuation?.resume(returning: person)
-         personChoiceContinuation = nil
-     }
- }
-
- */
-

@@ -3,34 +3,36 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 23 May 2026.
 //
 
 import Foundation
 
-/// Underlying dictionary used for the program value data type.
+/// Dictionary used as the DeadEnds program table data type; it maps strings
+/// to program values.
 final public class ProgramTable {
     
-    var elements: [String: ProgramValue] = [:]
+    var elements: [String: ProgramValue] = [:]  // Underlying dictionary.
 
-    var count: Int {
-        elements.count
-    }
+    var count: Int { elements.count }  // Number of dictionary entries.
 
+    /// Empty the table.
     func clear() {
         elements.removeAll(keepingCapacity: true)
     }
 }
 
+/// Built-in functions that implement the table user interface.
 extension Program {
 
-    /// Create a program table and add it to the symbol table.
+    /// Create an empty table program value.
     func bltinTable(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .table(ProgramTable())
     }
 
-    /// Insert a new entry in a program table.
+    /// Insert an entry into a table. There are no restrinctions on values.
     func bltinInsert(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         let tableValue = try await evaluate(args[0])
         guard case let .table(table) = tableValue else {
             throw RuntimeError("insert: 1st arg must be a table", line:args[0].line)
@@ -44,8 +46,9 @@ extension Program {
         return .null
     }
 
-    /// Lookup an entry in a program table.
+    /// Lookup an entry in a program tablel, returning its value if present.
     func bltinLookup(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         let tableValue = try await evaluate(args[0])
         guard case let .table(table) = tableValue else {
             throw RuntimeError("lookup: 1st arg must be a table", line: args[0].line)
@@ -55,14 +58,5 @@ extension Program {
             throw RuntimeError("lookup: 2nd arg must be a string", line: args[1].line)
         }
         return table.elements[key] ?? .null
-    }
-
-    /// TODO: Isn't this redundant with the generic length builtin?
-    func builtinTableLength(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let tableValue = try await evaluate(args[0])
-        guard case let .table(table) = tableValue else {
-            throw RuntimeError("table-length: 1st arg must be a table", line: args[0].line)
-        }
-        return .integer(table.elements.count)
     }
 }

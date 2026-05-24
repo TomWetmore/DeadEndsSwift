@@ -3,39 +3,10 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 21 May 2026.
+//  Last changed on 23 May 2026.
 //
 
 import Foundation
-
-/// Generalize program output. Standard output, buffered output, and UI text view output
-/// are used in DeadEnds.
-public protocol ProgramOutput {
-
-    func write(_ text: String)
-
-    @MainActor
-    func flush() async  // Ensure buffered output is visible.
-}
-
-public extension ProgramOutput {
-
-    func writeln(_ text: String) {
-        write(text + "\n")
-    }
-}
-
-/// Program output for standard console output.
-public final class ConsoleOutput: ProgramOutput {
-
-    public func write(_ text: String) {
-        print(text, terminator: "")
-    }
-
-    @MainActor public func flush() async {}
-
-    public init() {}  // Needed to make it public.
-}
 
 /// DeadEnds program; combines static program parts with runtime parts.
 /// To run a DeadEnds program/script a program object is created and its
@@ -43,8 +14,8 @@ public final class ConsoleOutput: ProgramOutput {
 @MainActor
 final public class Program {
 
-    let parsedProgram: ParsedProgram  // Immutable program.
-    var builtins: [String: Builtin] = [:]  // Builtin library.
+    let parsedProgram: ParsedProgram  // Immutable parsed program.
+    var builtins: [String: Builtin] = [:]  // Built-in library.
     let procTable: [String: ParsedProcDefn]  // User defined procs.
     let funcTable: [String: ParsedFuncDefn]  // User defined funcs.
     var hasRun = false
@@ -76,9 +47,10 @@ final public class Program {
         }
     }
 
-    /// Create a runnable program from a parsed program, database, and output sink.
-    public init(parsedProgram: ParsedProgram, database: Database, output: ProgramOutput,
-                userInterface: UserInterface) {
+    /// Create a runnable program from a parsed program, database, output sink
+    /// and user interface conformance.
+    public init(parsedProgram: ParsedProgram, database: Database,
+                output: ProgramOutput, userInterface: UserInterface) {
 
         self.parsedProgram = parsedProgram
         self.database = database
@@ -106,6 +78,35 @@ final public class Program {
 
         setupBuiltins()
     }
+}
+
+/// Generalize program output. Standard output, buffered output, and UI text view output
+/// are used in DeadEnds.
+public protocol ProgramOutput {
+
+    func write(_ text: String)
+
+    @MainActor
+    func flush() async  // Ensure buffered output is visible.
+}
+
+public extension ProgramOutput {
+
+    func writeln(_ text: String) {
+        write(text + "\n")
+    }
+}
+
+/// Program output for standard console output.
+public final class ConsoleOutput: ProgramOutput {
+
+    public func write(_ text: String) {
+        print(text, terminator: "")
+    }
+
+    @MainActor public func flush() async {}
+
+    public init() {}  // Needed to make it public.
 }
 
 /// Run time errors.
@@ -168,8 +169,9 @@ extension Program {
 extension Program {
 
     /// Called when a statement is interpreted.
-    func tick(line: Int) throws {
+    func tick(line: Int) async throws {
         stepCount += 1
+        if stepCount % 6000 == 0 { await output.flush() }
         if stepCount > maxSteps {
             throw RuntimeError("run stopped: possible infinite loop", line: line)
         }

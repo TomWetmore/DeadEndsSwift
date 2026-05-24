@@ -1,0 +1,56 @@
+===========
+I'm going to try describe the value of a program that can read gedcom files and then generate any kind of reports from the data in the files, in other words a small subset of what the DeadEnds program can do. You've seen how the DeadEnds programming language can create text outputs of essentially any kind (text, postscript, tex, latex, html, csv, xml, etc, etc.) quite easily. Would you please take a stab at describing this capability in a way that might grab a genealotist's attention and make him want to try it out.
+===========
+
+Most genealogy programs give you a fixed set of reports. You can print a pedigree chart, a family group sheet, maybe a descendant report, and if you are lucky there are a few formatting options. But sooner or later every serious genealogist reaches the same point:
+
+“I wish my program could print exactly this.”
+
+That is where a programmable genealogy system becomes something entirely different.
+
+Imagine being able to read your GEDCOM file and then create any report you can describe. Not just the standard reports that came with the software, but reports designed around your research, your questions, and your style of presentation.
+
+Want a register-style descendant book with custom numbering and narrative paragraphs?
+A migration report showing families moving town by town over generations?
+A timeline of all marriages in a county?
+A cemetery index?
+A DNA cousin report?
+A list of everyone who served in the Civil War?
+A wall chart?
+A website?
+A CSV file for spreadsheet analysis?
+A beautifully typeset LaTeX book?
+A custom HTML site for relatives?
+
+The same genealogical database can produce all of them.
+
+The idea is simple but powerful:
+
+* The program reads your GEDCOM data into memory.
+* A small genealogical programming language lets you explore relationships:
+    parents, children, spouses, ancestors, descendants, events, places, dates, sources, and more.
+* Your script then generates output in whatever form you want:
+    plain text, HTML, LaTeX, XML, CSV, PostScript, or anything else that can be written as text.
+
+Instead of being trapped inside somebody else’s idea of what genealogy reports should look like, you gain the ability to describe your own.
+
+For many genealogists, this becomes addictive. Once you realize you can ask questions like:
+
+* “Show everyone born within ten miles of this town between 1780 and 1820.”
+* “Find repeated naming patterns across generations.”
+* “List all descendants who emigrated.”
+* “Generate a custom index for my book.”
+* “Create an ahnentafel with duplicate ancestors marked.”
+* “Produce a complete website directly from the database.”
+
+…you stop thinking of genealogy software as merely a database and start thinking of it as a research tool.
+
+And the surprising part is that the language does not have to be enormous or intimidating. A few simple constructs — loops over people and families, access to events and names, conditionals, tables, and output commands — are enough to produce remarkably sophisticated results.
+
+The result is a system that grows with the genealogist.
+
+Beginners can run existing scripts written by others.
+Intermediate users can modify reports to suit their needs.
+Advanced users can invent entirely new kinds of genealogical analysis and presentation.
+
+In effect, it turns a GEDCOM file from a static collection of records into a living body of information that can be explored, analyzed, and presented in unlimited ways.

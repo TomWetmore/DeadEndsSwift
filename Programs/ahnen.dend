@@ -1,37 +1,47 @@
 proc main ()
 {
-    set(indi, person(“@I1@“))
+    set(indi, getperson(“enter first person in ahnentafel“))
     set(ilist, list())
     set(alist, list())
+    set(table, table())
     enqueue(ilist, indi)
     enqueue(alist, 1)
 
     while(indi, dequeue(ilist)) {
         set(ahnen, dequeue(alist))
-        d(ahnen) ". " name(indi) nl()
-        if (e, birth(indi)) { “b. "  nl() }
-        if (e, death(indi)) { “d. "  nl() }
-        if (par,father(indi)) {
-            enqueue(ilist, par)
-            enqueue(alist, mul(2,ahnen))
+
+        set(key, key(indi))
+        set(already, lookup(table, key))
+
+        d(ahnen) “. “ name(indi)
+        if(already) {
+            “ (Same as “ d(already) “)”
+        } else {
+            insert(table, key, ahnen)
         }
-        if (par,mother(indi)) {
+        nl() call showvitals(indi) nl()
+        if (par, father(indi)) {
             enqueue(ilist, par)
-            enqueue(alist, add(1,mul(2,ahnen)))
+            enqueue(alist, mul(2, ahnen))
+        }
+        if (par, mother(indi)) {
+            enqueue(ilist, par)
+            enqueue(alist, add(1, mul(2, ahnen)))
         }
     }
 }
 
 proc showvitals(person) {
-    call dateAndPlace(“b. “, birth(person))
-    call dateAndPlace(“d. “, death(person))
+    “   “ call dateAndPlace(“b. “, birth(person))
+    “   “ call dateAndPlace(“d. “, death(person))
 }
 
 proc dateAndPlace(head, event) {
     set(date, date(event))
     set(place, place(event))
     if (and(date, place)) { head date “, “ place }
-    if (and(date, not(place))) { head date }
-    if (and(not(date), place)) { head place }
+    elsif (and(date, not(place))) { head date }
+    elsif (and(not(date), place)) { head place }
+    else { head }
     nl()
 }

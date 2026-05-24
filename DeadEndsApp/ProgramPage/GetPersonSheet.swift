@@ -3,14 +3,17 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 21 May 2026.
-//  Last changed on 21 May 2026.
+//  Last changed on 23 May 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
+/// Person request sheet used on the program page when a program uses
+/// the getperson built-in.
 struct GetPersonSheet: View {
-    let request: PersonRequest
+
+    let request: GetPersonRequest
     let database: Database
     let onChoose: (Person) -> Void
     let onCancel: () -> Void
