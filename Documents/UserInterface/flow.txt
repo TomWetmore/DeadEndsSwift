@@ -12,13 +12,32 @@ BUILTIN LAYER. Here is an example built-in for asking the user to identify a per
         return .null
     }
 
-The key line is the "await userinterface.getPerson(prompt: prompt)". What is happening here?
+USERINTERFACE PROTOCOL
+
+The key line in the bltinGedPerson example is the "await userinterface.getPerson(prompt: prompt)". What is happening here?
     o userInterface is a property of the ProgramModel defined by:
         let userInterface: UserInterface
     o UserInterface in a protocol defined in UserInterface.swift as:
-
         public protocol UserInterface {
             func getPerson(prompt: String?) async -> Person?
             func getInteger(prompt: String?) async -> Int?
             ... with more to come ...
         }
+
+    o So userInterface is an object that conforms to UserInterface. The ProgramModel conforms to the interface. as shown here:
+
+        extension ProgramModel: UserInterface {
+            func getInteger(prompt: String?) async -> Int? {
+                programRequest = .getInteger(GetIntegerRequest(prompt: prompt ?? "Enter an integer"))
+                return await withCheckedContinuation { continuation in integerContinuation = continuation}
+            }
+            func finishGetInteger(_ value: Int?) {
+                programRequest = nil
+                integerContinuation?.resume(returning: value)
+                integerContinuation = nil
+            }
+        }
+
+    What happens in here? Or first, what does this do, or why is this here? We have to get the ProgramPage to open a sheet for the user to interact with. We therefore have to change an observed property for the ProgramPage to see so that it will open that sheet. The property that does that here is programRequest.
+
+    The request changes.

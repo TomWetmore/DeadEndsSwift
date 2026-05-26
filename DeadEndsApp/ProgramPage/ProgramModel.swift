@@ -32,6 +32,7 @@ final class ProgramModel {
 
     var personContinuation: CheckedContinuation<Person?, Never>?
     var integerContinuation: CheckedContinuation<Int?, Never>?
+    var stringContinuation: CheckedContinuation<String?, Never>?
 
     /// Create a program model with unnamed, empty source text.
     init(programName: String = "Untitled", source: String = "") {
@@ -203,7 +204,6 @@ extension ProgramModel: UserInterface {
         programRequest = .getPerson(GetPersonRequest(
             prompt: prompt ?? "Enter a person"
         ))
-
         return await withCheckedContinuation { continuation in
             personContinuation = continuation
         }
@@ -220,7 +220,6 @@ extension ProgramModel: UserInterface {
         programRequest = .getInteger(GetIntegerRequest(
             prompt: prompt ?? "Enter an integer"
         ))
-
         return await withCheckedContinuation { continuation in
             integerContinuation = continuation
         }
@@ -230,5 +229,20 @@ extension ProgramModel: UserInterface {
         programRequest = nil
         integerContinuation?.resume(returning: value)
         integerContinuation = nil
+    }
+
+    /// Protocol method for the getstring() built-in.
+    func getString(prompt: String?) async -> String? {
+        programRequest = .getString(GetStringRequest(
+            prompt: prompt ?? "Enter a string"))
+        return await withCheckedContinuation { continuation in
+            stringContinuation = continuation
+        }
+    }
+
+    func finishGetString(_ value: String?) {
+        programRequest = nil
+        stringContinuation?.resume(returning: value)
+        stringContinuation = nil
     }
 }

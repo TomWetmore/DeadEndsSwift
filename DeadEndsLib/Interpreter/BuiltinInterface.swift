@@ -13,10 +13,7 @@ extension Program {
     /// Get the user to identify a single person.
     /// getperson(message: string) -> person?
     func bltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let prompt = try await evaluateString(args[0],
-                            errMsg: "getperson: arg must be a prompt message")
-        // Make pending output visible before interaction.
-
+        let prompt = try await evaluateString(args[0], errMsg: "getperson: arg must be a prompt")
         await output.flush()
         let person = await userInterface.getPerson(prompt: prompt)
         if let person {
@@ -25,7 +22,7 @@ extension Program {
         return .null
     }
 
-    /// Get user to enter an integer.
+    /// Get the user to enter an integer.
     /// getinteger(messagte: String) -> Int?
     func bltinGetInteger(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
@@ -34,6 +31,18 @@ extension Program {
         let result = await userInterface.getInteger(prompt: prompt)
         if let result {
             return .integer(result)
+        }
+        return .null
+    }
+
+    /// Get the user to enter a string.
+    /// getstring(prompt) -> string?
+    func bltinGetString(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let prompt = try await evaluateString(args[0], errMsg: "getstring: arg must be a prompt")
+        await output.flush()
+        let result = await userInterface.getString(prompt: prompt)
+        if let result {
+            return .string(result)
         }
         return .null
     }

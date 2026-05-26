@@ -43,3 +43,37 @@ struct GetIntegerSheet: View {
         }
     }
 }
+
+struct GetStringSheet: View {
+    let request: GetStringRequest
+    let onChoose: (String) -> Void
+    let onCancel: () -> Void
+
+    @State private var text = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(request.prompt)
+                .font(.headline)
+
+            TextField("Integer", text: $text)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit(submit)
+
+            HStack {
+                Spacer()
+                Button("Cancel", action: onCancel)
+                Button("OK", action: submit)
+                    .disabled(Int(text) == nil)
+            }
+        }
+        .padding()
+        .frame(minWidth: 320)
+    }
+
+    private func submit() {
+        //if let value = text {
+            onChoose(text)
+        //}
+    }
+}

@@ -27,7 +27,7 @@ extension Program {
     func bltinFullName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evaluatePersonOpt(args[0],
-                                    errMsg: "fullname: 1st arg must be a person") else {
+                                                       errMsg: "fullname: 1st arg must be a person") else {
             return .null
         }
         let upSurname = try await evaluate(args[1]).toBool
@@ -35,10 +35,10 @@ extension Program {
         let limit = try await evaluate(args[3])
         guard case let .integer(intvalue) = limit else {
             throw RuntimeError("fullname: 4th arg must be an integer",
-                                line: args[3].line)
+                               line: args[3].line)
         }
         let name = person.displayName(upSurname: upSurname, surnameFirst: surnameFirst,
-                                        limit: intvalue)
+                                      limit: intvalue)
         return .string(name)
 
     }
@@ -47,7 +47,7 @@ extension Program {
     func bltinSurname(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evaluatePersonOpt(args[0],
-                                    errMsg: "surname: arg must be a person") else {
+                                                       errMsg: "surname: arg must be a person") else {
             return .null
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
@@ -62,7 +62,7 @@ extension Program {
     func bltinGivens(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evaluatePersonOpt(args[0],
-                                    errMsg: "givens: arg must be a person") else {
+                                                       errMsg: "givens: arg must be a person") else {
             return .null
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
@@ -76,7 +76,7 @@ extension Program {
     func builtinTrimName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evaluatePersonOpt(args[0],
-                                    errMsg: "trimName: arg must be a person") else {
+                                                       errMsg: "trimName: arg must be a person") else {
             return .null
         }
         return .string(person.displayName(limit: 40))
@@ -91,7 +91,7 @@ extension Program {
     func builtinNextSibling(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evaluatePersonOpt(args[0],
-                                           errMsg: "nextsib: arg must be a person") else {
+                                                       errMsg: "nextsib: arg must be a person") else {
             return .null
         }
         if let nextSibling = person.nextSibling(in: self.recordIndex) {
@@ -105,7 +105,7 @@ extension Program {
     func builtinPrevSibling(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evaluatePersonOpt(args[0],
-                                    errMsg: "prevsib: arg must be a person") else {
+                                                       errMsg: "prevsib: arg must be a person") else {
             return .null
         }
         if let previousSibling = person.previousSibling(in: self.recordIndex) {
@@ -137,7 +137,7 @@ extension Program {
 
     /// Made generic so it can run on persons and families.
     func bltinHusband(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        
+
         let value = try await evaluate(args[0])
         switch value {
         case .person(let person):
@@ -182,7 +182,7 @@ extension Program {
     func bltinMale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evaluatePersonOpt(args[0],
-                                errMsg: "male: arg must be a person") else { return .null }
+                                                       errMsg: "male: arg must be a person") else { return .null }
         return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
@@ -190,9 +190,9 @@ extension Program {
     func bltinFemale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evaluatePersonOpt(args[0],
-                                errMsg: "female: arg must be a person") else { return .null }
+                                                       errMsg: "female: arg must be a person") else { return .null }
         return person.isFemale ? ProgramValue.trueProgramValue
-            : ProgramValue.falseProgramValue
+        : ProgramValue.falseProgramValue
     }
 
     func builtinPronouns(_ args: [ParsedExpr]) throws -> ProgramValue {
@@ -317,14 +317,15 @@ extension Program {
 }
 
 
+
 extension Program {
 
     // Extract an event from a .gnode associated ProgramNode.
     func extractPersonEvent(from arg: ParsedExpr, tag: String, functionName: String) throws -> ProgramValue {
-//        // Get the person with the requested event.
-//        let person = try personFromProgramNode(arg, errorMessage: "\(functionName)() expects a person root node")
-//        // Get the first child node with the even's tag in the person's tree.
-//        return person.kid(withTag: tag).map { .gnode($0) } ?? .null
+        //        // Get the person with the requested event.
+        //        let person = try personFromProgramNode(arg, errorMessage: "\(functionName)() expects a person root node")
+        //        // Get the first child node with the even's tag in the person's tree.
+        //        return person.kid(withTag: tag).map { .gnode($0) } ?? .null
 
         return .null
     }
@@ -372,13 +373,13 @@ extension Program {
  number of spouses of
  number of families (as spouse/parent) of
  first parents’ family of
------------------------------------
+ -----------------------------------
  STRING title(INDI)
  STRING key(INDI|FAM [,BOOL])
  STRING soundex(INDI)
  NODE inode(INDI)
  NODE root(INDI)
- 
+
  first title of
  internal key of (work for families also)
  SOUNDEX code of

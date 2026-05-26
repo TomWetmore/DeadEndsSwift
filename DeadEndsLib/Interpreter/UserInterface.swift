@@ -22,7 +22,7 @@ public protocol UserInterface {
 //    func getPersonSet(prompt: String?) async -> PersonSet<ProgramValue>?
 //    func getFamily(prompt: String?) async -> Family?
     func getInteger(prompt: String?) async -> Int?
-//    func getString(prompt: String?) async -> String?
+    func getString(prompt: String?) async -> String?
 
 //    func chooseChild(from value: ProgramValue) async -> Person?
 //    func chooseFamily(of person: Person) async -> Family?
@@ -37,13 +37,10 @@ public protocol UserInterface {
 /*
  VOID getindiset(SET_V [,STRING])
  VOID getfam(FAM_V)
- VOID getstr(STRING_V [,STRING])
-
  INDI choosechild(INDI|FAM)
  FAM choosefam(INDI)
  INDI chooseindi(SET)
  INDI choosespouse(INDI)
  SET choosesubset(SET)
-
  INT menuchoose(LIST [,STRING])
  */

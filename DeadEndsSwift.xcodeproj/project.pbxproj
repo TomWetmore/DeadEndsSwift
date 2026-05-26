@@ -92,6 +92,7 @@
 				ImportStack.swift,
 				Interpreter/Builtin.swift,
 				Interpreter/BuiltinEvent.swift,
+				Interpreter/BuiltinExtract.swift,
 				Interpreter/BuiltinInterface.swift,
 				Interpreter/BuiltinList.swift,
 				Interpreter/BuiltinMath.swift,

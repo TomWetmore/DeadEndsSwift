@@ -13,11 +13,13 @@ import DeadEndsLib
 enum ProgramRequest: Identifiable {
     case getPerson(GetPersonRequest)
     case getInteger(GetIntegerRequest)
+    case getString(GetStringRequest)
 
     var id: UUID {
         switch self {
         case .getPerson(let request): return request.id
         case .getInteger(let request): return request.id
+        case .getString(let request): return request.id
         }
     }
 }
@@ -28,6 +30,11 @@ struct GetPersonRequest: Identifiable {
 }
 
 struct GetIntegerRequest: Identifiable {
+    let id = UUID()
+    let prompt: String
+}
+
+struct GetStringRequest: Identifiable {
     let id = UUID()
     let prompt: String
 }

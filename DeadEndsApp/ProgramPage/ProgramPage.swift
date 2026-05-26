@@ -51,6 +51,12 @@ struct ProgramPage: View {
                     onChoose: { model.finishGetInteger($0) },
                     onCancel: { model.finishGetInteger(nil) }
                 )
+            case .getString(let request):
+                GetStringSheet(
+                    request: request,
+                    onChoose: { model.finishGetString($0) },
+                    onCancel: { model.finishGetString(nil) }
+                )
             }
         }
     }

@@ -68,6 +68,8 @@ public struct Patch: UserInterface {
 
     public func getInteger(prompt: String?) async -> Int? { return nil }
 
+    public func getString(prompt: String?) async -> String? { return nil }
+
     public func choosePerson(from set: PersonSet<ProgramValue>) async -> Person? { return nil }
 
     public func menuChoose(from list: List, prompt: String?) async -> Int? { return nil }

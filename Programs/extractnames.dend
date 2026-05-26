@@ -1,0 +1,24 @@
+
+proc main() {
+	set(me, person(“I1”))
+
+	set(list, list())
+	extractnames(me, list, n, s)
+	call showresults(list, n, s)
+
+	set(root, root(me))
+	extractnames(root, list, n, s)
+   call showresults(list, n, s)
+
+	set(namenode, kidwithtag(root, “NAME”))
+   extractnames(namenode, list, n, s)
+   call showresults(list, n, s)
+
+	set(val, val(namenode))
+   extractnames(val, list, n, s)
+   call showresults(list, n, s)
+}
+
+proc showresults(list, n, s) {
+	d(length(list)) “ “ d(n) “ “ d(s) “\n”
+}

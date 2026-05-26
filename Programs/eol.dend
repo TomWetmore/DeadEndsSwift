@@ -29,7 +29,7 @@ proc main () {
     set(seen, table())
     set(abbvtab, table())
     set(set, personset())
-    set(indi,person("I1")) /* CHANGED BECAUSE NO USER INTERFACE */
+    set(indi,getperson(“Enter a person by name”))
     /*monthformat(4)*/
     "END OF LINE ANCESTORS OF " fullname(indi,1,1,30) "\n\n"
     call setupabbvtab()
@@ -226,23 +226,23 @@ proc set_year (person)
     }
 
 
-    if(sp,father(person)) {        /* set limits from father */
-        if(yr,year(birth(sp))) {
+    if(sp, father(person)) {        /* set limits from father */
+        if(yr, year(birth(sp))) {
         call get_modifier(birth(sp))
-        set(iyr,add(atoi(yr),Minpar))
-        if(and(ge(datemod,0),gt(iyr,minyr))) {set(minyr,iyr)}
+        set(iyr, add(atoi(yr), Minpar))
+        if(and(ge(datemod, 0), gt(iyr, minyr))) {set(minyr, iyr)}
         }
-        if(yr,year(death(sp))) {
+        if(yr, year(death(sp))) {
         call get_modifier(death(sp))
-        set(iyr,add(atoi(yr),1))
-        if(and(le(datemod,0),lt(iyr,maxyr))) {set(maxyr,iyr)}
+        set(iyr, add(atoi(yr), 1))
+        if(and(le(datemod, 0), lt(iyr, maxyr))) {set(maxyr, iyr)}
         }
     }
 
-    set(maryr,9999)            /* marriage date or upper limit */
-    set(marbest,9999)        /* best guess at marriage date */
-    set(lastbirth,0)
-    foreach(families(person),fam,sp,spi) {    /* check on marriage/chidren */
+    set(maryr, 9999)            /* marriage date or upper limit */
+    set(marbest, 9999)        /* best guess at marriage date */
+    set(lastbirth, 0)
+    foreach(families(person), fam, sp, spi) {    /* check on marriage/chidren */
         if(yr, year(marriage(fam))) {
             call get_modifier(marriage(fam))
             set(iyr,atoi(yr))    /* go by marriage date */
