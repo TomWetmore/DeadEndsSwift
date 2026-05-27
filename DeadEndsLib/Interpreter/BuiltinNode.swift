@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 5/26/26.
-//  Last changed on 26 May 2026.
+//  Last changed on 27 May 2026.
 //
 //  This file has the built-in methods for Gedcom
 //  nodes.
@@ -14,15 +14,16 @@ import Foundation
 /// Gedcom node properties.
 extension Program {
 
+    // Replaced by the version in BuiltinPerson.swift (should be moved from there).
     /// Returns the key of a node; returns .null if the node is nil or does not have a key.
-    func builtInKey(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "key: arg must be a node")
-        if let node = node, let key = node.key {
-            return .string(key)
-        }
-        return .null
-    }
+//    func bltinKey(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//
+//        let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "key: arg must be a node")
+//        if let node = node, let key = node.key {
+//            return .string(key)
+//        }
+//        return .null
+//}
 
     /// Built-in that returns the tag of a node.
     func bltinTag(_ args: [ParsedExpr]) async throws -> ProgramValue {

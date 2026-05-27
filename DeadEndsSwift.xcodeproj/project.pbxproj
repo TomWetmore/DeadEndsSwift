@@ -86,6 +86,7 @@
 				Interpreter/BuiltinList.swift,
 				Interpreter/BuiltinMath.swift,
 				Interpreter/BuiltinMeta.swift,
+				Interpreter/BuiltinNode.swift,
 				Interpreter/BuiltinPerson.swift,
 				Interpreter/BuiltinPersonSet.swift,
 				Interpreter/BuiltinString.swift,
