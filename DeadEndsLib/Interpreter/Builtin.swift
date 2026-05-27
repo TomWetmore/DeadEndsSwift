@@ -149,7 +149,7 @@ extension Program {
             "getstring": Builtin(min: 1, max: 1) { try await self.bltinGetString($0)},
 
             // Extract built-ins.
-            "extractnames": Builtin(min: 4, max: 4) { try await self.bltinExtractNames($0)},
+            "extractname": Builtin(min: 4, max: 4) { try await self.bltinExtractName($0)},
         ]
     }
 }

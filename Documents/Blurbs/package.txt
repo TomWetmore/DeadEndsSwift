@@ -1,0 +1,336 @@
+==========================================================
+It would be easy to create a "one page" SwiftUI app that shows just the ProgramPage. By adding a button to read a database (i.e., a Gedcom file) the program could start and run on that page. For such a program there would be no intention of changing the contents of the database. The idea is simple: read in a Gedcom file, run a program, and quit.
+==========================================================
+Second I am wondering how to get some users to try it out. Do you have any suggestions on that idea?
+==========================================================
+
+Your first idea is extremely good, and perhaps more important than it first appears.
+
+A focused “DeadEnds Script Runner” app would let people experience the programming language without needing to understand the whole genealogy application architecture. That lowers the barrier enormously.
+
+You are essentially describing something like:
+* Open GEDCOM file
+* Edit/load script
+* Run script
+* See output
+* Quit
+
+That is a very understandable mental model.  In fact, it resembles the original spirit of LifeLines more than a modern “all-in-one genealogy application.” The scripting language becomes the star.
+
+And architecturally, it fits where you already are:
+* you already have ProgramPage
+* you already have the parser/interpreter pipeline
+* the database is read-only during execution
+* the app state can stay tiny and clean
+
+You could probably build the first usable version in a couple of days.  A tiny app also has advantages:
+* easier debugging
+* easier distribution
+* easier explanation
+* easier onboarding
+* fewer SwiftUI navigation concerns
+* fewer expectations from users
+
+You could even eventually make:
+* RunScript command-line tool
+* minimal GUI “Script Runner”
+* full DeadEnds app
+—all sharing the same core library.
+That separation is actually very elegant.
+
+As for getting users to try it out, I would strongly recommend aiming first for:
+“technically curious genealogy people”
+rather than mainstream genealogy users.
+
+Those are very different audiences.
+
+The people most likely to become enthusiastic early adopters are:
+
+* former LifeLines users
+* genealogy hobbyists who write code
+* GEDCOM tinkerers
+* people frustrated by rigid commercial genealogy software
+* people interested in programmable reports
+* old Roots/LifeLines/GenTech communities
+* developers hanging around genealogy GitHub projects
+
+A few concrete possibilities:
+
+Genealogy software forums
+
+You already asked recently about genealogy software forums. That is probably your best starting point.
+Particularly:
+* RootsDev
+* GEDCOM-related GitHub discussions
+* niche genealogy Discords/forums
+* the Gramps developer/user community
+* Reddit genealogy programming threads
+
+Not by saying:
+“Here is my software.”
+
+But rather:
+“I’m reviving the programmable genealogy ideas from LifeLines in Swift.”
+
+That has a story attached to it.  And honestly, you have a story:
+* Bell Labs background
+* original LifeLines
+* custom genealogy language
+* modern SwiftUI revival
+* emphasis on flexibility over rigid forms
+
+That is interesting to the right people.
+
+GitHub
+I think you should absolutely put:
+* screenshots
+* sample scripts
+* tiny sample GEDCOMs
+* a README showing “hello world” examples
+into the repository.  Especially examples like:
+
+forindi(person) {
+    name(person) nl()
+}
+People immediately understand programmable genealogy when they see examples.
+
+A “killer demo”.  You need one or two demos that commercial genealogy software does badly.
+
+For example:
+* relationship reports
+* custom descendant narratives
+* migration tracing
+* surname studies
+* weird/custom tags
+* programmable filtering
+* generating LaTeX reports
+* historical/statistical summaries
+
+The goal is:
+“Oh! I can ask arbitrary questions of my genealogy data.” That was always the magic of LifeLines.  Very important: keep installation simple.  Early testers disappear instantly if they must:
+* install Xcode
+* build Swift packages
+* fight macOS security
+* configure paths
+
+If possible:
+* distribute a signed app eventually
+* or at least a zipped .app
+* include a tiny sample GEDCOM
+* include working example scripts
+
+A tiny self-contained app helps enormously here.
+
+Another possibility: script-sharing
+
+Longer term, I think the real hook may not be the app itself.
+
+It may be: “people sharing genealogy scripts.” That was one of the strengths of LifeLines.  Once people start saying:
+* “here’s my census consistency checker”
+* “here’s my military-service report”
+* “here’s my cousin chart generator”
+
+—you have a community instead of merely software.  And your current architecture is actually very well suited to that future.
+=======================================================================
+In terms of getting the software to other Mac users to try out, what is the easiest way. Can I zip up applicstion in a single file and just ship it?
+=======================================================================
+
+Yes. For a small group of Mac testers, the easiest path is:
+1. In Xcode, choose Product → Archive.
+2. In the Organizer, choose Distribute App.
+3. For informal testing, choose Direct Distribution or Copy App, depending on what Xcode offers.
+4. Put the resulting .app into a folder.
+5. Compress it: Finder → right-click → Compress.
+6. Send the .zip.
+
+But there is one catch: macOS Gatekeeper.
+If the app is not signed/notarized, your testers may see “Apple could not verify…” or “app is damaged/can’t be opened.” They can usually bypass it by:
+
+* right-clicking the app
+* choosing Open
+* confirming Open
+
+For a few trusted testers, that may be good enough.  The smoother route is:
+* join the Apple Developer Program
+* sign the app with a Developer ID Application certificate
+* notarize it with Apple
+* zip the notarized .app
+* send that zip
+
+Then testers can open it normally.  So practically: For first experiments: yes, zip the .app and send it.  For non-technical testers: sign and notarize, or use TestFlight.
+
+For your first DeadEnds Script Runner testers, I’d start with a zipped .app, plus a one-page note explaining the right-click → Open step.
+=============================================================
+I have been in the Apple Developer Program for years, though I have done nothing with it.
+=============================================================
+Then you are in excellent shape.  You can distribute a very professional-looking Mac test app with surprisingly little additional work.
+
+The basic path is:
+1. Build the app in Xcode.
+2. Archive it.
+3. Sign it automatically using your Apple Developer credentials.
+4. Notarize it through Apple.
+5. Zip the resulting .app.
+6. Send the zip or place it on a website/GitHub release page.
+
+Once notarized:
+* testers can simply double-click it
+* Gatekeeper warnings are minimal or absent
+* it behaves like a normal Mac app
+
+For your purposes, I would strongly recommend:
+* a tiny standalone “DeadEnds Script Runner”
+* signed + notarized
+* bundled with:
+    * a sample GEDCOM
+    * 5–10 sample scripts
+    * a short PDF or markdown quick-start
+
+That would make trying it almost frictionless.  In Xcode, this is much easier now than it used to be. Much of the signing process is automatic if:
+* your Apple ID is logged into Xcode
+* “Automatically manage signing” is checked for the target
+
+Then:
+* Product → Archive
+* Organizer window opens
+* Distribute App
+* choose Developer ID
+* Xcode will usually walk you through notarization automatically
+
+After distribution, Xcode typically creates:
+* a signed .app
+* or a .dmg
+
+Either is fine, though for your use case a zipped .app is probably simplest.  I would also seriously consider creating a GitHub repository specifically for the runner app, with:
+* screenshots
+* downloadable releases
+* sample scripts
+* example output
+
+People are much more willing to try something if they can:
+* see screenshots immediately
+* download one file
+* run it without building anything
+
+And your project has a genuinely distinctive angle:
+programmable genealogy rather than form-driven genealogy. That stands out.
+
+------------------------------------------------------------------
+Okay. I want to start toward a "script running app." Here are my initial thoughts.
+It needs the DeadEndsLib for:
+	1. Database
+	2. Parser/Interpreter
+	3. Basic Gedcom Support
+But it doesn't need any customization or additions to the library.
+It needs, I believe, a single SwiftUI page. And that page would start out (and probably remain) almost identical to the current ProgramPage.
+
+The big difference would be in how the Gedcom file gets read.  I think the best way is to have another button on the button bar on the program page that reads a Gedcom file. Yeah, I think the first version of the script runner can be that simple -- one SwiftUI page that controls everything.
+
+I believe I should create a new SwiftUI app target, and put create a new ProgramPage i that target and go from there.  How do you see it?
+------------------------------------------------------------------
+I see it almost exactly the same way.  Create a new SwiftUI app target, maybe named:
+DeadEndsRunner or ScriptRunner
+
+It should depend on DeadEndsLib, but should not require changes to the library.  For the first version, I would keep the architecture deliberately plain:
+
+@main
+struct DeadEndsRunnerApp: App {
+    @State private var model = ProgramModel()
+    @State private var parser = Parser()
+
+    var body: some Scene {
+        WindowGroup {
+            ProgramPage(model: model, parser: parser)
+        }
+    }
+}
+
+The one real change is that ProgramPage should not assume a database has already been loaded by the main DeadEnds app. It should own, or be given, enough state to load one.
+
+So the button bar could have:
+
+Open GEDCOM    Open Program    Save Program    Compile    Run
+
+For now, Open GEDCOM can use a standard macOS file importer, read the selected file, build a Database, and store it in the ProgramModel.
+
+Conceptually:
+
+@Observable
+@MainActor
+final class ProgramModel {
+    var database: Database?
+    var databaseURL: URL?
+    var sourceText: String = ""
+    var outputText: String = ""
+    var status: String = "No database loaded"
+}
+
+Then the runner app is simply:
+
+DeadEndsLib
+    Database
+    GEDCOM
+    Parser
+    Interpreter
+
+DeadEndsApp
+    full genealogy UI
+
+DeadEndsRunner
+    one-window script runner
+
+Shared UI folder, included in both app targets:
+    ProgramPage.swift
+    ProgramModel.swift
+    ProgramOutputView.swift
+
+That way the runner becomes a focused shell around the same page, not a fork.
+
+But if target membership becomes annoying, it is perfectly reasonable to copy ProgramPage first, get the runner working, and refactor sharing later.
+
+My suggested first milestone:
+
+New app target opens directly to ProgramPage.
+ProgramPage has an Open GEDCOM button.
+After opening, status says “Loaded 15,950 persons, 5,357 families.”
+Compile button still works.
+Run button runs against the loaded database.
+
+That is a very clean first version.
+==========================================
+I was thinking that the ProgramPage would be different enough in the two apps that they should be different files. Are you suggesting they may be similar enough to keep the same and deal with their differences programatically?
+======================================
+I’d start with different files.
+
+My earlier “share the same ProgramPage” idea is attractive only if the differences stay small. But your instinct is probably right: the runner page has a different job.
+
+The full DeadEnds app’s ProgramPage is part of a larger navigation/database environment.
+
+The runner app’s page is more like a self-contained workbench:
+
+Open GEDCOM
+Open Script
+Edit Script
+Compile
+Run
+Show Output
+
+So I’d do this:
+
+DeadEndsApp
+    ProgramPage.swift
+
+DeadEndsRunner
+    RunnerProgramPage.swift
+
+But share smaller pieces when they naturally emerge:
+
+Shared UI or DeadEndsLib-adjacent support
+    ProgramEditorView
+    ProgramOutputView
+    ProgramButtonBar
+    ProgramModel
+
+In other words: don’t prematurely unify the pages. Let the runner page be free to evolve. If duplication starts to annoy you later, extract the common subviews.
+
+That seems very much in the spirit of what you’re doing: get the simple version working, then refactor once the shape is visible.

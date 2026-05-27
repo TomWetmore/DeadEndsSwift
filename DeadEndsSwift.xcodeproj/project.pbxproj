@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		2631CF252F80128F00EFAE4F /* Parsing in Frameworks */ = {isa = PBXBuildFile; productRef = 2631CF242F80128F00EFAE4F /* Parsing */; };
 		263408D52E21698F00F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
-		263408E12E216A8100F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		26DF075D2E69F15E000D08EE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 /* End PBXBuildFile section */
 
@@ -24,15 +23,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		263408D82E216A7200F4E6DE /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
 		26DF07542E69E7E6000D08EE /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -47,7 +37,6 @@
 /* Begin PBXFileReference section */
 		260186FD2E3D6423006A7ECC /* README.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		263408B02E21680900F4E6DE /* DeadEndsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeadEndsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		263408DA2E216A7200F4E6DE /* RunScript */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RunScript; sourceTree = BUILT_PRODUCTS_DIR; };
 		2673AD292E22A6B10078C61B /* libWarehouse.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWarehouse.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2682068B2D1337930051544B /* libDeadEndsLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDeadEndsLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		26DF07562E69E7E6000D08EE /* DeadEndsTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DeadEndsTest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -127,7 +116,6 @@
 				RecordIndex.swift,
 				RefnIndex.swift,
 				Search.swift,
-				SExprInterpreter/ProgramNode.swift,
 				SplitJoin.swift,
 				ToBeMoved.swift,
 				Traverse.swift,
@@ -147,11 +135,6 @@
 				26193A952F59EA2B00086E59 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */,
 			);
 			path = DeadEndsApp;
-			sourceTree = "<group>";
-		};
-		263408DB2E216A7200F4E6DE /* RunScript */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = RunScript;
 			sourceTree = "<group>";
 		};
 		263C00902F4CD5DD0061F086 /* Documents */ = {
@@ -198,14 +181,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				263408D52E21698F00F4E6DE /* libDeadEndsLib.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		263408D72E216A7200F4E6DE /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				263408E12E216A8100F4E6DE /* libDeadEndsLib.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -256,7 +231,6 @@
 				263408B12E21680900F4E6DE /* DeadEndsApp */,
 				260186FD2E3D6423006A7ECC /* README.md */,
 				26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */,
-				263408DB2E216A7200F4E6DE /* RunScript */,
 				2673AD2D2E22A7000078C61B /* Warehouse */,
 				26DF07572E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC42F2ACDAF001406E5 /* DeadEndsIPad */,
@@ -272,7 +246,6 @@
 			children = (
 				2682068B2D1337930051544B /* libDeadEndsLib.a */,
 				263408B02E21680900F4E6DE /* DeadEndsApp.app */,
-				263408DA2E216A7200F4E6DE /* RunScript */,
 				2673AD292E22A6B10078C61B /* libWarehouse.a */,
 				26DF07562E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC32F2ACDAF001406E5 /* DeadEnds.app */,
@@ -323,28 +296,6 @@
 			productName = DeadEndsApp;
 			productReference = 263408B02E21680900F4E6DE /* DeadEndsApp.app */;
 			productType = "com.apple.product-type.application";
-		};
-		263408D92E216A7200F4E6DE /* RunScript */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 263408DE2E216A7200F4E6DE /* Build configuration list for PBXNativeTarget "RunScript" */;
-			buildPhases = (
-				263408D62E216A7200F4E6DE /* Sources */,
-				263408D72E216A7200F4E6DE /* Frameworks */,
-				263408D82E216A7200F4E6DE /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				263408DB2E216A7200F4E6DE /* RunScript */,
-			);
-			name = RunScript;
-			packageProductDependencies = (
-			);
-			productName = RunScript;
-			productReference = 263408DA2E216A7200F4E6DE /* RunScript */;
-			productType = "com.apple.product-type.tool";
 		};
 		2673AD282E22A6B10078C61B /* Warehouse */ = {
 			isa = PBXNativeTarget;
@@ -443,9 +394,6 @@
 					263408AF2E21680900F4E6DE = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					263408D92E216A7200F4E6DE = {
-						CreatedOnToolsVersion = 16.4;
-					};
 					2673AD282E22A6B10078C61B = {
 						CreatedOnToolsVersion = 16.4;
 						LastSwiftMigration = 1640;
@@ -481,7 +429,6 @@
 			targets = (
 				2682068A2D1337930051544B /* DeadEndsLib */,
 				263408AF2E21680900F4E6DE /* DeadEndsApp */,
-				263408D92E216A7200F4E6DE /* RunScript */,
 				2673AD282E22A6B10078C61B /* Warehouse */,
 				26DF07552E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC22F2ACDAF001406E5 /* DeadEndsIPad */,
@@ -508,13 +455,6 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		263408AC2E21680900F4E6DE /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		263408D62E216A7200F4E6DE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -637,30 +577,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
-		263408DF2E216A7200F4E6DE /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 22WT5TK79S;
-				ENABLE_HARDENED_RUNTIME = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		263408E02E216A7200F4E6DE /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 22WT5TK79S;
-				ENABLE_HARDENED_RUNTIME = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -940,15 +856,6 @@
 			buildConfigurations = (
 				263408BA2E21680B00F4E6DE /* Debug */,
 				263408BB2E21680B00F4E6DE /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		263408DE2E216A7200F4E6DE /* Build configuration list for PBXNativeTarget "RunScript" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				263408DF2E216A7200F4E6DE /* Debug */,
-				263408E02E216A7200F4E6DE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

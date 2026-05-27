@@ -17,7 +17,7 @@ extension Program {
     /// arg must be a list; it is cleared and filled with string parts. The third
     /// and fourth args must be identifiers that receive the number of parts and
     /// index (relative 1) of the surname; if there is no surnams the value is 0.
-    func bltinExtractNames(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func bltinExtractName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         // 1st arg must resolve to a Gedcom name struct.
         guard let gedcomName = try await evaluateGedcomNameOpt(args[0],
