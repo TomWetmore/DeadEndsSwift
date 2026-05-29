@@ -8,11 +8,15 @@
 
 import SwiftUI
 import DeadEndsLib
+import Combine
 
 /// Application model. Added to the view environment by the root view.
 @MainActor
-@Observable
+//@Observable
 class AppModel: ObservableObject {
+
+    //let objectWillChange: ObservableObjectPublisher
+
     var database: Database?
     var path = NavigationPath()
     var status: String?

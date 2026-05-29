@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 24 April 2026.
+//  Last changed on 28 May 2026.
 
 /// This is the root view of the DeadEndsApp. If the database does not
 /// exist the Load Gedcom view is shown. If there is a database but the
@@ -98,10 +98,8 @@ struct RootView: View {
                     Text("hello")
                 case .program:
                     ProgramPage(
-                        model: ProgramModel(
-                            programName: "Test Program",
-                            source: ""
-                        )
+                        model: ProgramModel(programName: "Test Program", source: ""),
+                        database: model.database
                     )
                 }
             }

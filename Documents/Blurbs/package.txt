@@ -1,93 +1,34 @@
 ==========================================================
-It would be easy to create a "one page" SwiftUI app that shows just the ProgramPage. By adding a button to read a database (i.e., a Gedcom file) the program could start and run on that page. For such a program there would be no intention of changing the contents of the database. The idea is simple: read in a Gedcom file, run a program, and quit.
+Discussion of a "one page" SwiftUI app that shows a ProgramPage. By adding a button that reads a Gedcom file the programcan start and run on the page. There would be no intention of any database contents. The program reads in a Gedcom file, creates a database from the file, and then runs programs.
 ==========================================================
-Second I am wondering how to get some users to try it out. Do you have any suggestions on that idea?
+How would I get users to try it out?
 ==========================================================
 
 Your first idea is extremely good, and perhaps more important than it first appears.
 
 A focused “DeadEnds Script Runner” app would let people experience the programming language without needing to understand the whole genealogy application architecture. That lowers the barrier enormously.
 
-You are essentially describing something like:
-* Open GEDCOM file
-* Edit/load script
-* Run script
-* See output
-* Quit
+You are essentially describing something like: Open GEDCOM file; Edit/load script; Run script; Quit.
 
-That is a very understandable mental model.  In fact, it resembles the original spirit of LifeLines more than a modern “all-in-one genealogy application.” The scripting language becomes the star.
+That is a very understandable mental model.  It resembles the spirit of LifeLines more than a modern “all-in-one genealogy application.” The scripting language becomes the star.
 
-And architecturally, it fits where you already are:
-* you already have ProgramPage
-* you already have the parser/interpreter pipeline
-* the database is read-only during execution
-* the app state can stay tiny and clean
+Architecturally, it fits where you already are: you have ProgramPage; you have the parser/interpreter pipeline; the database is read-only during execution; the app state can stay tiny and clean.
 
-You could probably build the first usable version in a couple of days.  A tiny app also has advantages:
-* easier debugging
-* easier distribution
-* easier explanation
-* easier onboarding
-* fewer SwiftUI navigation concerns
-* fewer expectations from users
+You could build the first usable version in a couple of days.  A tiny app has advantages: easier debugging; easier distribution; easier explanation; easier onboarding; fewer SwiftUI navigation concerns; fewer expectations from users.
 
-You could even eventually make:
-* RunScript command-line tool
-* minimal GUI “Script Runner”
-* full DeadEnds app
-—all sharing the same core library.
-That separation is actually very elegant.
+You could even eventually make: RunScript command-line tool; minimal GUI “Script Runner”; full DeadEnds app -- all sharing the same core library.  That separation is elegant.
 
-As for getting users to try it out, I would strongly recommend aiming first for:
-“technically curious genealogy people”
-rather than mainstream genealogy users.
-
-Those are very different audiences.
-
-The people most likely to become enthusiastic early adopters are:
-
-* former LifeLines users
-* genealogy hobbyists who write code
-* GEDCOM tinkerers
-* people frustrated by rigid commercial genealogy software
-* people interested in programmable reports
-* old Roots/LifeLines/GenTech communities
-* developers hanging around genealogy GitHub projects
+As for getting users to try it out, I would strongly recommend aiming first for: “technically curious genealogy people”
+rather than mainstream genealogy users.  Those are very different audiences.  The people most likely to become enthusiastic early adopters are: former LifeLines users; genealogy hobbyists who write code; GEDCOM tinkerers; people frustrated by rigid commercial genealogy software; people interested in programmable reports; old Roots/LifeLines/GenTech communities; developers hanging around genealogy GitHub projects.
 
 A few concrete possibilities:
 
-Genealogy software forums
+Genealogy software forums: That is probably your best starting point.
+Particularly: * RootsDev; * GEDCOM-related GitHub discussions; * niche genealogy Discords/forums; * the Gramps developer/user community; * Reddit genealogy programming threads;
 
-You already asked recently about genealogy software forums. That is probably your best starting point.
-Particularly:
-* RootsDev
-* GEDCOM-related GitHub discussions
-* niche genealogy Discords/forums
-* the Gramps developer/user community
-* Reddit genealogy programming threads
-
-Not by saying:
-“Here is my software.”
-
-But rather:
-“I’m reviving the programmable genealogy ideas from LifeLines in Swift.”
-
-That has a story attached to it.  And honestly, you have a story:
-* Bell Labs background
-* original LifeLines
-* custom genealogy language
-* modern SwiftUI revival
-* emphasis on flexibility over rigid forms
-
-That is interesting to the right people.
-
-GitHub
-I think you should absolutely put:
-* screenshots
-* sample scripts
-* tiny sample GEDCOMs
-* a README showing “hello world” examples
-into the repository.  Especially examples like:
+Not by saying: “Here is my software.”
+But rather: “I’m reviving the programmable genealogy ideas from LifeLines in Swift.” That has a story attached to it.  And honestly, you have a story: * Bell Labs background; * original LifeLines * custom genealogy language * modern SwiftUI revival * emphasis on flexibility over rigid forms.  That is interesting to the right people.
+GitHub.  I think you should absolutely put: screenshots; sample scripts; tiny sample GEDCOMs; a README showing “hello world” examples into the repository.  Especially examples like:
 
 forindi(person) {
     name(person) nl()
@@ -96,41 +37,22 @@ People immediately understand programmable genealogy when they see examples.
 
 A “killer demo”.  You need one or two demos that commercial genealogy software does badly.
 
-For example:
-* relationship reports
-* custom descendant narratives
-* migration tracing
-* surname studies
-* weird/custom tags
-* programmable filtering
-* generating LaTeX reports
-* historical/statistical summaries
+For example: relationship reports; custom descendant narratives; migration tracing; surname studies; weird/custom tags; programmable filtering; generating LaTeX reports; historical/statistical summaries.
 
-The goal is:
-“Oh! I can ask arbitrary questions of my genealogy data.” That was always the magic of LifeLines.  Very important: keep installation simple.  Early testers disappear instantly if they must:
-* install Xcode
-* build Swift packages
-* fight macOS security
-* configure paths
+The goal is: I can ask arbitrary questions of my genealogy data.” That was the magic of LifeLines. Very important: keep installation simple. Early testers disappear instantly if they must: * install Xcode * build Swift packages * fight macOS security * configure paths
 
-If possible:
-* distribute a signed app eventually
-* or at least a zipped .app
-* include a tiny sample GEDCOM
-* include working example scripts
-
-A tiny self-contained app helps enormously here.
+If possible: distribute a signed app eventually; or at least a zipped .app; include a tiny sample GEDCOM; include working example scripts. A tiny self-contained app helps enormously here.
 
 Another possibility: script-sharing
 
 Longer term, I think the real hook may not be the app itself.
 
-It may be: “people sharing genealogy scripts.” That was one of the strengths of LifeLines.  Once people start saying:
+It may be: “people sharing genealogy scripts.” That was one of the strengths of LifeLines. Once people start saying:
 * “here’s my census consistency checker”
 * “here’s my military-service report”
 * “here’s my cousin chart generator”
 
-—you have a community instead of merely software.  And your current architecture is actually very well suited to that future.
+—you have a community instead of merely software. And your current architecture is actually very well suited to that future.
 =======================================================================
 In terms of getting the software to other Mac users to try out, what is the easiest way. Can I zip up applicstion in a single file and just ship it?
 =======================================================================
@@ -150,20 +72,20 @@ If the app is not signed/notarized, your testers may see “Apple could not veri
 * choosing Open
 * confirming Open
 
-For a few trusted testers, that may be good enough.  The smoother route is:
+For a few trusted testers, that may be good enough. The smoother route is:
 * join the Apple Developer Program
 * sign the app with a Developer ID Application certificate
 * notarize it with Apple
 * zip the notarized .app
 * send that zip
 
-Then testers can open it normally.  So practically: For first experiments: yes, zip the .app and send it.  For non-technical testers: sign and notarize, or use TestFlight.
+Then testers can open it normally. So practically: For first experiments: yes, zip the .app and send it. For non-technical testers: sign and notarize, or use TestFlight.
 
 For your first DeadEnds Script Runner testers, I’d start with a zipped .app, plus a one-page note explaining the right-click → Open step.
 =============================================================
 I have been in the Apple Developer Program for years, though I have done nothing with it.
 =============================================================
-Then you are in excellent shape.  You can distribute a very professional-looking Mac test app with surprisingly little additional work.
+Then you are in excellent shape. You can distribute a very professional-looking Mac test app with surprisingly little additional work.
 
 The basic path is:
 1. Build the app in Xcode.
@@ -182,11 +104,11 @@ For your purposes, I would strongly recommend:
 * a tiny standalone “DeadEnds Script Runner”
 * signed + notarized
 * bundled with:
-    * a sample GEDCOM
-    * 5–10 sample scripts
-    * a short PDF or markdown quick-start
+   * a sample GEDCOM
+   * 5–10 sample scripts
+   * a short PDF or markdown quick-start
 
-That would make trying it almost frictionless.  In Xcode, this is much easier now than it used to be. Much of the signing process is automatic if:
+That would make trying it almost frictionless. In Xcode, this is much easier now than it used to be. Much of the signing process is automatic if:
 * your Apple ID is logged into Xcode
 * “Automatically manage signing” is checked for the target
 
@@ -201,7 +123,7 @@ After distribution, Xcode typically creates:
 * a signed .app
 * or a .dmg
 
-Either is fine, though for your use case a zipped .app is probably simplest.  I would also seriously consider creating a GitHub repository specifically for the runner app, with:
+Either is fine, though for your use case a zipped .app is probably simplest. I would also seriously consider creating a GitHub repository specifically for the runner app, with:
 * screenshots
 * downloadable releases
 * sample scripts
@@ -216,19 +138,14 @@ And your project has a genuinely distinctive angle:
 programmable genealogy rather than form-driven genealogy. That stands out.
 
 ------------------------------------------------------------------
-Okay. I want to start toward a "script running app." Here are my initial thoughts.
-It needs the DeadEndsLib for:
-	1. Database
-	2. Parser/Interpreter
-	3. Basic Gedcom Support
-But it doesn't need any customization or additions to the library.
-It needs, I believe, a single SwiftUI page. And that page would start out (and probably remain) almost identical to the current ProgramPage.
+I want to start toward a "script running app." Here are my initial thoughts.  It needs the DeadEndsLib for: 1. Database; 2. Parser/Interpreter; 3. Basic Gedcom Support.  But it doesn't need any customization or additions to the library.
+It needs a single SwiftUI page. And that page would be similar to the current ProgramPage.
 
-The big difference would be in how the Gedcom file gets read.  I think the best way is to have another button on the button bar on the program page that reads a Gedcom file. Yeah, I think the first version of the script runner can be that simple -- one SwiftUI page that controls everything.
+The main difference is in how the Gedcom file is read. the best way is to have another button on the button bar on the program page that reads a Gedcom file. Yeah, I think the first version of the script runner can be that simple -- one SwiftUI page that controls everything.
 
-I believe I should create a new SwiftUI app target, and put create a new ProgramPage i that target and go from there.  How do you see it?
+I believe I should create a new SwiftUI app target, and put create a new ProgramPage i that target and go from there. How do you see it?
 ------------------------------------------------------------------
-I see it almost exactly the same way.  Create a new SwiftUI app target, maybe named:
+I see it almost exactly the same way. Create a new SwiftUI app target, maybe named:
 DeadEndsRunner or ScriptRunner
 
 It should depend on DeadEndsLib, but should not require changes to the library.  For the first version, I would keep the architecture deliberately plain:

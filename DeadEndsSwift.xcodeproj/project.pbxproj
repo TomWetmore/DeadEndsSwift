@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		261FD2F22FC8AA3D004BF7DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		2631CF252F80128F00EFAE4F /* Parsing in Frameworks */ = {isa = PBXBuildFile; productRef = 2631CF242F80128F00EFAE4F /* Parsing */; };
 		263408D52E21698F00F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		26DF075D2E69F15E000D08EE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
@@ -36,6 +37,7 @@
 
 /* Begin PBXFileReference section */
 		260186FD2E3D6423006A7ECC /* README.md */ = {isa = PBXFileReference; explicitFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		261FD2E22FC88C4B004BF7DE /* DeadEndsProgApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeadEndsProgApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		263408B02E21680900F4E6DE /* DeadEndsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeadEndsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2673AD292E22A6B10078C61B /* libWarehouse.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libWarehouse.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2682068B2D1337930051544B /* libDeadEndsLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDeadEndsLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,6 +54,19 @@
 				ProgramUserInterface/PersonChoiceRow.swift,
 			);
 			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
+		};
+		261FD2F02FC8A627004BF7DE /* Exceptions for "DeadEndsApp" folder in "DeadEndsProgApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppStartup/AppModel.swift,
+				ProgramPage/DiagnosticPane.swift,
+				ProgramPage/GetIntegerSheet.swift,
+				ProgramPage/GetPersonSheet.swift,
+				ProgramPage/ProgramInterface.swift,
+				ProgramPage/ProgramModel.swift,
+				ProgramPage/ProgramPage.swift,
+			);
+			target = 261FD2E12FC88C4B004BF7DE /* DeadEndsProgApp */;
 		};
 		263E61072F51273E00EAD723 /* Exceptions for "Warehouse" folder in "DeadEndsApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -130,10 +145,16 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		261FD2E32FC88C4B004BF7DE /* DeadEndsProgApp */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DeadEndsProgApp;
+			sourceTree = "<group>";
+		};
 		263408B12E21680900F4E6DE /* DeadEndsApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				26193A952F59EA2B00086E59 /* Exceptions for "DeadEndsApp" folder in "DeadEndsApp" target */,
+				261FD2F02FC8A627004BF7DE /* Exceptions for "DeadEndsApp" folder in "DeadEndsProgApp" target */,
 			);
 			path = DeadEndsApp;
 			sourceTree = "<group>";
@@ -177,6 +198,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		261FD2DF2FC88C4B004BF7DE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				261FD2F22FC8AA3D004BF7DE /* libDeadEndsLib.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		263408AD2E21680900F4E6DE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -229,6 +258,7 @@
 			isa = PBXGroup;
 			children = (
 				26FB11272F51F9C800E30FDE /* PRINCIPLES.md */,
+				261FD2E32FC88C4B004BF7DE /* DeadEndsProgApp */,
 				263408B12E21680900F4E6DE /* DeadEndsApp */,
 				260186FD2E3D6423006A7ECC /* README.md */,
 				26CA3DD52DBFD1A9001DA273 /* DeadEndsLib */,
@@ -250,6 +280,7 @@
 				2673AD292E22A6B10078C61B /* libWarehouse.a */,
 				26DF07562E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC32F2ACDAF001406E5 /* DeadEnds.app */,
+				261FD2E22FC88C4B004BF7DE /* DeadEndsProgApp.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -274,6 +305,28 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		261FD2E12FC88C4B004BF7DE /* DeadEndsProgApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 261FD2EC2FC88C4C004BF7DE /* Build configuration list for PBXNativeTarget "DeadEndsProgApp" */;
+			buildPhases = (
+				261FD2DE2FC88C4B004BF7DE /* Sources */,
+				261FD2DF2FC88C4B004BF7DE /* Frameworks */,
+				261FD2E02FC88C4B004BF7DE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				261FD2E32FC88C4B004BF7DE /* DeadEndsProgApp */,
+			);
+			name = DeadEndsProgApp;
+			packageProductDependencies = (
+			);
+			productName = DeadEndsProgApp;
+			productReference = 261FD2E22FC88C4B004BF7DE /* DeadEndsProgApp.app */;
+			productType = "com.apple.product-type.application";
+		};
 		263408AF2E21680900F4E6DE /* DeadEndsApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 263408B92E21680B00F4E6DE /* Build configuration list for PBXNativeTarget "DeadEndsApp" */;
@@ -389,9 +442,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2640;
+				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
+					261FD2E12FC88C4B004BF7DE = {
+						CreatedOnToolsVersion = 26.5;
+					};
 					263408AF2E21680900F4E6DE = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -433,11 +489,19 @@
 				2673AD282E22A6B10078C61B /* Warehouse */,
 				26DF07552E69E7E6000D08EE /* DeadEndsTest */,
 				26EABDC22F2ACDAF001406E5 /* DeadEndsIPad */,
+				261FD2E12FC88C4B004BF7DE /* DeadEndsProgApp */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		261FD2E02FC88C4B004BF7DE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		263408AE2E21680900F4E6DE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -455,6 +519,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		261FD2DE2FC88C4B004BF7DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		263408AC2E21680900F4E6DE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -501,6 +572,72 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		261FD2EA2FC88C4C004BF7DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 22WT5TK79S;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bartonstreet.DeadEndsProgApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		261FD2EB2FC88C4C004BF7DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 22WT5TK79S;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bartonstreet.DeadEndsProgApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		263408BA2E21680B00F4E6DE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -852,6 +989,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		261FD2EC2FC88C4C004BF7DE /* Build configuration list for PBXNativeTarget "DeadEndsProgApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				261FD2EA2FC88C4C004BF7DE /* Debug */,
+				261FD2EB2FC88C4C004BF7DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		263408B92E21680B00F4E6DE /* Build configuration list for PBXNativeTarget "DeadEndsApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

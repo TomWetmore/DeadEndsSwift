@@ -21,6 +21,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>DeadEndsProgApp.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>8</integer>
+		</dict>
 		<key>DeadEndsSwift.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -34,12 +39,12 @@
 		<key>Parsing (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>6</integer>
+			<integer>7</integer>
 		</dict>
 		<key>ParsingTest.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>7</integer>
+			<integer>6</integer>
 		</dict>
 		<key>RunScript.xcscheme_^#shared#^_</key>
 		<dict>
@@ -57,6 +62,11 @@
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>26106FA62D7BC6E600994B2C</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>261FD2E12FC88C4B004BF7DE</key>
 		<dict>
 			<key>primary</key>
 			<true/>

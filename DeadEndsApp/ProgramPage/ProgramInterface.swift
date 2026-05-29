@@ -1,9 +1,9 @@
 //
-//  ProgramOutput.swift
+//  ProgramInterface.swift
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 24 May 2026.
-//  Last changed on 24 May 2026.
+//  Last changed on 28 May 2026.
 //
 
 import Foundation

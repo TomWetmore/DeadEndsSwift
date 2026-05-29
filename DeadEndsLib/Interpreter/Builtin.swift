@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 24 May 2026.
+//  Last changed on 27 May 2026.
 //
 
 import Foundation
@@ -76,7 +76,7 @@ extension Program {
             "death":    Builtin(min: 1, max: 1) { try await self.bltinDeath($0)},
             "father":   Builtin(min: 1, max: 1) { try await self.bltinFather($0)},
             "mother":   Builtin(min: 1, max: 1) { try await self.bltinMother($0)},
-            "families": Builtin(min: 1, max: 1) { try await self.builtinFamilyList($0)},
+            "families": Builtin(min: 1, max: 1) { try await self.bltinFamilyList($0)},
             "allpersons":  Builtin(min: 0, max: 0) { try self.bltinAllPersons($0)},
             "male":     Builtin(min: 1, max: 1) { try await self.bltinMale($0)},
             "female":   Builtin(min: 1, max: 1) { try await self.bltinWife($0)},

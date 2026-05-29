@@ -3,18 +3,20 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 24 May 2026.
+//  Last changed on 28 May 2026.
 //
 //  This is the programming page of the app. It allows users to
 //  compose, edit, compile and run DeadEnds programs.
 //
 
 import SwiftUI
+import DeadEndsLib
 
 struct ProgramPage: View {
 
-    @EnvironmentObject var appModel: AppModel
+    //@EnvironmentObject var appModel: AppModel
     @Bindable var model: ProgramModel
+    let database: Database?
 
     var body: some View {
 
@@ -40,7 +42,7 @@ struct ProgramPage: View {
             case .getPerson(let request):
                 GetPersonSheet(
                     request: request,
-                    database: appModel.database!,
+                    database: database!,
                     onChoose: { model.finishGetPerson($0) },
                     onCancel: { model.finishGetPerson(nil) }
                 )
@@ -81,13 +83,13 @@ struct ProgramPage: View {
             }
             .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Button("Run") {
-                if let db = appModel.database {
+                if let db = database {
                     Task {
                         await model.handleRunButton(database: db)
                     }
                 }
             }
-            .disabled(model.parsedProgram == nil || appModel.database == nil)
+            .disabled(model.parsedProgram == nil || database == nil)
             Spacer()
         }
         .padding(.horizontal)

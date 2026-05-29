@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 27 May 2026.
 //
 
 import Foundation
@@ -85,14 +85,6 @@ extension Program {
 
     /// Append a value to a list. This method requires the first argument to be a
     /// variable with a list value in the symbol table.
-    func oldbltinAppend(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let (name, list) =
-            try requireListVariable(args[0], errMsg: "append: 1st arg must be a list var")
-        await list.append(try evaluate(args[1]))
-        assignToSymbol(name, value: .list(list))
-        return .null
-    }
-
     func bltinAppend(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let list = try await evaluateListOpt(args[0], errMsg: "append: 1st arg must be a list") else {
@@ -128,11 +120,16 @@ extension Program {
         return list
     }
 
+    /// Evaluate an expression and be sure it is a list or nil.
     func evaluateListOpt(_ expr: ParsedExpr, errMsg: String) async throws -> List? {
-        guard case let .list(list) = try await evaluate(expr) else {
+        switch try await evaluate(expr) {
+        case .list(let list):
+            return list
+        case .null:
+            return nil
+        default:
             throw RuntimeError(errMsg, line: expr.line)
         }
-        return list
     }
 }
 
@@ -253,7 +250,7 @@ extension Program {
 
     /// Return the list of families a person is in as a spouse.
     /// families(person) -> .list(Family)
-    func builtinFamilyList(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func bltinFamilyList(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let line = args[0].line
         var families = [Family]()
 

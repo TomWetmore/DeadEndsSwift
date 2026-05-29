@@ -3,15 +3,13 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 23 May 2026.
+//  Last changed on 28 May 2026.
 //
 
 import Foundation
 import DeadEndsLib
 import AppKit
 import UniformTypeIdentifiers
-
-
 
 /// Program page model.
 @MainActor
