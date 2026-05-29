@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 22 June 2025.
-//  Last changed on 24 February 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -12,10 +12,8 @@ import Combine
 
 /// Application model. Added to the view environment by the root view.
 @MainActor
-//@Observable
-class AppModel: ObservableObject {
-
-    //let objectWillChange: ObservableObjectPublisher
+@Observable
+class AppModel {
 
     var database: Database?
     var path = NavigationPath()

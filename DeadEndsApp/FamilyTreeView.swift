@@ -2,9 +2,8 @@
 //  FamilyTreeView.swift
 //  DeadEndsSwift
 //
-//  Created by Thomas Wetmore on 8/8/25.
-//  Coalesced by ChatGPT on 8/8/25.
-//  Last changed on 18 May 2026.
+//  Created by Thomas Wetmore on 8 August 2025.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -12,7 +11,7 @@ import DeadEndsLib
 
 struct FamilyTreeView: View {
 
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
     let person: Person
 
     var body: some View {

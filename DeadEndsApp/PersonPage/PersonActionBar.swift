@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 9 March 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -17,7 +17,7 @@ struct FamilyList: Identifiable {
 /// Row of action buttons displayed on person page views.
 struct PersonActionBar: View {
 
-    @EnvironmentObject private var model: AppModel
+    @Environment(AppModel.self) var model
     let person: Person
     @State private var familyList: FamilyList? = nil
     @State private var showEditSheet = false
@@ -63,7 +63,7 @@ struct PersonActionBar: View {
             Button("Edit") { showEditSheet = true }
             .sheet(isPresented: $showEditSheet) {
                 PersonEditSheet(person: person)
-                    .environmentObject(model)
+                    .environment(model)
             }
         }
         .buttonStyle(.bordered)
@@ -76,7 +76,7 @@ struct PersonActionBar: View {
                 familyList = nil
                 model.path.append(Route.family(selectedFamily))
             }
-            .environmentObject(model)
+            .environment(model)
         }
     }
 

@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 5 July 2025.
-//  Last changed on 28 January 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -21,7 +21,7 @@ private struct PedigreeNode: Identifiable {
 struct PedigreeDetail: View {
 
     @State private var layout: [PedigreeNode] = []
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
 
     let person: Person  // Root of Pedigree.
     let generations: Int  // Number of generations.

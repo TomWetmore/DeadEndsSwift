@@ -3,7 +3,7 @@
 //  DeadEndsApp.swift
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 7 March 2026.
+//  Last changed on 29 May 2026.
 
 /// DeadEndsApp is the MacOS DeadEnds application. It creates AppModel, the
 /// system wide application model and then renders the root view. The model
@@ -15,13 +15,13 @@ import DeadEndsLib
 /// DeadEnds SwiftUI application.
 @main
 struct DeadEndsApp: App {
-    @StateObject private var model = AppModel()  // System wide application model.
+    @State private var model = AppModel()  // System wide application model.
 
     /// Application scene.
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environmentObject(model)
+                .environment(model)
                 .onAppear { print("RootView appear — pid:", getpid()) }  // Debug.
                 .onDisappear {
                     print("RootView disappear, app terminate.")  // Debug.

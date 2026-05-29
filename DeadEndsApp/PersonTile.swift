@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 4 July 2025.
-//  Last changed on 7 March 2026.
+//  Last changed on 29 May 2026.
 
 /// PersonTile is used on several page views to show persons in small
 /// tiles. Labels are optional and birth and death summaries are optional.
@@ -14,7 +14,8 @@ import DeadEndsLib
 
 /// General view that shows a person in a tile shape.
 struct PersonTile: View {
-    @EnvironmentObject var model: AppModel
+    
+    @Environment(AppModel.self) var model
     let person: Person
     var label: String? = nil
     var showSummary: Bool = true

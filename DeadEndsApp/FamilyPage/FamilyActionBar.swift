@@ -3,14 +3,15 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 January 2026.
-//  Last changed on 24 Januaury 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
 struct FamilyActionBar: View {
-    @EnvironmentObject var model: AppModel
+    
+    @Environment(AppModel.self) var model
     let family: Family
     @State private var showEditSheet = false
 

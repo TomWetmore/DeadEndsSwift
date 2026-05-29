@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 28 March 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -21,7 +21,7 @@ struct PersonEditSheet: View {
     @State private var showEditAlert: Bool = false
     @State private var editErrors: [String] = []
     @State private var showErrorSheet: Bool = false
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
     @Environment(\.dismiss) var dismiss
 
     let person: Person  // Person edited.

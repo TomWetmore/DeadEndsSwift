@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 14 July 2025.
-//  Last changed on 14 July 2025
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -13,7 +13,8 @@ import DeadEndsLib
 
 
 struct FamilySelectionView: View {
-    @EnvironmentObject var model: AppModel
+    
+    @Environment(AppModel.self) var model
     let families: [Family]
 
     var body: some View {

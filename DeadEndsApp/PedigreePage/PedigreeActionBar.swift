@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 14 January 2026.
-//  Last changed on 7 March 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -12,7 +12,7 @@ import DeadEndsLib
 /// Action buttons shown on a pedigree page.
 struct PedigreeActionBar: View {
 
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
     @State private var childList: PersonSelectRequest?
     @State private var spouseList: PersonSelectRequest?
 
@@ -31,14 +31,14 @@ struct PedigreeActionBar: View {
                 childList = nil
                 model.path.append(Route.pedigree(selected)) // or Route.person(selected)
             }
-            .environmentObject(model)
+            .environment(model)
         }
         .sheet(item: $spouseList) { list in
             PersonSelectionSheet(title: list.title, persons: list.persons) { selected in
                 spouseList = nil
                 model.path.append(Route.pedigree(selected))
             }
-            .environmentObject(model)
+            .environment(model)
         }
     }
 

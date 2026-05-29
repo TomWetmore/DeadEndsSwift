@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 11 July 2025.
-//  Last changed on 26 February 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -12,7 +12,7 @@ import DeadEndsLib
 // Provides the top level View of a Family.
 struct FamilyPage: View {
 
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
     let family: Family  // Family in View.
 
     private var index: RecordIndex? { model.database?.recordIndex }

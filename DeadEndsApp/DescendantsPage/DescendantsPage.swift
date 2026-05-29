@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 7 August 2025.
-//  Last changed on 2 February 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -20,7 +20,7 @@ struct DescendantNode: Identifiable {
 struct DescendantsPage: View {
 
     @State private var expanded: Set<DescendantNode.ID> = []  // Expanded nodes.
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
     @State private var rootNode: DescendantNode? = nil  // Descendant tree.
     let root: Person
 

@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 23 August 2025.
-//  Last changed on 3 February 2026.
+//  Last changed on 29 May 2026.
 
 import SwiftUI
 import DeadEndsLib
@@ -26,7 +26,7 @@ private let palette = DescPalette(
 /// Descendancy list page view.
 struct DescendancyListPage: View {
 
-    @EnvironmentObject var app: AppModel
+    @Environment(AppModel.self) var appModel
     @State private var model: DescendancyListModel
     private let indent: CGFloat = 40
 
@@ -98,14 +98,14 @@ struct DescendancyListPage: View {
                 personRow(person, events: events)
                     .contentShape(Rectangle())  // Make the row tappable.
                     .onTapGesture {
-                        app.path.append(Route.descendancy(person))
+                        appModel.path.append(Route.descendancy(person))
                     }
                     .contextMenu {
                         Button("Make Root Here") {
                             model.reRoot(person)  // Reroot to current Person.
                         }
                         Button("Open in Person View") {
-                            app.path.append(Route.person(person))  // Open current Person in PersonView.
+                            appModel.path.append(Route.person(person))  // Open current Person in PersonView.
                         }
                         Button("Show Families") {
                             model.expandPerson(person.key)
@@ -122,7 +122,7 @@ struct DescendancyListPage: View {
                     .contentShape(Rectangle())  // Make the row tappable.
                     .onTapGesture {
                         if let spouse = spouse {
-                            app.path.append(Route.person(spouse))  // Open current spouse in PersonView.
+                            appModel.path.append(Route.person(spouse))  // Open current spouse in PersonView.
                         }
                     }
                     .allowsHitTesting(spouse != nil)  // Disable taps when there is no spouse.
@@ -138,7 +138,7 @@ struct DescendancyListPage: View {
                         }
                         if let spouse = spouse {
                             Button("Open Spouse in Person View") {
-                                app.path.append(Route.person(spouse))
+                                appModel.path.append(Route.person(spouse))
                             }
                         }
                         Button("Collapse Subtree") {

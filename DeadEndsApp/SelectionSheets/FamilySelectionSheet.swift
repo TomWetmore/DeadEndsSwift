@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 14 July 2025.
-//  Last changed on 14 January 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -15,7 +15,7 @@ struct FamilySelectionSheet: View {
     let families: [Family]  // Array of families to select from.
     let onSelect: (Family) -> Void  // Closure to call on selected FAM node.
 
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
     @Environment(\.dismiss) var dismiss
 
     var body: some View {

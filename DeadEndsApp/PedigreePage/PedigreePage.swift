@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 14 January 2026.
-//  Last changed on 28 January 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -11,7 +11,7 @@ import DeadEndsLib
 
 struct PedigreePage: View {
 
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
     let person: Person  // Root of Pedigree.
     let generations: Int
     let buttonWidth: CGFloat  // Max button width.

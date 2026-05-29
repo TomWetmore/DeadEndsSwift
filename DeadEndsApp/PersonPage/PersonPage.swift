@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 26 February 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -12,7 +12,7 @@ import DeadEndsLib
 /// Show person on a person page. Uses person tiles and a person action bar.
 struct PersonPage: View {
 
-    @EnvironmentObject private var model: AppModel
+    @Environment(AppModel.self) var model
     let person: Person
     @State private var showingSearch = false
     @State private var searchCriteria = SearchCriteria()
@@ -61,7 +61,7 @@ struct PersonPage: View {
                     // model.currentPersonKey = key
                 }
             )
-            .environmentObject(model) // If SearchPanel needs it (currently doesn’t).
+            .environment(model) // If SearchPanel needs it (currently doesn’t).
         }
         .contextMenu {
             Button("Search…") { showingSearch = true }

@@ -3,13 +3,14 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 16 September 2025.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
 
 struct SelectPersonView: View {
-    @EnvironmentObject var model: AppModel
+
+    @Environment(AppModel.self) var model
     @State private var key: String = "@I1@"
 
     var body: some View {

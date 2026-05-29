@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 October 2025.
-//  Last changed on 25 January 2026.
+//  Last changed on 29 May 2026.
 //
 
 import SwiftUI
@@ -12,7 +12,7 @@ import DeadEndsLib
 /// View that contains draggable cards and supports genealogical activities.
 struct DesktopView: View {
 
-    @EnvironmentObject var appModel: AppModel
+    @Environment(AppModel.self) var appModel
     @State private var model: DesktopModel
     @State private var showingSearchSheet = false
     @State private var marqueeStart: CGPoint? = nil
@@ -210,7 +210,7 @@ struct PersonSearchSheet: View {
 
     @Environment(\.dismiss) var dismiss
     @Bindable var model: DesktopModel
-    @EnvironmentObject var appModel: AppModel
+    @Environment(AppModel.self) var appModel
     @State private var didSearch = false
 
     @State private var query: String = ""

@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed on 13 May 2026.
+//  Last changed on 29 May 2026.
 
 /// PersonSelectionView is used on the RootView to get a list of persons
 /// from a name pattern that the user selects an member of. The person chosen
@@ -35,7 +35,7 @@ struct PersonMatch: Identifiable {
 /// A View that shows a list of Persons from a Database who have names that match
 /// a pattern and allows the user to select one.
 struct PersonSelectionView: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
     @State private var namePattern: String = ""
     @State private var results: [PersonMatch] = []
 

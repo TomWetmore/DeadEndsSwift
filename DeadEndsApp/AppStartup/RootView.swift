@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 24 June 2025.
-//  Last changed on 28 May 2026.
+//  Last changed on 29 May 2026.
 
 /// This is the root view of the DeadEndsApp. If the database does not
 /// exist the Load Gedcom view is shown. If there is a database but the
@@ -42,11 +42,11 @@ extension EnvironmentValues {
 
 /// Root View of the DeadEnds App.
 struct RootView: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) var model
 
     /// Render the root view.
     var body: some View {
-
+        @Bindable var model = model
         NavigationStack(path: $model.path) {
             VStack {
                 if model.database == nil {
@@ -85,7 +85,7 @@ struct RootView: View {
                 case .descendancy(let person):
                     if let idx = model.database?.recordIndex {
                         DescendancyListPage(root: person, index: idx)
-                            .environmentObject(model)
+                            .environment(model)
                             .navigationTitle("Descendancy")
                     } else {
                         Text("No record index or person available.")
