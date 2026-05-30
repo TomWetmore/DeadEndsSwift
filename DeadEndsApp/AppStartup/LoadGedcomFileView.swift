@@ -8,6 +8,7 @@
 
 import SwiftUI
 import DeadEndsLib
+import UniformTypeIdentifiers
 
 /// View that prompts user to select a Gedcom file to load into a database.
 struct LoadGedcomFileView: View {
@@ -30,12 +31,25 @@ struct LoadGedcomFileView: View {
         }.padding()
     }
 
+}
+
     /// Open file dialog for choosing a Gedcom file.
-    func openGedcomFilePanel() -> String? {
+    func oldopenGedcomFilePanel() -> String? {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.init(filenameExtension: "ged")!]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         return panel.runModal() == .OK ? panel.url?.path : nil
     }
+
+func openGedcomFilePanel() -> String? {
+
+    let panel = NSOpenPanel()
+    panel.title = "Create Gedcom Database"
+    panel.message = "Choose a Gedcom File for Building the Database."
+    panel.allowedContentTypes = [.init(filenameExtension: "ged")!]
+    panel.allowsMultipleSelection = false
+    panel.canChooseDirectories = false
+
+    return panel.runModal() == .OK ? panel.url?.path : nil
 }

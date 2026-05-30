@@ -59,6 +59,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppStartup/AppModel.swift,
+				AppStartup/LoadGedcomFileView.swift,
 				ProgramPage/DiagnosticPane.swift,
 				ProgramPage/GetIntegerSheet.swift,
 				ProgramPage/GetPersonSheet.swift,

@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 28 May 2026.
+//  Last changed on 29 May 2026.
 //
 //  This is the programming page of the app. It allows users to
 //  compose, edit, compile and run DeadEnds programs.
@@ -12,11 +12,18 @@
 import SwiftUI
 import DeadEndsLib
 
-struct ProgramPage: View {
+struct ProgramPage<ExtraCommands: View>: View {
 
-    //@EnvironmentObject var appModel: AppModel
     @Bindable var model: ProgramModel
     let database: Database?
+    let extraCommands: ExtraCommands
+
+    init(model: ProgramModel, database: Database?,
+         @ViewBuilder extraCommands: () -> ExtraCommands = { EmptyView() }) {
+            self.model = model
+            self.database = database
+            self.extraCommands = extraCommands()
+        }
 
     var body: some View {
 
@@ -66,6 +73,9 @@ struct ProgramPage: View {
     /// Row of command buttons.
     private var commandBar: some View {
         HStack {
+
+            extraCommands
+            
             Button("Open") {
                 model.openProgramFile()
             }
@@ -78,20 +88,33 @@ struct ProgramPage: View {
             }
             .disabled(model.source.isEmpty)
             Spacer().frame(width: 12)
-            Button("Compile") {
-                model.handleCompileButton()
+            HStack {
+                Button("Compile") {
+                    model.handleCompileButton()
+                }
+                Circle()
+                    .fill(model.parsedProgram == nil ? .gray : .green)
+                    .frame(width: 11, height: 11)
+                    .help(model.parsedProgram == nil
+                          ? "Program not compiled"
+                          : "Program compiled")
             }
             .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            Button("Run") {
-                if let db = database {
-                    Task {
-                        await model.handleRunButton(database: db)
+            HStack {
+                Button("Run") {
+                    if let db = database {
+                        Task {
+                            await model.handleRunButton(database: db)
+                        }
                     }
                 }
+                Circle()
+                    .frame(width: 11, height: 11)
             }
             .disabled(model.parsedProgram == nil || database == nil)
             Spacer()
         }
+        .buttonStyle(.borderless)
         .padding(.horizontal)
         .padding(.vertical, 8)
         .frame(minHeight: 48, idealHeight: 60, maxHeight: 60)
