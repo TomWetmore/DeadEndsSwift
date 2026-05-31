@@ -92,12 +92,13 @@ struct ProgramPage<ExtraCommands: View>: View {
                 Button("Compile") {
                     model.handleCompileButton()
                 }
-                Circle()
-                    .fill(model.parsedProgram == nil ? .gray : .green)
-                    .frame(width: 11, height: 11)
-                    .help(model.parsedProgram == nil
-                          ? "Program not compiled"
-                          : "Program compiled")
+                StatusLight(
+                    state: model.compileState,
+                    initialHelp: "Program not compiled",
+                    successHelp: "Program compiled",
+                    workingHelp: "Program compiling",
+                    failureHelp: "Program compile failed"
+                )
             }
             .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             HStack {

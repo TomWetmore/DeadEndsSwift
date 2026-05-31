@@ -1,6 +1,6 @@
 proc main ()
 {
-    set(indi, getperson(“enter first person in ahnentafel“))
+    set(indi, getperson(“Enter first person in ahnentafel“))
     set(ilist, list())
     set(alist, list())
     set(table, table())

@@ -26,6 +26,9 @@ final class ProgramModel {
     var fileURL: URL? = nil
     var isDirty: Bool = false
 
+    var compileState: StatusState = .initial
+    var runState: StatusState = .initial
+
     var programRequest: ProgramRequest?
 
     var personContinuation: CheckedContinuation<Person?, Never>?
@@ -40,7 +43,7 @@ final class ProgramModel {
 
     /// Handle the compile button; tries to compile a program.
     /// It will either succeed or display a diagnostic message.
-    func handleCompileButton() {
+    func oldhandleCompileButton() {
 
         diagnostics = []
         parsedProgram = nil
@@ -71,6 +74,68 @@ final class ProgramModel {
                 message: error.localizedDescription,
                 line: nil
             )]
+        }
+    }
+
+    func handleCompileButton() {
+
+        compileState = .working
+
+        diagnostics = []
+        parsedProgram = nil
+        output.clear()
+
+        guard !source.isEmpty else {
+            compileState = .initial
+            return
+        }
+
+        do {
+            let normalized = normalizedSource(source)  // Smart quote hack.
+
+            var lexer = Lexer(source: normalized)
+            let tokens = lexer.tokenize()
+
+            guard tokens.last?.kind == .eof else {
+                throw FrontEndError.missingEOF
+            }
+
+            var input = tokens[...]
+
+            parsedProgram = try ProgramParser().parse(&input)
+
+            if let first = input.first, first.kind == .eof {
+                input.removeFirst()
+            }
+
+            if !input.isEmpty {
+                throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
+            }
+
+            compileState = .success
+
+        } catch let error as FrontEndError {
+
+            diagnostics = [convertFrontEndError(error)]
+            compileState = .failure
+
+        } catch let error as ParseError {
+
+            diagnostics = [Diagnostic(
+                message: error.description,
+                line: nil
+            )]
+
+            compileState = .failure
+
+        } catch {
+
+            diagnostics = [Diagnostic(
+                message: error.localizedDescription,
+                line: nil
+            )]
+
+            compileState = .failure
         }
     }
 
@@ -243,4 +308,18 @@ extension ProgramModel: UserInterface {
         stringContinuation?.resume(returning: value)
         stringContinuation = nil
     }
+}
+
+enum CompileState {
+    case notCompiled
+    case compiling
+    case success
+    case failure
+}
+
+enum RunState {
+    case notRun
+    case running
+    case success
+    case failure
 }
