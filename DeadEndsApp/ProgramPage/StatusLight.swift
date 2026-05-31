@@ -3,44 +3,34 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 30 May 2026.
-//  Last changed on 30 May 2026.
+//  Last changed on 31 May 2026.
 //
 
 import SwiftUI
 
-/// Small colored circle for showing state or status.
+/// Small colored circle that shows the status of an operation.
 struct StatusLight: View {
 
     let state: StatusState
 
-    let initialHelp: String
-    let successHelp: String
-    let workingHelp: String
-    let failureHelp: String
-
     var body: some View {
-
-        Circle()
-            .fill(color)
-            .frame(width: 11, height: 11)
-            .help(help)
+        Group {
+            switch state {
+            case .initial:
+                Circle().stroke(color, lineWidth: 1)
+            default:
+                Circle().fill(color)
+            }
+        }
+        .frame(width: 11, height: 11)
     }
 
     private var color: Color {
         switch state {
-        case .initial: .gray
+        case .initial: .secondary
         case .working: .orange
         case .success: .green
         case .failure: .red
-        }
-    }
-
-    private var help: String {
-        switch state {
-        case .initial: initialHelp
-        case .working: workingHelp
-        case .success: successHelp
-        case .failure: failureHelp
         }
     }
 }

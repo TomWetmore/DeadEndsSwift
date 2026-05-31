@@ -3,7 +3,7 @@
 //  DeadEndsProgApp
 //
 //  Created by Thomas Wetmore on 28 May 2026.
-//  Last changed on 29 May 2026.
+//  Last changed on 31 May 2026.
 //
 
 import Foundation
@@ -14,14 +14,17 @@ final class WrappedModel {
     
     var database: Database?
     var programModel = ProgramModel()
-    var databaseState: DatabaseState = .empty
+    var databaseState: StatusState = .initial
 
     @MainActor
     func loadDatabase() {
 
-        guard let path = openGedcomFilePanel() else { return }
+        databaseState = .working
+        guard let path = openGedcomFilePanel() else {
+            databaseState = .failure
+            return
+        }
         var log = ErrorLog()
-        databaseState = .loading
         if let database = DeadEndsLib.loadDatabase(from: path, errlog: &log) {
             self.database = database
             databaseState = .success

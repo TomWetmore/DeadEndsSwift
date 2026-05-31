@@ -3,7 +3,7 @@
 //  DeadEndsProgApp
 //
 //  Created by Thomas Wetmore on 28 May 2026.
-//  Last changed on 29 May 2026.
+//  Last changed on 31 May 2026.
 //
 
 import SwiftUI
@@ -24,11 +24,12 @@ struct DeadEndsRunnerApp: App {
                     Button("Load Database") {
                         wrappedModel.loadDatabase()
                     }//.buttonStyle(.borderless)
+                    StatusLight(state: wrappedModel.databaseState)
 
-                    Circle()
-                        .fill(wrappedModel.database == nil ? .gray : .green)
-                        .frame(width: 11, height: 11)
-                        .help(wrappedModel.database == nil ? "No database loaded" : "Database loaded")
+//                    Circle()
+//                        .fill(wrappedModel.database == nil ? .gray : .green)
+//                        .frame(width: 11, height: 11)
+//                        .help(wrappedModel.database == nil ? "No database loaded" : "Database loaded")
                 }
             }
         }

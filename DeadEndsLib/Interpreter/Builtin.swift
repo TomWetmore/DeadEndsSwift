@@ -79,7 +79,7 @@ extension Program {
             "families": Builtin(min: 1, max: 1) { try await self.bltinFamilyList($0)},
             "allpersons":  Builtin(min: 0, max: 0) { try self.bltinAllPersons($0)},
             "male":     Builtin(min: 1, max: 1) { try await self.bltinMale($0)},
-            "female":   Builtin(min: 1, max: 1) { try await self.bltinWife($0)},
+            "female":   Builtin(min: 1, max: 1) { try await self.bltinFemale($0)},
 
             "allfamilies": Builtin(min: 0, max: 0) { try self.bltinAllFamilies($0)},
 

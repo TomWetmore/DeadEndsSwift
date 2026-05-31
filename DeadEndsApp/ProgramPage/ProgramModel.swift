@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 28 May 2026.
+//  Last changed on 31 May 2026.
 //
 
 import Foundation
@@ -28,6 +28,7 @@ final class ProgramModel {
 
     var compileState: StatusState = .initial
     var runState: StatusState = .initial
+    var openState: StatusState = .initial
 
     var programRequest: ProgramRequest?
 
@@ -77,10 +78,10 @@ final class ProgramModel {
         }
     }
 
+    /// Handle the compile button.
     func handleCompileButton() {
 
         compileState = .working
-
         diagnostics = []
         parsedProgram = nil
         output.clear()
@@ -91,57 +92,44 @@ final class ProgramModel {
         }
 
         do {
-            let normalized = normalizedSource(source)  // Smart quote hack.
-
+            let normalized = normalizedSource(source)  // Quote hack.
             var lexer = Lexer(source: normalized)
             let tokens = lexer.tokenize()
-
             guard tokens.last?.kind == .eof else {
                 throw FrontEndError.missingEOF
             }
-
             var input = tokens[...]
-
             parsedProgram = try ProgramParser().parse(&input)
-
             if let first = input.first, first.kind == .eof {
                 input.removeFirst()
             }
-
             if !input.isEmpty {
                 throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
             }
-
             compileState = .success
 
         } catch let error as FrontEndError {
-
             diagnostics = [convertFrontEndError(error)]
             compileState = .failure
-
         } catch let error as ParseError {
-
             diagnostics = [Diagnostic(
                 message: error.description,
                 line: nil
             )]
-
             compileState = .failure
-
         } catch {
-
             diagnostics = [Diagnostic(
                 message: error.localizedDescription,
                 line: nil
             )]
-
             compileState = .failure
         }
     }
 
     /// Handle the run button; create a program and try to interpret it.
     func handleRunButton(database: Database) async {
-        
+
+        runState = .working
         guard let parsedProgram else { return }
         diagnostics = []
         output.clear()
@@ -153,20 +141,26 @@ final class ProgramModel {
             try await program.interpretProgram()
             //print("after interpret, output size =", buffer.text.count)  // DEBUG
             output.text = displayableOutput(buffer.text)  // Move buffered output to view.
+            runState = .success
         } catch let error as RuntimeError {
             output.text = displayableOutput(buffer.text)
             diagnostics = [Diagnostic(message: error.message,
                                       line: error.line > 0 ? error.line : nil)]
+            runState = .failure
         } catch {
             output.text = displayableOutput(buffer.text)
             diagnostics = [Diagnostic(message: String(describing: error), line: 0)]
+            runState = .failure
         }
     }
 
     /// Handle the open button; read a DeadEnds program from the file system.
     @MainActor
     func openProgramFile() {
-        
+
+        compileState = .initial
+        runState = .initial
+        openState = .working
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [
             .plainText,
@@ -185,6 +179,7 @@ final class ProgramModel {
                 diagnostics = []
                 output.clear()
                 isDirty = false
+                openState = .success
             } catch {
                 diagnostics = [
                     Diagnostic(
@@ -192,6 +187,7 @@ final class ProgramModel {
                         line: nil
                     )
                 ]
+                openState = .failure
             }
         }
     }
@@ -225,6 +221,15 @@ final class ProgramModel {
         } catch {
             diagnostics = [Diagnostic(message: "Could not save file: \(error.localizedDescription)", line: nil)]
         }
+    }
+
+    /// Called when the user starts to edit the edit field.
+    func sourceWasEdited() {
+        isDirty = true
+        parsedProgram = nil
+        compileState = .initial
+        runState = .initial
+        diagnostics = []
     }
 }
 

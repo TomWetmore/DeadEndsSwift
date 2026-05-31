@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 29 May 2026.
+//  Last changed on 31 May 2026.
 //
 //  This is the programming page of the app. It allows users to
 //  compose, edit, compile and run DeadEnds programs.
@@ -12,6 +12,7 @@
 import SwiftUI
 import DeadEndsLib
 
+/// Provides a mini-IDE for the development of DeadEnds programs.
 struct ProgramPage<ExtraCommands: View>: View {
 
     @Bindable var model: ProgramModel
@@ -75,9 +76,11 @@ struct ProgramPage<ExtraCommands: View>: View {
         HStack {
 
             extraCommands
-            
-            Button("Open") {
-                model.openProgramFile()
+            HStack {
+                Button("Open") {
+                    model.openProgramFile()
+                }
+                StatusLight(state: model.openState)
             }
             Button("Save") {
                 model.saveProgramFile()
@@ -92,13 +95,7 @@ struct ProgramPage<ExtraCommands: View>: View {
                 Button("Compile") {
                     model.handleCompileButton()
                 }
-                StatusLight(
-                    state: model.compileState,
-                    initialHelp: "Program not compiled",
-                    successHelp: "Program compiled",
-                    workingHelp: "Program compiling",
-                    failureHelp: "Program compile failed"
-                )
+                StatusLight(state: model.compileState)
             }
             .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             HStack {
@@ -109,8 +106,7 @@ struct ProgramPage<ExtraCommands: View>: View {
                         }
                     }
                 }
-                Circle()
-                    .frame(width: 11, height: 11)
+                StatusLight(state: model.runState)
             }
             .disabled(model.parsedProgram == nil || database == nil)
             Spacer()
@@ -139,11 +135,14 @@ struct ProgramPage<ExtraCommands: View>: View {
         }
     }
 
-    private var textEditor: some View {
 
-        TextEditor(text: $model.source)  // Editor for DeadEnds programs.
+    private var textEditor: some View {
+        TextEditor(text: $model.source)
             .font(.system(size: 16, design: .monospaced))
             .padding(8)
+            .onChange(of: model.source) { _, _ in
+                model.sourceWasEdited()
+            }
     }
 
     private var outputView: some View {
