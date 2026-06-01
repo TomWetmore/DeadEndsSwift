@@ -1,49 +1,27 @@
+/* cousins.dend —- Last changed on 1 June 2026. */
+/* Finds the relationship between two persons in a DeadEnds database. If there is a common ancestor or
+   common descendent that relationship is shown. If there is no direct relationship, the program tries
+   to find a sequence of genetic relations to link the two persons. For example, the program will find
+   the relationship between your two grandmothers as a sequence of two genetic relations with a
+   grandchild as the link between.  Two persons may be related to each other in many ways; this program
+   finds a shortest one.  */
 
-/* cousins 6.0 —- Last changed on 24 May 2026. */
-/* Finds the relationship between two persons in a DeadEnds database.  If there is no common ancestor or
-   descendent, the program tries to find a sequence of genetic relations that link the two persons. If the
-   two persons are genetically related (have a common ancestor) that relationship is shown. If the two
-   persons are not genetically related, the program tries to find a sequence of genetic relationships that
-   link the two persons.  For example, the program will find the the relationship between your two
-   grandmothers as a sequence of two genetic relations with a grandchild as the link between.  Two persons
-   may be related to each other in many ways; this program finds shortest ones.  */
-
-/* Find and describe the relationship between two persons in a DeadEnds
-   database.
-
-   The program first searches for a direct blood relationship: ancestor,
-   descendant, sibling, aunt/uncle, niece/nephew, cousin, or cousin removed.
-   More generally, it looks for the shortest path between the two persons
-   using only parent/child links.
-
-   If the persons do not share a common ancestor, they may still be connected
-   by a chain of blood relationships through other persons. For example, your
-   two grandmothers are not blood relatives of each other, but they can be
-   connected through you: each is your grandparent. This program can find and
-   display that kind of relationship path too.
-
-   Because two persons may be related in more than one way, the program reports
-   the shortest relationship paths it finds.
-*/
-
-
-global(links)   /* table of links back one person -- elements are record keys or 0 */
-global(rels)    /* table showing direction of the links —- keys are record keys */
-global(klist)   /* queue of found persons not linked back to yet */
-global(numb)    /* number of persons considered so far */
+global(links)   /* table of back links back */
+global(rels)    /* table of link directions —- keys are record keys */
+global(klist)   /* queue of unlinked persons */
+global(numb)    /* number of persons considered */
 
 /* main -- Get the two persons and call the relate procedure. */
 
 proc main () {
 
-    "This program finds the relationship between two persons.\n\n"
+    "Cousins finds the relationship between two persons.\n"
     set(from, getperson("enter the first person"))
     set(to, getperson("enter the second person"))
 
-    "Searching for the relationship between:\n\t"
-    name(from) " and " name(to) ".\n\nThis may take a while -- "
-    "each dot is 25 persons considered.\n"
-    "\n"
+    "Searching for a relationship between:\n\t"
+    name(from) " and " name(to) ".\n"
+    "Each dot is 25 persons considered. "
 
     set(fkey, key(from))
     set(tkey, key(to))
@@ -58,7 +36,7 @@ proc main () {
 
 proc relate (fkey, tkey) {
 
-    /* Handle case where they are the same person. */
+    /* See if they are the same person. */
     if (eq(0, strcmp(fkey, tkey))) {
         name(person(fkey)) " and " name(person(tkey)) " are the same person.\n"
         return()
@@ -73,23 +51,23 @@ proc relate (fkey, tkey) {
     set(down, neg(1))
     set(numb, 0)
     set(pathlength, 0)
-    set(toolong, 10)
+    set(toolong, 15)
 
-    /* Link the first person to him/herself with no direction, and make
-       him/her the first entry in the list of unlinked persons.  A 0
-       person marks the start of next-longer paths. */
+    /* Link the first person to itself without direction; make it the
+       first unlinked person; zero values mark the starts of the nexr
+       longer paths. */
 
     insert(links, fkey, fkey)
     insert(rels, fkey, 0)
     enqueue(klist, fkey)
     enqueue(klist, 0)
 
-    /* Iterate the list of unlinked persons; remove them one by one; link
-       their parents and children back to them; add their parents and
-       children to the unlinked list; check after each iteration to see if
-       one of the new parents or children is the searched for person; if
-       so quit the iteration and call foundpath; else continue iterating. */
-
+    /* Iterate the unprocessed person list; link their parents and
+       children back to them; add their parents and children to the
+       unprocessed queue; check after each iteration to see if one of
+       the parents or children is the searched for person; if so quit
+       iterating and call foundpath. */
+       
     while (gt(length(klist), 1)) { /* the last element of klist is always a 0 mark. */
         set(key, dequeue(klist))
         if(not(key)) {  /* zero marks spots where the path gets a link longer. */
@@ -108,7 +86,7 @@ proc relate (fkey, tkey) {
             }
         }
         if (lookup(links, tkey)) {
-            "Relationship from " name(person(tkey))
+            "\nRelationship from " name(person(tkey))
             " to " name(person(fkey)) ":\n"
 
             call foundpath(tkey)

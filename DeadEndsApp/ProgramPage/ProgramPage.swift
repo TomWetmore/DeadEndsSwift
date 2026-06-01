@@ -137,7 +137,8 @@ struct ProgramPage<ExtraCommands: View>: View {
 
 
     private var textEditor: some View {
-        TextEditor(text: $model.source)
+        //TextEditor(text: $model.source)
+        CodeEditor(text: $model.source)
             .font(.system(size: 16, design: .monospaced))
             .padding(8)
             .onChange(of: model.source) { _, _ in
