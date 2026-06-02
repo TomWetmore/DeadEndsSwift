@@ -28,11 +28,11 @@ proc main () {
     call relate(tkey, fkey)
 }
 
-/* relate -- Search for the shortest parent/child path between two persons.
-   The search begins at fkey and expands outward through parents and children.
-   Each newly found person is linked back to the person from which they were
-   found.  When tkey is reached, those back-links describe the relationship
-   path, which foundpath and fullpath then display. */
+/* relate -- Search for the shortest path between two persons. The search
+   search begins at fkey and expands out to parents and children. Each newly
+   found person is linked back to the person who generated it. When tkey is
+   reached, the links hold the relationship path, which foundpath and
+   fullpath can display. */
 
 proc relate (fkey, tkey) {
 
@@ -62,7 +62,7 @@ proc relate (fkey, tkey) {
     enqueue(klist, fkey)
     enqueue(klist, 0)
 
-    /* Iterate the unprocessed person list; link their parents and
+    /* Iterate the unprocessed 	queue; link their parents and
        children back to them; add their parents and children to the
        unprocessed queue; check after each iteration to see if one of
        the parents or children is the searched for person; if so quit
@@ -70,23 +70,20 @@ proc relate (fkey, tkey) {
        
     while (gt(length(klist), 1)) { /* the last element of klist is always a 0 mark. */
         set(key, dequeue(klist))
-        if(not(key)) {  /* zero marks spots where the path gets a link longer. */
-/*“got in there: key is “ valueof(key) nl() /* DEBUG */
-            set(pathlength, add(1,pathlength))
-            if(gt(pathlength,toolong)) { break() }
+        if(not(key)) {  /* zero marks where the path gets longer. */
+            set(pathlength, add(1, pathlength))
+            if(gt(pathlength, toolong)) { break() }
             enqueue(klist, 0)
             continue()
         }
-        set(indi, person(key))  /* need to get person in order to call father and mother. */
+        set(indi, person(key))  /* get person in order to call father and mother. */
         call include(key, father(indi), down)
         call include(key, mother(indi), down)
-        foreach(families(indi), fam, spouse, num1) {
-            foreach(children(fam), child, num2) {
-                call include(key, child, up)
-            }
+        foreach(children(indi), child, num) {
+            call include(key, child, up)
         }
         if (lookup(links, tkey)) {
-            "\nRelationship from " name(person(tkey))
+            " (" d(numb) ")\nRelationship from " name(person(tkey))
             " to " name(person(fkey)) ":\n"
 
             call foundpath(tkey)
@@ -97,8 +94,8 @@ proc relate (fkey, tkey) {
     "They are not blood-related to one another."
 }
 
- /* include -- Links a newly discovered person (indi) back to another person (key), with a specified
-direction (rel); the new person is then put on the list of unlinked back to persons. */
+ /* include -- Links a person (indi) back to another person (key), with a specified
+    direction (rel); the new person ia put on the queue of unprocessed persons. */
 
 proc include (key, indi, rel) {
     /* Include the person if he/she has not been found before. */
@@ -218,7 +215,7 @@ proc foundpath (key) {
     }
 }
 
-/* showancs -- Show a direct ancestry relationp. */
+/* showancs -- Show a direct ancestry relationship. */
 proc showancs (one, two, len)
 {
     set(indi, person(one))

@@ -1,0 +1,288 @@
+I have a github account and my DeadEnds C and DeadEnds Swift repository are both there. I am not really aware of what else can be stored in my GitHub account, but you mentioned a couple days a couple things that made me think I might be able to store lots of other information about the projects there, maybe including a discussion area. Can you review what are the capabilities I have with that account?
+
+Mmodern GitHub repositories can be much more than just source code storage. Given the kind of long-lived, technically sophisticated projects you have — especially DeadEnds and your original LifeLines heritage — GitHub can effectively become the public home of the projects: source, documentation, planning, discussions, releases, issue tracking, websites, and even community interaction.
+
+Here’s a structured overview of what you already have available with a normal GitHub account.
+
+Core Repository Features: Every repository can contain:
+* Source code
+* Branches
+* Commit history
+* Tags
+* Releases
+* Binary attachments
+* Markdown documentation
+* Wikis
+* Issue tracking
+* Discussions
+* Project boards
+* Actions (automation/CI)
+* Static websites
+
+So your DeadEnds repositories could evolve into complete project ecosystems.
+
+1. README.md — Your Front Door.  The single most important non-code file.  This becomes the project’s home page on GitHub.  For DeadEnds Swift, this could include:
+* Project goals
+* Screenshots
+* Architecture overview
+* GEDCOM philosophy
+* Build instructions
+* SwiftUI screenshots
+* Roadmap
+* Links to documentation
+* Historical background from LifeLines
+
+Example sections:
+# DeadEndsSwift
+
+A modern Swift rewrite of the classic LifeLines genealogy system.
+
+## Features
+- GEDCOM-native storage
+- SwiftUI interface
+- Embedded genealogical language
+- Advanced relationship algorithms
+
+## Status
+Early alpha.
+
+## Building
+Requires Xcode 16.4+
+
+This alone dramatically improves project presentation.
+
+2. Issues — Bug Tracking and Design Notes.  GitHub Issues are extremely useful even for solo developers.  You can use them for:
+* Bugs
+* Design ideas
+* TODOs
+* Refactoring notes
+* Architecture discussions
+* Feature planning
+
+Example issues for your projects:
+* “Implement incremental parser recovery”
+* “Refactor GedcomTreeEditor selection model”
+* “Design export strategy for standard GEDCOM”
+* “Add generation payload support to PersonSet”
+
+Issues support:
+* Labels
+* Milestones
+* Assignees
+* Search
+* Cross-linking to commits
+
+You can even reference issues in commits:
+Fixes #42
+
+3. Discussions — Community Forum / Design Conversation.  This is probably the feature you were thinking about.  GitHub Discussions gives you a built-in forum attached to the repository.  You can create categories like:
+* General
+* Design
+* Questions
+* Announcements
+* Ideas
+* Genealogy standards
+* SwiftUI architecture
+
+For a project like DeadEnds, this could become extremely valuable.  You could write long-form architectural discussions such as:
+* Why DeadEnds treats GEDCOM as backing store
+* Why lineage-link tags are sacred
+* Thoughts on lax vs strict GEDCOM validation
+* The history of LifeLines
+* The scripting language philosophy
+
+Discussions are more conversational than Issues.
+A good rule:
+
+Use
+For
+Issues
+actionable work
+Discussions
+open-ended conversation
+
+4. Wiki — Separate Documentation Area.  Each repository can have a wiki.  Good for:
+* User manuals
+* Internal architecture notes
+* Language reference
+* GEDCOM philosophy
+* Data model documentation
+
+For example:
+* “Import Stack Design”
+* “GedcomNode Tree Structure”
+* “PersonSet Semantics”
+* “Interpreter Architecture”
+* “Swift Porting Notes”
+
+Many projects instead keep docs directly in the repo under /Docs, which is also perfectly reasonable.
+
+5. GitHub Pages — Project Website.  You can host a static website directly from the repository.  For example:
+https://tomwetmore.github.io/DeadEndsSwift/
+
+Possible uses:
+* Documentation
+* Download page
+* Screenshots
+* Blog/devlog
+* Tutorials
+* Historical material about LifeLines
+
+This is free.
+
+And because you already maintain a genealogy/birding website, this capability probably fits naturally with how you think about publishing information.
+
+6. Releases.  You can create official downloadable versions.  Each release can contain:
+* Version notes
+* Source snapshots
+* Compiled binaries
+* Example GEDCOMs
+* Documentation PDFs
+
+Example:
+DeadEndsSwift 0.1 Alpha
+
+With release notes like:
+* Added Swift import stack
+* Added GedcomTreeEditor
+* Added undo/redo manager
+
+7. Project Boards (Kanban Style).  GitHub Projects gives you Trello-like planning boards.
+Columns like:
+* Todo
+* In Progress
+* Testing
+* Done
+* Someday
+Cards can link to issues automatically.  This is optional, but useful once a project becomes large.
+
+8. Actions — Automation / CI.  This is one of GitHub’s biggest features.  GitHub Actions can automatically:
+* Build projects
+* Run tests
+* Generate documentation
+* Publish websites
+* Create releases
+* Run linters
+
+For Swift projects:
+* Build on every commit
+* Run SwiftLint
+* Run unit tests
+You can even automate documentation generation.
+
+9. Pull Requests.  Even if you work alone, pull requests can be useful.  A PR lets you:
+* Review changes before merging
+* Comment on code
+* Discuss architectural changes
+* Keep experimental branches
+
+For example:
+Branch: incremental-parser
+PR: "Experiment with parser recovery"
+
+This becomes a design journal.
+
+10. Repository Organization. You can have:
+* Public repositories
+* Private repositories
+* Organization accounts
+* Multiple collaborators
+
+You might eventually separate DeadEnds into:
+* DeadEndsSwift
+* DeadEndsDocs
+* DeadEndsExamples
+* DeadEndsLanguageReference
+Though one repository is perfectly fine initially.
+
+11. GitHub as Historical Archive.  For a project like yours, GitHub is also archival.  You have decades of genealogy software history that is genuinely historically interesting.  Things worth preserving:
+* Original LifeLines papers/manuals
+* Early screenshots
+* Language grammar
+* Historical notes
+* Design philosophy
+GitHub is surprisingly good for long-term preservation.
+
+12. Things Especially Relevant To Your Projects.  I think the most valuable additions for you specifically would be:
+A strong README
+
+Especially describing:
+* LifeLines history
+* DeadEnds goals
+* GEDCOM philosophy
+* Embedded language
+* Swift rewrite rationale
+
+Discussions.  This fits your style extremely well.  You think architecturally and historically.  You could maintain ongoing design discussions like:
+* “GEDCOM as persistence format”
+* “Strict vs lax genealogy validation”
+* “RecordSequence philosophy”
+* “Why Swift for genealogy”
+
+Wiki or Docs Folde.r For preserving design rationale.  You already generate a lot of sophisticated architectural thought during our conversations.  That material deserves a home.
+
+Releases.  Once the script runner or app becomes usable.
+
+One Important Point.  GitHub is not just for collaboration.  Many experienced developers use it as:
+* notebook
+* archive
+* planning system
+* design history
+* documentation hub
+* publication mechanism
+Even for single-person projects.  And honestly, projects like DeadEnds benefit enormously from preserved design rationale because the architecture is unusually deep and domain-specific.
+
+You are not building “yet another CRUD app.” You are building a long-evolved genealogical system with its own language, data philosophy, and graph semantics. GitHub is very good at preserving that intellectual structure.
+
+================
+Thanks for that. I do have a wbsite where I have lots of data about the birds of Plum Island in Massachusetts, so I imagining hosting stuff about DeadEnds there. But the GitHub approach now seems must better.
+================
+
+I think GitHub would fit DeadEnds extremely well — especially given the nature of the project.  Your existing Plum Island birding site is perfect for publishing finished informational material, but GitHub is much better suited to a living software system with evolving architecture, source code, design notes, releases, and technical discussion.  In many ways, DeadEnds is exactly the kind of project GitHub was built for:
+* long-lived
+* technically deep
+* historically interesting
+* architecture-heavy
+* evolving over time
+* containing both code and ideas
+
+A personal website is excellent for presentation. GitHub excels at process and preservation.  For example, imagine someone discovering DeadEnds years from now. On GitHub they could see:
+* the current code
+* the entire development history
+* architectural discussions
+* issue evolution
+* release progression
+* design rationale
+* screenshots
+* documentation
+* experimental branches
+* the genealogy scripting language
+* links back to LifeLines
+
+That creates a kind of technical archaeology that ordinary websites rarely preserve well.  Also, GitHub markdown rendering is very pleasant for technical writing. You could comfortably maintain documents like:
+* “Why DeadEnds Uses GEDCOM as a Backing Store”
+* “The History of LifeLines”
+* “SwiftUI Lessons Learned”
+* “Genealogical Graph Algorithms”
+* “The DeadEnds Programming Language”
+* “Why Relaxed GEDCOM Validation Matters”
+without building any web infrastructure yourself.
+
+Another nice aspect is that GitHub naturally encourages incremental publishing. You do not need to “finish” anything before sharing it.  You can gradually add:
+1. README
+2. screenshots
+3. wiki pages
+4. Discussions
+5. Releases
+6. GitHub Pages site later if desired
+
+And GitHub Pages is actually compatible with your existing instincts about websites. You could eventually have:
+
+deadends.org or tomwetmore.github.io/DeadEndsSwift
+
+with documentation automatically generated from the repository.
+
+One thing I especially think would benefit your project is Discussions. Your conversational architectural style maps beautifully onto that feature. You already think in terms of evolving design essays and rationale, not just tickets and bugs.
+
+For instance, a Discussion thread titled: Why DeadEnds Treats GEDCOM as a Native Data Structure could become genuinely valuable historical and technical material.
+And unlike a traditional website, all of this stays closely tied to the actual evolving codebase.
