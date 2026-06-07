@@ -1,4 +1,4 @@
-/* cousins.dend —- Last changed on 2 June 2026.
+/* cousins.dend —- Original one-way version -- Last changed on 6 June 2026.
 
    Finds the relationship between two persons in a DeadEnds database. If there is a common ancestor or
    common descendent that relationship is shown. If there is no direct relationship, the program tries
@@ -33,7 +33,14 @@ proc main () {
 
     set(fkey, key(from))
     set(tkey, key(to))
-    call relate(tkey, fkey)
+    set(code, relate(tkey, fkey))
+    if (eq(code, "found")) {
+        " (" d(numb) ")\nRelationship from " name(person(tkey)) " to " name(person(fkey)) ":\n"
+        call foundpath(fkey)
+        call fullpath(fkey)
+    } else {
+        "They are not related\n"
+    }
 }
 
 /* relate -- Search for the shortest path between two persons. The search
@@ -42,7 +49,7 @@ proc main () {
    reached, the links hold the relationship path, which foundpath and
    fullpath can display. */
 
-proc relate (fkey, tkey) {
+func relate (fkey, tkey) {
 
     /* See if they are the same person. */
     if (eq(0, strcmp(fkey, tkey))) {
@@ -85,38 +92,36 @@ proc relate (fkey, tkey) {
             continue()
         }
         set(indi, person(key))  /* get person in order to call father and mother. */
-        call include(key, father(indi), down)
-        call include(key, mother(indi), down)
-        foreach(children(indi), child, num) {
-            call include(key, child, up)
-        }
-        if (lookup(links, tkey)) {
-            " (" d(numb) ")\nRelationship from " name(person(tkey))
-            " to " name(person(fkey)) ":\n"
 
-            call foundpath(tkey)
-            call fullpath(tkey)
-            return()
+        set(code, include(key, father(indi), tkey, down))
+        if (eq("found", code)) { return("found") }
+        set(code, include(key, mother(indi), tkey, down))
+        if (eq("found", code)) { return("found") }
+        foreach(children(indi), child, num) {
+            set(code, include(key, child, tkey, up))
+            if (eq("found", code)) { return("found") }
         }
     }
-    "They are not blood-related to one another."
+    return("not found")
 }
 
  /* include -- Links a person (indi) back to another person (key), with a specified
     direction (rel); the new person ia put on the queue of unprocessed persons. */
 
-proc include (key, indi, rel) {
+func include (key, indi, tkey, rel) {
     /* Include the person if he/she has not been found before. */
     if (and(indi, not(lookup(links, key(indi))))) {
-        set(numb, add(numb, 1))
-        if (eq(0, mod(numb, 25))) { "." }
-
-        /* Update the data structures. */
         set(new, key(indi))
         insert(links, new, key)
         insert(rels, new, rel)
+        set(numb, add(numb, 1))
+        if (eq(0, mod(numb, 25))) { "." }
+        if (eq(new, tkey)) { return("found") }
+
         enqueue(klist, new)
+        return("not found")
     }
+    return("not found")
 }
 
 /* foundpath -- Show the relationship path between two persons. */

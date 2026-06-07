@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 6 June 2026.
 //
 
 import Foundation
@@ -273,11 +273,11 @@ extension Program {
         let line = args[0].line
         let value = try await evaluate(args[0])
         guard case let .string(key) = value else {
-            throw RuntimeError("indi: arg must be a person key", line: line)
+            throw RuntimeError("person: arg must be a person key", line: line)
         }
         let normalized = normalizeGedcomKey(key)
         guard let root = recordIndex[normalized], root.tag == GedcomTag.INDI else {
-            throw RuntimeError("indi: arg must be a person key", line: line)
+            throw RuntimeError("person: arg must be a person key", line: line)
         }
         return .person(Person(root))
     }

@@ -37,6 +37,7 @@ proc main () {
 "main -- returned code is " code nl()
 "pathlength: " d(pathlength) nl()
 "numb:       " d(numb) nl()
+    call bothpaths()
 }
 
 func bothways(onekey, twokey) {
@@ -84,7 +85,7 @@ func onestep(links, rels, queue, otherlinks) {
 
     if (ge(0, length(queue))) { return("empty") }
 
-    while (gt(length(queue), 1)) {  /* While there are elements on the queue. */
+    while (gt(length(queue), 1)) {
 
         set(key, dequeue(queue))  /* Get next element from queue. */
 
@@ -110,17 +111,53 @@ func onestep(links, rels, queue, otherlinks) {
 
 func include(key, person, links, rels, queue, otherlinks, dir) {
 
+/*"considering " key(person) ": " name(person) nl()*/
+
     if (and(person, not(lookup(links, key(person))))) {
         set(new, key(person))
-        if (lookup(otherlinks, new)) { return("found") }
-        incr(numb)
-        if (eq(0, mod(numb, 25))) { "." }
-
-        /* Update the data structures. */
         insert(links, new, key)
         insert(rels, new, dir)
+        incr(numb)
+        if (eq(0, mod(numb, 25))) { "." }
+        if (lookup(otherlinks, new)) {
+            set(midkey, new)
+            return("found")
+        }
+
+        /* Update the data structures. */
         enqueue(queue, new)
+"added " new ": " name(person) nl()
         return("not found")
+    }
+}
+
+proc bothpaths() {
+"SHOWVALUE midkey: " valueof(midkey) nl()
+    call fullpath(midkey, onelinks, onerels)
+    call fullpath(midkey, twolinks, tworels)
+}
+
+/* fullpath -- Show the full path between the two persons. */
+proc fullpath (key, links, rels) {
+    "\nThe full relationship path between them is:\n\n"
+"SHOWVALUE key: " valueof(key) nl()
+    set(again, 1)
+    while (again) {
+        name(person(key))
+        set(new, lookup(links, key))
+        set(dir, lookup(rels, key))
+        if (gt(dir, 0)) {
+            " is the child of"
+        }
+        if (lt(dir, 0)) {
+            " is the parent of"
+        }
+        "\n"
+        if (eq(0, strcmp(key, new))) {
+            set(again, 0)
+        } else {
+            set(key, new)
+        }
     }
 }
 
