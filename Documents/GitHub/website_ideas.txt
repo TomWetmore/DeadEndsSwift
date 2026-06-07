@@ -1,8 +1,8 @@
-I have a github account and my DeadEnds C and DeadEnds Swift repository are both there. I am not really aware of what else can be stored in my GitHub account, but you mentioned a couple days a couple things that made me think I might be able to store lots of other information about the projects there, maybe including a discussion area. Can you review what are the capabilities I have with that account?
+I have a github account and my DeadEnds C and DeadEnds Swift repositories are there. Can you review the capabilities I have with that account?
 
-Mmodern GitHub repositories can be much more than just source code storage. Given the kind of long-lived, technically sophisticated projects you have — especially DeadEnds and your original LifeLines heritage — GitHub can effectively become the public home of the projects: source, documentation, planning, discussions, releases, issue tracking, websites, and even community interaction.
+Mmodern GitHub repositories can be much more than source code storage. Given the kind of long-lived, technically sophisticated projects you have — especially DeadEnds and your original LifeLines — GitHub can become the public home of the projects: source, documentation, planning, discussions, releases, issue tracking, websites, and even community interaction.
 
-Here’s a structured overview of what you already have available with a normal GitHub account.
+Here’s an overview of what you have available with a normal GitHub account.
 
 Core Repository Features: Every repository can contain:
 * Source code
@@ -19,9 +19,9 @@ Core Repository Features: Every repository can contain:
 * Actions (automation/CI)
 * Static websites
 
-So your DeadEnds repositories could evolve into complete project ecosystems.
+Your DeadEnds repositories could evolve into project ecosystems.
 
-1. README.md — Your Front Door.  The single most important non-code file.  This becomes the project’s home page on GitHub.  For DeadEnds Swift, this could include:
+1. README.md — Your Front Door.  The single most important non-code file. This is the project’s home page on GitHub. For DeadEnds Swift, this could include:
 * Project goals
 * Screenshots
 * Architecture overview
@@ -51,7 +51,7 @@ Requires Xcode 16.4+
 
 This alone dramatically improves project presentation.
 
-2. Issues — Bug Tracking and Design Notes.  GitHub Issues are extremely useful even for solo developers.  You can use them for:
+2. Issues — Bug Tracking and Design Notes. GitHub Issues are extremely useful even for solo developers.  You can use them for:
 * Bugs
 * Design ideas
 * TODOs
@@ -72,10 +72,9 @@ Issues support:
 * Search
 * Cross-linking to commits
 
-You can even reference issues in commits:
-Fixes #42
+You can reference issues in commits: Fixes #42
 
-3. Discussions — Community Forum / Design Conversation.  This is probably the feature you were thinking about.  GitHub Discussions gives you a built-in forum attached to the repository.  You can create categories like:
+3. Discussions — Community Forum / Design Conversation. GitHub Discussions gives you a built-in forum attached to the repository. You can create categories like:
 * General
 * Design
 * Questions
@@ -84,7 +83,7 @@ Fixes #42
 * Genealogy standards
 * SwiftUI architecture
 
-For a project like DeadEnds, this could become extremely valuable.  You could write long-form architectural discussions such as:
+For a project like DeadEnds, this could become extremely valuable. You could write long-form architectural discussions such as:
 * Why DeadEnds treats GEDCOM as backing store
 * Why lineage-link tags are sacred
 * Thoughts on lax vs strict GEDCOM validation
@@ -94,14 +93,11 @@ For a project like DeadEnds, this could become extremely valuable.  You could wr
 Discussions are more conversational than Issues.
 A good rule:
 
-Use
-For
-Issues
-actionable work
-Discussions
-open-ended conversation
+Use : For
+Issues : actionable work
+Discussions : open-ended conversation
 
-4. Wiki — Separate Documentation Area.  Each repository can have a wiki.  Good for:
+4. Wiki — Separate Documentation Area. Each repository can have a wiki. Good for:
 * User manuals
 * Internal architecture notes
 * Language reference
@@ -117,7 +113,7 @@ For example:
 
 Many projects instead keep docs directly in the repo under /Docs, which is also perfectly reasonable.
 
-5. GitHub Pages — Project Website.  You can host a static website directly from the repository.  For example:
+5. GitHub Pages — Project Website. You can host a static website directly from the repository.  For example:
 https://tomwetmore.github.io/DeadEndsSwift/
 
 Possible uses:
@@ -127,7 +123,6 @@ Possible uses:
 * Blog/devlog
 * Tutorials
 * Historical material about LifeLines
-
 This is free.
 
 And because you already maintain a genealogy/birding website, this capability probably fits naturally with how you think about publishing information.
@@ -219,11 +214,11 @@ Discussions.  This fits your style extremely well.  You think architecturally an
 * “RecordSequence philosophy”
 * “Why Swift for genealogy”
 
-Wiki or Docs Folde.r For preserving design rationale.  You already generate a lot of sophisticated architectural thought during our conversations.  That material deserves a home.
+Wiki or Docs Folder. For preserving design rationale. You already generate a lot of sophisticated architectural thought during our conversations. That material deserves a home.
 
 Releases.  Once the script runner or app becomes usable.
 
-One Important Point.  GitHub is not just for collaboration.  Many experienced developers use it as:
+One Important Point.  GitHub is not just for collaboration. Many experienced developers use it as:
 * notebook
 * archive
 * planning system
@@ -235,7 +230,7 @@ Even for single-person projects.  And honestly, projects like DeadEnds benefit e
 You are not building “yet another CRUD app.” You are building a long-evolved genealogical system with its own language, data philosophy, and graph semantics. GitHub is very good at preserving that intellectual structure.
 
 ================
-Thanks for that. I do have a wbsite where I have lots of data about the birds of Plum Island in Massachusetts, so I imagining hosting stuff about DeadEnds there. But the GitHub approach now seems must better.
+Thanks for that. I do have a website where I have lots of data about the birds of Plum Island in Massachusetts, so I imagining hosting stuff about DeadEnds there. But the GitHub approach now seems must better.
 ================
 
 I think GitHub would fit DeadEnds extremely well — especially given the nature of the project.  Your existing Plum Island birding site is perfect for publishing finished informational material, but GitHub is much better suited to a living software system with evolving architecture, source code, design notes, releases, and technical discussion.  In many ways, DeadEnds is exactly the kind of project GitHub was built for:

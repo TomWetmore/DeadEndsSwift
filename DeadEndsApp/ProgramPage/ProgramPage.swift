@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 31 May 2026.
+//  Last changed on 3 June 2026.
 //
 //  This is the programming page of the app. It allows users to
 //  compose, edit, compile and run DeadEnds programs.
@@ -80,7 +80,7 @@ struct ProgramPage<ExtraCommands: View>: View {
                 Button("Open") {
                     model.openProgramFile()
                 }
-                StatusLight(state: model.openState)
+                StatusCircle(state: model.openState)
             }
             Button("Save") {
                 model.saveProgramFile()
@@ -95,7 +95,7 @@ struct ProgramPage<ExtraCommands: View>: View {
                 Button("Compile") {
                     model.handleCompileButton()
                 }
-                StatusLight(state: model.compileState)
+                StatusCircle(state: model.compileState)
             }
             .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             HStack {
@@ -106,7 +106,7 @@ struct ProgramPage<ExtraCommands: View>: View {
                         }
                     }
                 }
-                StatusLight(state: model.runState)
+                StatusCircle(state: model.runState)
             }
             .disabled(model.parsedProgram == nil || database == nil)
             Spacer()

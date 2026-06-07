@@ -1,0 +1,127 @@
+/* bothways.dend —- Last changed on 6 June 2026. */
+
+global(onelinks)   /* Tables of back links (key->key). */
+global(twolinks)
+global(onerels)    /* Tables of link directions (key->int). */
+global(tworels)
+global(onequeue)   /* Queues of waiting persons ([key]) */
+global(twoqueue)
+global(numb)       /* Number of persons considered (int). */
+global(midkey)     /* Key where they meet (key). */
+
+global(up)         /* Code for up direction. */
+global(down)       /* Code for down direction. */
+
+global(pathlength) /* Path length between persons (check if this is correct). */
+global(infinity)
+
+/* main -- Get two persons and call bothways. */
+
+proc main () {
+
+    "Cousins finds the relationship between two persons.\n"
+
+    set(one, getperson("Enter the first person"))
+    if(not(one)) { "Program ended\n" return() }
+    set(two, getperson("Enter the second person"))
+    if(not(two)) { "Program ended\n" return() }
+
+    "Searching for a relationship between:\n\t"
+    name(one) " and " name(two) ".\n"
+    "Each dot is 25 persons considered. "
+
+    set(onekey, key(one))
+    set(twokey, key(two))
+    set(code, bothways(onekey, twokey))
+
+"main -- returned code is " code nl()
+"pathlength: " d(pathlength) nl()
+"numb:       " d(numb) nl()
+}
+
+func bothways(onekey, twokey) {
+
+	 nl() name(person(onekey)) " and " name(person(twokey)) nl()
+
+    set(onelinks, table())
+    set(onerels, table())
+    set(onequeue, list())
+
+    set(twolinks, table())
+    set(tworels, table())
+    set(twoqueue, list())
+
+    set(up, 1)
+    set(down, neg(1))
+    set(numb, 0)
+    set(pathlength, 0)
+    set(toolong, 16)
+
+    insert(onelinks, onekey, onekey)
+    enqueue(onequeue, onekey)
+    enqueue(onequeue, 0)
+
+    insert(twolinks, twokey, twokey)
+    enqueue(twoqueue, twokey)
+    enqueue(twoqueue, 0)
+
+    set(returncode, "not found")
+    set(infinity, 30)
+
+    while (1) {
+
+        set(code, onestep(onelinks, onerels, onequeue, twolinks))
+        if(ne("not found", code)) { return(code) }
+
+        set(code, onestep(twolinks, tworels, twoqueue, onelinks))
+        if(ne("not found", code)) { return(code) }
+    }
+}
+
+/* Do one step on one side. */
+
+func onestep(links, rels, queue, otherlinks) {
+
+    if (ge(0, length(queue))) { return("empty") }
+
+    while (gt(length(queue), 1)) {  /* While there are elements on the queue. */
+
+        set(key, dequeue(queue))  /* Get next element from queue. */
+
+        if (not(key)) {  /* If element is 0 we are at the end of a generation. */
+           set(pathlength, add(1, pathlength))  /* Add to the current path length. */
+           if (gt(pathlength, infinity)) { return("infinity") }  /* Check for too long path. */
+           enqueue(queue, 0)  /* Add 0 to mark end of next generation. */
+           return("not found")  /* Return "not found" so other side can take a step. */
+        }
+
+        set(person, person(key))
+        set(code, include(key, father(person), links, rels, queue, otherlinks, down))
+        if (eq("found", code)) { return("found") }
+        set(code, include(key, mother(person), links, rels, queue, otherlinks, down))
+        if (eq("found", code)) { return("found") }
+        foreach(children(person), child, num) {
+            set(code, include(key, child, links, rels, queue, otherlinks, up))
+            if (eq("found", code)) { return("found") }
+        }
+    }
+}
+
+
+func include(key, person, links, rels, queue, otherlinks, dir) {
+
+    if (and(person, not(lookup(links, key(person))))) {
+        set(new, key(person))
+        if (lookup(otherlinks, new)) { return("found") }
+        incr(numb)
+        if (eq(0, mod(numb, 25))) { "." }
+
+        /* Update the data structures. */
+        insert(links, new, key)
+        insert(rels, new, dir)
+        enqueue(queue, new)
+        return("not found")
+    }
+}
+
+

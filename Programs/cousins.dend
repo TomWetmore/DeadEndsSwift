@@ -1,24 +1,32 @@
-/* cousins.dend —- Last changed on 1 June 2026. */
-/* Finds the relationship between two persons in a DeadEnds database. If there is a common ancestor or
+/* cousins.dend —- Last changed on 2 June 2026.
+
+   Finds the relationship between two persons in a DeadEnds database. If there is a common ancestor or
    common descendent that relationship is shown. If there is no direct relationship, the program tries
    to find a sequence of genetic relations to link the two persons. For example, the program will find
    the relationship between your two grandmothers as a sequence of two genetic relations with a
    grandchild as the link between.  Two persons may be related to each other in many ways; this program
    finds a shortest one.  */
 
-global(links)   /* table of back links back */
-global(rels)    /* table of link directions —- keys are record keys */
-global(klist)   /* queue of unlinked persons */
-global(numb)    /* number of persons considered */
+global(links)   /* table of back links (key->key) */
+global(rels)    /* table of link directions (key->int) */
+global(klist)   /* queue of unlinked persons ([key]) */
+global(numb)    /* number of persons considered (int) */
 
-/* main -- Get the two persons and call the relate procedure. */
+/* main -- Get two persons and call relate. */
 
 proc main () {
 
     "Cousins finds the relationship between two persons.\n"
     set(from, getperson("enter the first person"))
+    if(not(from)) {
+        "Program ended\n"
+        return()
+    }
     set(to, getperson("enter the second person"))
-
+    if(not(to)) {
+        "Program ended\n"
+        return()
+    }
     "Searching for a relationship between:\n\t"
     name(from) " and " name(to) ".\n"
     "Each dot is 25 persons considered. "

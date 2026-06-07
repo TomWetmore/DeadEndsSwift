@@ -3,13 +3,13 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 30 May 2026.
-//  Last changed on 31 May 2026.
+//  Last changed on 3 June 2026.
 //
 
 import SwiftUI
 
 /// Small colored circle that shows the status of an operation.
-struct StatusLight: View {
+struct StatusCircle: View {
 
     let state: StatusState
 

@@ -1,0 +1,10 @@
+Hi @TomWetmore,
+
+We noticed your personal access token (classic) "Xcode Git Access" with repo and workflow scopes will expire in 6 days.
+
+If this token is still needed, visit https://github.com/settings/tokens/2093302643/regenerate to generate an equivalent.
+
+If you run into problems, please contact support by visiting https://github.com/contact
+
+Thanks,
+The GitHub Team

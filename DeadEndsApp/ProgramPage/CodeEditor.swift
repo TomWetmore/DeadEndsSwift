@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 31 May 2026.
-//  Last changed on 1 June 2026.
+//  Last changed on 3 June 2026.
 //
 
 import SwiftUI
@@ -85,10 +85,8 @@ struct CodeEditor: NSViewRepresentable {
 
             guard let textView =
                 notification.object as? NSTextView else { return }
-
             parent.text = textView.string
             textView.enclosingScrollView?.verticalRulerView?.needsDisplay = true
-            //textView.enclosingScrollView?.verticalRulerView?.invalidateRuleThickness()
         }
 
         @objc func boundsDidChange(_ notification: Notification) {
@@ -123,10 +121,6 @@ final class LineNumberRulerView: NSRulerView {
             let layoutManager = textView.layoutManager,
             let textContainer = textView.textContainer
         else { return }
-
-        // Following two lines removed to see if the text becomes visible.
-        //NSColor.textBackgroundColor.setFill()
-        //rect.fill()
 
         let visibleRect = textView.visibleRect
         let glyphRange = layoutManager.glyphRange(
