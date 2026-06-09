@@ -15,12 +15,11 @@ global(down)       /* Code for down direction. */
 global(pathlength) /* Path length between persons (check if this is correct). */
 global(infinity)
 
-/* main -- Get two persons and call bothways. */
-
+/* main -- Get two persons and call the doit routines.
+*/
 proc main () {
 
     "Cousins finds the relationship between two persons.\n"
-
     set(one, getperson("Enter the first person"))
     if(not(one)) { "Program ended\n" return() }
     set(two, getperson("Enter the second person"))
@@ -34,10 +33,14 @@ proc main () {
     set(twokey, key(two))
     set(code, bothways(onekey, twokey))
 
-"main -- returned code is " code nl()
-"pathlength: " d(pathlength) nl()
-"numb:       " d(numb) nl()
-    call bothpaths()
+    "main -- returned code is " code nl()
+    "pathlength: " d(pathlength) nl()
+    "numb:       " d(numb) nl()
+
+
+    call firsthalf()
+
+    call secondhalf()
 }
 
 func bothways(onekey, twokey) {
@@ -89,11 +92,11 @@ func onestep(links, rels, queue, otherlinks) {
 
         set(key, dequeue(queue))  /* Get next element from queue. */
 
-        if (not(key)) {  /* If element is 0 we are at the end of a generation. */
-           set(pathlength, add(1, pathlength))  /* Add to the current path length. */
+        if (eq(0, key)) {  /* 0 marks the end of the current generation. */
+           incr(pathlength)
            if (gt(pathlength, infinity)) { return("infinity") }  /* Check for too long path. */
-           enqueue(queue, 0)  /* Add 0 to mark end of next generation. */
-           return("not found")  /* Return "not found" so other side can take a step. */
+           enqueue(queue, 0)  /* 0 marks the end of next generation. */
+           return("not found")  /* Let other side run. */
         }
 
         set(person, person(key))
@@ -108,10 +111,10 @@ func onestep(links, rels, queue, otherlinks) {
     }
 }
 
-
+/* Add a person to the queue if it has not been seen before. If the person is new see if
+   it is in otherlinks, in which case we have found the middle person so can return "found".
+*/
 func include(key, person, links, rels, queue, otherlinks, dir) {
-
-/*"considering " key(person) ": " name(person) nl()*/
 
     if (and(person, not(lookup(links, key(person))))) {
         set(new, key(person))
@@ -126,38 +129,62 @@ func include(key, person, links, rels, queue, otherlinks, dir) {
 
         /* Update the data structures. */
         enqueue(queue, new)
-"added " new ": " name(person) nl()
+/*"added " new ": " name(person) nl()*/
         return("not found")
     }
 }
 
-proc bothpaths() {
-"SHOWVALUE midkey: " valueof(midkey) nl()
-    call fullpath(midkey, onelinks, onerels)
-    call fullpath(midkey, twolinks, tworels)
+global(fulllist)
+global(fullrels)
+
+proc firsthalf() {
+
+    set(fulllist, list())
+    set(fullrels, list())
+    set(key, midkey)
+
+    prepend(fulllist, midkey)
+    prepend(fullrels, neg(lookup(onerels, midkey)))
+    while (1) {
+        set(prev, lookup(onelinks, key))
+        if (eq(prev, key)) { break() }
+        prepend(fulllist, prev)
+        prepend(fullrels, neg(lookup(onerels, key)))
+        set(key, prev)
+    }
 }
 
-/* fullpath -- Show the full path between the two persons. */
-proc fullpath (key, links, rels) {
-    "\nThe full relationship path between them is:\n\n"
-"SHOWVALUE key: " valueof(key) nl()
-    set(again, 1)
-    while (again) {
-        name(person(key))
-        set(new, lookup(links, key))
-        set(dir, lookup(rels, key))
-        if (gt(dir, 0)) {
-            " is the child of"
-        }
-        if (lt(dir, 0)) {
-            " is the parent of"
-        }
-        "\n"
-        if (eq(0, strcmp(key, new))) {
-            set(again, 0)
+proc secondhalf() {
+
+    set(key, midkey)
+
+    while (1) {
+        set(next, lookup(twolinks, key))
+        if (eq(key, next)) { break() }
+
+        append(fulllist, next)
+
+        if (eq(next, lookup(twolinks, next))) {
+            append(fullrels, 0)
+            break()
         } else {
-            set(key, new)
+            append(fullrels, lookup(tworels, next))
         }
+        set(key, next)
+    }
+    call SHOWLISTNAMES(fulllist)
+    call SHOWLIST(fullrels)
+}
+
+proc SHOWLIST(list) {
+    foreach(list, element, n) {
+        d(n) ". " valueof(element) nl()
+    }
+}
+
+proc SHOWLISTNAMES(list) {
+    foreach(list, element, n) {
+        d(n) ". " name(person(element)) nl()
     }
 }
 

@@ -28,5 +28,28 @@ struct DeadEndsRunnerApp: App {
                 }
             }
         }
+        .commands {
+
+            CommandGroup(after: .textEditing) {
+
+                Button("Find…") {
+
+                    NSApp.sendAction(
+
+                        #selector(NSTextView.performFindPanelAction(_:)),
+
+                        to: nil,
+
+                        from: nil
+
+                    )
+
+                }
+
+                .keyboardShortcut("f", modifiers: .command)
+
+            }
+
+        }
     }
 }

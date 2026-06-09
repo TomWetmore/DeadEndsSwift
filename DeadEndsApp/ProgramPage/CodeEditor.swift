@@ -37,6 +37,13 @@ struct CodeEditor: NSViewRepresentable {
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = true
         textView.autoresizingMask = [.width]
+        // Add find command.
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.usesFindPanel = true
+        textView.isIncrementalSearchingEnabled = true
+        textView.usesFindPanel = true
+        textView.isIncrementalSearchingEnabled = true
 
         textView.textContainer?.containerSize = NSSize(
             width: CGFloat.greatestFiniteMagnitude,
