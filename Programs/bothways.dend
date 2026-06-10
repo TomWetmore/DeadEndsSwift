@@ -41,6 +41,11 @@ proc main () {
     call firsthalf()
 
     call secondhalf()
+
+    call fullpath()
+
+    set(nexuslist, getnexuslist())
+    call SHOWLISTNAMES(nexuslist)
 }
 
 func bothways(onekey, twokey) {
@@ -172,9 +177,43 @@ proc secondhalf() {
         }
         set(key, next)
     }
-    call SHOWLISTNAMES(fulllist)
-    call SHOWLIST(fullrels)
+    /*call SHOWLISTNAMES(fulllist)
+    call SHOWLIST(fullrels)*/
 }
+
+/* fullpath -- Show the full path between the two persons. */
+proc fullpath() {
+
+    foreach(fulllist, key, count) {
+        d(count) ". " name(person(key)) 
+        set(dir, subscript(fullrels, count))
+        if(eq(dir, 1)) { " is the child of\n" }
+        if(eq(dir, -1)) { " is the parent of\n" }
+        if(eq(dir, 0)) { ".\n" }
+    }
+}
+
+func getnexuslist() {
+	set(nexuslist, list())
+   foreach(fulllist, key, count) {
+        set(dir, subscript(fullrels, count))
+        if(eq(count, 1)) {
+            append(nexuslist, key)
+            set(target, neg(dir))
+            continue()
+        }
+        if(eq(count, length(fulllist))) {
+            append(nexuslist, key)
+            break()
+        }
+        if(eq(target, dir)) {
+            append(nexuslist, key)
+            set(target, neg(target))
+        }
+    }
+    return(nexuslist)
+}
+
 
 proc SHOWLIST(list) {
     foreach(list, element, n) {
