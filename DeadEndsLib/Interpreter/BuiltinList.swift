@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 27 May 2026.
+//  Last changed on 11 June 2026.
 //
 
 import Foundation
@@ -290,6 +290,33 @@ extension Program {
             throw RuntimeError("subscript: index \(index) is out of range", line: args[1].line)
         }
         return sequence[internalIndex]
+    }
+}
+
+/// Lisp basics.
+extension Program {
+
+    func bltinPair(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let car = try await evaluate(args[0])
+        let cdr = try await evaluate(args[1])
+        let pair = List()
+        pair.append(car)
+        pair.append(cdr)
+        return .list(pair)
+    }
+
+    func bltinFirst(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        guard case let .list(list) = try await evaluate(args[0]), list.count == 2 else {
+            throw RuntimeError("first: arg must be a list of two elements", line: args[0].line)
+        }
+        return list[0]
+    }
+
+    func bltinSecond(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        guard case let .list(list) = try await evaluate(args[0]), list.count == 2 else {
+            throw RuntimeError("second: arg must be a list of two elements", line: args[0].line)
+        }
+        return list[1]
     }
 }
 

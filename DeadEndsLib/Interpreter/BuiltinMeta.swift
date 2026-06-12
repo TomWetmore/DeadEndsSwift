@@ -25,7 +25,8 @@ extension Program {
         return .null
     }
 
-    /// Builtin function that shows the type and value of an expression.
+    /// Builtin function that returns the type and value of an evaluated expression
+    /// as a .string program value.
     func bltinValueOf(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let value = try await evaluate(args[0])
         return .string("\(value.typeName): \(value.displayValue)")

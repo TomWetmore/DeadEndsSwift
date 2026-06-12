@@ -72,7 +72,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
 
     }
 
-    /// Value strings for the program vaue kinds.
+    /// Value strings for the program value kinds.
     var displayValue: String {
         switch self {
         case .null:
@@ -86,7 +86,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         case .string(let s):
             return s
         case .person(let p):
-            return p.displayName()
+            return p.key + " " +  p.displayName()
         case .family(let f):
             return f.key
         case .gnode(let node):

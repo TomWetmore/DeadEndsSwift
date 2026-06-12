@@ -3,14 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 27 May 2026.
+//  Last changed on 11 June 2026.
 //
 
 import Foundation
 
 extension Program {
 
-    /// Structure that holds the builtin functions.
+    /// Structure that holds a builtin function.
     struct Builtin {
         
         let min: Int
@@ -18,7 +18,7 @@ extension Program {
         let function: @MainActor ([ParsedExpr]) async throws -> ProgramValue
     }
 
-    /// Build the array of built-in functions.
+    /// Build the dictionary of built-in functions.
     func setupBuiltins() {
         
         builtins = [
@@ -28,6 +28,7 @@ extension Program {
             "ord":  Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
             "card":  Builtin(min: 1, max: 1) { try await self.bltinCard($0) },
             "roman": Builtin(min: 1, max: 1) { try await self.bltinRoman($0) },
+            "null": Builtin(min: 0, max: 0) { try await self.bltinNull($0) },
 
             // Arithmetic operators.
             "add":  Builtin(min: 2, max: 2) { try await self.bltinAdd($0)},
@@ -114,6 +115,11 @@ extension Program {
             "enqueue": Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
             "dequeue": Builtin(min: 1, max: 1) { try self.bltinRemoveFirst($0)},
 
+            // Tuple shorthands for lists.
+            "pair":   Builtin(min: 2, max: 2) { try await self.bltinPair($0)},
+            "first":    Builtin(min: 1, max: 1) { try await self.bltinFirst($0)},
+            "second":    Builtin(min: 1, max: 1) { try await self.bltinSecond($0)},
+
             // Table operations.
             "table":  Builtin(min: 0, max: 0) { try self.bltinTable($0)},
             "insert": Builtin(min: 3, max: 3) { try await self.bltinInsert($0)},
@@ -178,5 +184,10 @@ extension Program {
         let value = try await evaluate(args[1])
         assignToSymbol(name, value: value)
         return .null  // Side effect only.
+    }
+
+    /// Return a .null program value.
+    func bltinNull(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        .null
     }
 }

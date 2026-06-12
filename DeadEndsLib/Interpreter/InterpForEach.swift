@@ -2,8 +2,8 @@
 //  InterpForEach.swift
 //  DeadEndsLib
 //
-//  Created by Thomas Wetmore on 5/1/26.
-//  Last changed on 20 May 2026.
+//  Created by Thomas Wetmore on 1 May 2026.
+//  Last changed on 11 June 2026.
 //
 
 import Foundation
@@ -27,6 +27,18 @@ extension Program {
             for (i, element) in set.enumerated() {
                 let result = try await interpBody(stmt, element: .person(element.person),
                                         payload: element.payload ?? .null, index: i + 1)
+                if let final = handleLoopResult(result) {
+                    return final
+                }
+            }
+        case .table(let table):
+            for (i, entry) in table.elements.enumerated() {
+                let result = try await interpBody(
+                    stmt,
+                    element: .string(entry.key),
+                    payload: entry.value,
+                    index: i + 1
+                )
                 if let final = handleLoopResult(result) {
                     return final
                 }

@@ -1,13 +1,9 @@
-/* bothways.dend —- Last changed on 6 June 2026. */
+/* bothways.dend —- Last changed on 11 June 2026. */
 
-global(onelinks)   /* Tables of back links (key->key). */
-global(twolinks)
-global(onerels)    /* Tables of link directions (key->int). */
-global(tworels)
-global(onequeue)   /* Queues of waiting persons ([key]) */
-global(twoqueue)
+/* Global variables. */
+
 global(numb)       /* Number of persons considered (int). */
-global(midkey)     /* Key where they meet (key). */
+/* global(midkey)     /* Key where they meet (key). */
 
 global(up)         /* Code for up direction. */
 global(down)       /* Code for down direction. */
@@ -15,62 +11,107 @@ global(down)       /* Code for down direction. */
 global(pathlength) /* Path length between persons (check if this is correct). */
 global(infinity)
 
-/* main -- Get two persons and call the doit routines.
+/* main -- Coordinates the whole thing.
 */
 proc main () {
 
     "Cousins finds the relationship between two persons.\n"
-    set(one, getperson("Enter the first person"))
-    if(not(one)) { "Program ended\n" return() }
-    set(two, getperson("Enter the second person"))
-    if(not(two)) { "Program ended\n" return() }
 
-    "Searching for a relationship between:\n\t"
-    name(one) " and " name(two) ".\n"
+/* Call getPersons to get the persons to connect. */
+
+    set(persons, getPersons())
+    if (not(first(persons))) {
+        "Program ended\n"  /* User did not provide two persons. */
+        return()
+    }
+    set(one, first(persons))
+    set(two, second(persons))
+    "Searching for a relationship between: " name(one) " and " name(two) ".\n"
     "Each dot is 25 persons considered. "
 
-    set(onekey, key(one))
-    set(twokey, key(two))
-    set(code, bothways(onekey, twokey))
+/* Set the global variables. */
 
-    "main -- returned code is " code nl()
+    call setGlobals()
+
+/* Prepare to find the link and direction tables for the two sides. */
+
+    set(onekey, key(one)) /* The algorithms use keys, not persons. */
+    set(twokey, key(two))
+    set(onelinks, table())   /* Tables of back links (key->key). */
+    set(twolinks, table())
+    set(onerels, table())    /* Tables of link directions (key->int). */
+    set(tworels, table())
+
+/* Call bothWays to get the links and direction tables. The return code is a pair with
+   "found", "not found", "empty" or "infinity" as the first part. */
+
+    set(code, bothWays(onekey, twokey, onelinks, twolinks, onerels, tworels))
+
+    "\nbothWays returned code " first(code) nl()
+    set(midkey, null())
+    if(ne(second(code), null())) { set(midkey, second(code)) }
+
+if(midkey) { "MIDKEY IS " midkey nl() }
+
+
+
+"THE MIDKEY PERSON IS " name(person(second(code))) nl()
     "pathlength: " d(pathlength) nl()
     "numb:       " d(numb) nl()
 
+/* Debug to see what are in those four tables. */
 
-    call firsthalf()
+call SHOWLINKSTABLE(onelinks, onerels)  /* DEBUG. */
+call SHOWLINKSTABLE(twolinks, tworels)  /* DEBUG. */
 
-    call secondhalf()
+/* Create the full list from the from person to the to person */
 
-    call fullpath()
+    set(fulllist, list())
+    set(fullrels, list())
+"CALLING FIRSTHALF\n"
+    call firsthalf(midkey, fulllist, fullrels, onelinks, onerels)
+"CALLING SECONDHALF\n"
+    call secondhalf(midkey, fulllist, fullrels, twolinks, tworels)
+"CALLING FULLPATH\n"
+    call fullpath(fulllist, fullrels)
+return()
 
-    set(nexuslist, getnexuslist())
-    call SHOWLISTNAMES(nexuslist)
+    set(nexdata, getnexdata(fulllist, fullrels))
+    call SHOWLISTNAMES(first(nexdata))
 }
 
-func bothways(onekey, twokey) {
+/* Get and return the two persons. */
+func getPersons() {
 
-	 nl() name(person(onekey)) " and " name(person(twokey)) nl()
+    set(one, getperson("Enter the first person"))
 
-    set(onelinks, table())
-    set(onerels, table())
+    if(not(one)) { return(pair(0,0)) }
+    set(two, getperson("Enter the second person"))
+
+    if(not(two)) { return(pair(0,0)) }
+    return(pair(one, two))
+}
+
+/* Find the connection between two persons by moving outward, back and
+   forth, from the from person and the two person. Only keys are used.
+*/
+
+func bothWays(onekey, twokey, onelinks, twolinks, onerels, tworels) {
+
+    if(eq(onekey, twokey)) {
+        return(pair("found", onekey))
+    }
+
     set(onequeue, list())
-
-    set(twolinks, table())
-    set(tworels, table())
     set(twoqueue, list())
 
-    set(up, 1)
-    set(down, neg(1))
-    set(numb, 0)
-    set(pathlength, 0)
-    set(toolong, 16)
-
     insert(onelinks, onekey, onekey)
+    insert(onerels, onekey, 0)
     enqueue(onequeue, onekey)
     enqueue(onequeue, 0)
 
     insert(twolinks, twokey, twokey)
+    insert(tworels, twokey, 0)
     enqueue(twoqueue, twokey)
     enqueue(twoqueue, 0)
 
@@ -80,18 +121,22 @@ func bothways(onekey, twokey) {
     while (1) {
 
         set(code, onestep(onelinks, onerels, onequeue, twolinks))
-        if(ne("not found", code)) { return(code) }
+        if(ne("not found", first(code))) { return(code) }
 
         set(code, onestep(twolinks, tworels, twoqueue, onelinks))
-        if(ne("not found", code)) { return(code) }
+        if(ne("not found", first(code))) { return(code) }
     }
 }
 
-/* Do one step on one side. */
-
+/* Do one step on one side.
+    links: [key->key], back links for 'this' side.
+    rels: [key->rel], up/down directions of the back links.
+    queue: [key], queue of persons whose links haven't been checked.
+    otherlinks: [key->key], back links for the 'other' side.
+*/
 func onestep(links, rels, queue, otherlinks) {
 
-    if (ge(0, length(queue))) { return("empty") }
+    if (ge(0, length(queue))) { return(pair("empty", null())) }
 
     while (gt(length(queue), 1)) {
 
@@ -99,21 +144,22 @@ func onestep(links, rels, queue, otherlinks) {
 
         if (eq(0, key)) {  /* 0 marks the end of the current generation. */
            incr(pathlength)
-           if (gt(pathlength, infinity)) { return("infinity") }  /* Check for too long path. */
+           if (gt(pathlength, infinity)) { return(pair("infinity", null())) }  /* Check for too long path. */
            enqueue(queue, 0)  /* 0 marks the end of next generation. */
-           return("not found")  /* Let other side run. */
+           return(pair("not found", null()))  /* Let other side run. */
         }
 
         set(person, person(key))
         set(code, include(key, father(person), links, rels, queue, otherlinks, down))
-        if (eq("found", code)) { return("found") }
+        if (eq("found", first(code))) { return(code) }
         set(code, include(key, mother(person), links, rels, queue, otherlinks, down))
-        if (eq("found", code)) { return("found") }
+        if (eq("found", first(code))) { return(code) }
         foreach(children(person), child, num) {
             set(code, include(key, child, links, rels, queue, otherlinks, up))
-            if (eq("found", code)) { return("found") }
+            if (eq("found", first(code))) { return(code) }
         }
     }
+    return(pair("not found", null()))
 }
 
 /* Add a person to the queue if it has not been seen before. If the person is new see if
@@ -128,24 +174,15 @@ func include(key, person, links, rels, queue, otherlinks, dir) {
         incr(numb)
         if (eq(0, mod(numb, 25))) { "." }
         if (lookup(otherlinks, new)) {
-            set(midkey, new)
-            return("found")
+            return(pair("found", new))
         }
-
-        /* Update the data structures. */
         enqueue(queue, new)
-/*"added " new ": " name(person) nl()*/
-        return("not found")
     }
+    return(pair("not found", null()))
 }
 
-global(fulllist)
-global(fullrels)
+proc firsthalf(midkey, fulllist, fullrels, onelinks, onerels) {
 
-proc firsthalf() {
-
-    set(fulllist, list())
-    set(fullrels, list())
     set(key, midkey)
 
     prepend(fulllist, midkey)
@@ -157,18 +194,18 @@ proc firsthalf() {
         prepend(fullrels, neg(lookup(onerels, key)))
         set(key, prev)
     }
+call SHOWLISTNAMES(fulllist) nl()
+call SHOWLIST(fullrels) nl()
 }
 
-proc secondhalf() {
+proc secondhalf(midkey, fulllist, fullrels, twolinks, tworels) {
 
     set(key, midkey)
 
     while (1) {
         set(next, lookup(twolinks, key))
         if (eq(key, next)) { break() }
-
         append(fulllist, next)
-
         if (eq(next, lookup(twolinks, next))) {
             append(fullrels, 0)
             break()
@@ -177,12 +214,12 @@ proc secondhalf() {
         }
         set(key, next)
     }
-    /*call SHOWLISTNAMES(fulllist)
-    call SHOWLIST(fullrels)*/
+call SHOWLISTNAMES(fulllist)
+call SHOWLIST(fullrels)
 }
 
 /* fullpath -- Show the full path between the two persons. */
-proc fullpath() {
+proc fullpath(fulllist, fullrels) {
 
     foreach(fulllist, key, count) {
         d(count) ". " name(person(key)) 
@@ -193,25 +230,26 @@ proc fullpath() {
     }
 }
 
-func getnexuslist() {
-	set(nexuslist, list())
-   foreach(fulllist, key, count) {
+func getnexdata(fulllist, fullrels) {
+    set(nexlist, list())
+    set(nexlens, list())
+    foreach(fulllist, key, count) {
         set(dir, subscript(fullrels, count))
         if(eq(count, 1)) {
-            append(nexuslist, key)
+            append(nexlist, key)
             set(target, neg(dir))
             continue()
         }
         if(eq(count, length(fulllist))) {
-            append(nexuslist, key)
+            append(nexlist, key)
             break()
         }
         if(eq(target, dir)) {
-            append(nexuslist, key)
+            append(nexlist, key)
             set(target, neg(target))
         }
     }
-    return(nexuslist)
+    return(pair(nexlist, nexlens))
 }
 
 
@@ -222,9 +260,23 @@ proc SHOWLIST(list) {
 }
 
 proc SHOWLISTNAMES(list) {
+    "CALLINGSHOWLISTNAMES\n"
     foreach(list, element, n) {
         d(n) ". " name(person(element)) nl()
     }
 }
 
+proc SHOWLINKSTABLE(links, dirs) {
+    "CONTENTS OF A LINKS TABLE\n"
+    foreach(links, key, value, n) {
+        d(n) ". " key " " name(person(key)) " ---> " value " " name(person(value)) "  (" d(lookup(dirs, key)) ")\n"
+    }
+}
 
+proc setGlobals() {
+set(up, 1)
+    set(down, neg(1))
+    set(numb, 0)
+    set(pathlength, 0)
+    set(toolong, 16)
+}
