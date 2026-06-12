@@ -1,14 +1,12 @@
-/* bothways.dend —- Last changed on 11 June 2026. */
+/* bothways.dend —- Last changed on 12 June 2026. */
 
 /* Global variables. */
 
 global(numb)       /* Number of persons considered (int). */
-/* global(midkey)     /* Key where they meet (key). */
-
 global(up)         /* Code for up direction. */
 global(down)       /* Code for down direction. */
-
-global(pathlength) /* Path length between persons (check if this is correct). */
+global(generations)
+global(genMarker)
 global(infinity)
 
 /* main -- Coordinates the whole thing.
@@ -33,7 +31,7 @@ proc main () {
 
     call setGlobals()
 
-/* Prepare to find the link and direction tables for the two sides. */
+/* Prepare to find the link and dir tables for the two sides. */
 
     set(onekey, key(one)) /* The algorithms use keys, not persons. */
     set(twokey, key(two))
@@ -42,27 +40,21 @@ proc main () {
     set(onerels, table())    /* Tables of link directions (key->int). */
     set(tworels, table())
 
-/* Call bothWays to get the links and direction tables. The return code is a pair with
-   "found", "not found", "empty" or "infinity" as the first part. */
-
+/* Call bothWays to get the link and dir tables. */
     set(code, bothWays(onekey, twokey, onelinks, twolinks, onerels, tworels))
 
     "\nbothWays returned code " first(code) nl()
     set(midkey, null())
     if(ne(second(code), null())) { set(midkey, second(code)) }
 
-if(midkey) { "MIDKEY IS " midkey nl() }
-
-
-
 "THE MIDKEY PERSON IS " name(person(second(code))) nl()
-    "pathlength: " d(pathlength) nl()
+    "generations: " d(generations) nl()
     "numb:       " d(numb) nl()
 
 /* Debug to see what are in those four tables. */
 
-call SHOWLINKSTABLE(onelinks, onerels)  /* DEBUG. */
-call SHOWLINKSTABLE(twolinks, tworels)  /* DEBUG. */
+/*call SHOWLINKSTABLE(onelinks, onerels)  /* DEBUG. */
+/*call SHOWLINKSTABLE(twolinks, tworels)  /* DEBUG. */
 
 /* Create the full list from the from person to the to person */
 
@@ -74,46 +66,43 @@ call SHOWLINKSTABLE(twolinks, tworels)  /* DEBUG. */
     call secondhalf(midkey, fulllist, fullrels, twolinks, tworels)
 "CALLING FULLPATH\n"
     call fullpath(fulllist, fullrels)
-return()
 
-    set(nexdata, getnexdata(fulllist, fullrels))
-    call SHOWLISTNAMES(first(nexdata))
+"CALLING GETNEXUSDATA\n"
+
+    set(nexusData, getNexusLists(fulllist, fullrels))
+    call SHOWLISTNAMES(first(nexusData))
+    call SHOWLIST(second(nexusData))
 }
 
-/* Get and return the two persons. */
+/* Get and return the persons to connect. */
+
 func getPersons() {
 
     set(one, getperson("Enter the first person"))
-
     if(not(one)) { return(pair(0,0)) }
     set(two, getperson("Enter the second person"))
-
     if(not(two)) { return(pair(0,0)) }
     return(pair(one, two))
 }
 
 /* Find the connection between two persons by moving outward, back and
-   forth, from the from person and the two person. Only keys are used.
-*/
+   forth, from the from person and the two person. Only keys are used. */
 
 func bothWays(onekey, twokey, onelinks, twolinks, onerels, tworels) {
 
     if(eq(onekey, twokey)) {
         return(pair("found", onekey))
     }
-
     set(onequeue, list())
     set(twoqueue, list())
-
     insert(onelinks, onekey, onekey)
     insert(onerels, onekey, 0)
     enqueue(onequeue, onekey)
-    enqueue(onequeue, 0)
-
+    enqueue(onequeue, genMarker)
     insert(twolinks, twokey, twokey)
     insert(tworels, twokey, 0)
     enqueue(twoqueue, twokey)
-    enqueue(twoqueue, 0)
+    enqueue(twoqueue, genMarker)
 
     set(returncode, "not found")
     set(infinity, 30)
@@ -141,14 +130,12 @@ func onestep(links, rels, queue, otherlinks) {
     while (gt(length(queue), 1)) {
 
         set(key, dequeue(queue))  /* Get next element from queue. */
-
-        if (eq(0, key)) {  /* 0 marks the end of the current generation. */
-           incr(pathlength)
-           if (gt(pathlength, infinity)) { return(pair("infinity", null())) }  /* Check for too long path. */
-           enqueue(queue, 0)  /* 0 marks the end of next generation. */
+        if (eq(genMarker, key)) {  /* At end of a generation? */
+           incr(generations)
+           if (gt(generations, infinity)) { return(pair("infinity", null())) }  /* Check for too long path. */
+           enqueue(queue, genMarker)  /* Marks the end of next generation. */
            return(pair("not found", null()))  /* Let other side run. */
         }
-
         set(person, person(key))
         set(code, include(key, father(person), links, rels, queue, otherlinks, down))
         if (eq("found", first(code))) { return(code) }
@@ -162,9 +149,9 @@ func onestep(links, rels, queue, otherlinks) {
     return(pair("not found", null()))
 }
 
-/* Add a person to the queue if it has not been seen before. If the person is new see if
-   it is in otherlinks, in which case we have found the middle person so can return "found".
-*/
+/* include adds a person to the queue if it has not been seen before. If the person is new and
+   is in otherlinks, it is 'middle' person in the search so include returns "found". */
+
 func include(key, person, links, rels, queue, otherlinks, dir) {
 
     if (and(person, not(lookup(links, key(person))))) {
@@ -181,12 +168,14 @@ func include(key, person, links, rels, queue, otherlinks, dir) {
     return(pair("not found", null()))
 }
 
+/* firstHalf starts fullllist and fullrels by adding the path from the from person to
+   the mid person. The fulllist will have all those persons. However the fulldirs will
+   not have a direction for the midkey -- that is supplied by secondHalf. */
+
 proc firsthalf(midkey, fulllist, fullrels, onelinks, onerels) {
 
     set(key, midkey)
-
     prepend(fulllist, midkey)
-    prepend(fullrels, neg(lookup(onerels, midkey)))
     while (1) {
         set(prev, lookup(onelinks, key))
         if (eq(prev, key)) { break() }
@@ -194,13 +183,18 @@ proc firsthalf(midkey, fulllist, fullrels, onelinks, onerels) {
         prepend(fullrels, neg(lookup(onerels, key)))
         set(key, prev)
     }
-call SHOWLISTNAMES(fulllist) nl()
-call SHOWLIST(fullrels) nl()
+/*call SHOWLISTNAMES(fulllist) nl()
+call SHOWLIST(fullrels) nl()*/
 }
+
+/* secondHalf completes fulllist and fullrels by appending the path from the middle
+   person to the to person. The direction for the middle person, not provided by
+   firstHalf, is added at the start. */
 
 proc secondhalf(midkey, fulllist, fullrels, twolinks, tworels) {
 
     set(key, midkey)
+    append(fullrels, lookup(tworels, key))
 
     while (1) {
         set(next, lookup(twolinks, key))
@@ -214,8 +208,8 @@ proc secondhalf(midkey, fulllist, fullrels, twolinks, tworels) {
         }
         set(key, next)
     }
-call SHOWLISTNAMES(fulllist)
-call SHOWLIST(fullrels)
+/*call SHOWLISTNAMES(fulllist)
+call SHOWLIST(fullrels)*/
 }
 
 /* fullpath -- Show the full path between the two persons. */
@@ -224,29 +218,40 @@ proc fullpath(fulllist, fullrels) {
     foreach(fulllist, key, count) {
         d(count) ". " name(person(key)) 
         set(dir, subscript(fullrels, count))
-        if(eq(dir, 1)) { " is the child of\n" }
-        if(eq(dir, -1)) { " is the parent of\n" }
+        if(eq(dir, 1)) { " is the " childWord(key) " of\n" }
+        if(eq(dir, -1)) { " is the " parentWord(key) " of\n" }
         if(eq(dir, 0)) { ".\n" }
     }
 }
 
-func getnexdata(fulllist, fullrels) {
+/* getNexusLists -- finds the two nexus lists needed to show the full type of output. */
+
+func getNexusLists(fulllist, fullrels) {
+
     set(nexlist, list())
     set(nexlens, list())
+    set(len, 0)
     foreach(fulllist, key, count) {
         set(dir, subscript(fullrels, count))
         if(eq(count, 1)) {
             append(nexlist, key)
+            append(nexlens, 0)
             set(target, neg(dir))
+            set(len, 0)
             continue()
         }
         if(eq(count, length(fulllist))) {
             append(nexlist, key)
+            append(nexlens, len)
             break()
         }
         if(eq(target, dir)) {
             append(nexlist, key)
+            append(nexlens, len) /* SHOULD IT BE LEN + 1? */
+            set(len, 0)
             set(target, neg(target))
+        } else {
+            incr(len)
         }
     }
     return(pair(nexlist, nexlens))
@@ -273,10 +278,28 @@ proc SHOWLINKSTABLE(links, dirs) {
     }
 }
 
+/* setGlobals -- set the global constants and variables used by the program. */
+
 proc setGlobals() {
-set(up, 1)
+
+    set(up, 1)
     set(down, neg(1))
     set(numb, 0)
-    set(pathlength, 0)
-    set(toolong, 16)
+    set(genMarker, 0)
+    set(generations, 0)
+    set(pathLength, 0)
+    set(infinity, 30)
 }
+
+func childWord(key) {
+    if (male(person(key))) { return("son") }
+    if (female(person(key))) { return("daughter") }
+    return("child")
+}
+
+func parentWord(key) {
+    if (male(person(key))) { return("father") }
+    if (female(person(key))) { return("mother") }
+    return("parent")
+}
+
