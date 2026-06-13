@@ -1,31 +1,18 @@
-The program page is working well enough to move forward. In case you did not know, I created a separate app for just running programs. It's an app that links the library with a couple SwiftUI files. It is very useful as a test vehicle as it starts up on the program page and is immediately ready to load a database or a program.
-
-Do you know what would be involved in porting this to simple app to an iPad version. Here are some of the issues that come to mind:
-
+The program page is working well enough to move forward. I created a separate app for running programs. It's an app that links the library with a couple SwiftUI files. It is very useful as a test vehicle as it starts up on the program page and is immediately ready to load a database or a program. Do you know what would be involved in porting this to simple app to an iPad version. Here are some of the issues that come to mind:
 1. The application would need its own private file system to hold, for example, Gedcom files and program files. I'd had to learn how to create such a file system.
-
 2. I would have to somehow get the programm over to my iPad. I don't know the technologies for doing this, though I assume that Apple has made it quite simple.
-
 3. Would I be able to share the iPad app with others without having to use the app store facility.
-
 4. How do I set up the Xcode project to have the multiple target versions? Again I assume Apple has made this pretty simple.
+================================================================================
+That separate runner app sounds like exactly the right test vehicle: small surface area, fast startup, and no editing complications. I’ll frame this as a practical porting checklist rather than an abstract iOS tutorial. Yes. For your runner app, an iPad port is very plausible.
 
-That separate runner app sounds like exactly the right test vehicle: small surface area, fast startup, and no editing complications. I’ll frame this as a practical porting checklist rather than an abstract iOS tutorial.
-
-Yes. For your runner app, an iPad port is very plausible.
-
-1. Private file system
-
+1. Private file system.
 You mostly get this automatically. Every iPad app has a sandbox with its own Documents, Library, and tmp directories. You do not “create a file system”; you use URLs such as:
-
 FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-
 For a first version, I would use the app’s Documents folder for GEDCOM and program files.
 
-2. Getting files onto the iPad
-
+2. Getting files onto the iPad.
 Likely easiest options:
-
 Use SwiftUI’s fileImporter to pick GEDCOM/program files from Files, iCloud Drive, Dropbox, etc.
 
 Then either:
@@ -100,3 +87,252 @@ iPad runner:
 5. Run program and show output.
 
 I would not worry yet about building a full private file browser. Let the Files app do that at first. Later, you can copy selected files into the app’s Documents folder and add a simple in-app “recent files” list.
+
+My iPad is connected to my computer now. What can I do to see the file system on the iPad?
+
+Apple doesn’t really let you browse the entire iPad file system the way you would on a Mac. But there are several useful things you can see.
+1. Finder
+With the iPad connected:
+1. Open Finder.
+2. Look in the sidebar under Locations.
+3. Click your iPad.
+You’ll see information about the device, storage usage, backups, files shared by apps, etc. If an app supports file sharing, you’ll find it under the Files tab when the iPad is selected.
+
+2. Files App on the iPad
+On the iPad itself:
+1. Open Files.
+2. Tap Browse.
+
+You should see locations such as:
+* iCloud Drive
+* On My iPad
+* Downloads
+* Third-party providers (Dropbox, OneDrive, etc.)
+
+“On My iPad” is the closest thing to a visible local file system.
+
+3. Xcode Device Browser. If Xcode is running:
+
+1. Choose Window → Devices and Simulators.
+2. Select your iPad.
+
+From there you can:
+* Install apps
+* View logs
+* Download app containers (for apps you build)
+This becomes particularly useful once you have your runner app installed.
+
+4. What you’ll see for your own app. After you build an iPad version of the runner and install it, the app gets a sandbox like:
+
+Documents/
+Library/
+tmp/
+
+You normally don’t see these directly. However, if you enable:
+
+UIFileSharingEnabled = YES
+LSSupportsOpeningDocumentsInPlace = YES
+
+then Finder and the Files app can expose your app’s Documents folder. At that point you can drag GEDCOM files directly into your app’s storage from the Mac.
+
+For a genealogy script runner, that’s probably exactly what you’d want:
+
+DeadEnds Runner
+    Database.ged
+    cousins.ll
+    ancestors.ll
+    descendants.ll
+
+visible in Files and drag-and-droppable from Finder.
+
+An experiment you can do right now On the iPad:
+1. Open Files.
+2. Tap Browse.
+3. Tell me what locations appear under “Locations.”
+
+I’m particularly interested in whether you already have an “On My iPad” location visible, because that will tell us a lot about how Apple is currently exposing local storage on your device.
+================================================================================================
+I just turned on my iPad for development. The locations include "On My iPad", "Working Copy", and "Recently Deleted."
+===============================================================================================
+That’s actually a very good sign. The presence of “On My iPad” means the local storage area is enabled and visible. The fact that Working Copy appears there tells you exactly how third-party apps can expose their own files to the Files app.
+If you tap around inside On My iPad, you’ll likely see folders belonging to apps that have chosen to expose documents. Working Copy is one example.
+
+Your future runner app could appear there as:
+
+On My iPad
+    DeadEnds Runner
+        MyDatabase.ged
+        cousins.ll
+        ancestors.ll
+
+        and users could:
+
+* Copy GEDCOM files into it
+* Copy program files into it
+* Rename files
+* Organize folders
+* Share files with other apps
+
+all without you writing a file browser.
+
+For a first iPad version, I would make the architecture even simpler:
+
+************************************* Version 1 *************************
+
+Buttons:
+Load GEDCOM
+Load Program
+Run
+
+Use fileImporter to select files from anywhere:
+
+On My iPad
+iCloud Drive
+Dropbox
+Working Copy
+
+No internal file management at all.
+
+The user picks a GEDCOM and a program, and you run them.
+
+Version 2
+
+Add a “Save into Runner Documents” button.
+
+When a user imports a file:
+
+Documents/
+    Databases/
+    Programs/
+
+    The file gets copied into the app sandbox.
+
+Now the app remembers its databases and programs between launches.
+
+⸻
+
+Version 3
+
+Expose the Documents folder to Files/Finder.
+
+At that point users can drag files directly from the Mac into:
+
+On My iPad/DeadEnds Runner/
+
+without ever opening the app.
+
+⸻
+
+What’s particularly encouraging is that your runner is already very close to an iPad-style application. It has:
+
+* one screen,
+* a few buttons,
+* file input,
+* text output.
+
+SwiftUI handles all of those well on iPad.
+
+The hardest part is usually document management, and Apple has already solved much of that through Files and fileImporter.
+
+One thing I’d be curious about: does your current ProgramPage use a plain TextEditor for entering and editing programs? If so, that is probably the only part that might feel noticeably different on the iPad compared to the Mac. The rest should port with surprisingly little work.
+=======================================================================
+What is "fileImporter"?
+=======================================================================
+fileImporter is a SwiftUI modifier that displays Apple’s standard document picker.
+
+Think of it as the iPad/iPhone equivalent of NSOpenPanel on the Mac.
+
+On macOS you might do something like:
+
+let panel = NSOpenPanel()
+panel.runModal()
+
+On iPadOS, you generally don’t do that. Instead, SwiftUI presents the Files app interface and lets the user choose a document.
+
+A minimal example looks like:
+
+@State private var showingImporter = false
+
+Button("Load GEDCOM") {
+    showingImporter = true
+}
+.fileImporter(
+    isPresented: $showingImporter,
+    allowedContentTypes: [.data]
+) { result in
+    switch result {
+    case .success(let url):
+        print(url)
+
+    case .failure(let error):
+        print(error)
+    }
+}
+
+When the button is pressed, the user sees a picker similar to:
+
+Browse
+    iCloud Drive
+    On My iPad
+    Working Copy
+    Dropbox
+    ...
+
+and can navigate to a file.
+
+For your runner app, you’d probably have something more like:
+
+.fileImporter(
+    isPresented: $showingGedcomImporter,
+    allowedContentTypes: [.gedcom]
+)
+
+except Apple doesn’t define a GEDCOM type, so initially you might simply allow:
+
+allowedContentTypes: [.text]
+
+and then inspect the filename extension yourself.
+
+The result is a URL:
+
+case .success(let url):
+
+You can read the file directly:
+
+let text = try String(contentsOf: url)
+
+or copy it into your app’s Documents folder.
+
+⸻
+
+A typical runner workflow might become:
+
+Load GEDCOM
+    ↓
+fileImporter
+    ↓
+User selects:
+    On My iPad/MyData.ged
+    ↓
+Import database
+
+Load Program
+    ↓
+fileImporter
+    ↓
+User selects:
+    On My iPad/cousins.ll
+    ↓
+Load program text
+
+One nice aspect is that the exact same fileImporter also works on macOS. So if your current runner uses NSOpenPanel, you could eventually replace it with a cross-platform solution:
+
+#if os(macOS)
+...
+#else
+...
+#endif
+
+or even use fileImporter on both platforms.
+
+For your first iPad port, I would expect fileImporter to be the only new file-management API you absolutely need to learn. Everything else can come later.

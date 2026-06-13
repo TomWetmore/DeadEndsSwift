@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2617894C2FDDEF2800E874C8 /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		261FD2F22FC8AA3D004BF7DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
 		2631CF252F80128F00EFAE4F /* Parsing in Frameworks */ = {isa = PBXBuildFile; productRef = 2631CF242F80128F00EFAE4F /* Parsing */; };
 		263408D52E21698F00F4E6DE /* libDeadEndsLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2682068B2D1337930051544B /* libDeadEndsLib.a */; };
@@ -14,6 +15,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		2617894A2FDDEEFA00E874C8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2682065A2D13370F0051544B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2682068A2D1337930051544B;
+			remoteInfo = DeadEndsLib;
+		};
 		264C9E9B2ED7CD7A00BA7D56 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2682065A2D13370F0051544B /* Project object */;
@@ -244,6 +252,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2617894C2FDDEF2800E874C8 /* libDeadEndsLib.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -427,6 +436,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				2617894B2FDDEEFA00E874C8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				26EABDC42F2ACDAF001406E5 /* DeadEndsIPad */,
@@ -567,6 +577,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		2617894B2FDDEEFA00E874C8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2682068A2D1337930051544B /* DeadEndsLib */;
+			targetProxy = 2617894A2FDDEEFA00E874C8 /* PBXContainerItemProxy */;
+		};
 		264C9E9C2ED7CD7A00BA7D56 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 2682068A2D1337930051544B /* DeadEndsLib */;
@@ -587,7 +602,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
@@ -610,6 +625,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -629,6 +646,7 @@
 				DEVELOPMENT_TEAM = 22WT5TK79S;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -643,6 +661,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -819,6 +839,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -875,6 +896,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -945,7 +967,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -955,6 +977,7 @@
 				PRODUCT_NAME = DeadEnds;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -979,7 +1002,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -989,6 +1012,7 @@
 				PRODUCT_NAME = DeadEnds;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
