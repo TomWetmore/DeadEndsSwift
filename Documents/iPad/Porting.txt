@@ -1,0 +1,102 @@
+The program page is working well enough to move forward. In case you did not know, I created a separate app for just running programs. It's an app that links the library with a couple SwiftUI files. It is very useful as a test vehicle as it starts up on the program page and is immediately ready to load a database or a program.
+
+Do you know what would be involved in porting this to simple app to an iPad version. Here are some of the issues that come to mind:
+
+1. The application would need its own private file system to hold, for example, Gedcom files and program files. I'd had to learn how to create such a file system.
+
+2. I would have to somehow get the programm over to my iPad. I don't know the technologies for doing this, though I assume that Apple has made it quite simple.
+
+3. Would I be able to share the iPad app with others without having to use the app store facility.
+
+4. How do I set up the Xcode project to have the multiple target versions? Again I assume Apple has made this pretty simple.
+
+That separate runner app sounds like exactly the right test vehicle: small surface area, fast startup, and no editing complications. I’ll frame this as a practical porting checklist rather than an abstract iOS tutorial.
+
+Yes. For your runner app, an iPad port is very plausible.
+
+1. Private file system
+
+You mostly get this automatically. Every iPad app has a sandbox with its own Documents, Library, and tmp directories. You do not “create a file system”; you use URLs such as:
+
+FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+
+For a first version, I would use the app’s Documents folder for GEDCOM and program files.
+
+2. Getting files onto the iPad
+
+Likely easiest options:
+
+Use SwiftUI’s fileImporter to pick GEDCOM/program files from Files, iCloud Drive, Dropbox, etc.
+
+Then either:
+
+// read in place
+let text = try String(contentsOf: url)
+
+or copy the selected file into your app’s Documents folder.
+
+You can also enable iTunes/Finder file sharing so your app’s Documents folder appears in Finder when the iPad is connected. That is controlled by Info.plist keys, especially UIFileSharingEnabled and often LSSupportsOpeningDocumentsInPlace.
+
+3. Sharing the app without App Store
+
+Yes, but with limits.
+
+For yourself: plug in the iPad, select it as the run destination in Xcode, build/run.
+
+For a few testers: use TestFlight or Ad Hoc distribution. Ad Hoc requires registering device UDIDs. TestFlight is usually easier for real testers, though it goes through App Store Connect. Apple documents both beta/release distribution and registered-device distribution.
+
+For broad public use without App Store: not really, unless you are in special enterprise/internal distribution situations.
+
+4. Xcode project setup
+
+You have two reasonable paths:
+
+Add an iPad/iOS app target to the same project, link it with DeadEndsLib, and share most SwiftUI files.
+
+Or make a multiplatform app target if the Mac/iPad versions are nearly identical. Apple supports both adding new targets and configuring multiplatform app targets.
+
+For your case, I would start with a separate iOS/iPadOS target. Keep DeadEndsLib shared. Keep ProgramPage mostly shared if possible, but make platform-specific file-loading wrappers:
+
+#if os(macOS)
+// NSOpenPanel
+#elseif os(iOS)
+// fileImporter
+#endif
+
+My practical recommendation: port the runner first, not the full app. The runner has exactly the right shape for iPad: load GEDCOM, load program, run, view output.
+
+Yes, I am only interested in porting the runner right now. I consider the full app to be more of a hodge podge of ideas under test rather than a real application.
+
+That makes the iPad version much cleaner.
+
+I’d treat the runner as a third app target:
+
+DeadEndsLib
+DeadEndsApp        // Mac experimental app
+RunScript          // CLI
+DeadEndsRunnerMac  // current SwiftUI runner
+DeadEndsRunneriPad // new iPadOS SwiftUI runner
+
+The iPad target should share:
+
+Mac runner:
+  NSOpenPanel
+  local file paths
+  maybe menu commands
+
+iPad runner:
+  fileImporter
+  app Documents folder
+  share/export sheet later
+
+  The first useful milestone would be very small:
+
+1. Create iPadOS app target.
+2. Link DeadEndsLib.
+3. Show ProgramPage.
+4. Add two fileImporter buttons:
+    * Load GEDCOM
+    * Load program
+5. Run program and show output.
+
+I would not worry yet about building a full private file browser. Let the Files app do that at first. Later, you can copy selected files into the app’s Documents folder and add a simple in-app “recent files” list.
