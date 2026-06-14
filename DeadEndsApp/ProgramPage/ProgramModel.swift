@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 31 May 2026.
+//  Last changed on 13 June 2026.
 //
 
 import Foundation
@@ -44,41 +44,6 @@ final class ProgramModel {
 
     /// Handle the compile button; tries to compile a program.
     /// It will either succeed or display a diagnostic message.
-    func oldhandleCompileButton() {
-
-        diagnostics = []
-        parsedProgram = nil
-        output.clear()
-
-        guard !source.isEmpty else { return }
-        do {
-            let normalized = normalizedSource(source)  // Smart quote hack.
-            var lexer = Lexer(source: normalized)
-            let tokens = lexer.tokenize()
-            guard tokens.last?.kind == .eof else {
-                throw FrontEndError.missingEOF
-            }
-            var input = tokens[...]  // Parse the tokens into a parsed program.
-            parsedProgram = try ProgramParser().parse(&input)
-            if let first = input.first, first.kind == .eof {
-                input.removeFirst()
-            }
-            if !input.isEmpty {
-                throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
-            }
-        } catch let error as FrontEndError {
-            diagnostics = [convertFrontEndError(error)]
-        } catch let error as ParseError {
-                diagnostics = [Diagnostic(message: error.description, line: nil)]
-        } catch {
-            diagnostics = [Diagnostic(
-                message: error.localizedDescription,
-                line: nil
-            )]
-        }
-    }
-
-    /// Handle the compile button.
     func handleCompileButton() {
 
         compileState = .working
