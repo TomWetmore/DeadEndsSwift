@@ -3,62 +3,75 @@
 //  DeadEndsIPad
 //
 //  Created by Thomas Wetmore on 13 June 2026.
-//  Last changed on 13 June 2026.
+//  Last changed on 15 June 2026.
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct IPadProgramPage: View {
 
     @Bindable var model: IPadRunnerModel
+    @State private var showingImporter = false
+    @State private var importKind: ImportKind?
 
     var body: some View {
         VStack(spacing: 0) {
 
             HStack {
                 Button("Load Database") {
-                    model.showingDatabaseImporter = true
+                    importKind = .database
+                    showingImporter = true
                 }
                 StatusCircle(state: model.databaseState)
 
                 Button("Load Program") {
-                    model.showingProgramImporter = true
+                    importKind = .program
+                    showingImporter = true
                 }
-                StatusCircle(state: model.programModel.openState)
+                StatusCircle(state: model.programLoadState)
 
                 Button("Compile") {
-                    model.programModel.handleCompileButton()
+                    model.handleCompileButton()
                 }
-                .disabled(model.programModel.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                StatusCircle(state: model.programModel.compileState)
+                .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                StatusCircle(state: model.compileState)
 
                 Button("Run") {
                     if let db = model.database {
                         Task {
-                            await model.programModel.handleRunButton(database: db)
+                            await model.handleRunButton(database: db)
                         }
                     }
                 }
-                .disabled(model.programModel.parsedProgram == nil || model.database == nil)
-
-                StatusCircle(state: model.programModel.runState)
+                .disabled(model.parsedProgram == nil || model.database == nil)
+                StatusCircle(state: model.runState)
 
                 Spacer()
             }
             .padding()
 
-            TextEditor(text: $model.programModel.source)
+            TextEditor(text: $model.source)
                 .font(.system(size: 16, design: .monospaced))
-                .padding()
-                .onChange(of: model.programModel.source) { _, _ in
-                    model.programModel.sourceWasEdited()
-                }
+
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .padding()
+            .onChange(of: model.source) { _, _ in
+                model.sourceWasEdited()
+            }
+
+            /*
+             TextEditor(text: $model.source)
+                 .font(.system(.body, design: .monospaced))
+                 .textInputAutocapitalization(.never)
+                 .autocorrectionDisabled()
+             */
 
             Divider()
 
             ScrollView {
-                Text(model.programModel.output.text)
+                Text(model.output.text)
                     .font(.system(size: 16, design: .monospaced))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
@@ -66,20 +79,25 @@ struct IPadProgramPage: View {
             }
         }
         .fileImporter(
-            isPresented: $model.showingProgramImporter,
+            isPresented: $showingImporter,
             allowedContentTypes: [.plainText, .data]
         ) { result in
+            guard let importKind else { return }
+            self.importKind = nil
+
             if case .success(let url) = result {
-                model.loadProgram(from: url)
-            }
-        }
-        .fileImporter(
-            isPresented: $model.showingDatabaseImporter,
-            allowedContentTypes: [.data]
-        ) { result in
-            if case .success(let url) = result {
-                model.loadDatabase(from: url)
+                switch importKind {
+                case .database:
+                    model.loadDatabase(from: url)
+                case .program:
+                    model.loadProgram(from: url)
+                }
             }
         }
     }
+}
+
+enum ImportKind {
+    case database
+    case program
 }

@@ -94,6 +94,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				ProgramPage/DiagnosticPane.swift,
+				ProgramPage/ProgramInterface.swift,
 				ProgramPage/StatusLight.swift,
 			);
 			target = 26EABDC22F2ACDAF001406E5 /* DeadEndsIPad */;
