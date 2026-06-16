@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 3 June 2026.
+//  Last changed on 16 June 2026.
 //
 //  This is the programming page of the app. It allows users to
 //  compose, edit, compile and run DeadEnds programs.
@@ -117,25 +117,6 @@ struct ProgramPage<ExtraCommands: View>: View {
         .frame(minHeight: 48, idealHeight: 60, maxHeight: 60)
     }
 
-    /// Failed experiment to get line numbers.
-    private var poortextEditor: some View {
-
-        HStack(alignment: .top, spacing: 0) {
-
-            ScrollView {
-                Text(lineNumbers)
-                    .font(.system(size: 14, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 8)
-            }
-            .frame(width: 50)
-
-            TextEditor(text: $model.source)
-                .font(.system(size: 14, design: .monospaced))
-        }
-    }
-
-
     private var textEditor: some View {
         //TextEditor(text: $model.source)
         CodeEditor(text: $model.source)
@@ -166,5 +147,3 @@ struct ProgramPage<ExtraCommands: View>: View {
             .joined(separator: "\n")
     }
 }
-
-

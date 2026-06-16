@@ -3,7 +3,7 @@
 //  DeadEndsIPad
 //
 //  Created by Thomas Wetmore on 13 June 2026.
-//  Last changed on 15 June 2026.
+//  Last changed on 16 June 2026.
 //
 
 import SwiftUI
@@ -14,7 +14,7 @@ import UniformTypeIdentifiers
 
 @MainActor
 @Observable
-final class IPadRunnerModel: UserInterface {
+final class IPadRunnerModel {
 
     var database: Database?
     var source: String = ""
@@ -26,6 +26,8 @@ final class IPadRunnerModel: UserInterface {
     var programLoadState: StatusState = .initial
     var compileState: StatusState = .initial
     var runState: StatusState = .initial
+    var programRequest: ProgramRequest?
+    var personContinuation: CheckedContinuation<Person?, Never>?
 
     var diagnostics: [Diagnostic] = []
 
@@ -117,7 +119,6 @@ final class IPadRunnerModel: UserInterface {
         }
     }
 
-    /// Copied from ProgramModel.
     /// Handle the run button; create a program and try to interpret it.
     func handleRunButton(database: Database) async {
 
@@ -134,7 +135,6 @@ final class IPadRunnerModel: UserInterface {
                               output: buffer, userInterface: self)
         do {
             try await program.interpretProgram()
-            //print("after interpret, output size =", buffer.text.count)  // DEBUG
             output.text = displayableOutput(buffer.text)  // Move buffered output to view.
             runState = .success
         } catch let error as RuntimeError {
@@ -148,8 +148,7 @@ final class IPadRunnerModel: UserInterface {
             runState = .failure
         }
     }
-
-    /// Copied from ProgramModel.
+    
     /// Called when the user starts to edit the edit field.
     func sourceWasEdited() {
         isDirty = true
@@ -158,14 +157,33 @@ final class IPadRunnerModel: UserInterface {
         runState = .initial
         diagnostics = []
     }
+}
 
-    func getPerson(prompt: String?) async -> Person? { return nil }
+/// Model extension that implements the UserInterface protocol.
+@MainActor
+extension IPadRunnerModel: UserInterface {
+
+    func getPerson(prompt: String?) async -> Person? {
+        programRequest = .getPerson(GetPersonRequest(
+            prompt: prompt ?? "Enter a person"
+        ))
+
+        return await withCheckedContinuation { continuation in
+            personContinuation = continuation
+        }
+    }
+
+    func finishGetPerson(_ person: Person?) {
+        programRequest = nil
+        personContinuation?.resume(returning: person)
+        personContinuation = nil
+    }
+
+
     func getInteger(prompt: String?) async -> Int? { return nil }
     func getString(prompt: String?) async -> String? { return nil }
 }
 
-
-/// Copied from ProgramModel:
 /// Simple diagnostic to start with.
 struct Diagnostic: Identifiable {
 
@@ -174,7 +192,6 @@ struct Diagnostic: Identifiable {
     public let line: Int?
 }
 
-/// Copied from ProgramModel:
 /// Required because TextEditor uses smart quotes that are hard to turn off.
 func normalizedSource(_ text: String) -> String {
     text

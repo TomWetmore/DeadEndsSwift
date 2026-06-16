@@ -94,6 +94,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				ProgramPage/DiagnosticPane.swift,
+				ProgramPage/GetPersonSheet.swift,
 				ProgramPage/ProgramInterface.swift,
 				ProgramPage/StatusLight.swift,
 			);

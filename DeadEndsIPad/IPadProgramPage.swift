@@ -3,7 +3,7 @@
 //  DeadEndsIPad
 //
 //  Created by Thomas Wetmore on 13 June 2026.
-//  Last changed on 15 June 2026.
+//  Last changed on 16 June 2026.
 //
 
 import SwiftUI
@@ -76,6 +76,45 @@ struct IPadProgramPage: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     .textSelection(.enabled)
+            }
+        }
+        .sheet(item: $model.programRequest) { request in
+            switch request {
+            case .getPerson(let request):
+                GetPersonSheet(
+                    request: request,
+                    database: model.database!,
+                    onChoose: { person in
+                        model.finishGetPerson(person)
+                    },
+                    onCancel: {
+                        model.finishGetPerson(nil)
+                    }
+                )
+
+            case .getInteger(let request):
+                VStack(spacing: 20) {
+                    Text(request.prompt)
+                    Button("Return 42") {
+                        //model.finishGetInteger(42)
+                    }
+                    Button("Cancel") {
+                        //model.finishGetInteger(nil)
+                    }
+                }
+                .padding()
+
+            case .getString(let request):
+                VStack(spacing: 20) {
+                    Text(request.prompt)
+                    Button("Return test string") {
+                        //model.finishGetString("test string")
+                    }
+                    Button("Cancel") {
+                        //model.finishGetString(nil)
+                    }
+                }
+                .padding()
             }
         }
         .fileImporter(

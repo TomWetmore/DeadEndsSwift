@@ -3,7 +3,9 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 21 May 2026.
-//  Last changed on 23 May 2026.
+//  Last changed on 16 June 2026.
+//
+//  This code is used in both the Mac and iPad versions of the program page.
 //
 
 import SwiftUI
@@ -29,6 +31,10 @@ struct GetPersonSheet: View {
             HStack {
                 TextField("Name pattern", text: $pattern)
                     .textFieldStyle(.roundedBorder)
+#if os(iOS)
+                    .textInputAutocapitalization(.never)
+#endif
+                    .autocorrectionDisabled()
                     .onSubmit(search)
 
                 Button("Search") {
@@ -53,7 +59,11 @@ struct GetPersonSheet: View {
             }
         }
         .padding()
+#if os(macOS)
         .frame(minWidth: 520, minHeight: 420)
+#else
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+#endif
     }
 
     private func search() {

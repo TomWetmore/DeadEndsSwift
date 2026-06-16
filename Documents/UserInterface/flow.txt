@@ -1,43 +1,168 @@
-Explanation of how the user iterface builtins work.
+How the user iterface builtins work.
 
-Basics. There are builtins programmers can put in DeadEnds programs that cause a SwiftUI based user interface to interact with the user to get information that is then provided back to the builtin which then continues with the program.
+User interface builtins interact with users. For example, getPerson("prompt") lets the user identify a person by name. and then that person is returned to the program.
 
-BUILTIN LAYER. Here is an example built-in for asking the user to identify a person needed by the program:
+BUILTIN LAYER. Here is an example built-in for asking the user to identify a person:
 
     func bltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let prompt = try await evaluateString(args[0], errMsg: "getperson: ...")
+        let prompt = try await evaluateString(args[0], errMsg: "getperson: arg must be a prompt string")
         await output.flush()
         let person = await userInterface.getPerson(prompt: prompt)
         if let person { return .person(person) }
         return .null
     }
 
+All builtins have the same interface, an array of ParsedExpr's, and return a ProgramValue. They are potentially asynchronous and may throw errors. This builtin shows typical behaviour. The first (and only) ParsedExpr must evaluate to a string. The method throws an error if the argument is not a string. Once the prompt is resolved it is passed through the user interface mechanism. SwiftUI will open a sheet the user uses to identify the person. That person is returned to the program
+
 USERINTERFACE PROTOCOL
 
-The key line in the bltinGedPerson example is the "await userinterface.getPerson(prompt: prompt)". What is happening here?
-    o userInterface is a property of the ProgramModel defined by:
-        let userInterface: UserInterface
-    o UserInterface in a protocol defined in UserInterface.swift as:
-        public protocol UserInterface {
-            func getPerson(prompt: String?) async -> Person?
-            func getInteger(prompt: String?) async -> Int?
-            ... with more to come ...
+The user interface built-ins pass their requests to an object that implemements the UserInterface protocol. That protocol is currently:
+
+@MainActor
+public protocol UserInterface {
+    func getPerson(prompt: String?) async -> Person?
+    func getInteger(prompt: String?) async -> Int?
+    func getString(prompt: String?) async -> String?
+}
+
+In the current two implementations (for Mac and for iPad) the UserInterface protocol is implemented by a model object and uses a request enum.
+
+The protocol has only three methods now. It will grow with new methods as more user interfaces built-ins are ported. Before discussing the protocol further, let's first review what has to be done before a SwiftUI will show the sheet we need.
+
+Here is she start of the Mac program model for the programming page feature. Note that it is @Observable, which means that any time a property of ProgramModel changes any view that observes a part of the model that changes will be redrawn. Consider the property programRequest. When that property changes the program view is drawn. This is the next key in how the process works. The methods that meet the protocol can change this property to start off the view changes.
+
+@MainActor
+@Observable
+final class ProgramModel {
+    ....
+    var programRequest: ProgramRequest?
+    ....
+}
+
+Here is how ProgramRequest is defined:
+
+enum ProgramRequest: Identifiable {
+    case getPerson(GetPersonRequest)
+    case getInteger(GetIntegerRequest)
+    case getString(GetStringRequest)
+    var id: UUID {
+        switch self {
+        case .getPerson(let request): return request.id
+        case .getInteger(let request): return request.id
+        case .getString(let request): return request.id
+        }
+    }
+}
+struct GetPersonRequest: Identifiable {
+    let id = UUID()
+    let prompt: String
+}
+...
+
+So a ProgramRequest is an enumerated value with an associated type of a more specific request. The example also shows the GetPersonRequest struct, one of the more specific requests.
+
+The following code shows how the Mac version implements the UserInterface protocol for the getPerson case.
+
+@MainActor
+extension ProgramModel: UserInterface {
+
+    func getPerson(prompt: String?) async -> Person? {
+        programRequest = .getPerson(GetPersonRequest(
+            prompt: prompt ?? "Enter a person"
+        ))
+        return await withCheckedContinuation { continuation in
+            personContinuation = continuation
+        }
+    }
+
+    func finishGetPerson(_ person: Person?) {
+        programRequest = nil
+        personContinuation?.resume(returning: person)
+        personContinuation = nil
+    }
+    ...
+}
+
+The getPerson implementation first creates a GetPersonRequest with the users's prompt, and then creates a getPerson request from that GetPersonRequest. This changes the programRequest property which triggers the SwiftUI update mechanism.
+
+Let me get back to the continuation stuff later.
+
+So let's see how that change to the programRequest property causes the SwiftUI sheets to pop up. Attached to the top view of the ProgramPage is this:
+
+        .sheet(item: $model.programRequest) { request in
+            switch request {
+            case .getPerson(let request):
+                GetPersonSheet(
+                    request: request,
+                    database: database!,
+                    onChoose: { model.finishGetPerson($0) },
+                    onCancel: { model.finishGetPerson(nil) }
+                )
+
+            case .getInteger(let request):
+                GetIntegerSheet(
+                    request: request,
+                    onChoose: { model.finishGetInteger($0) },
+                    onCancel: { model.finishGetInteger(nil) }
+                )
+            case .getString(let request):
+                GetStringSheet(
+                    request: request,
+                    onChoose: { model.finishGetString($0) },
+                    onCancel: { model.finishGetString(nil) }
+                )
+            }
         }
 
-    o So userInterface is an object that conforms to UserInterface. The ProgramModel conforms to the interface. as shown here:
+The trigger for this sheet of a change to the programRequest. The code checks which kind of request it is and then present the right sheet for the case.
 
-        extension ProgramModel: UserInterface {
-            func getInteger(prompt: String?) async -> Int? {
-                programRequest = .getInteger(GetIntegerRequest(prompt: prompt ?? "Enter an integer"))
-                return await withCheckedContinuation { continuation in integerContinuation = continuation}
+And to get to the bottom here is the sheet that is presented for the get person case
+
+struct GetPersonSheet: View {
+
+    let request: GetPersonRequest
+    let database: Database
+    let onChoose: (Person) -> Void
+    let onCancel: () -> Void
+
+    @State private var pattern = ""
+    @State private var results: [Person] = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(request.prompt)
+                .font(.headline)
+
+            HStack {
+                TextField("Name pattern", text: $pattern)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit(search)
+
+                Button("Search") {
+                    search()
+                }
             }
-            func finishGetInteger(_ value: Int?) {
-                programRequest = nil
-                integerContinuation?.resume(returning: value)
-                integerContinuation = nil
+
+            List(results, id: \.key) { person in
+                Button {
+                    onChoose(person)
+                } label: {
+                    PersonChoiceRow(person: person)
+                }
+                .buttonStyle(.plain)
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel") {
+                    onCancel()
+                }
             }
         }
-
-    What happens in here? Or first, what does this do, or why is this here? We have to get the ProgramPage to open a sheet for the user to interact with. We therefore have to change an observed property for the ProgramPage to see so that it will open that sheet. The property that does that here is programRequest.
-
-    The request changes.
+        .padding()
+        .frame(minWidth: 520, minHeight: 420)
+    }
+struct GetPersonRequest: Identifiable {
+    let id = UUID()
+    let prompt: String
+}
