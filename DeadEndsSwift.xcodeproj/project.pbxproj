@@ -75,7 +75,7 @@
 				ProgramPage/ProgramInterface.swift,
 				ProgramPage/ProgramModel.swift,
 				ProgramPage/ProgramPage.swift,
-				ProgramPage/StatusLight.swift,
+				ProgramPage/StatusCircle.swift,
 			);
 			target = 261FD2E12FC88C4B004BF7DE /* DeadEndsProgApp */;
 		};
@@ -96,7 +96,7 @@
 				ProgramPage/DiagnosticPane.swift,
 				ProgramPage/GetPersonSheet.swift,
 				ProgramPage/ProgramInterface.swift,
-				ProgramPage/StatusLight.swift,
+				ProgramPage/StatusCircle.swift,
 			);
 			target = 26EABDC22F2ACDAF001406E5 /* DeadEndsIPad */;
 		};

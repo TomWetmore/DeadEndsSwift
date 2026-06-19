@@ -3,16 +3,16 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 4 July 2025.
-//  Last changed on 29 May 2026.
+//  Last changed on 19 June 2026.
 
-/// PersonTile is used on several page views to show persons in small
-/// tiles. Labels are optional and birth and death summaries are optional.
-/// If a buttonAction is given the tile will be place in a button.
+/// PersonTile is used on page views to show persons in small tiles.
+/// Labels are optional and birth and death summaries are optional.
+/// If a buttonAction is given the tile is placed in a button.
 
 import SwiftUI
 import DeadEndsLib
 
-/// General view that shows a person in a tile shape.
+/// General view that shows a person in a tile.
 struct PersonTile: View {
     
     @Environment(AppModel.self) var model
@@ -49,7 +49,7 @@ struct PersonTile: View {
         .background(person.sexTint)
         .cornerRadius(6)
 
-        if let buttonAction {  // Render tile in button if there is a closure.
+        if let buttonAction {  // Render tile in a button if there is an action.
             Button {
                 buttonAction(person)
             } label: {

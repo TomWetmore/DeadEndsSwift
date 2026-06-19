@@ -12,9 +12,9 @@ import DeadEndsLib
 struct PedigreePage: View {
 
     @Environment(AppModel.self) var model
-    let person: Person  // Root of Pedigree.
-    let generations: Int
-    let buttonWidth: CGFloat  // Max button width.
+    let person: Person  // Root person of pedigree.
+    let generations: Int // Number of generations.
+    let buttonWidth: CGFloat // Max button width.
 
     /// Render pedigree page.
     var body: some View {

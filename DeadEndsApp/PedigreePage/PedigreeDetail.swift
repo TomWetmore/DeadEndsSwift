@@ -3,21 +3,22 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 5 July 2025.
-//  Last changed on 29 May 2026.
+//  Last changed on 19 June 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// Layout information about person in unit square coords.
+/// Pedigree layout information about a person in unit square coords.
 private struct PedigreeNode: Identifiable {
+    
     let id: UUID = UUID()
     let person: Person  // Person.
     let x: CGFloat  // X-coord in unit square.
     let y: CGFloat  // Y-coord in unit square.
 }
 
-/// DeadEnds Page showing a person with pedigree.
+/// Pedigree view that shows a person with its pedigree.
 struct PedigreeDetail: View {
 
     @State private var layout: [PedigreeNode] = []
@@ -67,18 +68,18 @@ struct PedigreeDetail: View {
     }
 }
 
-/// Position persons in unit square; return array of pedigree nodes.
+/// Position the persons in a unit square; return the array of pedigree nodes.
 private func buildPedigreeLayout(from person: Person,  generations: Int,
                                  recordIndex: RecordIndex) -> [PedigreeNode] {
     var pedigreeNodes = [PedigreeNode]()
 
-    /// Function to build pedigree nodes.
+    /// Internal function that builds the array of nodes.
     func addPerson(_ person: Person, gen: Int, index: Int) {
-        let x = CGFloat(gen) / CGFloat(generations)  // Compute unit square coords.
+        let x = CGFloat(gen) / CGFloat(generations) // Unit square coords.
         let y = CGFloat(2 * index + 1) / CGFloat(1 << (gen + 1))
         pedigreeNodes.append(PedigreeNode(person: person, x: x, y: y))
 
-        if gen < generations - 1 {  // Recurse to next generation.
+        if gen < generations - 1 { // Recurse to next generation.
             if let father = person.father(in: recordIndex) {
                 addPerson(father, gen: gen + 1, index: 2 * index)
             }
@@ -87,12 +88,12 @@ private func buildPedigreeLayout(from person: Person,  generations: Int,
             }
         }
     }
-    addPerson(person, gen: 0, index: 0)  // Call to build the pedigree nodes.
+
+    addPerson(person, gen: 0, index: 0)  // Call function to build the nodes.
     return pedigreeNodes
 }
 
-/// Debug function to show pedigreeNodes.
+/// Debug function that shows the pedigree nodes.
 private func showPedigreeNodes(_ nodes: [PedigreeNode]) {
-
     for node in nodes { print("\(node.person.displayName()) at \(node.x), \(node.y)") }
 }

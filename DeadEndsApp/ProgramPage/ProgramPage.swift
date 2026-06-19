@@ -91,24 +91,20 @@ struct ProgramPage<ExtraCommands: View>: View {
             }
             .disabled(model.source.isEmpty)
             Spacer().frame(width: 12)
-            HStack {
-                Button("Compile") {
-                    model.handleCompileButton()
-                }
-                StatusCircle(state: model.compileState)
-            }
-            .disabled(model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            HStack {
-                Button("Run") {
-                    if let db = database {
-                        Task {
-                            await model.handleRunButton(database: db)
-                        }
+
+            StatusButton("Compile", state: model.compileState,
+                disabled: model.source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ) { model.handleCompileButton() }
+
+            StatusButton("Run", state: model.runState,
+                disabled: model.parsedProgram == nil || database == nil
+            ) {
+                if let db = database {
+                    Task {
+                        await model.handleRunButton(database: db)
                     }
                 }
-                StatusCircle(state: model.runState)
             }
-            .disabled(model.parsedProgram == nil || database == nil)
             Spacer()
         }
         .buttonStyle(.borderless)

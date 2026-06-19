@@ -11,8 +11,8 @@
 import SwiftUI
 import DeadEndsLib
 
-/// Person request sheet used on the program page when a program uses
-/// the getperson built-in.
+/// Person request sheet used on a program page when a program calls the
+/// getperson built-in.
 struct GetPersonSheet: View {
 
     let request: GetPersonRequest

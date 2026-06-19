@@ -1,9 +1,9 @@
 //
-//  StatusLight.swift
+//  StatusCircle.swift
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 30 May 2026.
-//  Last changed on 3 June 2026.
+//  Last changed on 18 June 2026.
 //
 
 import SwiftUI
@@ -40,4 +40,31 @@ enum StatusState {
     case working
     case success
     case failure
+}
+
+/// Combined button and status circle.
+struct StatusButton: View {
+
+    let title: String
+    let state: StatusState
+    let disabled: Bool
+    let action: () -> Void
+
+    /// Create a new status button.
+    init(_ title: String, state: StatusState, disabled: Bool = false,
+        action: @escaping () -> Void) {
+        self.title = title
+        self.state = state
+        self.disabled = disabled
+        self.action = action
+    }
+
+    /// Status button view.
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(title, action: action)
+                .disabled(disabled)
+            StatusCircle(state: state)
+        }
+    }
 }
