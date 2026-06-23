@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 2 July 2025.
-//  Last changed on 29 May 2026.
+//  Last changed on 21 June 2026.
 //
 
 import SwiftUI
@@ -70,7 +70,6 @@ struct PersonActionBar: View {
         .font(.body)
         .tint(.secondary)
         .padding(.top)
-        // .sheet takes an optional. If nil nothing happens. If non-nil content is rendered.
         .sheet(item: $familyList) { wrapped in
             FamilySelectionSheet(families: wrapped.nodes) { selectedFamily in
                 familyList = nil
@@ -107,7 +106,6 @@ struct PersonActionBar: View {
             model.status = "No father found"
         }
     }
-
 
     /// Navigate to the older sibling.
     private func navigateToNextSibling() {

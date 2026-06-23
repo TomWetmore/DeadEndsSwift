@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 9 February 2026.
-//  Last changed on 9 March 2026.
+//  Last changed on 21 June 2026.
 //
 
 import SwiftUI
@@ -11,10 +11,12 @@ import DeadEndsLib
 
 /// Person search panel using names and vitals dates and places.
 struct PersonSearchPanel: View {
+    
     @Environment(\.dismiss) private var dismiss
-    @Binding var criteria: SearchCriteria  // Caller owns search criteria.
-    let onSearch: (SearchCriteria) -> [RecordKey]  // Run search and return record keys.
+    @Binding var criteria: SearchCriteria // Caller owns search criteria.
+    let onSearch: (SearchCriteria) -> [SearchResult] // Search and return results.
     let onSelect: (RecordKey) -> Void  // Run when user taps a result.
+    let resultDescription: (SearchResult) -> String
 
     @State private var draft: SearchCriteria = .init()  // Search criteria fields.
     @State private var birthFromText: String = ""
@@ -24,7 +26,7 @@ struct PersonSearchPanel: View {
     @State private var birthPlaceText: String = ""
     @State private var deathPlaceText: String = ""
 
-    @State private var results: [RecordKey] = []
+    @State private var results: [SearchResult] = []
     @State private var lastError: String? = nil
 
     /// Render person search panel.
@@ -114,33 +116,38 @@ struct PersonSearchPanel: View {
                 Text("No results yet.")
                     .foregroundStyle(.secondary)
             } else {
-                List(results, id: \.self) { key in
-                    Button {
-                        onSelect(key)
-                        dismiss()
-                    } label: {
-                        Text(key) // Replace with display name if you want
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 6) {
+                        ForEach(results) { result in
+                            Button {
+                                onSelect(result.key)
+                                dismiss()
+                            } label: {
+                                resultRow(result)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
-                .frame(minHeight: 200)
             }
-
-            //            HStack {
-            //                Button("Clear Results") {
-            //                    results = []
-            //                }
-            //                .buttonStyle(.borderless)
-            //
-            //                Spacer()
-            //
-            //                Button("Clear All") {
-            //                    clearAll()
-            //                }
-            //                .buttonStyle(.borderless)
-            //            }
         }
     }
 
+    /// Render a search result row.
+    private func resultRow(_ result: SearchResult) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(resultDescription(result))
+                .font(.headline)
+
+            Text("Score: \(result.score)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 2)
+    }
+
+    
     /// Load from binding.
     private func loadFromBinding() {
         draft = criteria

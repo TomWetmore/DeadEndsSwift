@@ -3,9 +3,9 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 26 November 2025.
-//  Last changed on 9 March 2026.
+//  Last changed on 21 June 2026.
 
-/// Search.swift has the code that searches database for persons.
+/// This file has the code that searches databases for persons.
 /// The criteria used include name, birth year range, death year
 /// range, birth place parts and death place parts.
 
@@ -13,13 +13,14 @@ import Foundation
 
 /// Person search criteria.
 public struct SearchCriteria {
+
     public var name: String?
     public var birthYearRange: ClosedRange<Year>?
     public var deathYearRange: ClosedRange<Year>?
     public var birthPlace: String?
     public var deathPlace: String?
 
-    /// Create search criteria struct.
+    /// Create a search criteria struct.
     public init(name: String? = nil, birthYearRange: ClosedRange<Year>? = nil,
                 deathYearRange: ClosedRange<Year>? = nil, birthPlace: String? = nil, deathPlace: String? = nil) {
         self.name = name
@@ -30,28 +31,28 @@ public struct SearchCriteria {
     }
 }
 
-/// Search result consists of record key, score, and array of reasons.
+/// Search result structure; consists of record key, score, and array of reasons.
 public struct SearchResult: Identifiable, CustomStringConvertible {
+
     public let key: RecordKey
     public var score: Int
     public var reasons: [String]
-
     public var id: RecordKey { key }
 
-    /// Description of search result.
+    /// Description of a search result.
     public var description: String {
         let reasonList = reasons
             .map { $0 }.sorted().joined(separator: ", ")
         return "SearchResult(key: \(key), score: \(score), reasons: [\(reasonList)])"
     }
 
-    /// Add score to search result.
+    /// Add a score increment to a search result.
     mutating func add(_ points: Int, reason: String) {
         score += points
         reasons.append(reason)
     }
 
-    /// Compare search results; used to sort results.
+    /// Compare two search results; used to sort results.
     func compare(to other: SearchResult, in index: RecordIndex) -> ComparisonResult {
         if score < other.score { return .orderedDescending }
         if score > other.score { return .orderedAscending }
@@ -70,6 +71,15 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
             .map { $0 }.sorted().joined(separator: ", ")
         return "\(name) \(key)  \(score)  b. \(birth) d. \(death) {\(reasonList)}"
     }
+
+    /// Description of result currently being used by the search panel.
+    public func searchResultDescription(in index: RecordIndex) -> String {
+        guard let person = index.person(for: key) else { return "<unknown>" }
+        let name = person.displayName()
+        let birth = person.birthEvent?.summary ?? "-"
+        let death = person.deathEvent?.summary ?? "-"
+        return "\(name) b. \(birth) d. \(death)"
+    }
 }
 
 /// Map that collects the search results.
@@ -77,6 +87,7 @@ public typealias SearchResults = [RecordKey : SearchResult]
 
 /// Candidate sets hold record keys of persons who match search criteria.
 private struct CandidateSets {
+
     let nameSet: Set<RecordKey>
     let birthDateSet: Set<RecordKey>
     let deathDateSet: Set<RecordKey>
@@ -101,22 +112,23 @@ extension Database {
     /// Search database for persons based on five criteria: name, birth and death year,
     /// birth and death place.
     public func searchPersons(_ criteria: SearchCriteria) -> [SearchResult] {
+
         var nameSet: Set<RecordKey> = []
         var birthDateSet: Set<RecordKey> = []
         var deathDateSet: Set<RecordKey> = []
         var birthPartSets: [String : Set<RecordKey>] = [:]
         var deathPartSets: [String : Set<RecordKey>] = [:]
 
-        if let name = criteria.name {  // Persons matching name.
+        if let name = criteria.name { // Keys of persons who match the name.
             nameSet = Set(personKeys(forName: name))
         }
-        if let range = criteria.birthYearRange {  // Persons matching birth year range.
+        if let range = criteria.birthYearRange { // Keys of persons who match a birth range.
             birthDateSet = dateIndex.recordKeys(in: range, event: .birth)
         }
-        if let range = criteria.deathYearRange {  // Persons matching death year range.
+        if let range = criteria.deathYearRange { // Keys of persons who match a death range.
             deathDateSet = dateIndex.recordKeys(in: range, event: .death)
         }
-        if let place = criteria.birthPlace {  // Ppersons matching birth place parts.
+        if let place = criteria.birthPlace { // Keys of persons who match a birth place part.
             birthPartSets = placeIndex.recordKeys(place: place, event: .birth)
         }
         if let place = criteria.deathPlace {  // Persons matching death place parts.
@@ -126,12 +138,12 @@ extension Database {
                                           deathDateSet: deathDateSet, birthPartSets: birthPartSets,
                                           deathPartSets: deathPartSets)
         var results: SearchResults = [:]
-        if !nameSet.isEmpty {  // If there are names do name based search.
+        if !nameSet.isEmpty { // If there are names do a name based search.
             results = nameBasedSearch(candidateSets)
-        } else {  // Otherwise do a date and place based search.
+        } else { // Otherwise do a date and place based search.
             results = datePlaceBasedSearch(candidateSets)
         }
-        return results.values.sorted {  // Convert SearchResults to sorted [SearchResult].
+        return results.values.sorted { // Convert SearchResults to sorted [SearchResult].
             $0.compare(to: $1, in: recordIndex) == .orderedAscending
         }
     }

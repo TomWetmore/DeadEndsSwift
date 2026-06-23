@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 11 May 2026.
+//  Last changed on 23 June 2026.
 //
 
 import Foundation
@@ -26,6 +26,12 @@ public struct Person: Record {
         else { fatalError("Root \(root) is not a valid 0 INDI node") }
         self.root = root
     }
+
+// SAVE FOR POSSIBLE USE.
+//    public init?(_ root: GedcomNode) {
+//        guard root.tag == "INDI" else { return nil }
+//        self.root = root
+//    }
 
     public var key: String {
         guard let key = root.key else { fatalError("person must have a key") }

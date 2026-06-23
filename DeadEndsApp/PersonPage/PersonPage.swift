@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 20 June 2025.
-//  Last changed on 29 May 2026.
+//  Last changed on 21 June 2026.
 //
 
 import SwiftUI
@@ -41,27 +41,22 @@ struct PersonPage: View {
                 .help("Search persons")
             }
         }
-
         .sheet(isPresented: $showingSearch) {
             PersonSearchPanel(
                 criteria: $searchCriteria,
                 onSearch: { crit in
-                    print("search button pressed with \(crit)")
-                    testPlaceIndexing()  // Debugging.
-                    let results = model.database?.searchPersons(crit)
-                    for result in results! {  // Debugging.
-                        print(result.fullDescription(in: model.database!.recordIndex))
-                    }
-                    return []
+                    guard let db = model.database else { return [] }
+                    return db.searchPersons(crit)
                 },
                 onSelect: { key in
-                    // Temporary: hook this to your navigation.
-                    // Example possibilities:
-                    // model.path.append(.person(key))
-                    // model.currentPersonKey = key
+                    guard let person = model.database?.recordIndex.person(for: key) else { return }
+                    model.path.append(Route.person(person))
+                },
+                resultDescription: { result in
+                    guard let db = model.database else { return result.key }
+                    return result.searchResultDescription(in: db.recordIndex)
                 }
             )
-            .environment(model) // If SearchPanel needs it (currently doesn’t).
         }
         .contextMenu {
             Button("Search…") { showingSearch = true }
@@ -71,10 +66,10 @@ struct PersonPage: View {
     }
 }
 
-/// Subviews implemented as computed properties.
+/// Person page subviews that are implemented as computed properties.
 private extension PersonPage {
     
-    /// Render name.
+    /// Subview that shows the person's name.
     var header: some View {
         Text(person.displayName(upSurname: true))
             .font(.title3)
@@ -88,7 +83,7 @@ private extension PersonPage {
             )
     }
     
-    /// Render vitals.
+    /// Subview that shows the person's vitals.
     var vitals: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Born: \(person.birthEvent?.summary ?? "")")
@@ -97,7 +92,7 @@ private extension PersonPage {
         .padding(.horizontal)
     }
     
-    /// Render relatives in scroll view.
+    /// Subview that shows the person's relatives.
     var relativesScroll: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
@@ -110,7 +105,7 @@ private extension PersonPage {
         .padding(.horizontal, 8)
     }
     
-    /// Render parents.
+    /// Subview that shows the persons's parents.
     @ViewBuilder
     var parentsSection: some View {
         if let index {
@@ -127,7 +122,7 @@ private extension PersonPage {
         }
     }
     
-    /// Render spouses and children.
+    /// Subview that shows the person's spouses and children.
     @ViewBuilder
     var familiesSection: some View {
         if let index {
@@ -146,7 +141,7 @@ private extension PersonPage {
         }
     }
 
-    /// Render status message and action bar.
+    /// Subview that shows the status message and action bar.
     @ViewBuilder
     var footer: some View {
         VStack(alignment: .leading, spacing: 4) {

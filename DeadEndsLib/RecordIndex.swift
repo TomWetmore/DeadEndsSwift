@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 28 March 2026.
+//  Last changed on 23 June 2026.
 
 import Foundation
 
@@ -44,11 +44,17 @@ extension RecordIndex: Sequence {
 /// Extension for record retrieval from indexes.
 extension RecordIndex {
 
-    /// Create a person record from its root node. Fatal error if fails.
-    public func person(for key: String) -> Person? { self[key].map(Person.init) }
+    /// Try to create a person record from a root node.
+    public func person(for key: String) -> Person? {
+        guard let node = self[key], node.tag == "INDI" else { return nil }
+        return Person(node)
+    }
 
-    /// Create a family record from its root node. Fatal error if fails.
-    public func family(for key: String) -> Family? { self[key].map(Family.init) }
+    /// Try to create a family record from a root node.
+    public func family(for key: String) -> Family? {
+        guard let node = self[key], node.tag == "FAM" else { return nil }
+        return Family(node)
+    }
 }
 
 extension Root {

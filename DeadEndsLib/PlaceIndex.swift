@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 28 March 2026.
+//  Last changed on 23 June 2026.
 //
 
 import Foundation
@@ -62,23 +62,6 @@ final public class PlaceIndex {
         return index[PlaceIndexKey(part: part, event: event)] ?? []
     }
 }
-
-/// Collect all PLAC values, at any level, and return them as a string array.
-//func collectAllPlaceStrings(from recordIndex: RecordIndex) -> [String] {
-//    var results: [String] = []
-//    var records = 0
-//
-//    for (_, root) in recordIndex {
-//        records += 1
-//        for node in root.descendants() {
-//            if node.tag == "PLAC", let value = node.val {
-//                results.append(value)
-//            }
-//        }
-//    }
-//    print("collected \(results.count) PLAC values across \(records) records")
-//    return results
-//}
 
 /// Get the canonical parts of a Gedcom PLAC value.
 func placeParts(_ raw: String) -> [String] {
@@ -189,6 +172,7 @@ public func buildPlaceIndex(from recordIndex: RecordIndex) -> PlaceIndex {
         default: break
         }
     }
+    placeIndex.showContents(using: recordIndex)
     return placeIndex
 }
 
