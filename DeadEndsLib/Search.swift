@@ -3,11 +3,11 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 26 November 2025.
-//  Last changed on 21 June 2026.
+//  Last changed on 24 June 2026.
 
-/// This file has the code that searches databases for persons.
-/// The criteria used include name, birth year range, death year
-/// range, birth place parts and death place parts.
+// This file has the code that searches databases for persons.
+// The criteria used include name, birth year range, death year
+// range, birth place parts and death place parts.
 
 import Foundation
 
@@ -80,6 +80,12 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
         let death = person.deathEvent?.summary ?? "-"
         return "\(name) b. \(birth) d. \(death)"
     }
+
+    /// Extra info to put in a select row during debugging.
+    public func extraDebugDescription() -> String {
+        let reasonList = reasons.map { $0 }.sorted().joined(separator: ", ")
+        return "score: \(score)  reasons: [\(reasonList)]"
+    }
 }
 
 /// Map that collects the search results.
@@ -143,9 +149,13 @@ extension Database {
         } else { // Otherwise do a date and place based search.
             results = datePlaceBasedSearch(candidateSets)
         }
-        return results.values.sorted { // Convert SearchResults to sorted [SearchResult].
+
+        let sortedResults = results.values.sorted {
             $0.compare(to: $1, in: recordIndex) == .orderedAscending
         }
+        let bestScore = sortedResults.first?.score ?? 0
+        let cutoff = bestScore / 4
+        return sortedResults.filter { $0.score >= cutoff }
     }
 }
 

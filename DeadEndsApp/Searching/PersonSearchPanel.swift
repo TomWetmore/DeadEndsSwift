@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 9 February 2026.
-//  Last changed on 21 June 2026.
+//  Last changed on 24 June 2026.
 //
 
 import SwiftUI
@@ -29,8 +29,9 @@ struct PersonSearchPanel: View {
     @State private var results: [SearchResult] = []
     @State private var lastError: String? = nil
 
-    /// Render person search panel.
+    /// Show the person search panel.
     var body: some View {
+
         NavigationStack {
             Form {
                 nameSection
@@ -133,13 +134,12 @@ struct PersonSearchPanel: View {
         }
     }
 
-    /// Render a search result row.
+    /// Show a search result row.
     private func resultRow(_ result: SearchResult) -> some View {
+
         VStack(alignment: .leading, spacing: 3) {
             Text(resultDescription(result))
-                .font(.headline)
-
-            Text("Score: \(result.score)")
+            Text(result.extraDebugDescription())
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

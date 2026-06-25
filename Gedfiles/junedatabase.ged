@@ -1,8 +1,8 @@
 0 HEAD
 1 SOUR LIFELINES 3.2.0 (alpha)
 1 DEST ANY
-1 DATE 22 JUN 2026
-2 TIME 19:42
+1 DATE 23 JUN 2026
+2 TIME 14:19
 1 SUBM
 1 GEDC
 2 VERS 5.5
@@ -20,21 +20,21 @@
 1 SEX F
 1 BIRT
 2 DATE 10 July 1949
-2 PLAC Pittsburgh, Pennslyvania
+2 PLAC Pittsburgh, ALLEGHNY, Pennsylvania, USA
 1 FAMS @F1@
 0 @I2@ INDI
 1 NAME Thomas Trask /Wetmore/ iv
 1 SEX M
 1 BIRT
 2 DATE 18 December 1949
-2 PLAC New London, New London, Connecticut, United States
+2 PLAC New London City, New London County, Connecticut, United States of America
 1 FAMS @F1@
 0 @I3@ INDI
 1 NAME Anna Vivian /Wetmore/
 1 SEX F
 1 BIRT
 2 DATE 14 December 1974
-2 PLAC Fairbanks, Alaska
+2 PLAC City of Fairbanks, State of Alaska
 1 FAMC @F1@
 0 @I4@ INDI
 1 NAME Jan /Grenda/
