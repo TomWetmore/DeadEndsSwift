@@ -3,7 +3,7 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 13 May 2026.
+//  Last changed on 26 June 2026.
 //
 
 import Foundation
@@ -21,6 +21,8 @@ final public class NameIndex {
 		"M": "5", "N": "5",
 		"R": "6"
 	]
+
+    fileprivate static let emptyNameKey = "00000"
 
 	private(set) var index = [NameKey: Set<RecordKey>]()  // Representation.
 
@@ -69,7 +71,7 @@ final public class NameIndex {
 /// Return the name key of a 1 NAME value.
 func nameKey(value: String) -> String {
     guard let gedcomName = GedcomName(string: value) else {
-        fatalError("Invalid name: \(value)")
+        return NameIndex.emptyNameKey
     }
     return gedcomName.nameKey
 }

@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 9 February 2026.
-//  Last changed on 24 June 2026.
+//  Last changed on 26 June 2026.
 //
 
 import SwiftUI
@@ -13,9 +13,9 @@ import DeadEndsLib
 struct PersonSearchPanel: View {
     
     @Environment(\.dismiss) private var dismiss
-    @Binding var criteria: SearchCriteria // Caller owns search criteria.
+    @Binding var criteria: SearchCriteria // Caller owned search criteria.
     let onSearch: (SearchCriteria) -> [SearchResult] // Search and return results.
-    let onSelect: (RecordKey) -> Void  // Run when user taps a result.
+    let onSelect: (RecordKey) -> Void // Run when user taps a result row.
     let resultDescription: (SearchResult) -> String
 
     @State private var draft: SearchCriteria = .init()  // Search criteria fields.
@@ -29,21 +29,24 @@ struct PersonSearchPanel: View {
     @State private var results: [SearchResult] = []
     @State private var lastError: String? = nil
 
-    /// Show the person search panel.
+    /// The person search panel view.
     var body: some View {
 
         NavigationStack {
-            Form {
-                nameSection
-                yearsSection
-                placeSection
+            VStack(spacing: 0) {
 
-                if let lastError {
-                    Section {
-                        Text(lastError)
-                            .foregroundStyle(.red)
+                Form {
+                    nameSection
+                    yearsSection
+                    placeSection
+
+                    if let lastError {
+                        Section {
+                            Text(lastError).foregroundStyle(.red)
+                        }
                     }
                 }
+                Divider()
 
                 resultsSection
             }
@@ -52,6 +55,8 @@ struct PersonSearchPanel: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
+                // Make search the default button. Then pressing return anywhere
+                // in the sheet activates this button.
                 ToolbarItem(placement: .primaryAction) {
                     Button("Search") { runSearch() }
                         .keyboardShortcut(.defaultAction)
@@ -112,7 +117,10 @@ struct PersonSearchPanel: View {
 
     /// Results section.
     private var resultsSection: some View {
-        Section("Results") {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Results")
+                .font(.headline)
+
             if results.isEmpty {
                 Text("No results yet.")
                     .foregroundStyle(.secondary)
@@ -132,6 +140,7 @@ struct PersonSearchPanel: View {
                 }
             }
         }
+        .padding()
     }
 
     /// Show a search result row.
@@ -139,7 +148,7 @@ struct PersonSearchPanel: View {
 
         VStack(alignment: .leading, spacing: 3) {
             Text(resultDescription(result))
-            Text(result.extraDebugDescription())
+            Text(result.extraDebugDescription()) // TODO: Remove after development.
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -150,8 +159,8 @@ struct PersonSearchPanel: View {
     
     /// Load from binding.
     private func loadFromBinding() {
-        draft = criteria
 
+        draft = criteria
         if let r = criteria.birthYearRange {
             birthFromText = String(r.lowerBound)
             birthToText = String(r.upperBound)
@@ -164,11 +173,13 @@ struct PersonSearchPanel: View {
         deathPlaceText = criteria.deathPlace ?? ""
     }
 
-    /// Run search.
+    /// Run search. Called when the user clicks the search button in the panel's
+    /// tool bar or hits the return key. It builds a criterion from the text fields
+    /// and then calls the panel's onSearch function to get the results.
     private func runSearch() {
-        lastError = nil
 
-        // Parse year ranges from text fields (optional)
+        lastError = nil
+        // Get the year ranges if there.
         if let range = parseRange(from: birthFromText, to: birthToText) {
             draft.birthYearRange = range
         } else if !birthFromText.isEmpty || !birthToText.isEmpty {
@@ -186,7 +197,7 @@ struct PersonSearchPanel: View {
             draft.deathYearRange = nil
         }
 
-        // If user typed place text but didn’t hit “Use this place text”, do a simple default.
+        // Get the place strings if there.
         let bp = birthPlaceText.trimmingCharacters(in: .whitespacesAndNewlines)
         draft.birthPlace = bp.isEmpty ? nil : bp
 
@@ -206,7 +217,9 @@ struct PersonSearchPanel: View {
         return lo...hi
     }
 
+    /// Clear the search fields, results and lastError.
     private func clearAll() {
+
         draft = .init()
         criteria = draft
         birthFromText = ""

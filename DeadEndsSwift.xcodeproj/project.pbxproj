@@ -60,6 +60,7 @@
 			membershipExceptions = (
 				Merging/CenterMergePane.swift,
 				ProgramUserInterface/PersonChoiceRow.swift,
+				Searching/PersonSearchGridPanel.swift,
 			);
 			target = 263408AF2E21680900F4E6DE /* DeadEndsApp */;
 		};
