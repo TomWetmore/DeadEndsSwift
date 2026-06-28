@@ -70,38 +70,49 @@ eq()
             \cf4 "female"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinFemale\cf2 ($0)\},\
 \
             \cf4 "allfamilies"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 0\cf2 , \cf6 max\cf2 : \cf7 0\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinAllFamilies\cf2 ($0)\},\
-\
-            \cf5 ///\cf2  \cf5 Generic operations on persons and families.\cf2 \
-            \cf4 "husband"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinHusband\cf2 ($0)\},\
-            \cf4 "wife"\cf2 :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinWife\cf2 ($0)\},\
-            \cf4 "husbands"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinHusbands\cf2 ($0)\},\
-            \cf4 "wives"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinWives\cf2 ($0)\},\
-            \cf4 "children"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinChildren\cf2 ($0)\},\
-            \cf4 "spouses"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinSpouses\cf2 ($0)\},\
-            \cf4 "parents"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinParents\cf2 ($0)\},\
-            \cf4 "siblings"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinSiblings\cf2 ($0)\},\
-\
-            \cf5 // Event operations.\cf2 \
-            \cf4 "date"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinDate\cf2 ($0)\},\
-            \cf4 "place"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinPlace\cf2 ($0)\},\
-\
-            \cf5 // Generic operations on lists, tables and person sets.\cf2 \
-            \cf4 "empty"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinEmpty\cf2 ($0)\},\
-            \cf4 "length"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinLength\cf2 ($0)\},\
-            \cf4 "clear"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinClear\cf2 ($0)\},\
-            \cf4 "subscript"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinSubscript\cf2 ($0)\},\
-\
-            \cf4 "traverse"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinNodes\cf2 ($0)\},\
-\
-            \cf5 // List operations; the length and empty builtins are generic.\cf2 \
-            \cf4 "list"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 0\cf2 , \cf6 max\cf2 : \cf7 0\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinList\cf2 ($0)\},\
-            \cf4 "append"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinAppend\cf2 ($0)\},\
-            \cf4 "prepend"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinPrepend\cf2 ($0)\},\
-            \cf4 "push"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinAppend\cf2 ($0)\},\
-            \cf4 "pop"\cf2 :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinRemoveFirst\cf2 ($0)\},\
-            \cf4 "enqueue"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinAppend\cf2 ($0)\},\
-            \cf4 "dequeue"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinRemoveFirst\cf2 ($0)\},\
-\
+
+Generic Operations on Persons and Families. The arguments must be ParsedExpr objects
+that evaluate to either a .person or .family.
+
+husband (.person | .family) -> .person | .null   Husband of person or family
+wife    (.person | .family) -> .person | .null      Wife of person or family
+husbands(.person | .family) -> .list[.person]   Husbands of person or family
+wives   (.person | .family) -> .list[.person]      Wives of person or family
+children(.person | .family) -> .list[.person]   Children of person or family
+spouses (.person | .family) -> .list[.person]    Spouses of person or family
+parents (.person | .family) -> .list[.person]    Parents of person or family
+siblings(.person)           -> .list[.person]   Siblings of person
+
+Event-based Operations on Events. The arguments must be ParsedExpr objects that
+evaluate to an event node in a person or family.
+
+date (.node) -> .string | .null    Value of first DATE node that is a child of .node
+place(.node) -> .string | .null    Value of first PLAC node that is a child of .node
+
+-----------------------------------------------------------------------------------
+Generic Operations on Lists, Tables and PersonSets. The subscript operator currently
+takes only .list arguments. There is no reason why it can't take PersonSets or Tables
+of Strings.
+
+empty (.list | .table | .personset | .string) -> .bool      Whether the structure or string is empty.
+length(.list | .table | .personset | .string) -> .integer   Length of the structure or string.
+clear (.list | .table | .personset)           -> .null      Empty the structure
+subscript(.list, .integer) -> .any                          Return indexed element of list
+
+
+            "traverse":  Builtin(min: 1, max: 1) { try await self.bltinNodes($0)},
+--------------------------------------------------------------------
+List operations
+
+list  ()             -> .list     Create an empty list
+append(.list, .any)  -> .null     Append a program value to the end of a list
+prepend(.list, .any) -> .nul     Prepend a program value to the start of a list
+push   (.list, .any) -> .null       Push a program value onto a list usee as a stack.
+pop    (.list)       -> .any         Pop a program value from a list used as a stack.
+enqueue(.list, .any) -> .null    Enqueue a program value onto a liast used as a queue
+dequeue(.list)       -> .any     Dequeue a program value from a list used as a queue
+
+
             \cf5 // Tuple shorthands for lists.\cf2 \
             \cf4 "pair"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinPair\cf2 ($0)\},\
             \cf4 "first"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinFirst\cf2 ($0)\},\

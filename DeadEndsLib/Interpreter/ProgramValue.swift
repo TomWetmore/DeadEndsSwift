@@ -324,3 +324,9 @@ extension ProgramValue {
         }
     }
 }
+
+extension ProgramValue {
+    static var emptyList: ProgramValue {
+        .list(List())
+    }
+}

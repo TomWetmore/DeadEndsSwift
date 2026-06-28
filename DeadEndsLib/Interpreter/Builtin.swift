@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 11 June 2026.
+//  Last changed on 28 June 2026.
 //
 
 import Foundation
@@ -111,9 +111,9 @@ extension Program {
             "append":  Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
             "prepend": Builtin(min: 2, max: 2) { try await self.bltinPrepend($0)},
             "push":    Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
-            "pop":     Builtin(min: 1, max: 1) { try self.bltinRemoveFirst($0)},
+            "pop":     Builtin(min: 1, max: 1) { try await self.bltinRemoveLast($0)},
             "enqueue": Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
-            "dequeue": Builtin(min: 1, max: 1) { try self.bltinRemoveFirst($0)},
+            "dequeue": Builtin(min: 1, max: 1) { try await self.bltinRemoveFirst($0)},
 
             // Tuple shorthands for lists.
             "pair":   Builtin(min: 2, max: 2) { try await self.bltinPair($0)},

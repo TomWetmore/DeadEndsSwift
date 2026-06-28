@@ -87,29 +87,36 @@ extension Program {
     /// variable with a list value in the symbol table.
     func bltinAppend(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let list = try await evaluateListOpt(args[0], errMsg: "append: 1st arg must be a list") else {
-            return .null
-        }
+        guard let list = try await evaluateListOpt(args[0], errMsg: "append: 1st arg must be a list")
+        else { return .null }
         await list.append(try evaluate(args[1]))
         return .null
     }
 
     /// Prepend a value to a list.
     func bltinPrepend(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let (name, list) =
-            try requireListVariable(args[0], errMsg: "prepend: 1st arg must be a list var")
+
+        guard let list = try await evaluateListOpt(args[0], errMsg: "prepend: 1st arg must be a list")
+        else { return .null }
         await list.prepend(try evaluate(args[1]))
-        assignToSymbol(name, value: .list(list))
         return .null
     }
 
     /// Remove the first value from a list.
-    func bltinRemoveFirst(_ args: [ParsedExpr]) throws -> ProgramValue {
-        let (name, list) =
-            try requireListVariable(args[0], errMsg: "removefirst: 1st arg must be a list var")
+    func bltinRemoveFirst(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        guard let list = try await evaluateListOpt(args[0], errMsg: "removefirst: 1st arg must be a list")
+        else { return .null }
         guard let first = list.removeFirst() else { return .null }
-        assignToSymbol(name, value: .list(list))
         return first
+    }
+
+    func bltinRemoveLast(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        guard let list = try await evaluateListOpt(args[0], errMsg: "removelast: 1st arg must be a list")
+        else { return .null }
+        guard let last = list.removeLast() else { return .null }
+        return last
     }
 
     /// Evaluate an expression and be sure it is a list.
@@ -148,7 +155,7 @@ extension Program {
         case .family(let family):
             children = family.children(in: recordIndex)
         case .null:
-            return .null
+            return .emptyList
         default:
             throw RuntimeError("children: arg must be a person or family", line: line)
         }
@@ -167,7 +174,7 @@ extension Program {
         case .family(let family):
             husbands = family.husbands(in: recordIndex)
         case .null:
-            return .null
+            return .emptyList
         default:
             throw RuntimeError("husbands: arg must be a person or family", line: line)
         }
@@ -185,7 +192,7 @@ extension Program {
         case .family(let family):
             wives = family.wives(in: recordIndex)
         case .null:
-            return .null
+            return .emptyList
         default:
             throw RuntimeError("wives: arg must be a person or family", line: line)
         }
@@ -202,7 +209,7 @@ extension Program {
         case .person(let person):
             siblings = person.siblings(in: recordIndex)
         case .null:
-            return .null
+            return .emptyList
         default:
             throw RuntimeError("siblings: arg must be a person", line: line)
         }
@@ -221,7 +228,7 @@ extension Program {
         case .family(let family):
             spouses = family.spouses(in: recordIndex)
         case .null:
-            return .null
+            return .emptyList
         default:
             throw RuntimeError("spouses: arg must be a person or family",
                                                 line: line)
@@ -241,7 +248,7 @@ extension Program {
         case .family(let family):
             parents = family.spouses(in: recordIndex) // Define parents of a family and the spouses.
         case .null:
-            return .null
+            return .emptyList
         default:
             throw RuntimeError("parents: arg must be a person", line: line)
         }
@@ -258,7 +265,7 @@ extension Program {
         case .person(let person):
             families = person.spouseFamilies(in: recordIndex)
         case .null:
-            return .null
+            return .emptyList
         default:
             throw RuntimeError("spouses: arg must be a person", line: line)
         }
@@ -293,7 +300,7 @@ extension Program {
     }
 }
 
-/// Lisp basics.
+/// Tuple support.
 extension Program {
 
     func bltinPair(_ args: [ParsedExpr]) async throws -> ProgramValue {
@@ -372,6 +379,12 @@ public class List {
     func removeFirst() -> ProgramValue? {
         guard !values.isEmpty else { return nil }
         return self.values.removeFirst()
+    }
+
+    /// Remove the last program value from a list.
+    func removeLast() -> ProgramValue? {
+        guard !values.isEmpty else { return nil }
+        return self.values.removeLast()
     }
 
     /// Remove all program values from a list.
