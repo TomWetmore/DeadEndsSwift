@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 3 May 2026.
+//  Last changed on 27 June 2026.
 //
 
 import Foundation
@@ -17,6 +17,7 @@ enum SortType {
     case notSorted
     case keySorted
     case nameSorted
+    //case payloadSorted // TODO: Future enhancement.
 }
 
 /// Element in a person set.
@@ -95,11 +96,13 @@ public class PersonSet<Payload>: Collection {
     /// Append an existing element to the set.
     func append(_ element: PersonSetElement<Payload>) {
         elements.append(element)
+        sortType = .notSorted
     }
 
     /// Append new a sequence element to the set.
     func append(_ person: Person, payload: Payload? = nil) {
         append(PersonSetElement(person, payload: payload))
+        sortType = .notSorted
     }
 
     /// Return deep copy of a set.

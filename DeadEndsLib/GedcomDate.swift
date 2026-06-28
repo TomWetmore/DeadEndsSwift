@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 29 June 2025.
-//  Last changed on 18 May 2026.
+//  Last changed on 27June 2026.
 //
 
 import Foundation
@@ -30,9 +30,3 @@ func year(from dateNode: GedcomNode) -> Year? {
     guard let value = dateNode.val else { return nil }
     return year(from: value)
 }
-
-/// Extract year integer from a a date string (e.g. 1 DATE value).
-//func yearInt(_ value: String?) -> Year? {
-//    return year(from: value).flatMap(Int.init)
-//}
-

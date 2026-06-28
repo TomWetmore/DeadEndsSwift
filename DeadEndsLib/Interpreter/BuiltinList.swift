@@ -320,57 +320,72 @@ extension Program {
     }
 }
 
-/// Structure that holds the programming language's List values.
+/// Structure that holds the programming language's list values. These are the
+/// enumerated .list elements that have an array of program values for their
+/// associated types.
 public class List {
 
+    /// A .list program value is an array of program values.
     private var values: [ProgramValue] = []
 
+    /// The number of program values in this list.
     var count: Int { values.count }
 
+    /// Create a list from an array of program values.
     public init(_ values: [ProgramValue] = []) {
         self.values = values
     }
 
+    /// Push a program value onto a list (treated as a stack).
     func push(_ element: ProgramValue) {
         values.insert(element, at: 0)
     }
 
+    /// Pop a program value from a list (treated as a stack).
     func pop() -> ProgramValue? {
         guard !values.isEmpty else { return nil }
         return values.removeFirst()
     }
 
+    /// Enqueue a program value on a list (treated as a queue).
     func enqueue(_ element: ProgramValue) {
         values.append(element)
     }
 
+    /// Dequeue a program value from a list (treated as a queue).
     func dequeue() -> ProgramValue? {
         guard !values.isEmpty else { return nil }
         return values.removeFirst()
     }
 
+    /// Append a program value to a list.
     func append(_ element: ProgramValue) {
         values.append(element)
     }
 
+    /// Prepend a program value to a list.
     func prepend(_ element: ProgramValue) {
         values.insert(element, at: 0)
     }
 
+    /// Remove the first program value from a list
     func removeFirst() -> ProgramValue? {
         guard !values.isEmpty else { return nil }
         return self.values.removeFirst()
     }
 
+    /// Remove all program values from a list.
     func clear() {
         values.removeAll(keepingCapacity: false)
     }
 
+    /// Simple subscript operation for a list.
     subscript(index: Int) -> ProgramValue {
         get { values[index] }
         set { values[index] = newValue }
     }
 
+    /// Sort the program values in a list using a comparison function.
     func sort(by areInIncreasingOrder: (ProgramValue, ProgramValue) -> Bool) {
         values.sort(by: areInIncreasingOrder)
     }

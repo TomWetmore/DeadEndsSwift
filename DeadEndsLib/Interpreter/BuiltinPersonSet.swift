@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 27 June 2026.
 //
 
 import Foundation
@@ -13,7 +13,7 @@ public typealias ProgramPersonSet = PersonSet<ProgramValue>
 
 extension Program {
 
-    /// Create a new person set and put it in the symbol table.
+    /// Create a new person set.
     /// personset() -> PersonSet
     func bltinPersonSet(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .personset(ProgramPersonSet())

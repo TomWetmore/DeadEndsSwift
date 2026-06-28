@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 26 March 2026.
+//  Last changed on 27 June 2026.
 //
 
 import Foundation
@@ -11,19 +11,23 @@ import Foundation
 public typealias Root = GedcomNode
 public typealias Tag = String
 
-/// Represent a line in a Gedcom source; key, tag and val are from the Gedcom line; lev is computed.
+/// A GedcomNode holds a single Gedcom line. The key, tag and val are from the Gedcom line;
+/// lev is computed. The sib, kid and dad fields hold the tree structure. Each node has a
+/// UUID, required by the user interface. The names sib, kid and dad were chosen to avoid
+/// conflict with the inter-record terms sibling, child and parent. GedcomNode is a class
+/// object with reference semantics.
+
 final public class GedcomNode: Identifiable, CustomStringConvertible {
 
-    public let id = UUID()
+    public let id = UUID() // id -- unique identifier of the node.
+    public var key: RecordKey? // key -- record key required on level 0 nodes.
+    public var tag: String // tag -- Gedcom tag required on all nodes.
+    public var val: String? // val -- Gedcom value required on some nodes.
+    public var sib: GedcomNode? // sib -- next sibling in Gedcom tree.
+    public var kid: GedcomNode? // kid -- first child in Gedcom tree.
+    public weak var dad: GedcomNode? // dad -- parent node in tree, required on non-roots.
 
-    public var key: RecordKey?
-    public var tag: String
-    public var val: String?
-    public var sib: GedcomNode?
-    public var kid: GedcomNode?
-    public weak var dad: GedcomNode?
-
-    /// Return kids of node.
+    /// Return the kids of a node as an array of nodes.
     public var kids: [GedcomNode] {
         var results: [GedcomNode] = []
         var node = kid
@@ -34,7 +38,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return results
     }
 
-    /// Return description of node; does not recurse.
+    /// Return a description of a single node; does not recurse.
     public var description: String {
         var description = "\(lev) "
         if let key { description += "\(key) " }
@@ -43,14 +47,15 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return description
     }
 
-    /// Create Gedcom node.
+    /// Create an unlinked Gedcom node.
     public init(key: RecordKey? = nil, tag: String, val: String? = nil) {
         self.key = key
         self.tag = tag
         self.val = val
     }
 
-    /// Return level of node; infinite cycles detected.
+    /// Return the level of a node by counting steps to the root;
+    /// infinite cycles are detected.
     public var lev: Int {
         var level = -1
         var node: GedcomNode? = self
@@ -61,7 +66,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return level
     }
 
-    /// Print Gedcom node tree to stdout; recurse to kids and sibs.
+    /// Print the Gedcom node tree to stdout; recurse to kids and sibs.
     public func printTree(level: Int = 0, indent: String = "") {
         let space = String(repeating: indent, count: level)
         print("\(space)\(level) \(self)")
@@ -73,7 +78,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 /// Methods that return kid nodes or their values.
 public extension GedcomNode {
 
-    /// Return first kid with given tag.
+    /// Return the first kid with the given tag.
     func kid(withTag tag: String) -> GedcomNode? {
         var node = kid
         while let current = node {
@@ -85,7 +90,7 @@ public extension GedcomNode {
         return nil
     }
 
-    /// Return first kid with tag from list of tags.
+    /// Return the first kid with tag from a list of tags.
     func kid(withTags tags: [String]) -> GedcomNode? {
         let tagSet = Set(tags)
         var node = kid
@@ -98,7 +103,7 @@ public extension GedcomNode {
         return nil
     }
 
-    /// Return all kids with given tag.
+    /// Return all kids with the given tag.
     func kids(withTag tag: String) -> [GedcomNode] {
         var results: [GedcomNode] = []
         var node = kid
@@ -125,22 +130,22 @@ public extension GedcomNode {
         return results
     }
 
-    /// Return val of first kid with given tag.
+    /// Return the val of first kid with a given tag.
     func kidVal(forTag tag: String) -> String? {
         return kid(withTag: tag)?.val
     }
 
-    /// Return val of first child with tag from list.
+    /// Return the val of first kid with a tag from a list of tags.
     func kidVal(forTags tags: [String]) -> String? {
         return kid(withTags: tags)?.val
     }
 
-    /// Return list of all vals from .self's children with the given tag.
+    /// Return the list of all non-nil vals from .self's kids with the given tag.
     func kidVals(forTag tag: String) -> [String] {
         kids(withTag: tag).compactMap { $0.val }
     }
 
-    /// Returns the list of all non-nil values from .self's kids with tags in the given list of tags.
+    /// Return the list of all non-nil vals from .self's kids with tags in the given list of tags.
     func kidVals(forTags tags: [String]) -> [String] {
         kids(withTags: tags).compactMap { $0.val }
     }
@@ -161,7 +166,7 @@ public extension GedcomNode {
 
 public extension GedcomNode {
 
-    /// Convert Gedcom node tree to Gedcom text.
+    /// Convert a Gedcom node tree to Gedcom text.
     func gedcomText(level: Int = 0, indent: Bool = false) -> String {
         var lines: [String] = []
 
@@ -183,7 +188,7 @@ public extension GedcomNode {
 
 extension GedcomNode {
 
-    /// Return number of nodes rooted at this node.
+    /// Return the number of nodes rooted at this node.
     public var count: Int {
         var count = 1
         var child = self.kid
@@ -194,14 +199,14 @@ extension GedcomNode {
         return count
     }
 
-    /// Return number of nodes before node in its tree.
+    /// Return the number of nodes before this node in its tree.
     public var offset: Int {
         var count = 0
         var curNode: GedcomNode? = self
         var loops = 0
         while let node = curNode, let dad = node.dad {
             loops += 1
-            if loops > 100 { fatalError("Cycle detected in tree.") }
+            if loops > 100 { fatalError("Cycle detected in tree by the offset method.") }
             var sibling = dad.kid // Count previous sibs.
             while let cursibling = sibling, cursibling !== node {
                 count += cursibling.count

@@ -1,43 +1,33 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 DroidSansMono;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue253;\red237\green248\blue249;\red64\green128\blue2;
-\red250\green0\blue9;\red43\green131\blue159;\red0\green0\blue128;\red0\green0\blue128;\red184\green0\blue191;
-}
-{\*\expandedcolortbl;;\csgenericrgb\c0\c0\c99355;\csgenericrgb\c93008\c97449\c97831;\csgenericrgb\c25097\c50195\c895;
-\csgenericrgb\c98085\c0\c3404;\csgenericrgb\c16900\c51200\c62500;\csgenericrgb\c0\c0\c50196;\csgenericrgb\c0\c1\c50197;\csgenericrgb\c72341\c0\c75050;
-}
-\margl1440\margr1440\vieww9000\viewh8400\viewkind0
-\deftab864
-\pard\tx864\pardeftab864\partightenfactor0
+These are the built-in functions of the DeadEnds programming language.
 
-\f0\fs36 \cf2 \cb3 These are the built-in functions of the DeadEnds programming language.\
-\
-The arguments to built-in functions are ParsedExpr objects. In most cases they are evaluated to ProgramValues before the built-in completes its operation. In a few cases, however, where L-values are required, one of the ParsedExpr arguments must be an identifier that is not evaluated. The best example is the assignment statement built-in set(identifier, expression). Here identifier must be an .identifier parsed expression that is not evaluated. The second argument can be any ParsedExpr which is fully evaluated to a ProgramValue. Once the second argument is evaluated its value is assigned to the identifier in the local or global symbol table.\
-\
-\
- \cf4 d(.integer) -> .string                 Convert an integer to a string.\
-nl() -> .string                              Return new line character.\
-set(identifier parsed expression, any-expression) -> .null        Assign value of expression to variable.\
-ord(.integer) -> .string                Ordinal form of a number.\
-card(.integer) -> .string               Cardinal form of a number.\
-roman(.integer) -> .string              Roman numeral form of a number.\
-null() -> .null                         Return the .null program value.\
-\
-ARITHMETIC OPERATORS\
-\
-add(.integer|.double|.string, .integer|.double|.string) -> .integer|.double|.string\
-\pard\tx864\pardeftab864\partightenfactor0
-\cf4 sub(.integer|.double, .integer|.double) -> .integer|.double\cf2 \
-\cf4 mul(.integer|.double, .integer|.double) -> .integer|.double\
-div(.integer|.double, .integer|.double) -> .integer|.double\
-mod(.integer, .integer) -> .integer\
-neg(.integer|.double) -> .integer|.double\
-\cf2 \
-INCREMENT AND DECREMENT\
-\pard\tx864\pardeftab864\partightenfactor0
-\cf2 \
-incr(.identifier) -> .integer -- .identifier must have an .integer value\
-decr(.identifier) -> .integer --  .identiier must have an .integer value\
+The arguments to built-ins are ParsedExprs. In most cases they are evaluated into ProgramValues before the built-in operates on them. In a few cases, however, where L-values are needed, a ParsedExpr must be an .identifier and it is not evaluated. The best example is the assignment built-in, set(identifier, expression). Here identifier must be an .identifier ParsedExpr that is not evaluated. The second argument can be any ParsedExpr, which is evaluated to a ProgramValue, and the result is assigned to the identifier in a symbol table.
+
+
+d(.integer) -> .string                 Convert an integer to a string.
+nl() -> .string                              Return new line character.
+set(.identifier, any-expression) -> .null        Assign value of expression to variable.
+ord(.integer) -> .string                Ordinal form of a number.
+card(.integer) -> .string               Cardinal form of a number.
+roman(.integer) -> .string              Roman numeral form of a number.
+null() -> .null                         Return the .null program value.
+
+ARITHMETIC OPERATORS
+
+add(.integer|.double|.string, .integer|.double|.string) -> .integer|.double|.string
+sub(.integer|.double, .integer|.double) -> .integer|.double
+mul(.integer|.double, .integer|.double) -> .integer|.double
+div(.integer|.double, .integer|.double) -> .integer|.double
+mod(.integer, .integer) -> .integer
+neg(.integer|.double) -> .integer|.double
+
+INCREMENT AND DECREMENT
+
+incr(.identifier) -> .integer -- .identifier must have an .integer value
+decr(.identifier) -> .integer -- .identifier must have an .integer value
+
+COMPARISON OPERATORS
+
+eq()
 \
             \cf5 // Comparison operators.\cf2 \
             \cf4 "eq"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinEq\cf2 ($0)\},\
