@@ -1,157 +1,327 @@
-These are the built-in functions of the DeadEnds programming language.
+These are the built-in functions of the DeadEnds programming language. I wrote this for both my own use as designer and developer so it contains more internal information than a users guide would normally have.
 
-The arguments to built-ins are ParsedExprs. In most cases they are evaluated into ProgramValues before the built-in operates on them. In a few cases, however, where L-values are needed, a ParsedExpr must be an .identifier and it is not evaluated. The best example is the assignment built-in, set(identifier, expression). Here identifier must be an .identifier ParsedExpr that is not evaluated. The second argument can be any ParsedExpr, which is evaluated to a ProgramValue, and the result is assigned to the identifier in a symbol table.
+The arguments to built-ins are ParsedExprs. These are tree structures built when the program is parsed. They are static and persistent representations of the program's expressions. When programs are run the ParsedExprs are evaluated in the context of the database and run time stack. The result of evaluating a ParsedExpr is a transient ProgramValue object that holds the expression's current run time value.
+
+In most cases the ParsedExprs are evaluated to ProgramValues as the first step in running a built-in. In a few cases, however, where L-values are needed, a ParsedExpr must be an .identifier, and it is not evaluated. The best example is the assignment built-in, "set(identifier, .any)". Here identifier must be an .identifier ParsedExpr, and it is not evaluated. The second argument can be any ParsedExpr; the set built-in evaluates it to a ProgramValue, and that value is then assigned to the identifier in a symbol table.
+
+The DeadEnds language is strongly typed in the sense that every ProgramValue has an explicit type. The types and their associated values include:
+
+.null                -- an explicit null value; no associated type.
+.ident(String)       -- an identifier (variable); the associated String is its name.
+.integer(Int)        -- an integer constant; the associated Int is its value.
+.double(Double)      -- a double constant; the associated Double is its value.
+.boolean(Bool)       -- a boolean constant; the associated Bool is its value.
+.string(String)      -- a string constant; the associated String is its value.
+.gnode(GedcomNode)   -- a Gedcom node; the assoicated GedcomNode (reference semantics) is its value.
+.person(Person)      -- a Person; the associated Person structure (value semantics) is its value.
+.family(Family)      -- a Family; the associated Family structure (value semantics) is its value.
+.source(Source)      -- future
+.list(List)          -- a List of ProgramValues (reference semantics)
+.table(ProgramTable) -- a Dictionary of String to ProgramValue mappings (reference semantics).
+.personset(PersonSet<ProgramValue>) -- A set of ...
+.traverse(GedcomNode)
+.allPersons          -- all Persons in the database
+.allFamilies         -- all Families in the database.
+
+The type .any is used in the tables below. There is no .any type; it signifies arguments that can be of any type.
+
+Unlike ProgramValues variables are not strongly typed. A variable's type is that of the last ProgramValue assigned to it.
+
+Built-in arguments are parsed as ParsedExpr values. Unless otherwise noted,
+the built-in first evaluates each argument to a ProgramValue, then checks
+the resulting runtime type.
+
+The types shown in the tables below are the required ProgramValue types after evaluation.
+
+Some built-ins require L-values. In those cases the argument must be an
+identifier ParsedExpr and is not evaluated. Examples: set(), incr(), decr(),
+and some extract-style built-ins.
+
+=========================================================
+Null Forwarding
+=========================================================
+
+Many built-ins use null-forwarding. For example the father() function is intended to take a person as an argument and return that person's father as a result. If the person does not have a father the function returns .null instead. And also, if .null is passed in to father(), then it also returns .null. This allows built-ins to be very conviently chained together without needing any extra code that checks for .null returns.
+
+Consider this program:
+
+proc main () {
+    set(p, getperson("enter a person"))
+    "1 " name(p) nl()
+    "2 " name(father(p)) nl()
+    "3 " name(father(father(p))) nl()
+    "4 " name(father(father(father(p)))) nl()
+    "5 " name(father(father(father(father(p))))) nl()
+}
+
+This asks for a person and then tries to print the person's name and the names of the next four males in the person's paternal line. If I run this on my wife the output is:
+
+1 Luann Frances Grenda
+2 Anthony Grenda
+3 Jan Grenda
+4 Frank Grenda
+5
+
+because her paternal great great grandfather is not in the database. Null forwarding is almost always the right thing to do and it greatly simplifies the structure of DeadEnds programs.
+
+Calls to built-ins can become highly nested. In many cases built-in expressions
+For example, say we wanted to show the name of a person's paternal grandfather. Using the built-ins we could write name(father(father(person))), where person is an identifier assigned to some person in the database.
 
 
-d(.integer) -> .string                 Convert an integer to a string.
-nl() -> .string                              Return new line character.
-set(.identifier, any-expression) -> .null        Assign value of expression to variable.
-ord(.integer) -> .string                Ordinal form of a number.
-card(.integer) -> .string               Cardinal form of a number.
-roman(.integer) -> .string              Roman numeral form of a number.
-null() -> .null                         Return the .null program value.
+Summary
 
-ARITHMETIC OPERATORS
+• Built-in arguments are ParsedExpr objects. Unless otherwise noted, they
+  are evaluated to ProgramValues before the built-in operates on them.
+
+• Types shown in this reference are the required ProgramValue types after
+  evaluation.
+
+• .any denotes any ProgramValue. It is documentation shorthand, not an
+  actual ProgramValue type.
+
+• Sequence-valued built-ins return empty lists when there are no results.
+  Scalar-valued built-ins generally propagate null.
+
+• Lists, Tables, and PersonSets have reference semantics. Mutating a
+  structure changes the original object; there is no need to assign it
+  back to a variable that references it.
+
+• Some built-ins require an L-value. Their argument must be an identifier
+  ParsedExpr and is not evaluated.
+
+Sequence-returning built-ins generally return empty lists, not null, when
+there are no results.
+
+.list(.person) means a List whose elements are ProgramValue.person values.
+.list(.any) means a List whose elements may be any ProgramValue values.
+
+
+d(.integer)            -> .string      Convert an integer to a string.
+nl()                   -> .string      Return new line character.
+set(.identifier, .any) -> .null        Assign value of expression to variable.
+ord(.integer)          -> .string      Return ordinal form of a number as a string.
+card(.integer)         -> .string      Return the cardinal form of a number as a string.
+roman(.integer)        -> .string      Return the Roman form of a number as a string.
+null()                 -> .null        Return the .null program value.
+
+===============================================================================
+Arithmetic Operators
+===============================================================================
 
 add(.integer|.double|.string, .integer|.double|.string) -> .integer|.double|.string
 sub(.integer|.double, .integer|.double) -> .integer|.double
 mul(.integer|.double, .integer|.double) -> .integer|.double
 div(.integer|.double, .integer|.double) -> .integer|.double
-mod(.integer, .integer) -> .integer
-neg(.integer|.double) -> .integer|.double
+mod(.integer, .integer)                 -> .integer
+neg(.integer|.double)                   -> .integer|.double
 
-INCREMENT AND DECREMENT
+===========================================================================================
+Increment and Decrement. The argument is not evaluated; it must be a ParsedExpr .identifier
+with in .integer program value in a symbol table.
+===========================================================================================
 
 incr(.identifier) -> .integer -- .identifier must have an .integer value
 decr(.identifier) -> .integer -- .identifier must have an .integer value
 
-COMPARISON OPERATORS
+===========================================================================
+Comparison Operators
+============================================================================
 
-eq()
-\
-            \cf5 // Comparison operators.\cf2 \
-            \cf4 "eq"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinEq\cf2 ($0)\},\
-            \cf4 "ne"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinNe\cf2 ($0)\},\
-            \cf4 "lt"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinLt\cf2 ($0)\},\
-            \cf4 "le"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinLe\cf2 ($0)\},\
-            \cf4 "gt"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinGt\cf2 ($0)\},\
-            \cf4 "ge"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinGe\cf2 ($0)\},\
-\
-            \cf5 // Logical operators.\cf2 \
-            \cf4 "and"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 32\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinAnd\cf2 ($0)\},\
-            \cf4 "or"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 32\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinOr\cf2 ($0)\},\
-            \cf4 "not"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinNot\cf2 ($0)\},\
-\
-            \cf5 // Gedcom node properties and operations.\cf2 \
-            \cf4 "key"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinKey\cf2 ($0)\},\
-            \cf4 "tag"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinTag\cf2 ($0)\},\
-            \cf4 "val"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinVal\cf2 ($0)\},\
-            \cf4 "lev"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinLev\cf2 ($0)\},\
-            \cf4 "kid"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinKid\cf2 ($0)\},\
-            \cf4 "sib"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinSib\cf2 ($0)\},\
-            \cf4 "dad"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinDad\cf2 ($0)\},\
-            \cf4 "root"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinRoot\cf2 ($0)\},\
-            \cf4 "kidwithtag"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinKidWithTag\cf2 ($0)\},\
-            \cf4 "kidswithtag"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinKidsWithTag\cf2 ($0)\},\
-\
-            \cf5 // Person operations.\cf2 \
-            \cf4 "person"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinPerson\cf2 ($0)\},\
-            \cf4 "name"\cf2 :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinName\cf2 ($0)\},\
-            \cf4 "fullname"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 4\cf2 , \cf6 max\cf2 : \cf7 4\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinFullName\cf2 ($0)\},\
-            \cf4 "givens"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinGivens\cf2 ($0)\},\
-            \cf4 "surname"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinSurname\cf2 ($0)\},\
-            \cf4 "birth"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinBirth\cf2 ($0)\},\
-            \cf4 "death"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinDeath\cf2 ($0)\},\
-            \cf4 "father"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinFather\cf2 ($0)\},\
-            \cf4 "mother"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinMother\cf2 ($0)\},\
-            \cf4 "families"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinFamilyList\cf2 ($0)\},\
-            \cf4 "allpersons"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 0\cf2 , \cf6 max\cf2 : \cf7 0\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinAllPersons\cf2 ($0)\},\
-            \cf4 "male"\cf2 :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinMale\cf2 ($0)\},\
-            \cf4 "female"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinFemale\cf2 ($0)\},\
-\
-            \cf4 "allfamilies"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 0\cf2 , \cf6 max\cf2 : \cf7 0\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinAllFamilies\cf2 ($0)\},\
+eq(.any, .any) -> .bool           Returns whether two values are equal based on ProgramValue.==.
+ne(.any, .any) -> .bool           Returns whether two values are not equal based on ProgramValue.==.
+lt(.any, .any) -> .bool | .null   Returns whether the first arg is less than the second.
+le(.any, .any) -> .bool | .null   Returns whether the first arg is less than or equal the second.
+gt(.any, .any) -> .bool | .null   Returns whether the first arg is greater than the second.
+ge(.any, .any) -> .bool | .null   Returns whether the first arg is greater than or equal the second.
 
+Notes.
+1. eq and ne use ProgramValue's == operator. So it is only as good as that operator.
+2. lt, le, gt, and ge use ProgramValue's compare operator. This operator returns .null
+non-simple comparisons. This may be an issue for the future.
+
+=========================================================================
+Logical Operators
+=========================================================================
+
+and(.any [, .any]...) -> .bool     Return the result of and'ing up to 32 boolean values.
+or (.any [, .any]...) -> .bool     Return the result of or'ing up to 32 boolean values.
+not(.any)             -> .bool     Return the not of a boolean value.
+
+Notes:
+1. and and or can have 1 to 32 arguments. Short circuiting is used in both.
+Arguments that do not need to be evaluated are not. The args can be .any
+because there is a toBool function that allows any ProgramValue to be
+treated as boolean. However the toBool function is still primitive.
+2. not also can have .any argument because it uses the same toBool function as
+the other two.
+
+========================================================================================
+GedcomNode properties and operations. Most are null-forwarding.
+========================================================================================
+
+key (.person | .family | .node | .null ) -> .string | .null    Return key of record or node
+tag (.node | .null) -> .string                                 Return tag of node
+val (.node | .null) -> .string | .null                         Return value of node
+lev (.node | .null) -> .integer                                Return level of node
+kid (.node | .null) -> .node | .null                           Return first child of node
+sib (.node | .null) -> .node | .null                           Return next sibling of node
+kids(.node | .null) -> .list(.node)                            Return all children of a node
+sibs(.node | .null) -> .list(.node)                            Return all siblings of a node
+dad (.node | .null) -> .node | .null                           Return parent node of node
+root(.person | .family | .null) -> .node | .null               Return the root node of a record
+kidwithtag(.node | .null, string) -> .node | .null             Return the first child of a node with given tag
+kidswithtag(.node | .null, .string) -> .list(.node)            Return list of children with given tag
+
+========================================================================================
+Person Operations
+========================================================================================
+
+person  (.string)         -> .person                  Look up person in database by key
+name    (.person | .null) -> .string | .null          Return vanilla version of person's name
+fullname(.person | .null, .bool, .bool, .integer)
+                          -> .string | .null          Return formatted name of person
+givens  (.person | .null) -> .list(.string)           Return the given names of a person as a .list
+surname (.person | .null) -> .string | .null          Return the surname of a person
+birth   (.person | .null) -> .gnode | .null           Return the primary birth event of a person
+death   (.person | .null) -> .gnode | .null           Return the primary death event of a person
+father  (.person | .null) -> .person | .null          Return the primary father of a person
+mother  (.person | .null) -> .person | .null          Return the primary father of a person
+families(.person | .null) -> .list(.family)           Return the list of families a person is a spouse in
+allpersons()              -> .list(.person)           Return the list of all persons in the database
+male(.person)             -> .bool | .null            Return whether a person is male
+female(.person)           -> .bool | .null            Return whether a person is female
+
+allfamilies()             -> .list(.family)           Return the list of all families in the database
+
+============================================================================================
 Generic Operations on Persons and Families. The arguments must be ParsedExpr objects
 that evaluate to either a .person or .family.
+============================================================================================
 
 husband (.person | .family) -> .person | .null   Husband of person or family
 wife    (.person | .family) -> .person | .null      Wife of person or family
-husbands(.person | .family) -> .list[.person]   Husbands of person or family
-wives   (.person | .family) -> .list[.person]      Wives of person or family
-children(.person | .family) -> .list[.person]   Children of person or family
-spouses (.person | .family) -> .list[.person]    Spouses of person or family
-parents (.person | .family) -> .list[.person]    Parents of person or family
-siblings(.person)           -> .list[.person]   Siblings of person
+husbands(.person | .family) -> .list(.person)   Husbands of person or family
+wives   (.person | .family) -> .list(.person)      Wives of person or family
+children(.person | .family) -> .list(.person)   Children of person or family
+spouses (.person | .family) -> .list(.person)    Spouses of person or family
+parents (.person | .family) -> .list(.person)    Parents of person or family
+siblings(.person)           -> .list(.person)   Siblings of person
 
+====================================================================================
 Event-based Operations on Events. The arguments must be ParsedExpr objects that
 evaluate to an event node in a person or family.
+====================================================================================
 
 date (.node) -> .string | .null    Value of first DATE node that is a child of .node
 place(.node) -> .string | .null    Value of first PLAC node that is a child of .node
 
------------------------------------------------------------------------------------
+===================================================================================
 Generic Operations on Lists, Tables and PersonSets. The subscript operator currently
-takes only .list arguments. There is no reason why it can't take PersonSets or Tables
-of Strings.
+takes only .list arguments. It should take PersonSets and possibly Tables.
+====================================================================================
 
 empty (.list | .table | .personset | .string) -> .bool      Whether the structure or string is empty.
 length(.list | .table | .personset | .string) -> .integer   Length of the structure or string.
 clear (.list | .table | .personset)           -> .null      Empty the structure
-subscript(.list, .integer) -> .any                          Return indexed element of list
-
+subscript(.list, .integer)                    -> .any       Return 1-indexed element of list
 
             "traverse":  Builtin(min: 1, max: 1) { try await self.bltinNodes($0)},
---------------------------------------------------------------------
-List operations
 
-list  ()             -> .list     Create an empty list
-append(.list, .any)  -> .null     Append a program value to the end of a list
-prepend(.list, .any) -> .nul     Prepend a program value to the start of a list
-push   (.list, .any) -> .null       Push a program value onto a list usee as a stack.
-pop    (.list)       -> .any         Pop a program value from a list used as a stack.
-enqueue(.list, .any) -> .null    Enqueue a program value onto a liast used as a queue
-dequeue(.list)       -> .any     Dequeue a program value from a list used as a queue
+====================================================================
+List Operations
+====================================================================
+
+list   ()            -> .list       Create an empty list
+append (.list, .any) -> .null       Append a program value to the end of a list
+prepend(.list, .any) -> .null       Prepend a program value to the start of a list
+push   (.list, .any) -> .null       Push a program value onto a list used as a stack.
+pop    (.list)       -> .any        Pop a program value from a list used as a stack.
+enqueue(.list, .any) -> .null       Enqueue a program value onto a list used as a queue
+dequeue(.list)       -> .any        Dequeue a program value from a list used as a queue
+pair   (.any, .any)  -> .list(.any) Create a pair (two-element list) from any two program values
+first  (.list(.any)) -> .any        Return the first program value from a pair of values
+second (.list(.any)) -> .any        Return the second program value from a pair of values
+
+Notes:
+1. append, prepend, push, and enqueue return .null. They cause only side-effects.
+2. A pair is implemented as a two-element list; this is a convenience; users should not
+assume this implementation.
+
+=====================================================================================
+Table Operations
+=====================================================================================
+
+table()                       -> .table            Create a table
+insert(.table, .string, .any) -> .null             Add a (key, value) pair to the table.
+lookup(.table, .string)       -> .any | .null      Lookup a value in a table
+
+=====================================================================================
+PersonSet Operations
+=====================================================================================
+
+personset    ()                             -> .personset    Create a person set
+addtoset     (.personset, .person [, .any]) -> .null         Add a person to a person set
+removefromset(.personset, .person)          -> .null         Remove a person from a person set
+union        (.personset, .personset)       -> .personset    Nondestructive union
+intersect    (.personset, .personset)       -> .personset    Nondestructive intersection
+difference   (.personset, .personset)       -> .personset    Nondestructive difference
+parentset    (.personset)                   -> .personset    Parent personset of personset
+childset     (.peronsset)                   -> .personset    Children set of personset
+spouseset    (.personset)                   -> .personset    Spouse set of personset
+siblingset   (.personset)                   -> .personset    Sibling set of personset
+ancestorset  (.personset)                   -> .personset    Ancestor set of personset
+descendentset(.personset)                   -> .personset    Descendant set of personset
+namesort     (.personset)                   -> .null         Sort personset by name
+keysort      (.personset)                   -> .null         Sort personset by key
+
+Notes:
+1. union, intersect, difference are nondestructive -- the two argument sets still exist when
+the built-in returns (unless the actions of the builtin cause the last reference to dissappear).
+2. parentset, childset, spouseset, siblingset, and descendentset do not include the members
+of the argument set in the result set.
+3. It may be useful to add a valuesort function.
+
+                       // String operations.
+            "strcmp": Builtin(min: 2, max: 2) { try await self.bltinStrcmp($0)},
+
+===============================================================================
+Meta Operations. These were added to help debugging.
+===============================================================================
+
+showframe() -> .string            Shows the current run time stack frame
+showstack() -> .stribng           Shows the full run time stack.
+valueof(.any) -> .string          Evaluates the argument and shows its type and value.
+
+Notes:
+1. The DeadEnds programming language is conventional. When procedures and functions are called arguments (ParsedExprs) are evaluated in the calling module's stack frame. Then a new frame for the called module is created and the argument values (now ProgramValues) are assigned to their corresponding parameter identifier in the new frame. The new frame is added to the run time stack and the called module is run. Variables defined in the called module are stored in the local symbol table. When a module returns its frame (which holds the symbol table) is removed and the calling module continues where it left off.
+2. The meta operations let you inspect the local frame (showframe), the entire run time stack (showstack) or the value and type of any ProgramValue.
 
 
-            \cf5 // Tuple shorthands for lists.\cf2 \
-            \cf4 "pair"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinPair\cf2 ($0)\},\
-            \cf4 "first"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinFirst\cf2 ($0)\},\
-            \cf4 "second"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinSecond\cf2 ($0)\},\
-\
-            \cf5 // Table operations.\cf2 \
-            \cf4 "table"\cf2 :  \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 0\cf2 , \cf6 max\cf2 : \cf7 0\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinTable\cf2 ($0)\},\
-            \cf4 "insert"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 3\cf2 , \cf6 max\cf2 : \cf7 3\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinInsert\cf2 ($0)\},\
-            \cf4 "lookup"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinLookup\cf2 ($0)\},\
-\
-            \cf5 // Person set operations.\cf2 \
-            \cf4 "personset"\cf2 :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 0\cf2 , \cf6 max\cf2 : \cf7 0\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinPersonSet\cf2 ($0)\},\
-            \cf4 "addtoset"\cf2  :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 3\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinAddToSet\cf2 ($0)\},\
-            \cf4 "removefromset"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinDeleteFromSet\cf2 ($0)\},\
-            \cf4 "union"\cf2     :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinUnion\cf2 ($0)\},\
-            \cf4 "intersect"\cf2 :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinIntersect\cf2 ($0)\},\
-            \cf4 "difference"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinDifference\cf2 ($0)\},\
-            \cf4 "parentset"\cf2  :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinParentSet\cf2 ($0)\},\
-            \cf4 "childset"\cf2  :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinChildSet\cf2 ($0)\},\
-            \cf4 "spouseset"\cf2 :     \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinSpouseSet\cf2 ($0)\},\
-            \cf4 "siblingset"\cf2 :    \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinSiblingSet\cf2 ($0)\},\
-            \cf4 "ancestorset"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinAncestorSet\cf2 ($0)\},\
-            \cf4 "descendentset"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinDescendentSet\cf2 ($0)\},\
-            \cf4 "namesort"\cf2 :      \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinNameSort\cf2 ($0)\},\
-            \cf4 "keysort"\cf2 :       \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinKeySort\cf2 ($0)\},\
-\
-            \cf5 // String operations.\cf2 \
-            \cf4 "strcmp"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 2\cf2 , \cf6 max\cf2 : \cf7 2\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinStrcmp\cf2 ($0)\},\
-\
-            \cf5 // Meta operations.\cf2 \
-            \cf4 "showframe"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 0\cf2 , \cf6 max\cf2 : \cf7 0\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinShowFrame\cf2 ($0)\},\
-            \cf4 "showstack"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 0\cf2 , \cf6 max\cf2 : \cf7 0\cf2 ) \{ \cf8 try\cf2  \cf8 self\cf2 .\cf9 bltinShowStack\cf2 ($0)\},\
-            \cf4 "valueof"\cf2 :   \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinValueOf\cf2 ($0)\},\
-\
-            \cf5 // User interface.\cf2 \
-            \cf4 "getperson"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinGetPerson\cf2 ($0)\},\
-            \cf4 "getinteger"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinGetInteger\cf2 ($0)\},\
-            \cf4 "getstring"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 1\cf2 , \cf6 max\cf2 : \cf7 1\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinGetString\cf2 ($0)\},\
-\
-            \cf5 // Extract built-ins.\cf2 \
-            \cf4 "extractname"\cf2 : \cf6 Builtin\cf2 (\cf6 min\cf2 : \cf7 4\cf2 , \cf6 max\cf2 : \cf7 4\cf2 ) \{ \cf8 try\cf2  \cf8 await\cf2  \cf8 self\cf2 .\cf9 bltinExtractName\cf2 ($0)\},\
-}
+====================================================================================
+User Interface. These built-ins open sheets that request the user enter information.
+====================================================================================
+
+getperson(.string)  -> .person | .null    Request user to identify a persons.
+getinteger(.string) -> .integer | .null   Request user to enter an integer.
+getstring(.string)  -> .string | .null    Request user to enter a string.
+
+Notes:
+1. The .string arguments are prompts shown in the sheets.
+
+===========================================================================
+Built-ins that extract information from strings.
+===========================================================================
+
+            // Extract built-ins.
+            "extractname": Builtin(min: 4, max: 4) { try await self.bltinExtractName($0)},
+        ]
+
+============================================================================
+Lists of Lists, Tables of Tables
+============================================================================
+
+Lists and Tables are reference ProgramValues. This simplifies internal operations, and it allows interesting structuring. For example, a .list holds a list of ProgramValues, and there are no restrictions on what those ProgramValues can be; for example, they can be .list or .table objects of their own.
+
+Of course, if you go crazy with "intersting" structuring, you will deserve all the problems you cause yourself.
+
+There is no requirement that the elements in a .list or the values in a .table have the same type. The only requirement is that each element or value have a type, but you get that for free.

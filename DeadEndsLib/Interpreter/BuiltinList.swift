@@ -267,7 +267,7 @@ extension Program {
         case .null:
             return .emptyList
         default:
-            throw RuntimeError("spouses: arg must be a person", line: line)
+            throw RuntimeError("families: arg must be a person", line: line)
         }
         let result = List(families.map { ProgramValue.family($0)})
         return .list(result)

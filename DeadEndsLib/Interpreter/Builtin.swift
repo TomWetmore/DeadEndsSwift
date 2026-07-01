@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 28 June 2026.
+//  Last changed on 29 June 2026.
 //
 
 import Foundation
@@ -62,6 +62,8 @@ extension Program {
             "lev":  Builtin(min: 1, max: 1) { try await self.bltinLev($0)},
             "kid":  Builtin(min: 1, max: 1) { try await self.bltinKid($0)},
             "sib":  Builtin(min: 1, max: 1) { try await self.bltinSib($0)},
+            "kids": Builtin(min: 1, max: 1) { try await self.bltinKids($0)},
+            "sibs": Builtin(min: 1, max: 1) { try await self.bltinSibs($0)},
             "dad":  Builtin(min: 1, max: 1) { try await self.bltinDad($0)},
             "root": Builtin(min: 1, max: 1) { try await self.bltinRoot($0)},
             "kidwithtag": Builtin(min: 2, max: 2) { try await self.bltinKidWithTag($0)},

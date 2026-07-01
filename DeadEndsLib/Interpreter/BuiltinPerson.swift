@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 6 June 2026.
+//  Last changed on 29 June 2026.
 //
 
 import Foundation
@@ -11,8 +11,8 @@ import Foundation
 /// Name related built-ins.
 extension Program {
 
-    // builtinName returns the value of the first 1 NAME line in a person's record.
-    // name(person [, bool]). bool for all caps on the surname
+    /// builtinName returns a vanilla version of a person's name.
+    /// name(person)
     func bltinName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let value = try await evaluatePersonOpt(args[0], errMsg: "name: arg must be a person")
@@ -57,18 +57,23 @@ extension Program {
 
     }
 
-    /// Return the given names from the first NAME line in the record.
-    /// TODO -- THIS INCLUDES THE SURNAME -- MUST BE FIXED.
+    /// Return the given names from the first NAME line in a person record. The name
+    /// parts are return in a .list.
     func bltinGivens(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0],
-                                                       errMsg: "givens: arg must be a person") else {
-            return .null
-        }
-        guard let name = person.kidVal(forTag: "NAME") else { return .null }
-        guard let gedcomName = GedcomName(string: name) else { return .null }
-        return .string(gedcomName.parts.joined(separator: " "))
+        guard let person = try await evaluatePersonOpt(args[0], errMsg: "givens: arg must be a person")
+        else { return .list(List()) }
+        
+        guard let name = person.kidVal(forTag: "NAME"), let gedcomName = GedcomName(string: name)
+        else { return .list(List()) }
 
+        let list = List()
+        for (index, part) in gedcomName.parts.enumerated() {
+            if index != gedcomName.surnameIndex {
+                list.append(.string(part))
+            }
+        }
+        return .list(list)
     }
 
     /// Returns the trimmed name of a person.
@@ -316,8 +321,6 @@ extension Program {
     }
 }
 
-
-
 extension Program {
 
     // Extract an event from a .gnode associated ProgramNode.
@@ -330,68 +333,3 @@ extension Program {
         return .null
     }
 }
-
-
-/*
- -----------------------------------
- STRING name(INDI [,BOOL])
- STRING fullname(INDI, BOOL, BOOL, INT)
- STRING surname(INDI)
- STRING givens(INDI)
- STRING trimname(INDI,INT)
-
- default name of
- many name forms of
- surname of
- given names of
- trimmed name of
- -----------------------------------
- EVENT birth(INDI)
- EVENT death(INDI)
- EVENT baptism(INDI)
- EVENT burial(INDI)
-
- first birth event of
- first death event of
- first baptism event of
- first burial event of
- -----------------------------------
- STRING sex(INDI)
- BOOL male(INDI)
- BOOL female(INDI)
- STRING pn(INDI, INT)
-
- sex of
- male predicate
- female predicate
- pronoun referring to
- -----------------------------------
- INT nspouses(INDI)
- INT nfamilies(INDI)
- FAM parents(INDI)
-
- number of spouses of
- number of families (as spouse/parent) of
- first parents’ family of
- -----------------------------------
- STRING title(INDI)
- STRING key(INDI|FAM [,BOOL])
- STRING soundex(INDI)
- NODE inode(INDI)
- NODE root(INDI)
-
- first title of
- internal key of (work for families also)
- SOUNDEX code of
- root GEDCOM node of
- root GEDCOM node of
- -----------------------------------
- INDI firstindi()
- INDI nextindi(INDI)
- INDI previndi(INDI)
-
- first person in database in key order
- next person in database in key order
- previous person in database in key order
- -----------------------------------
- */

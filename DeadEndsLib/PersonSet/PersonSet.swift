@@ -3,7 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 27 June 2026.
+//  Last changed on 30 June 2026.
+//
+//  A PersonSet ...
+//  PersonSets are the objects used by the programming system to hold
+//  rich collections of persons.
+//  PersonSets are not used within the main (non-programming) part of DeadEnds.
 //
 
 import Foundation

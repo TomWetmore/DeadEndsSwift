@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 5/26/26.
-//  Last changed on 27 May 2026.
+//  Last changed on 29 June 2026.
 //
 //  This file has the built-in methods for Gedcom
 //  nodes.
@@ -87,6 +87,24 @@ extension Program {
         return .null
     }
 
+    /// Returns the list of kids of a node.
+    /// TODO: Not been tested.
+    func bltinKids(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        guard let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "kids: arg must be a node")
+        else { return .list(List()) }
+        return .list(List(node.kids.map { ProgramValue.gnode($0) }))
+    }
+
+    /// Returns the list of sibs of a node.
+    /// TODO: Not been tested.
+    func bltinSibs(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        guard let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "sibs: arg must be a node")
+        else { return .list(List()) }
+        return .list(List(node.sibs.map { ProgramValue.gnode($0) }))
+    }
+
     /// Returns the first kid of a node that has a given tag; returns .null if there
     /// isn't one.
     /// kidwithtag(node, string) -> node?
@@ -107,11 +125,11 @@ extension Program {
 
     /// Returns the list of nodes that are kids of the given node and have a given tag.
     /// kidswithtag(node, string) -> list<node>
-    func bltinKidsWithTag(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func bltinKidsWithTagOld(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let node =
                 try await evaluateGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
-            return .null
+            return .list(List())
         }
         let tag = try await evaluateString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
         let list = List()
@@ -119,5 +137,17 @@ extension Program {
             list.append(.gnode(kid))
         }
         return .list(list)
+    }
+
+    /// TODO: New version has not been tested.
+    func bltinKidsWithTag(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        guard let node =
+                try await evaluateGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
+            return .list(List())
+        }
+        let tag = try await evaluateString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
+
+        return .list(List(node.kids(withTag: tag).map(ProgramValue.gnode)))
+
     }
 }

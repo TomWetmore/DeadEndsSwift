@@ -36,6 +36,7 @@ extension Program {
     /// deletefromset(PersonSet, Person) -> Void
     /// the bool is to remove all elements with same person.
     func bltinDeleteFromSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         let set = try await evalPersonSet(args[0], errMsg: "deletefromset: 1st arg must be a personset")
         let person = try await evaluatePerson(args[1], errMsg: "deletefromset: 2nd arg must be a person")
         set.remove(key: person.key)

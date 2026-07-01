@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 27 June 2026.
+//  Last changed on 29 June 2026.
 //
 
 import Foundation
@@ -31,6 +31,18 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     public var kids: [GedcomNode] {
         var results: [GedcomNode] = []
         var node = kid
+        while let current = node {
+            results.append(current)
+            node = current.sib
+        }
+        return results
+    }
+
+    /// Return the sibs of a node as an array of nodes.
+    /// TODO: This code has not been tested.
+    public var sibs: [GedcomNode] {
+        var results: [GedcomNode] = []
+        var node = sib
         while let current = node {
             results.append(current)
             node = current.sib

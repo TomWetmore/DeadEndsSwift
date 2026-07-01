@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 28 June 2026.
+//  Last changed on 29 June 2026.
 //
 //  ProgramValue is the type of the expressions in the DeadEnds
 //  programming language. It is an enumeration with associated types.
@@ -131,6 +131,8 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
             return b1 == b2
         case let (.string(s1), .string(s2)):
             return s1 == s2
+        case (.null, .null):
+            return true
         case let (.gnode(n1), .gnode(n2)):
             return n1 === n2 // Reference equality.
         case let (.person(p1), .person(p2)):
