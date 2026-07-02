@@ -1,13 +1,12 @@
-These are the built-in functions of the DeadEnds programming language. I wrote this for both my own use as designer and developer so it contains more internal information than a users guide would normally have.
+These are the built-in functions of the DeadEnds programming language.
 
-The arguments to built-ins are ParsedExprs. These are tree structures built when the program is parsed. They are static and persistent representations of the program's expressions. When programs are run the ParsedExprs are evaluated in the context of the database and run time stack. The result of evaluating a ParsedExpr is a transient ProgramValue object that holds the expression's current run time value.
+The args to built-ins are ParsedExprs. These are tree structures built when the program is parsed. They are static and persistent structures holding the program's expressions. When programs are run the args are evaluated in the current context -- those values are transient ProgramValue object that hold the expressions' run time values.
 
-In most cases the ParsedExprs are evaluated to ProgramValues as the first step in running a built-in. In a few cases, however, where L-values are needed, a ParsedExpr must be an .identifier, and it is not evaluated. The best example is the assignment built-in, "set(identifier, .any)". Here identifier must be an .identifier ParsedExpr, and it is not evaluated. The second argument can be any ParsedExpr; the set built-in evaluates it to a ProgramValue, and that value is then assigned to the identifier in a symbol table.
+Args are usually evaluated to ProgramValues as the first step in running a built-in. In a few cases, however, where L-values are needed, an arg is a ParsedExpr .identifier that is not evaluated. The best example is the assignment built-in, "set(identifier, .any)". The identifier must be an .identifier ParsedExpr; it is not evaluated; the identifier is the name of the variable (L-value) that is assigned a new value. The second arg is evaluated and that value is assigned to the identifier.
 
-The DeadEnds language is strongly typed in the sense that every ProgramValue has an explicit type. The types and their associated values include:
+The DeadEnds language is strongly typed. Every ProgramValue has an explicit type. The types and their associated values are:
 
-.null                -- an explicit null value; no associated type.
-.ident(String)       -- an identifier (variable); the associated String is its name.
+.null                -- an explicit null value; no associated value.
 .integer(Int)        -- an integer constant; the associated Int is its value.
 .double(Double)      -- a double constant; the associated Double is its value.
 .boolean(Bool)       -- a boolean constant; the associated Bool is its value.
@@ -17,31 +16,28 @@ The DeadEnds language is strongly typed in the sense that every ProgramValue has
 .family(Family)      -- a Family; the associated Family structure (value semantics) is its value.
 .source(Source)      -- future
 .list(List)          -- a List of ProgramValues (reference semantics)
+.pair(ProgramValue, ProgramValue)      -- a Pair of ProgramValues (now implemented as a .list).
 .table(ProgramTable) -- a Dictionary of String to ProgramValue mappings (reference semantics).
 .personset(PersonSet<ProgramValue>) -- A set of ...
 .traverse(GedcomNode)
 .allPersons          -- all Persons in the database
 .allFamilies         -- all Families in the database.
 
-The type .any is used in the tables below. There is no .any type; it signifies arguments that can be of any type.
+The type .any is used in the tables below. There is no .any type -- it signifies arguments that can be of any type.
 
 Unlike ProgramValues variables are not strongly typed. A variable's type is that of the last ProgramValue assigned to it.
 
-Built-in arguments are parsed as ParsedExpr values. Unless otherwise noted,
-the built-in first evaluates each argument to a ProgramValue, then checks
-the resulting runtime type.
+Built-in args are parsed as ParsedExpr values. Unless noted, a built-in evaluates each arg to a ProgramValue and checks the resulting runtime type.
 
-The types shown in the tables below are the required ProgramValue types after evaluation.
+The types in the tables below are the required ProgramValue types after evaluation.
 
-Some built-ins require L-values. In those cases the argument must be an
-identifier ParsedExpr and is not evaluated. Examples: set(), incr(), decr(),
-and some extract-style built-ins.
+Some built-ins require L-values. In those cases the argument must be an identifier ParsedExpr and is not evaluated. Examples: set(), incr(), decr(), and some extract built-ins.
 
 =========================================================
-Null Forwarding
+Null Forwarding and Returning Empty Lists.
 =========================================================
 
-Many built-ins use null-forwarding. For example the father() function is intended to take a person as an argument and return that person's father as a result. If the person does not have a father the function returns .null instead. And also, if .null is passed in to father(), then it also returns .null. This allows built-ins to be very conviently chained together without needing any extra code that checks for .null returns.
+Many built-ins use null-forwarding. It refers to a built-in returning .null if either a .null is used as an argument, or the information requested is not available. For example the father() function takes a person and returns the person's father. If the person does not have a father the function returns .null. Also, if .null is passed in to father(), then father() returns .null. This allows built-ins to be chained together without extra code that checks for .nulls.
 
 Consider this program:
 
@@ -52,21 +48,21 @@ proc main () {
     "3 " name(father(father(p))) nl()
     "4 " name(father(father(father(p)))) nl()
     "5 " name(father(father(father(father(p))))) nl()
+    "6 " name(father(father(father(father(father(p)))))) nl()
 }
 
-This asks for a person and then tries to print the person's name and the names of the next four males in the person's paternal line. If I run this on my wife the output is:
+This asks for a person and then tries to print the person's name and the names of the next five males in the person's paternal line. If I run this on my wife the output is:
 
 1 Luann Frances Grenda
 2 Anthony Grenda
 3 Jan Grenda
 4 Frank Grenda
 5
+6
 
-because her paternal great great grandfather is not in the database. Null forwarding is almost always the right thing to do and it greatly simplifies the structure of DeadEnds programs.
+because her paternal great great grandfather and beyond is not known. On the fifth call father() is called with Frank Grenda, but it returns .null because Frank's father is not known. On the sixth call father() is called with a .null argument and returns .null. Null forwarding is almost always the right thing to do, and it can greatly simplify the structure of programs.
 
-Calls to built-ins can become highly nested. In many cases built-in expressions
-For example, say we wanted to show the name of a person's paternal grandfather. Using the built-ins we could write name(father(father(person))), where person is an identifier assigned to some person in the database.
-
+Some built-ins return lists. For example, children() can be applied to either a person or a family and returns the children of that entity. If the person or family exists but has no children, children() returns an empty list. If the argument itself is .null, children() also returns an empty list. Returning an empty list in this case is a deliberate form of null forwarding for sequence-valued built-ins. The alternative would be to return .null, but empty lists are usually more useful because they work naturally with foreach(), length(), and other list operations.
 
 Summary
 
@@ -116,12 +112,15 @@ mod(.integer, .integer)                 -> .integer
 neg(.integer|.double)                   -> .integer|.double
 
 ===========================================================================================
-Increment and Decrement. The argument is not evaluated; it must be a ParsedExpr .identifier
-with in .integer program value in a symbol table.
+Increment and Decrement -- increments and decrements an integer.
 ===========================================================================================
 
 incr(.identifier) -> .integer -- .identifier must have an .integer value
 decr(.identifier) -> .integer -- .identifier must have an .integer value
+
+Notes:
+1. The arg is not evaluated. It must be an identifier ParseExpr.
+2. The identifier must already be in the symbol table (local or global) with an .integer value.
 
 ===========================================================================
 Comparison Operators
@@ -135,9 +134,8 @@ gt(.any, .any) -> .bool | .null   Returns whether the first arg is greater than 
 ge(.any, .any) -> .bool | .null   Returns whether the first arg is greater than or equal the second.
 
 Notes.
-1. eq and ne use ProgramValue's == operator. So it is only as good as that operator.
-2. lt, le, gt, and ge use ProgramValue's compare operator. This operator returns .null
-non-simple comparisons. This may be an issue for the future.
+1. eq and ne use ProgramValue's == operator. It is only as good as that operator.
+2. lt, le, gt, and ge use ProgramValue's compare operator. This operator returns .null for non-simple comparisons. This may be an issue for the future.
 
 =========================================================================
 Logical Operators
@@ -148,10 +146,7 @@ or (.any [, .any]...) -> .bool     Return the result of or'ing up to 32 boolean 
 not(.any)             -> .bool     Return the not of a boolean value.
 
 Notes:
-1. and and or can have 1 to 32 arguments. Short circuiting is used in both.
-Arguments that do not need to be evaluated are not. The args can be .any
-because there is a toBool function that allows any ProgramValue to be
-treated as boolean. However the toBool function is still primitive.
+1. and and or can have 1 to 32 arguments. Short circuiting is used for both, so args that do not need to be evaluated are not. The args can be .any because there is a toBool function that coerces any ProgramValue to boolean. However the toBool function is still primitive.
 2. not also can have .any argument because it uses the same toBool function as
 the other two.
 
@@ -241,11 +236,15 @@ dequeue(.list)       -> .any        Dequeue a program value from a list used as 
 pair   (.any, .any)  -> .list(.any) Create a pair (two-element list) from any two program values
 first  (.list(.any)) -> .any        Return the first program value from a pair of values
 second (.list(.any)) -> .any        Return the second program value from a pair of values
+removefirst(.list)   -> .any        Remove the first ...
+removelast(.list)    -> .any        Remove the last ...
 
 Notes:
-1. append, prepend, push, and enqueue return .null. They cause only side-effects.
-2. A pair is implemented as a two-element list; this is a convenience; users should not
+1. append, prepend, push, and enqueue return .null. They only cause side-effects.
+2, pop, dequeue, removefirst and removelast remove and return values from a list. They return .null if the list is empty.
+3. A pair is implemented as a two-element list; this is a convenience; users should not
 assume this implementation.
+4, Therefore, .pair should probably be added a new "official" type in the language.
 
 =====================================================================================
 Table Operations
@@ -275,17 +274,28 @@ namesort     (.personset)                   -> .null         Sort personset by n
 keysort      (.personset)                   -> .null         Sort personset by key
 
 Notes:
-1. union, intersect, difference are nondestructive -- the two argument sets still exist when
-the built-in returns (unless the actions of the builtin cause the last reference to dissappear).
-2. parentset, childset, spouseset, siblingset, and descendentset do not include the members
-of the argument set in the result set.
-3. It may be useful to add a valuesort function.
+1. union, intersect, difference are nondestructive -- their argument still exist when the built-in returns (unless the actions of the built-in cause their last reference to dissappear). For example:
+
+    ...
+    set(a, personset())
+    set(b, personset())
+    ... /* Code that adds elements to a and b. */
+    set(a, union(a, b))
+    ...
+
+    When union completes it returns a new set; sets a and b still exist and a and b still refer to them. But the action of the set causes variable a to now reference the new set. This may cause the original set a to be freed.
+2. parentset, childset, spouseset, siblingset, ancestorset, and descendentset do not add the members their arg sets to their result sets. However, members of the arg set may be in the result set if they have the necessary relationship with another member of the args. For example, consider:
+    ...                   /* code that creates, s, a set of person set elements. */
+    set(t, spouseset(s))  /* t generally does not contain elements from s unless s has persons who are their own spouses). */
+    set(t, spouseset(t))  /* t must contain all elements from s and likely many more (t contains all spouses of spouses of s, which includes all of s. */
+3. Elements of person sets have an optional .any "value" property. It can be any program value. Algorithms can take advantage of this extra property in any way that works. The value can only be assigned when a person is explicilty added to a set. The set operations do not have a way to compute new values for the elements that get added to the result sets (the DeadEnds programming language does not have any real features for functional programming)
+4. It may be useful to add a valuesort function.
 
                        // String operations.
             "strcmp": Builtin(min: 2, max: 2) { try await self.bltinStrcmp($0)},
 
 ===============================================================================
-Meta Operations. These were added to help debugging.
+Meta Operations. These are for debugging during program development.
 ===============================================================================
 
 showframe() -> .string            Shows the current run time stack frame
@@ -293,9 +303,8 @@ showstack() -> .stribng           Shows the full run time stack.
 valueof(.any) -> .string          Evaluates the argument and shows its type and value.
 
 Notes:
-1. The DeadEnds programming language is conventional. When procedures and functions are called arguments (ParsedExprs) are evaluated in the calling module's stack frame. Then a new frame for the called module is created and the argument values (now ProgramValues) are assigned to their corresponding parameter identifier in the new frame. The new frame is added to the run time stack and the called module is run. Variables defined in the called module are stored in the local symbol table. When a module returns its frame (which holds the symbol table) is removed and the calling module continues where it left off.
-2. The meta operations let you inspect the local frame (showframe), the entire run time stack (showstack) or the value and type of any ProgramValue.
-
+1. When procs and funcs are called, their args are evaluated in the caller's frame. A new frame is made for the called module, and the arg values are assigned to the params there. The new frame is added to the stack, and the called module runs. Identifiers defined in the called module are stored in its frame. When a module returns its frame dissappears and the calling module continues.
+2. Meta operations let you inspect the local frame (showframe), the entire run time stack (all frames plus the global table) or the value and type of any expression.
 
 ====================================================================================
 User Interface. These built-ins open sheets that request the user enter information.
@@ -306,7 +315,7 @@ getinteger(.string) -> .integer | .null   Request user to enter an integer.
 getstring(.string)  -> .string | .null    Request user to enter a string.
 
 Notes:
-1. The .string arguments are prompts shown in the sheets.
+1. The .string arguments are prompts that are shown in the sheets.
 
 ===========================================================================
 Built-ins that extract information from strings.
@@ -320,8 +329,8 @@ Built-ins that extract information from strings.
 Lists of Lists, Tables of Tables
 ============================================================================
 
-Lists and Tables are reference ProgramValues. This simplifies internal operations, and it allows interesting structuring. For example, a .list holds a list of ProgramValues, and there are no restrictions on what those ProgramValues can be; for example, they can be .list or .table objects of their own.
+Lists and Tables are reference ProgramValues. This simplifies internal operations, and it arbitrary structuring. For example, a .list holds a list of ProgramValues with no restrictions on what the ProgramValues can be; for example, they can be .list or .table objects of their own.
 
-Of course, if you go crazy with "intersting" structuring, you will deserve all the problems you cause yourself.
+There is no requirement that the elements in a .list or the values in a .table have the same type. Each element or value must have a type, but that happens automatically.
 
-There is no requirement that the elements in a .list or the values in a .table have the same type. The only requirement is that each element or value have a type, but you get that for free.
+Of course, if you go crazy with "intersting" structures, and structure with mixed types, you will deserve the problems they cause.

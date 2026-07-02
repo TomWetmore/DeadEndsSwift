@@ -3,10 +3,10 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 29 June 2026.
+//  Last changed on 2 July 2026.
 //
-//  ProgramValue is the type of the expressions in the DeadEnds
-//  programming language. It is an enumeration with associated types.
+//  ProgramValue is the type of evaluated expression in the DeadEnds
+//  programming language.
 //
 
 import Foundation
@@ -15,7 +15,6 @@ import Foundation
 public enum ProgramValue: @unchecked Sendable, Equatable {
 
     case null
-    case ident(String)
     case integer(Int)
     case double(Double)
     case boolean(Bool)
@@ -32,13 +31,13 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     case traverse(GedcomNode)
     case allPersons
     case allFamilies
+    //case pair(ProgramValue, ProgramValue) -- in case pair becomes a separate type
 
     /// Description of a program value.
     var description: String {
 
         switch self {
         case .null: return "null"
-        case .ident(let string): return "\(string))"
         case .integer(let integer): return "\(integer)"
         case .double(let double): return "\(double)"
         case .boolean(let bool): return "\(bool)"
@@ -63,39 +62,27 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         case .gnode: return "gnode"
         case .personset: return "indiset"
         case .table: return "table"
-        case .ident(_): return "ident"
         case .list(_): return "list"
         case .traverse(_): return "traverse"
         case .allPersons: return "allPersons"
         case .allFamilies: return "allFamilies"
         }
-
     }
 
     /// Value strings for the program value kinds.
     var displayValue: String {
+
         switch self {
-        case .null:
-            return "null"
-        case .boolean(let b):
-            return b ? "true" : "false"
-        case .integer(let i):
-            return String(i)
-        case .double(let d):
-            return String(d)
-        case .string(let s):
-            return s
-        case .person(let p):
-            return p.key + " " +  p.displayName()
-        case .family(let f):
-            return f.key
-        case .gnode(let node):
-            return node.description
-        case .personset(let set):
-            return "\(set.count) persons"
-        case .table(let table):
-            return "\(table.count) entries" // adjust to your table wrapper
-        case .ident(_): return "ident"
+        case .null: return "null"
+        case .boolean(let b): return b ? "true" : "false"
+        case .integer(let i): return String(i)
+        case .double(let d): return String(d)
+        case .string(let s): return s
+        case .person(let p): return p.key + " " +  p.displayName()
+        case .family(let f): return f.key
+        case .gnode(let node): return node.description
+        case .personset(let set): return "\(set.count) persons"
+        case .table(let table): return "\(table.count) entries" // adjust to your table wrapper
         case .traverse(_): return "traverse"
         case .allPersons: return "allPersons"
         case .allFamilies: return "allFamilies"
@@ -103,14 +90,12 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
             let maxItems = 10
             var parts: [String] = []
             parts.reserveCapacity(maxItems)
-
             var shown = 0
             for value in list {
                 if shown >= maxItems { break }
                 parts.append(value.displayValue)
                 shown += 1
             }
-
             if list.count > maxItems {
                 return "[" + parts.joined(separator: ", ") + ", ... (\(list.count) total)]"
             } else {
@@ -123,24 +108,15 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     public static func == (lhs: ProgramValue, rhs: ProgramValue) -> Bool {
 
         switch (lhs, rhs) {
-        case let (.integer(i1), .integer(i2)):
-            return i1 == i2
-        case let (.double(f1), .double(f2)):
-            return f1 == f2
-        case let (.boolean(b1), .boolean(b2)):
-            return b1 == b2
-        case let (.string(s1), .string(s2)):
-            return s1 == s2
-        case (.null, .null):
-            return true
-        case let (.gnode(n1), .gnode(n2)):
-            return n1 === n2 // Reference equality.
-        case let (.person(p1), .person(p2)):
-            return p1.key == p2.key
-        case let (.family(f1), .family(f2)):
-            return f1.key == f2.key
-        default:
-            return false
+        case let (.integer(i1), .integer(i2)): return i1 == i2
+        case let (.double(f1), .double(f2)):   return f1 == f2
+        case let (.boolean(b1), .boolean(b2)): return b1 == b2
+        case let (.string(s1), .string(s2)):   return s1 == s2
+        case (.null, .null):                   return true
+        case let (.gnode(n1), .gnode(n2)):     return n1 === n2 // Reference equality.
+        case let (.person(p1), .person(p2)):   return p1.key == p2.key
+        case let (.family(f1), .family(f2)):   return f1.key == f2.key
+        default:                               return false
         }
     }
 }
@@ -160,10 +136,10 @@ extension ProgramValue {
         switch self {
         case .boolean(let value): return value
         case .integer(let value): return value != 0
-        case .double(let value): return value != 0.0
-        case .string(let value): return !value.isEmpty
-        case .null: return false
-        default: return true // TODO: Other types now default to true; this needs work.
+        case .double(let value):  return value != 0.0
+        case .string(let value):  return !value.isEmpty
+        case .null:               return false
+        default:                  return true // TODO: Other types now default to true; this needs work.
         }
     }
 }
@@ -176,9 +152,9 @@ extension ProgramValue {
 
         switch (val1, val2) {
         case let (.integer(i1), .integer(i2)): return .integer(i1 + i2)
-        case let (.double(f1), .double(f2)): return .double(f1 + f2)
-        case let (.string(s1), .string(s2)): return .string(s1 + s2)
-        default: return .null
+        case let (.double(f1), .double(f2)):   return .double(f1 + f2)
+        case let (.string(s1), .string(s2)):   return .string(s1 + s2)
+        default:                               return .null
         }
     }
 
@@ -187,8 +163,8 @@ extension ProgramValue {
 
         switch (val1, val2) {
         case let (.integer(i1), .integer(i2)): return .integer(i1 - i2)
-        case let (.double(f1), .double(f2)): return .double(f1 - f2)
-        default: return .null
+        case let (.double(f1), .double(f2)):   return .double(f1 - f2)
+        default:                               return .null
         }
     }
 
@@ -196,8 +172,8 @@ extension ProgramValue {
     static func mulPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
         switch (val1, val2) {
         case let (.integer(i1), .integer(i2)): return .integer(i1 * i2)
-        case let (.double(f1), .double(f2)): return .double(f1 * f2)
-        default: return .null
+        case let (.double(f1), .double(f2)):   return .double(f1 * f2)
+        default:                               return .null
         }
     }
 
@@ -208,7 +184,7 @@ extension ProgramValue {
         switch (val1, val2) {
         case let (.integer(i1), .integer(i2)) where i2 != 0: return .integer(i1 / i2)
         case let (.double(f1), .double(f2)) where f2 != 0.0: return .double(f1 / f2)
-        default: return .null
+        default:                                             return .null
         }
     }
 
@@ -226,8 +202,8 @@ extension ProgramValue {
     static func negPValue(_ val: ProgramValue) -> ProgramValue {
         switch val {
         case let .integer(i): return .integer(-i)
-        case let .double(f): return .double(-f)
-        default: return .null
+        case let .double(f):  return .double(-f)
+        default:              return .null
         }
     }
 
@@ -237,7 +213,7 @@ extension ProgramValue {
 
         switch val {
         case let .integer(i): return .integer(i + 1)
-        default: return .null
+        default:              return .null
         }
     }
 
@@ -245,21 +221,17 @@ extension ProgramValue {
     /// THIS METHOD IS NOT USED.
     static func decrPValue(_ val: ProgramValue) -> ProgramValue {
         switch val {
-        case let .integer(i):
-            return .integer(i - 1)
-        default:
-            return .null
+        case let .integer(i): return .integer(i - 1)
+        default:              return .null
         }
     }
 
     /// Raise the first program value by the second and return the result.
     static func expPValues(_ base: ProgramValue, _ exponent: ProgramValue) -> ProgramValue {
         switch (base, exponent) {
-        case let (.integer(b), .integer(e)) where e >= 0:
-            return .integer(Int(pow(Double(b), Double(e))))
-        case let (.double(b), .integer(e)) where e >= 0:
-            return .double(pow(b, Double(e)))
-        default: return .null
+        case let (.integer(b), .integer(e)) where e >= 0: return .integer(Int(pow(Double(b), Double(e))))
+        case let (.double(b), .integer(e)) where e >= 0:  return .double(pow(b, Double(e)))
+        default:                                          return .null
         }
     }
 }
@@ -272,13 +244,10 @@ extension ProgramValue {
                         using comparator: (Int, Int) -> Bool) -> ProgramValue {
 
         switch (val1, val2) {
-        case let (.integer(i1), .integer(i2)):
-            return .boolean(comparator(i1, i2))
-        case let (.double(f1), .double(f2)):
-            return .boolean(comparator(Int(f1), Int(f2)))
-        case let (.string(s1), .string(s2)):
-            return .boolean(comparator(s1.compare(s2).rawValue, 0))
-        default: return .null
+        case let (.integer(i1), .integer(i2)): return .boolean(comparator(i1, i2))
+        case let (.double(f1), .double(f2)):   return .boolean(comparator(Int(f1), Int(f2)))
+        case let (.string(s1), .string(s2)):   return .boolean(comparator(s1.compare(s2).rawValue, 0))
+        default:                               return .null
         }
     }
 
