@@ -16,7 +16,6 @@ The DeadEnds language is strongly typed. Every ProgramValue has an explicit type
 .family(Family)      -- a Family; the associated Family structure (value semantics) is its value.
 .source(Source)      -- future
 .list(List)          -- a List of ProgramValues (reference semantics)
-.pair(ProgramValue, ProgramValue)      -- a Pair of ProgramValues (now implemented as a .list).
 .table(ProgramTable) -- a Dictionary of String to ProgramValue mappings (reference semantics).
 .personset(PersonSet<ProgramValue>) -- A set of ...
 .traverse(GedcomNode)
@@ -25,21 +24,23 @@ The DeadEnds language is strongly typed. Every ProgramValue has an explicit type
 
 The type .any is used in the tables below. There is no .any type -- it signifies arguments that can be of any type.
 
-Unlike ProgramValues variables are not strongly typed. A variable's type is that of the last ProgramValue assigned to it.
+Identifiers (variables in symbol tables) are not strongly typed. An identifier's type is that of the last ProgramValue assigned to it.
 
-Built-in args are parsed as ParsedExpr values. Unless noted, a built-in evaluates each arg to a ProgramValue and checks the resulting runtime type.
+Built-in args are parsed as ParsedExpr values. Unless noted, a built-in evaluates its args into ProgramValues and checks their runtime types, throwing run time errors if there are type problems.
 
-The types in the tables below are the required ProgramValue types after evaluation.
+The Program Value types shown in the tables below are the required ProgramValue types after evaluation.
 
-Some built-ins require L-values. In those cases the argument must be an identifier ParsedExpr and is not evaluated. Examples: set(), incr(), decr(), and some extract built-ins.
+Some built-ins require L-values. In those cases an arg must be an identifier ParsedExpr that is not evaluated. Examples include set(), incr(), decr(), and some extract built-ins.
 
 =========================================================
 Null Forwarding and Returning Empty Lists.
 =========================================================
 
-Many built-ins use null-forwarding. It refers to a built-in returning .null if either a .null is used as an argument, or the information requested is not available. For example the father() function takes a person and returns the person's father. If the person does not have a father the function returns .null. Also, if .null is passed in to father(), then father() returns .null. This allows built-ins to be chained together without extra code that checks for .nulls.
+Many built-ins use null-forwarding. Null forwarding happens when a built-in has a .null argument instead of an expected type, and it then returns .null. It refers to a built-in returning .null if either a .null is used as an argument, or the information requested is not available. For example the father() function takes a person and returns the person's father. If the person does not have a father the function returns .null. Also, if .null is passed in to father(), then father() returns .null. This allows built-ins to be chained together without extra code that checks for .nulls.
 
-Consider this program:
+We can see two types of null forwarding. A built-in starts null forwarding when it can't find information in the database so it returns a .null instead. A built-in continues null forwarding when it takes .null as an input arg and passes that .null along by returning it.
+
+Consider this program that shows both types of forwarding.
 
 proc main () {
     set(p, getperson("enter a person"))
@@ -60,9 +61,9 @@ This asks for a person and then tries to print the person's name and the names o
 5
 6
 
-because her paternal great great grandfather and beyond is not known. On the fifth call father() is called with Frank Grenda, but it returns .null because Frank's father is not known. On the sixth call father() is called with a .null argument and returns .null. Null forwarding is almost always the right thing to do, and it can greatly simplify the structure of programs.
+Her paternal great great grandfather and beyond are not known. On the fifth call to name(), father() is called on Frank Grenda, but it returns .null because Frank's father is not in the database. On the sixth call father() is called with a .null argument and returns .null. Null forwarding is almost always the right thing to do, and it can greatly simplify program structure.
 
-Some built-ins return lists. For example, children() can be applied to either a person or a family and returns the children of that entity. If the person or family exists but has no children, children() returns an empty list. If the argument itself is .null, children() also returns an empty list. Returning an empty list in this case is a deliberate form of null forwarding for sequence-valued built-ins. The alternative would be to return .null, but empty lists are usually more useful because they work naturally with foreach(), length(), and other list operations.
+Some built-ins return lists. For example, children() can be applied to a person or a family and returns the children of that entity. If the person or family exists but has no children, children() returns an empty list. If the argument itself is .null, children() also returns an empty list. Returning an empty list in this case is a deliberate form of null forwarding for sequence-valued built-ins. The alternative would be to return .null, but empty lists are usually more useful because they work naturally with foreach(), length(), and other list operations.
 
 Summary
 
@@ -111,16 +112,20 @@ div(.integer|.double, .integer|.double) -> .integer|.double
 mod(.integer, .integer)                 -> .integer
 neg(.integer|.double)                   -> .integer|.double
 
+Notes:
+1. The current implementation require the argument types to match. For example, sub must be given either two integers or two doubles, but one of each. This should be rethought because there are no current built-ins that coerce program values.
+2. In LifeLines add and mul could have one to 32 arguments (like add and or currently allow). Maybe add and mul should be changed to match the LifeLines approach.
+
 ===========================================================================================
-Increment and Decrement -- increments and decrements an integer.
+Increment and Decrement -- increment and decrement integers.
 ===========================================================================================
 
 incr(.identifier) -> .integer -- .identifier must have an .integer value
 decr(.identifier) -> .integer -- .identifier must have an .integer value
 
 Notes:
-1. The arg is not evaluated. It must be an identifier ParseExpr.
-2. The identifier must already be in the symbol table (local or global) with an .integer value.
+1. The arg is not evaluated, so .identifier means the ParsedExpr type, not the ProgramValue type. The arg must be an identifier ParseExpr.
+2. The identifier must already be in a symbol table (it can be local or global) with an .integer value.
 
 ===========================================================================
 Comparison Operators
@@ -151,7 +156,7 @@ Notes:
 the other two.
 
 ========================================================================================
-GedcomNode properties and operations. Most are null-forwarding.
+GedcomNode properties and operations.are null-forwarding.
 ========================================================================================
 
 key (.person | .family | .node | .null ) -> .string | .null    Return key of record or node
@@ -167,58 +172,67 @@ root(.person | .family | .null) -> .node | .null               Return the root n
 kidwithtag(.node | .null, string) -> .node | .null             Return the first child of a node with given tag
 kidswithtag(.node | .null, .string) -> .list(.node)            Return list of children with given tag
 
+Notes:
+1. These built-ins are all null forwarding. Most forward .null directly. The three (kids, sibs, kidswithtag) list returning built-ins return empty lists as their form of null forwarding.
+
 ========================================================================================
 Person Operations
 ========================================================================================
 
-person  (.string)         -> .person                  Look up person in database by key
-name    (.person | .null) -> .string | .null          Return vanilla version of person's name
-fullname(.person | .null, .bool, .bool, .integer)
-                          -> .string | .null          Return formatted name of person
-givens  (.person | .null) -> .list(.string)           Return the given names of a person as a .list
-surname (.person | .null) -> .string | .null          Return the surname of a person
-birth   (.person | .null) -> .gnode | .null           Return the primary birth event of a person
-death   (.person | .null) -> .gnode | .null           Return the primary death event of a person
-father  (.person | .null) -> .person | .null          Return the primary father of a person
-mother  (.person | .null) -> .person | .null          Return the primary father of a person
-families(.person | .null) -> .list(.family)           Return the list of families a person is a spouse in
-allpersons()              -> .list(.person)           Return the list of all persons in the database
-male(.person)             -> .bool | .null            Return whether a person is male
-female(.person)           -> .bool | .null            Return whether a person is female
+person  (.string)       -> .person|.null          Look up person in database by key
+name    (.person|.null) -> .string|.null          Return vanilla version of person's name
+fullname(.person|.null, .bool, .bool, .integer)
+                        -> .string|.null          Return formatted name of person
+givens  (.person|.null) -> .list(.string)         Return the given names of a person as a .list
+surname (.person|.null) -> .string|.null          Return the surname of a person
+birth   (.person|.null) -> .gnode|.null           Return the primary birth event of a person
+death   (.person|.null) -> .gnode|.null           Return the primary death event of a person
+father  (.person|.null) -> .person|.null          Return the primary father of a person
+mother  (.person|.null) -> .person|.null          Return the primary father of a person
+families(.person|.null) -> .list(.family)         Return the list of families a person is a spouse in
+allpersons()            -> .list(.person)         Return the list of all persons in the database
+male(.person)           -> .bool|.null            Return whether a person is male
+female(.person)         -> .bool|.null            Return whether a person is female
 
-allfamilies()             -> .list(.family)           Return the list of all families in the database
+allfamilies()           -> .list(.family)         Return the list of all families in the database
+
+Notes:
+1. These are all null forwarding.
 
 ============================================================================================
 Generic Operations on Persons and Families. The arguments must be ParsedExpr objects
 that evaluate to either a .person or .family.
 ============================================================================================
 
-husband (.person | .family) -> .person | .null   Husband of person or family
-wife    (.person | .family) -> .person | .null      Wife of person or family
-husbands(.person | .family) -> .list(.person)   Husbands of person or family
-wives   (.person | .family) -> .list(.person)      Wives of person or family
-children(.person | .family) -> .list(.person)   Children of person or family
-spouses (.person | .family) -> .list(.person)    Spouses of person or family
-parents (.person | .family) -> .list(.person)    Parents of person or family
-siblings(.person)           -> .list(.person)   Siblings of person
+husband (.person|.family) -> .person|.null    Husband of person or family
+wife    (.person|.family) -> .person|.null    Wife of person or family
+husbands(.person|.family) -> .list(.person)   Husbands of person or family
+wives   (.person|.family) -> .list(.person)   Wives of person or family
+children(.person|.family) -> .list(.person)   Children of person or family
+spouses (.person|.family) -> .list(.person)   Spouses of person or family
+parents (.person|.family) -> .list(.person)   Parents of person or family
+siblings(.person)         -> .list(.person)   Siblings of person
+
+Notes:
+1. These are all null or empty list forwarding.
 
 ====================================================================================
 Event-based Operations on Events. The arguments must be ParsedExpr objects that
 evaluate to an event node in a person or family.
 ====================================================================================
 
-date (.node) -> .string | .null    Value of first DATE node that is a child of .node
-place(.node) -> .string | .null    Value of first PLAC node that is a child of .node
+date (.node) -> .string|.null    Value of first DATE node that is a child of .node
+place(.node) -> .string|.null    Value of first PLAC node that is a child of .node
 
 ===================================================================================
 Generic Operations on Lists, Tables and PersonSets. The subscript operator currently
 takes only .list arguments. It should take PersonSets and possibly Tables.
 ====================================================================================
 
-empty (.list | .table | .personset | .string) -> .bool      Whether the structure or string is empty.
-length(.list | .table | .personset | .string) -> .integer   Length of the structure or string.
-clear (.list | .table | .personset)           -> .null      Empty the structure
-subscript(.list, .integer)                    -> .any       Return 1-indexed element of list
+empty (.list|.table|.personset|.string) -> .bool      Whether the structure or string is empty.
+length(.list|.table|.personset|.string) -> .integer   Length of the structure or string.
+clear (.list|.table|.personset)         -> .null      Empty the structure
+subscript(.list, .integer)              -> .any       Return 1-indexed element of list
 
             "traverse":  Builtin(min: 1, max: 1) { try await self.bltinNodes($0)},
 

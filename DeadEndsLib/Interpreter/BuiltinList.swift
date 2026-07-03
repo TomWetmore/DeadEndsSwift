@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 11 June 2026.
+//  Last changed on 3 July 2026.
 //
 
 import Foundation
@@ -291,7 +291,7 @@ extension Program {
         guard let sequence = try await evaluateListOpt(args[0], errMsg: "subscript: 1st arg must be a sequence") else {
             return .null
         }
-        let index = try await evaluateInteger(args[1], errMsg: "subscript: 2nd arg must be an integer")
+        let index = try await evalInteger(args[1], errMsg: "subscript: 2nd arg must be an integer")
         let internalIndex = index - 1
         guard internalIndex >= 0 && internalIndex < sequence.count else {
             throw RuntimeError("subscript: index \(index) is out of range", line: args[1].line)

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 5/26/26.
-//  Last changed on 29 June 2026.
+//  Last changed on 3 July 2026.
 //
 //  This file has the built-in methods for Gedcom
 //  nodes.
@@ -28,7 +28,7 @@ extension Program {
     /// Built-in that returns the tag of a node.
     func bltinTag(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "tag: arg must be a node")
+        let node = try await evalGedcomNodeOpt(args[0], errMsg: "tag: arg must be a node")
         if let node = node {
             return .string(node.tag)
         }
@@ -38,7 +38,7 @@ extension Program {
     /// Built-in that returns the value of a node; returns .nll
     func bltinVal(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "value: arg must be a node")
+        let node = try await evalGedcomNodeOpt(args[0], errMsg: "value: arg must be a node")
         if let node = node, let val = node.val {
             return .string(val)
         }
@@ -48,7 +48,7 @@ extension Program {
     /// Built-in that returns the level of a node; returns .null if the node .null.
     func bltinLev(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "level: arg must be a node")
+        let node = try await evalGedcomNodeOpt(args[0], errMsg: "level: arg must be a node")
         if let node = node {
             return .integer(node.lev)
         }
@@ -58,7 +58,7 @@ extension Program {
     /// Built-in that returns the kid of a node; returns .null if is null or has no kid.
     func bltinKid(_ args: [ParsedExpr]) async throws -> ProgramValue {
         
-        let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "child: arg must be a node")
+        let node = try await evalGedcomNodeOpt(args[0], errMsg: "child: arg must be a node")
         if let node = node, let kid = node.kid {
             return .gnode(kid)
         }
@@ -68,7 +68,7 @@ extension Program {
     /// Returns the sib of a node; returns .null if it is nil or has no sib.
     func bltinSib(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let node = try await evaluateGedcomNodeOpt(args[0],
+        let node = try await evalGedcomNodeOpt(args[0],
                                 errMsg: "sibling: arg must be a node")
         if let node = node, let sib = node.sib {
             return .gnode(sib)
@@ -79,7 +79,7 @@ extension Program {
     /// Returns the dad of a node; returns .null if it is nil or has no dad.
     func bltinDad(_ args: [ParsedExpr]) async throws -> ProgramValue {
         
-        let node = try await evaluateGedcomNodeOpt(args[0],
+        let node = try await evalGedcomNodeOpt(args[0],
                                 errMsg: "dad: arg must be a node")
         if let node = node, let par = node.dad {
             return .gnode(par)
@@ -91,7 +91,7 @@ extension Program {
     /// TODO: Not been tested.
     func bltinKids(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "kids: arg must be a node")
+        guard let node = try await evalGedcomNodeOpt(args[0], errMsg: "kids: arg must be a node")
         else { return .list(List()) }
         return .list(List(node.kids.map { ProgramValue.gnode($0) }))
     }
@@ -100,7 +100,7 @@ extension Program {
     /// TODO: Not been tested.
     func bltinSibs(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let node = try await evaluateGedcomNodeOpt(args[0], errMsg: "sibs: arg must be a node")
+        guard let node = try await evalGedcomNodeOpt(args[0], errMsg: "sibs: arg must be a node")
         else { return .list(List()) }
         return .list(List(node.sibs.map { ProgramValue.gnode($0) }))
     }
@@ -111,7 +111,7 @@ extension Program {
     func bltinKidWithTag(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let node =
-            try await evaluateGedcomNodeOpt(args[0],
+            try await evalGedcomNodeOpt(args[0],
                             errMsg: "kidwithtag: 1st arg must be a node") else {
             return .null
         }
@@ -128,7 +128,7 @@ extension Program {
     func bltinKidsWithTagOld(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let node =
-                try await evaluateGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
+                try await evalGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
             return .list(List())
         }
         let tag = try await evaluateString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
@@ -142,7 +142,7 @@ extension Program {
     /// TODO: New version has not been tested.
     func bltinKidsWithTag(_ args: [ParsedExpr]) async throws -> ProgramValue {
         guard let node =
-                try await evaluateGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
+                try await evalGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
             return .list(List())
         }
         let tag = try await evaluateString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")

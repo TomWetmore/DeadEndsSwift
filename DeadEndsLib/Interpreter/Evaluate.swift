@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 3 July 2026.
 //
 
 import Foundation
@@ -11,7 +11,7 @@ import Foundation
 extension Program {
 
     /// Evaluate a parsed expression that must be an integer.
-    func evaluateInteger(_ expr: ParsedExpr, errMsg: String) async throws -> Int {
+    func evalInteger(_ expr: ParsedExpr, errMsg: String) async throws -> Int {
 
         guard case let .integer(integer) = try await evaluate(expr) else {
             throw RuntimeError(errMsg, line: expr.line)
@@ -24,9 +24,9 @@ extension Program {
 
         switch expr.kind {
         case .identifier(let string): // Identifier.
-            return try evaluateIdentifier(string, line: expr.line)
+            return try evalIdentifier(string, line: expr.line)
         case .functionCall(let name, let args): // Builtin or user function.
-            return try await evaluateFunction(name, args: args, line: expr.line)
+            return try await evalFunction(name, args: args, line: expr.line)
         case .integerConstant(let integer): // Integer.
             return ProgramValue.integer(integer)
         case .stringConstant(let string): // String.
@@ -51,7 +51,7 @@ extension Program {
     }
 
     /// Evaluate an identifer by looking it up in a symbol table.
-    func evaluateIdentifier(_ ident: String, line: Int) throws -> ProgramValue {
+    func evalIdentifier(_ ident: String, line: Int) throws -> ProgramValue {
 
         guard let value = lookupSymbol(ident) else {
             // TODO: Set a line number for the identifier.
@@ -64,16 +64,16 @@ extension Program {
 extension Program {
 
     /// Evaluate a builtin or user function.
-    func evaluateFunction(_ name: String, args: [ParsedExpr], line: Int) async throws -> ProgramValue {
+    func evalFunction(_ name: String, args: [ParsedExpr], line: Int) async throws -> ProgramValue {
         if let _ = builtins[name] {
-            return try await evaluateBuiltin(name, args: args, line: line)
+            return try await evalBuiltIn(name, args: args, line: line)
         } else {
-            return try await evaluateUserFunction(name, args: args, line: line)
+            return try await evalUserFunc(name, args: args, line: line)
         }
     }
 
     /// Evaluate a builtin function.
-    private func evaluateBuiltin(_ name: String, args: [ParsedExpr], line: Int) async throws -> ProgramValue {
+    private func evalBuiltIn(_ name: String, args: [ParsedExpr], line: Int) async throws -> ProgramValue {
         guard let builtin = builtins[name] else {  // Get builtin function.
             throw RuntimeError("Unknown builtin function: \(name)", line: line)
         }
@@ -94,7 +94,7 @@ extension Program {
     }
 
     // Evaluate a user function.
-    func evaluateUserFunction(_ name: String, args: [ParsedExpr], line: Int) async throws -> ProgramValue {
+    func evalUserFunc(_ name: String, args: [ParsedExpr], line: Int) async throws -> ProgramValue {
 
         let funcDefn = try requireFuncDefn(name, line: line)
         let nParams = funcDefn.params.count
@@ -138,7 +138,7 @@ extension Program {
 extension Program {
 
     /// Evaluate an expression that should return a person.
-    func evaluatePerson(_ expr: ParsedExpr, errMsg: String) async throws -> Person {
+    func evalPerson(_ expr: ParsedExpr, errMsg: String) async throws -> Person {
 
         let value = try await evaluate(expr)
         guard case .person(let person) = value else {
@@ -148,7 +148,7 @@ extension Program {
     }
 
     /// Evaluate an expression for an optional person; throw error if not a person or null.
-    func evaluatePersonOpt(_ expr: ParsedExpr, errMsg: String) async throws -> Person? {
+    func evalPersonOpt(_ expr: ParsedExpr, errMsg: String) async throws -> Person? {
 
         switch try await evaluate(expr) {
         case .person(let person):
@@ -160,8 +160,8 @@ extension Program {
         }
     }
 
-
-    func evaluateGedcomNodeOpt(_ expr: ParsedExpr, errMsg: String) async throws -> GedcomNode? {
+    /// Evaluate an expression for an optional gedcom node; throw error if not a node or null.
+    func evalGedcomNodeOpt(_ expr: ParsedExpr, errMsg: String) async throws -> GedcomNode? {
 
         switch try await evaluate(expr) {
         case .gnode(let gnode):

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 27 June 2026.
+//  Last changed on 3 July 2026.
 //
 
 import Foundation
@@ -23,7 +23,7 @@ extension Program {
     /// addtoset(PersonSet, Person, Any) -> Void
     func bltinAddToSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let personSet = try await evalPersonSet(args[0], errMsg: "addtoset: 1st arg must be a personset")
-        let person = try await evaluatePerson(args[1], errMsg: "addtoset: 2nd arg must be a person")
+        let person = try await evalPerson(args[1], errMsg: "addtoset: 2nd arg must be a person")
         var any = ProgramValue.null
         if args.count == 3 {
             any = try await evaluate(args[2])
@@ -38,7 +38,7 @@ extension Program {
     func bltinDeleteFromSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let set = try await evalPersonSet(args[0], errMsg: "deletefromset: 1st arg must be a personset")
-        let person = try await evaluatePerson(args[1], errMsg: "deletefromset: 2nd arg must be a person")
+        let person = try await evalPerson(args[1], errMsg: "deletefromset: 2nd arg must be a person")
         set.remove(key: person.key)
         return .null
     }

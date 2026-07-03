@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 29 June 2026.
+//  Last changed on 3 July 2026.
 //
 
 import Foundation
@@ -15,7 +15,7 @@ extension Program {
     /// name(person)
     func bltinName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let value = try await evaluatePersonOpt(args[0], errMsg: "name: arg must be a person")
+        let value = try await evalPersonOpt(args[0], errMsg: "name: arg must be a person")
         if let person = value {
             return .string(person.displayName(upSurname: false, surnameFirst: false, limit: 0))
         }
@@ -26,7 +26,7 @@ extension Program {
     /// fullname(person, bool, bool, int) -> string
     func bltinFullName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0],
+        guard let person = try await evalPersonOpt(args[0],
                                                        errMsg: "fullname: 1st arg must be a person") else {
             return .null
         }
@@ -46,7 +46,7 @@ extension Program {
     /// Returns a person's surname as found on the first 1 NAME line in the record.
     func bltinSurname(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0],
+        guard let person = try await evalPersonOpt(args[0],
                                                        errMsg: "surname: arg must be a person") else {
             return .null
         }
@@ -61,7 +61,7 @@ extension Program {
     /// parts are return in a .list.
     func bltinGivens(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0], errMsg: "givens: arg must be a person")
+        guard let person = try await evalPersonOpt(args[0], errMsg: "givens: arg must be a person")
         else { return .list(List()) }
         
         guard let name = person.kidVal(forTag: "NAME"), let gedcomName = GedcomName(string: name)
@@ -80,7 +80,7 @@ extension Program {
     /// TODO: SHOULDN'T THIS HAVE A SECOND PARAMETER TO SET THE TRIM LENGTH?
     func builtinTrimName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0],
+        guard let person = try await evalPersonOpt(args[0],
                                                        errMsg: "trimName: arg must be a person") else {
             return .null
         }
@@ -95,7 +95,7 @@ extension Program {
     /// nextsibling(person) -> .person or .null
     func builtinNextSibling(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0],
+        guard let person = try await evalPersonOpt(args[0],
                                                        errMsg: "nextsib: arg must be a person") else {
             return .null
         }
@@ -109,7 +109,7 @@ extension Program {
     /// Return the previous sibling of a person.
     func builtinPrevSibling(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0],
+        guard let person = try await evalPersonOpt(args[0],
                                                        errMsg: "prevsib: arg must be a person") else {
             return .null
         }
@@ -123,7 +123,7 @@ extension Program {
     /// Return the first father of a person.
     func bltinFather(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let person = try await evaluatePersonOpt(args[0], errMsg: "father: arg must be a person")
+        let person = try await evalPersonOpt(args[0], errMsg: "father: arg must be a person")
         guard let father = person?.father(in: self.recordIndex) else {
             return .null
         }
@@ -133,7 +133,7 @@ extension Program {
     /// Return the first mother of a person.
     func bltinMother(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let person = try await evaluatePersonOpt(args[0], errMsg: "mother: arg must be a person")
+        let person = try await evalPersonOpt(args[0], errMsg: "mother: arg must be a person")
         guard let mother = person?.mother(in: self.recordIndex) else {
             return .null
         }
@@ -186,7 +186,7 @@ extension Program {
     /// Return true if a person is male.
     func bltinMale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0],
+        guard let person = try await evalPersonOpt(args[0],
                                                        errMsg: "male: arg must be a person") else { return .null }
         return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
@@ -194,7 +194,7 @@ extension Program {
     /// Return true if a person is female.
     func bltinFemale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let person = try await evaluatePersonOpt(args[0],
+        guard let person = try await evalPersonOpt(args[0],
                                                        errMsg: "female: arg must be a person") else { return .null }
         return person.isFemale ? ProgramValue.trueProgramValue
         : ProgramValue.falseProgramValue

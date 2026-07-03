@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed 20 May 2026.
+//  Last changed 3 July 2026.
 //
 //  This file has the builtin functions for add, sub, mul, div, mod, neg,
 //  eq, ne, lt, le, gt, ge, and, or, not, incr, decr.
@@ -218,7 +218,7 @@ extension Program {
 extension Program {
     func bltinOrd(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let n = try await evaluateInteger(args[0], errMsg: "ord: arg must be an integer")
+        let n = try await evalInteger(args[0], errMsg: "ord: arg must be an integer")
         let words = [
             "first", "second", "third", "fourth",
             "fifth", "sixth", "seventh", "eighth",
@@ -251,7 +251,7 @@ extension Program {
     /// Convert 0...20 to English cardinal words; otherwise fall back to d(INT).
     func bltinCard(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let n = try await evaluateInteger(args[0], errMsg: "card: arg must be an integer")
+        let n = try await evalInteger(args[0], errMsg: "card: arg must be an integer")
         let cardinals = [
             "zero", "one", "two", "three", "four", "five",
             "six", "seven", "eight", "nine", "ten",
@@ -272,7 +272,7 @@ extension Program {
     /// or less or equal to zero fall back to d(INT).
     func bltinRoman(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let n = try await evaluateInteger(args[0], errMsg: "roman: arg must be an integer")
+        let n = try await evalInteger(args[0], errMsg: "roman: arg must be an integer")
         if n > 3999 || n <= 0 { return try await bltinD(args) }
 
         var num = Int(n)
