@@ -255,10 +255,8 @@ removelast(.list)    -> .any        Remove the last ...
 
 Notes:
 1. append, prepend, push, and enqueue return .null. They only cause side-effects.
-2, pop, dequeue, removefirst and removelast remove and return values from a list. They return .null if the list is empty.
-3. A pair is implemented as a two-element list; this is a convenience; users should not
-assume this implementation.
-4, Therefore, .pair should probably be added a new "official" type in the language.
+2. pop, dequeue, removefirst and removelast remove and return values from a list. They return .null if the list is empty.
+3. Pair is now implemented as a two-element list; users should not rely on this implementation.
 
 =====================================================================================
 Table Operations
@@ -302,7 +300,7 @@ Notes:
     ...                   /* code that creates, s, a set of person set elements. */
     set(t, spouseset(s))  /* t generally does not contain elements from s unless s has persons who are their own spouses). */
     set(t, spouseset(t))  /* t must contain all elements from s and likely many more (t contains all spouses of spouses of s, which includes all of s. */
-3. Elements of person sets have an optional .any "value" property. It can be any program value. Algorithms can take advantage of this extra property in any way that works. The value can only be assigned when a person is explicilty added to a set. The set operations do not have a way to compute new values for the elements that get added to the result sets (the DeadEnds programming language does not have any real features for functional programming)
+3. Elements of person sets have an optional .any "value" property. It can be any program value. Algorithms can take advantage of this extra property in any way that works. The value can only be assigned when a person is explicilty added to a set. The set operations do not have a way to compute new values for the elements that get added to the result sets.
 4. It may be useful to add a valuesort function.
 
                        // String operations.
@@ -317,7 +315,7 @@ showstack() -> .stribng           Shows the full run time stack.
 valueof(.any) -> .string          Evaluates the argument and shows its type and value.
 
 Notes:
-1. When procs and funcs are called, their args are evaluated in the caller's frame. A new frame is made for the called module, and the arg values are assigned to the params there. The new frame is added to the stack, and the called module runs. Identifiers defined in the called module are stored in its frame. When a module returns its frame dissappears and the calling module continues.
+1. When modules are called, their args are evaluated in the caller's frame. A new frame is made for the called module, and the arg values are assigned to the params there. The new frame is added to the stack, and the called module runs. Identifiers defined in the called module are stored in its frame. When a module returns its frame dissappears and the calling module continues.
 2. Meta operations let you inspect the local frame (showframe), the entire run time stack (all frames plus the global table) or the value and type of any expression.
 
 ====================================================================================
@@ -335,9 +333,9 @@ Notes:
 Built-ins that extract information from strings.
 ===========================================================================
 
-            // Extract built-ins.
-            "extractname": Builtin(min: 4, max: 4) { try await self.bltinExtractName($0)},
-        ]
+extractname(.gedcomnode, .list, .integer, .integer) -> .null  Extract a GedcomName
+extractdate ----------TBD
+extractplace ---------TBD
 
 ============================================================================
 Lists of Lists, Tables of Tables
@@ -347,4 +345,4 @@ Lists and Tables are reference ProgramValues. This simplifies internal operation
 
 There is no requirement that the elements in a .list or the values in a .table have the same type. Each element or value must have a type, but that happens automatically.
 
-Of course, if you go crazy with "intersting" structures, and structure with mixed types, you will deserve the problems they cause.
+Of course, if you go crazy with "intersting" structures, using structure with mixed types, you will deserve the problems they cause.

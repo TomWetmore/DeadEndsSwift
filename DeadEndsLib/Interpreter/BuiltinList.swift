@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 3 July 2026.
+//  Last changed on 4 July 2026.
 //
 
 import Foundation
@@ -52,17 +52,19 @@ extension Program {
         case .list(let list):
             list.clear()
             assignToSymbol(name, value: .list(list))
+            return .list(list)
         case .table(let table):
             table.clear()
             assignToSymbol(name, value: .table(table))
+            return .table(table)
         case .personset(let personset):
             personset.clear()
             assignToSymbol(name, value: .personset(personset))
+            return .personset(personset)
         default:
             throw RuntimeError("clear: arg must be a list, table, or personset variable",
                 line: args[0].line)
         }
-        return .null
     }
 
     /// Return the length of a list, table, person set or string.
@@ -90,7 +92,7 @@ extension Program {
         guard let list = try await evaluateListOpt(args[0], errMsg: "append: 1st arg must be a list")
         else { return .null }
         await list.append(try evaluate(args[1]))
-        return .null
+        return .list(list)
     }
 
     /// Prepend a value to a list.
@@ -99,7 +101,7 @@ extension Program {
         guard let list = try await evaluateListOpt(args[0], errMsg: "prepend: 1st arg must be a list")
         else { return .null }
         await list.prepend(try evaluate(args[1]))
-        return .null
+        return .list(list)
     }
 
     /// Remove the first value from a list.
@@ -327,6 +329,19 @@ extension Program {
     }
 }
 
+extension Program {
+
+    func bltinShallowCopy(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        guard let list = try await evaluateListOpt(
+            args[0],
+            errMsg: "copy: arg must be a list"
+        ) else {
+            return .list(List())
+        }
+        return .list(list.copy())
+    }
+}
+
 /// Structure that holds the programming language's list values. These are the
 /// enumerated .list elements that have an array of program values for their
 /// associated types.
@@ -390,6 +405,11 @@ public class List {
     /// Remove all program values from a list.
     func clear() {
         values.removeAll(keepingCapacity: false)
+    }
+
+    /// Returns a shallow copy of a list.
+    public func copy() -> List {
+        List(values)
     }
 
     /// Simple subscript operation for a list.

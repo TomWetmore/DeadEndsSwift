@@ -1,0 +1,43 @@
+/* Show a list of a person and all their descendants, prefixed
+   by their Henry numbers.
+
+   VERSION USING A PERSONSET
+
+   Written by Tom Wetmore on 4 July 2026.
+   Last changed on 4 July 2026. */   
+
+
+proc main () {
+    set(root, getperson("enter person 1 for the henry listing"))
+    set(set, gethenryset(root))
+    foreach(set, person, code, n) {
+        call showperson(person, code)
+    }
+}
+
+proc showperson(person, code) {
+    foreach(code, number, n) { d(number) " " }
+    name(person) nl()
+}
+
+/* This function and the following procedure provide a "library service" for
+   generating a list of persons in Henry order with their Henry numbers
+   computed. */
+func gethenryset(person) {
+    set(code, list())  /* Henry codes are lists of integers */
+    append(code, 1) /* First code is a single 1 */
+    set(set, personset()) /* Persons in order with Henry codes */
+    addtoset(set, person, code) /* Init list with top person */
+
+    call addhenrychildren(set, person, code) /* Add top's children */
+    return(set) /* Return the full Henry set with codes */
+}
+
+proc addhenrychildren(set, person, code) {
+    foreach(children(person), child, n) { /* For each child of arg person */
+        set(childcode, append(shallowcopy(code), n)) /* Create its Henry code */
+        addtoset(set, child, childcode) /* Add child and its code to the set */
+        call addhenrychildren(set, child, childcode)
+    }
+}
+

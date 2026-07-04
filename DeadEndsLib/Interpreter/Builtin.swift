@@ -116,6 +116,9 @@ extension Program {
             "pop":     Builtin(min: 1, max: 1) { try await self.bltinRemoveLast($0)},
             "enqueue": Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
             "dequeue": Builtin(min: 1, max: 1) { try await self.bltinRemoveFirst($0)},
+            "removefirst": Builtin(min: 1, max: 1) { try await self.bltinRemoveFirst($0)},
+            "removelast": Builtin(min: 1, max: 1) { try await self.bltinRemoveLast($0)},
+            "shallowcopy": Builtin(min: 1, max: 1) { try await self.bltinShallowCopy($0)},
 
             // Tuple shorthands for lists.
             "pair":   Builtin(min: 2, max: 2) { try await self.bltinPair($0)},
