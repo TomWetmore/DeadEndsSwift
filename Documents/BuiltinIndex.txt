@@ -1,46 +1,48 @@
 These are the built-in functions of the DeadEnds programming language.
 
-The args to built-ins are ParsedExprs. These are tree structures built when the program is parsed. They are static and persistent structures holding the program's expressions. When programs are run the args are evaluated in the current context -- those values are transient ProgramValue object that hold the expressions' run time values.
+The arguments to the built-in functions are ParsedExprs. These are tree structures that are created when the program is parsed. They are static and persistent that hold arguments' expressions exactly as they are found in the source. When programs are interpreted the arguments are evaluated in the context of the running program. They evaluate to ProgramValue objects that represent the run-time value of the expression; they are transient objects that disappear as soon as its value is used.
 
-Args are usually evaluated to ProgramValues as the first step in running a built-in. In a few cases, however, where L-values are needed, an arg is a ParsedExpr .identifier that is not evaluated. The best example is the assignment built-in, "set(identifier, .any)". The identifier must be an .identifier ParsedExpr; it is not evaluated; the identifier is the name of the variable (L-value) that is assigned a new value. The second arg is evaluated and that value is assigned to the identifier.
+There is an exception. In a few cases identifier expressions for L-values ("names" of variables) are needed. One of the arguments will be a ParsedExpr identifier value (one of five types of ParsedExpr) that is not evaluated. In these cases the identifier names a variable in the program.
 
-The DeadEnds language is strongly typed. Every ProgramValue has an explicit type. The types and their associated values are:
+A good example is the assignment built-in, "set(identifier, any)". This built-in evaluates the second argument, which can be any ParsedExpr, to gets its ProgramValue. The first argument must be an identifier ParsedExpr; it is not evaluated because its value is not needed. The identifier itself is needed. The set built-in uses the identifier as a variable and assigns the value of the expression to it in the symbol table. If the variable is already in the symbol table its current value is changed. If the variable is not in the symbol table it is added with the expression value.
 
-.null                -- an explicit null value; no associated value.
-.integer(Int)        -- an integer constant; the associated Int is its value.
-.double(Double)      -- a double constant; the associated Double is its value.
-.boolean(Bool)       -- a boolean constant; the associated Bool is its value.
-.string(String)      -- a string constant; the associated String is its value.
-.gnode(GedcomNode)   -- a Gedcom node; the assoicated GedcomNode (reference semantics) is its value.
-.person(Person)      -- a Person; the associated Person structure (value semantics) is its value.
-.family(Family)      -- a Family; the associated Family structure (value semantics) is its value.
-.source(Source)      -- future
-.list(List)          -- a List of ProgramValues (reference semantics)
-.table(ProgramTable) -- a Dictionary of String to ProgramValue mappings (reference semantics).
-.personset(PersonSet<ProgramValue>) -- A set of ...
-.traverse(GedcomNode)
-.allPersons          -- all Persons in the database
-.allFamilies         -- all Families in the database.
+In most cases, however, ParsedExpr identifiers are the names of variables whose values are used in the evaluation. Then the identifier is be evaluated like any other expresssion, its value taken from the variable in the symbol table.
 
-The type .any is used in the tables below. There is no .any type -- it signifies arguments that can be of any type.
+The DeadEnds language is strongly typed. Every ProgramValue has an explicit type, and the type is kept as part of the value. See the valueof() built-in -- You can use it to inspect the type and value of any ProgramValue.
+
+The types and their associated values are:
+
+null                -- an explicit null value and type
+integer(Int)        -- an integer constant; the associated Int is its value
+double(Double)      -- a double constant; the associated Double is its value
+boolean(Bool)       -- a boolean constant; the associated Bool is its value
+string(String)      -- a string constant; the associated String is its value
+gnode(GedcomNode)   -- a Gedcom node; the assoicated GedcomNode (reference semantics) is its value
+person(Person)      -- a Person; the associated Person structure (value semantics) is its value
+family(Family)      -- a Family; the associated Family structure (value semantics) is its value
+source(Source)      -- future
+list(List)          -- a List of ProgramValues (reference semantics)
+table(ProgramTable) -- a Dictionary of String to ProgramValue mappings (reference semantics)
+personset(PersonSet<ProgramValue>) -- A set of person set elements
+traverse(GedcomNode)
+allPersons          -- all Persons in the database
+allFamilies         -- all Families in the database.
+
+The type "any" is used in the tables below. There is no "any" type; it signifies that an argument can be of any type.
 
 Identifiers (variables in symbol tables) are not strongly typed. An identifier's type is that of the last ProgramValue assigned to it.
-
-Built-in args are parsed as ParsedExpr values. Unless noted, a built-in evaluates its args into ProgramValues and checks their runtime types, throwing run time errors if there are type problems.
-
-The Program Value types shown in the tables below are the required ProgramValue types after evaluation.
-
-Some built-ins require L-values. In those cases an arg must be an identifier ParsedExpr that is not evaluated. Examples include set(), incr(), decr(), and some extract built-ins.
 
 =========================================================
 Null Forwarding and Returning Empty Lists.
 =========================================================
 
-Many built-ins use null-forwarding. Null forwarding happens when a built-in has a .null argument instead of an expected type, and it then returns .null. It refers to a built-in returning .null if either a .null is used as an argument, or the information requested is not available. For example the father() function takes a person and returns the person's father. If the person does not have a father the function returns .null. Also, if .null is passed in to father(), then father() returns .null. This allows built-ins to be chained together without extra code that checks for .nulls.
+Many built-ins use null-forwarding. Null fowarding happens when a built-in returns a null value instead of the normal type expected. This can happen in two ways.
 
-We can see two types of null forwarding. A built-in starts null forwarding when it can't find information in the database so it returns a .null instead. A built-in continues null forwarding when it takes .null as an input arg and passes that .null along by returning it.
+First, if the built-in cannot find the information requested it will return null instead. This is how null forwarding starts. Second, if a null is passed into a built-in, the built-in may pass (forward) the null along
 
-Consider this program that shows both types of forwarding.
+ A good example is the father() function which is defined below as: "father(person|null) -> person|null". The function takes a person and returns the person's father. If the person does not have a father the function returns null. Also, if null is passed to father(), then father() returns null. This allows built-ins to be chained together without extra code that checks for nulls.
+
+Consider this program that shows both types.
 
 proc main () {
     set(p, getperson("enter a person"))
@@ -61,82 +63,64 @@ This asks for a person and then tries to print the person's name and the names o
 5
 6
 
-Her paternal great great grandfather and beyond are not known. On the fifth call to name(), father() is called on Frank Grenda, but it returns .null because Frank's father is not in the database. On the sixth call father() is called with a .null argument and returns .null. Null forwarding is almost always the right thing to do, and it can greatly simplify program structure.
+Her paternal great great grandfather and beyond are not known. On the fifth call to name(), father() is called on Frank Grenda, but it returns null because Frank's father is not in the database. On the sixth call father() is called with a null argument and returns null. Null forwarding is almost always the right thing to do; it can greatly simplify program structure.
 
-Some built-ins return lists. For example, children() can be applied to a person or a family and returns the children of that entity. If the person or family exists but has no children, children() returns an empty list. If the argument itself is .null, children() also returns an empty list. Returning an empty list in this case is a deliberate form of null forwarding for sequence-valued built-ins. The alternative would be to return .null, but empty lists are usually more useful because they work naturally with foreach(), length(), and other list operations.
+Some built-ins return lists. For example, "children(person|family) -> list(person)" can be applied to a person or a family and returns the children of that entity. If the person or family exists but has no children, it returns an empty list. If the argument itself is null, it also returns an empty list. Returning an empty list in this case is a form of null forwarding for sequence-valued built-ins. The alternative is to return null, but empty lists are usually more useful because they work naturally with foreach(), length(), and other list operations.
 
 Summary
-
-• Built-in arguments are ParsedExpr objects. Unless otherwise noted, they
-  are evaluated to ProgramValues before the built-in operates on them.
-
-• Types shown in this reference are the required ProgramValue types after
-  evaluation.
-
-• .any denotes any ProgramValue. It is documentation shorthand, not an
-  actual ProgramValue type.
-
-• Sequence-valued built-ins return empty lists when there are no results.
-  Scalar-valued built-ins generally propagate null.
 
 • Lists, Tables, and PersonSets have reference semantics. Mutating a
   structure changes the original object; there is no need to assign it
   back to a variable that references it.
 
-• Some built-ins require an L-value. Their argument must be an identifier
-  ParsedExpr and is not evaluated.
+=======================
+MISC Built-ins
+=======================
 
-Sequence-returning built-ins generally return empty lists, not null, when
-there are no results.
-
-.list(.person) means a List whose elements are ProgramValue.person values.
-.list(.any) means a List whose elements may be any ProgramValue values.
-
-
-d(.integer)            -> .string      Convert an integer to a string.
-nl()                   -> .string      Return new line character.
-set(.identifier, .any) -> .null        Assign value of expression to variable.
-ord(.integer)          -> .string      Return ordinal form of a number as a string.
-card(.integer)         -> .string      Return the cardinal form of a number as a string.
-roman(.integer)        -> .string      Return the Roman form of a number as a string.
-null()                 -> .null        Return the .null program value.
+d(.integer)          -> string      Convert an integer to a string.
+nl()                 -> string      Return new line character.
+set(identifier, any) -> null        Assign value of expression to variable.
+ord(integer)         -> string      Return ordinal form of a number as a string.
+card(integer)        -> string      Return the cardinal form of a number as a string.
+roman(integer)       -> string      Return the Roman form of a number as a string.
+null()               -> null        Return the .null program value.
 
 ===============================================================================
 Arithmetic Operators
 ===============================================================================
 
-add(.integer|.double|.string, .integer|.double|.string) -> .integer|.double|.string
-sub(.integer|.double, .integer|.double) -> .integer|.double
-mul(.integer|.double, .integer|.double) -> .integer|.double
-div(.integer|.double, .integer|.double) -> .integer|.double
-mod(.integer, .integer)                 -> .integer
-neg(.integer|.double)                   -> .integer|.double
+add(integer|double|string, integer|double|string) -> integer|double|string
+sub(integer|double, integer|double) -> integer|double
+mul(integer|double, integer|double) -> integer|double
+div(integer|double, integer|double) -> integer|double
+mod(integer, integer)               -> integer
+neg(integer|double)                 -> integer|double
 
 Notes:
-1. The current implementation require the argument types to match. For example, sub must be given either two integers or two doubles, but one of each. This should be rethought because there are no current built-ins that coerce program values.
+1. The argument types must match. For example, sub must be given either two integers or two doubles, not one of each. This should be rethought because there are no current built-ins to coerce program values.
 2. In LifeLines add and mul could have one to 32 arguments (like add and or currently allow). Maybe add and mul should be changed to match the LifeLines approach.
 
 ===========================================================================================
 Increment and Decrement -- increment and decrement integers.
 ===========================================================================================
 
-incr(.identifier) -> .integer -- .identifier must have an .integer value
-decr(.identifier) -> .integer -- .identifier must have an .integer value
+incr(identifier) -> integer -- identifier must have an integer value
+decr(identifier) -> integer -- identifier must have an integer value
 
 Notes:
-1. The arg is not evaluated, so .identifier means the ParsedExpr type, not the ProgramValue type. The arg must be an identifier ParseExpr.
-2. The identifier must already be in a symbol table (it can be local or global) with an .integer value.
+1. The arg is not evaluated, so identifier means the ParsedExpr type, not the ProgramValue type. The arg must be an identifier ParseExpr.
+2. The identifier must already be in a symbol table (it can be local or global) with an integer value.
 
 ===========================================================================
 Comparison Operators
 ============================================================================
 
-eq(.any, .any) -> .bool           Returns whether two values are equal based on ProgramValue.==.
-ne(.any, .any) -> .bool           Returns whether two values are not equal based on ProgramValue.==.
-lt(.any, .any) -> .bool | .null   Returns whether the first arg is less than the second.
-le(.any, .any) -> .bool | .null   Returns whether the first arg is less than or equal the second.
-gt(.any, .any) -> .bool | .null   Returns whether the first arg is greater than the second.
-ge(.any, .any) -> .bool | .null   Returns whether the first arg is greater than or equal the second.
+eq(any, any) -> bool        Returns whether two values are equal based on ProgramValue.==.
+ne(any, any) -> bool        Returns whether two values are not equal based on ProgramValue.==.
+lt(any, any) -> bool|null   Returns whether the first arg is less than the second.
+le(any, any) -> bool|null   Returns whether the first arg is less than or equal the second.
+gt(any, any) -> bool|null   Returns whether the first arg is greater than the second.
+ge(any, any) -> bool|null   Returns whether the first arg is greater than or equal the second.
 
 Notes.
 1. eq and ne use ProgramValue's == operator. It is only as good as that operator.
@@ -146,9 +130,9 @@ Notes.
 Logical Operators
 =========================================================================
 
-and(.any [, .any]...) -> .bool     Return the result of and'ing up to 32 boolean values.
-or (.any [, .any]...) -> .bool     Return the result of or'ing up to 32 boolean values.
-not(.any)             -> .bool     Return the not of a boolean value.
+and(any [, any]...) -> bool     Return the result of and'ing up to 32 boolean values.
+or (any [, any]...) -> bool     Return the result of or'ing up to 32 boolean values.
+not(any)            -> bool     Return the not of a boolean value.
 
 Notes:
 1. and and or can have 1 to 32 arguments. Short circuiting is used for both, so args that do not need to be evaluated are not. The args can be .any because there is a toBool function that coerces any ProgramValue to boolean. However the toBool function is still primitive.
@@ -159,18 +143,18 @@ the other two.
 GedcomNode properties and operations.are null-forwarding.
 ========================================================================================
 
-key (.person | .family | .node | .null ) -> .string | .null    Return key of record or node
-tag (.node | .null) -> .string                                 Return tag of node
-val (.node | .null) -> .string | .null                         Return value of node
-lev (.node | .null) -> .integer                                Return level of node
-kid (.node | .null) -> .node | .null                           Return first child of node
-sib (.node | .null) -> .node | .null                           Return next sibling of node
-kids(.node | .null) -> .list(.node)                            Return all children of a node
-sibs(.node | .null) -> .list(.node)                            Return all siblings of a node
-dad (.node | .null) -> .node | .null                           Return parent node of node
-root(.person | .family | .null) -> .node | .null               Return the root node of a record
-kidwithtag(.node | .null, string) -> .node | .null             Return the first child of a node with given tag
-kidswithtag(.node | .null, .string) -> .list(.node)            Return list of children with given tag
+key (person|family|node|null) -> string|null    Return key of record or node
+tag (node|null) -> string|null                  Return tag of node
+val (node|null) -> string|null                  Return value of node
+lev (node|null) -> integer                      Return level of node
+kid (node|null) -> node|null                    Return first child of node
+sib (node|null) -> node|null                    Return next sibling of node
+kids(node|null) -> list(node)                   Return all children of a node
+sibs(node|null) -> list(node)                   Return all siblings of a node
+dad (node|null) -> node|null                    Return parent node of node
+root(person|family|null) -> node|null           Return the root node of a record
+kidwithtag(node|null, string) -> node|null      Return the first child of a node with given tag
+kidswithtag(node|null, string) -> list(node)    Return list of children with given tag
 
 Notes:
 1. These built-ins are all null forwarding. Most forward .null directly. The three (kids, sibs, kidswithtag) list returning built-ins return empty lists as their form of null forwarding.

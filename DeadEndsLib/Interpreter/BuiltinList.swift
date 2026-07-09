@@ -305,27 +305,28 @@ extension Program {
 /// Tuple support.
 extension Program {
 
+    /// Built-in that creates a pair ProgramValue
     func bltinPair(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let car = try await evaluate(args[0])
-        let cdr = try await evaluate(args[1])
-        let pair = List()
-        pair.append(car)
-        pair.append(cdr)
-        return .list(pair)
+
+        let first = try await evaluate(args[0])
+        let second = try await evaluate(args[1])
+        return .pair(Pair(first, second))
     }
 
+    /// Built-in that returns the first component of a pair.
     func bltinFirst(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        guard case let .list(list) = try await evaluate(args[0]), list.count == 2 else {
-            throw RuntimeError("first: arg must be a list of two elements", line: args[0].line)
+        guard case let .pair(pair) = try await evaluate(args[0]) else {
+            throw RuntimeError("first: arg must be a pair", line: args[0].line)
         }
-        return list[0]
+        return pair.first
     }
 
+    /// Built-in that returns the second component of a pair.
     func bltinSecond(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        guard case let .list(list) = try await evaluate(args[0]), list.count == 2 else {
-            throw RuntimeError("second: arg must be a list of two elements", line: args[0].line)
+        guard case let .pair(pair) = try await evaluate(args[0]) else {
+            throw RuntimeError("second: arg must be pair", line: args[0].line)
         }
-        return list[1]
+        return pair.second
     }
 }
 

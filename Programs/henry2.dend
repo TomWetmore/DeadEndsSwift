@@ -20,7 +20,7 @@ proc showperson(person, code) {
     name(person) nl()
 }
 
-/* This function and the following procedure provide a "library service" for
+/* This func and the following proc provide a "library service" for
    generating a list of persons in Henry order with their Henry numbers
    computed. */
 func gethenryset(person) {
@@ -34,9 +34,9 @@ func gethenryset(person) {
 }
 
 proc addhenrychildren(set, person, code) {
-    foreach(children(person), child, n) { /* For each child of arg person */
+    foreach(children(person), child, n) {
         set(childcode, append(shallowcopy(code), n)) /* Create its Henry code */
-        addtoset(set, child, childcode) /* Add child and its code to the set */
+        addtoset(set, child, childcode)
         call addhenrychildren(set, child, childcode)
     }
 }

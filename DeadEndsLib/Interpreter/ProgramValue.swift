@@ -31,7 +31,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     case traverse(GedcomNode)
     case allPersons
     case allFamilies
-    //case pair(ProgramValue, ProgramValue) -- in case pair becomes a separate type
+    case pair(Pair)
 
     /// Description of a program value.
     var description: String {
@@ -66,6 +66,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         case .traverse(_): return "traverse"
         case .allPersons: return "allPersons"
         case .allFamilies: return "allFamilies"
+        case .pair: return "pair"
         }
     }
 
@@ -101,6 +102,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
             } else {
                 return "[" + parts.joined(separator: ", ") + "]"
             }
+        case .pair(let pair) : return "(\(pair.first.displayValue), \(pair.second.displayValue))"
         }
     }
 
