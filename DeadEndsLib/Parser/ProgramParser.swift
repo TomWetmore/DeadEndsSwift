@@ -144,6 +144,54 @@ struct IdentifierListOptionalParser: Parser {
     }
 }
 
+// Addition heading for the refactoring to include include.
 
 
+//func parseFullProgram(fileName: String) throws -> ParsedProgram {
+//
+//    var pendingFiles: [String] = [fileName]
+//    var nextFileIndex = 0
+//
+//    var defns: [ParsedDefn] = []
+//
+//    while nextFileIndex < pendingFiles.count {
+//        let nextFile = pendingFiles[nextFileIndex]
+//        nextFileIndex += 1
+//
+//        let fileDefns = try parseFile(fileName: nextFile)
+//        defns.append(contentsOf: fileDefns)
+//    }
+//
+//    return ParsedProgram(defns: defns)
+//}
 
+// Starting the refactoring needed to move to the include feature.
+
+func parseFile(source: String) throws -> ParsedProgram {
+
+    let normalized = normalizedSource(source)  // Temporary quote hack.
+    var lexer = Lexer(source: normalized)
+    let tokens = lexer.tokenize()
+    guard tokens.last?.kind == .eof else {
+        throw FrontEndError.missingEOF
+    }
+    var input = tokens[...]
+    let program = try ProgramParser().parse(&input)
+
+    if input.first?.kind == .eof {
+        input.removeFirst()
+    }
+    guard input.isEmpty else {
+        throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
+    }
+    return program
+}
+
+/// Required because TextEditor uses smart quotes that are hard to turn off.
+public func normalizedSource(_ text: String) -> String {
+    text
+        .replacingOccurrences(of: "“", with: "\"")
+        .replacingOccurrences(of: "”", with: "\"")
+        .replacingOccurrences(of: "‘", with: "'")
+        .replacingOccurrences(of: "’", with: "'")
+}

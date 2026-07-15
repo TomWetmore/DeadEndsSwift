@@ -3,14 +3,8 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 9 May 2026.
+//  Last changed on 10 July 2026.
 //
-
-/// The parsed structs and enums make up the abstract syntax tree of
-/// a DeadEnds program. They are value types so the syntax tree fully
-/// formed value object with no pointers. As abstract syntax trees
-/// these parsed objects are never changed. They represent the static
-/// program, not its execution.
 
 import Foundation
 

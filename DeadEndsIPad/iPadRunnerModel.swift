@@ -192,14 +192,7 @@ struct Diagnostic: Identifiable {
     public let line: Int?
 }
 
-/// Required because TextEditor uses smart quotes that are hard to turn off.
-func normalizedSource(_ text: String) -> String {
-    text
-        .replacingOccurrences(of: "“", with: "\"")
-        .replacingOccurrences(of: "”", with: "\"")
-        .replacingOccurrences(of: "‘", with: "'")
-        .replacingOccurrences(of: "’", with: "'")
-}
+
 
 /// Copied from ProgramModel.
 func convertFrontEndError(_ error: FrontEndError) -> Diagnostic {
