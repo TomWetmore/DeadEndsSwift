@@ -1,6 +1,7 @@
+
 proc main ()
 {
-    set(indi, indi("@I1"))
+    set(indi, person("@I1"))
     set(ilist, list())
     set(alist, list())
     set(table, table())

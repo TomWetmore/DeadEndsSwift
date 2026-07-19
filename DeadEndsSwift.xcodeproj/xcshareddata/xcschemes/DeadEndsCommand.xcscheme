@@ -58,7 +58,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/ttw4/Desktop/DeadEndsSwift/Programs/ahnen.dend"
+            argument = "/Users/ttw4/Desktop/DeadEndsSwift/Programs/hello.dend"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

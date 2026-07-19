@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 8 May 2026.
+//  Last changed on 19 July 2026.
 //
 
 import Foundation
@@ -18,9 +18,6 @@ public struct Lexer {
     public init(source: String) {
         self.source = source
         self.index = source.startIndex
-//        for c in source {
-//            print(c, c.unicodeScalars.first!.value)
-//        }
     }
 }
 
@@ -233,7 +230,7 @@ extension Lexer {
 }
 
 /// Enumeration for kinds of tokens.
-public enum TokenKind: Equatable {
+public enum TokenKind: Equatable, Sendable {
 
     case identifier(String)
     case intConst(Int)
@@ -263,7 +260,7 @@ public enum TokenKind: Equatable {
 }
 
 /// Implement equatable for tokens.
-public struct Token: Equatable {
+public struct Token: Equatable, Sendable {
     public let kind: TokenKind
     public let line: Int
 }

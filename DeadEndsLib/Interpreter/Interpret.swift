@@ -9,7 +9,7 @@
 import Foundation
 
 /// Result values from interpreter methods.
-public enum InterpResult {
+public enum InterpResult: Sendable {
 
     case okay  // Normal end.
     case returning(ProgramValue?)  // Return statement end.
