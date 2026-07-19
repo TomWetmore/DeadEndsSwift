@@ -1,0 +1,209 @@
+Package.swift is a Swift program that describes a package to the Swift Package Manager (SPM). A typical package looks like this:
+
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "DeadEndsLib",
+
+    platforms: [
+        .macOS(.v13)
+    ],
+
+    products: [
+        .library(
+            name: "DeadEndsLib",
+            targets: ["DeadEndsLib"]
+        )
+    ],
+
+    dependencies: [
+        .package(url: "https://github.com/pointfreeco/swift-parsing.git",
+                 from: "0.14.0")
+    ],
+
+    targets: [
+        .target(
+            name: "DeadEndsLib",
+            dependencies: [
+                .product(name: "Parsing", package: "swift-parsing")
+            ]
+        ),
+
+        .testTarget(
+            name: "DeadEndsLibTests",
+            dependencies: ["DeadEndsLib"]
+        )
+    ]
+)
+
+
+1. Swift tools version: // swift-tools-version: 6.0
+This tells SwiftPM which version of the package format is used. It does not specify which version of Swift is required. It means: “This manifest uses the features understood by Swift Package Manager 6.0.”
+
+2. Package name: name: "DeadEndsLib"
+Mostly cosmetic. It becomes the package’s identity when imported by another project.
+
+3. Platforms
+platforms: [
+    .macOS(.v13)
+]
+
+This specifies the minimum OS versions the package supports. For libraries this only matters on Apple platforms. Linux ignores it completely.
+
+4. Products
+Products are what the package exports.
+
+Library
+
+.library(
+    name: "DeadEndsLib",
+    targets: ["DeadEndsLib"]
+)
+
+This means: “Build this target into a library.” Another package can then say
+
+import DeadEndsLib
+
+Executable. Instead of
+
+.library(...)
+
+you could write
+
+.executable(
+    name: "deadends"
+)
+
+which produces a command-line program.
+
+5. Dependencies: External packages. For example:
+
+dependencies: [
+    .package(
+        url: "...",
+        from: "0.14.0"
+    )
+]
+
+This says: “Download this package if it isn’t already present.” This does not use the package. It merely makes it available.
+
+6. Targets. Targets are where the actual code lives. A package may contain many targets. For example:
+
+DeadEndsLib
+CLI
+GUI
+Examples
+Tests
+
+could all be separate targets. A library target:
+
+.target(
+    name: "DeadEndsLib",
+    dependencies: [
+        .product(name: "Parsing",
+                 package: "swift-parsing")
+    ]
+)
+
+This means build everything under Sources/DeadEndsLib/ into one module.
+
+Executable target:
+
+.executableTarget(
+    name: "DeadEndsCLI",
+    dependencies: [
+        "DeadEndsLib"
+    ]
+)
+
+means
+
+Sources/
+    DeadEndsCLI/
+        main.swift
+
+gets built as an executable.
+
+Test target:
+
+.testTarget(
+    name: "DeadEndsTests",
+    dependencies: [
+        "DeadEndsLib"
+    ]
+)
+
+Everything under Tests/DeadEndsTests/ becomes unit tests.
+
+7. Resources (optional)
+
+For example
+
+.target(
+    ...
+    resources: [
+        .process("Examples")
+    ]
+)
+
+This bundles files with your package.
+
+Images, sample GEDCOM files, templates, etc.
+
+8. Swift language settings (optional). For example:
+
+swiftSettings: [
+    .enableUpcomingFeature("ExistentialAny")
+]
+
+or
+
+swiftSettings: [
+    .unsafeFlags(["-warnings-as-errors"])
+]
+
+These are compiler options.
+
+9. C compiler settings. Useful when mixing C and Swift.
+
+cSettings: [
+    .headerSearchPath("include")
+]
+
+10. Linker settings. Rarely needed. Example:
+
+linkerSettings: [
+    .linkedFramework("CoreFoundation")
+]
+
+Divide Package.swift into three questions:
+
+1. What am I building? products
+
+2. Where is the code? targets
+
+3. What else do I need? dependencies
+
+Everything else is mostly metadata.
+
+In the case of DeadEnds. The package might end up something like;
+
+Products
+--------
+DeadEndsLib      (library)
+deadends         (CLI executable)
+
+Targets
+-------
+DeadEndsLib
+DeadEndsCLI
+DeadEndsTests
+
+Dependencies
+------------
+swift-parsing
+
+Both the macOS app and the Linux CLI can depend on the same DeadEndsLib target. The app is built by Xcode, while the CLI is built directly by SwiftPM, but both share exactly the same library code. That separation is one of the major strengths of Swift packagesg.
+
+

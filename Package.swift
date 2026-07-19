@@ -4,11 +4,18 @@ import PackageDescription
 
 let package = Package(
     name: "DeadEndsSwift",
+    platforms: [
+        .macOS(.v13)
+    ],
 
     products: [
         .library(
             name: "DeadEndsLib",
             targets: ["DeadEndsLib"]
+        ),
+        .executable(
+            name: "deadends",
+            targets: ["DeadEndsCommand"]
         )
     ],
 
@@ -29,6 +36,14 @@ let package = Package(
                 )
             ],
             path: "DeadEndsLib"
+        ),
+
+        .executableTarget(
+            name: "DeadEndsCommand",
+            dependencies: [
+                "DeadEndsLib"
+            ],
+            path: "DeadEndsCommand"
         )
     ]
 )

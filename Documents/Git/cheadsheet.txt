@@ -1,0 +1,51 @@
+
+
+git branch                         // What branch am I on?
+git status                         // What is my status; what has changed?
+git pull                           // Update from GitHub
+git diff                           // Exactly what has changed?
+git add .                          // Add everything
+git add DeadEndsLib/Parser.swift   // Add a single file
+git commit -m "comment"            // Commit staged files
+git push                           // Push to GitHub
+git log --oneline                  // View history compact
+git log                            // View full history
+git log --oneline -10              // View last few commits
+git restore filename               // Discard edits to a single file
+get diff HEAD                      // Compare with last commit
+git ls-files                       // Show files in the repository
+git remote -v                      // What remote repository
+git version                        // Git version
+
+git config --global --list         // Show global properties
+
+
+
+
+git config --global user.name "User Name"
+git config --global user.email "ttw4@icloud.com"
+git init                      // Init a repository in the current directory
+
+
+GitHub Authentication (Linux)
+
+One-time setup:
+
+    git config --global credential.helper store
+
+First authenticated push:
+
+    git push
+
+When prompted:
+
+    Username: TomWetmore
+    Password: <GitHub Personal Access Token>
+
+Git stores the token in ~/.git-credentials.
+
+When the PAT expires:
+
+    1. Regenerate/create a new PAT on GitHub.
+    2. git push
+    3. Enter the new token when prompted.

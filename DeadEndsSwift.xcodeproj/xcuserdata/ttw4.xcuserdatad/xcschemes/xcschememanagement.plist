@@ -11,6 +11,11 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>DeadEndsCommand.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>10</integer>
+		</dict>
 		<key>DeadEndsIPad.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -24,7 +29,7 @@
 		<key>DeadEndsProgApp.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>8</integer>
+			<integer>7</integer>
 		</dict>
 		<key>DeadEndsSwift.xcscheme_^#shared#^_</key>
 		<dict>
@@ -36,10 +41,15 @@
 			<key>orderHint</key>
 			<integer>4</integer>
 		</dict>
+		<key>Parsing (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>8</integer>
+		</dict>
 		<key>Parsing (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>7</integer>
+			<integer>9</integer>
 		</dict>
 		<key>ParsingTest.xcscheme_^#shared#^_</key>
 		<dict>
@@ -61,6 +71,11 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>2606FA92300A8CBD00C72011</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>26106FA62D7BC6E600994B2C</key>
 		<dict>
 			<key>primary</key>
@@ -106,6 +121,11 @@
 			<key>primary</key>
 			<true/>
 		</dict>
+		<key>26C299E9300AA38800E928A4</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>26CAAD5A2F8014EC002C5B5A</key>
 		<dict>
 			<key>primary</key>
@@ -117,6 +137,16 @@
 			<true/>
 		</dict>
 		<key>26EABDC22F2ACDAF001406E5</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>26ED7EA4300AA4B00059EB1F</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>26ED7EC2300AAACD0059EB1F</key>
 		<dict>
 			<key>primary</key>
 			<true/>
