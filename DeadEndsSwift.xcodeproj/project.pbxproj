@@ -154,6 +154,7 @@
 				Interpreter/ProgramValue.swift,
 				Interpreter/RunProgram.swift,
 				Interpreter/RuntimeFrame.swift,
+				Interpreter/TerminalInterface.swift,
 				Interpreter/UserInterface.swift,
 				NameIndex.swift,
 				Parser/ExpressionParser.swift,

@@ -1,0 +1,49 @@
+
+proc main ()
+{
+set(iii, getinteger("Please enter an integer"))
+    set(indi, person("@I1"))
+    set(ilist, list())
+    set(alist, list())
+    set(table, table())
+    enqueue(ilist, indi)
+    enqueue(alist, 1)
+valueof(indi)
+    while(indi, dequeue(ilist)) {
+        set(ahnen, dequeue(alist))
+
+        set(key, key(indi))
+        set(already, lookup(table, key))
+
+        d(ahnen) “. “ name(indi)
+        if(already) {
+            “ (Same as “ d(already) “)”
+        } else {
+            insert(table, key, ahnen)
+        }
+        nl() call showvitals(indi) nl()
+        if (par, father(indi)) {
+            enqueue(ilist, par)
+            enqueue(alist, mul(2, ahnen))
+        }
+        if (par, mother(indi)) {
+            enqueue(ilist, par)
+            enqueue(alist, add(1, mul(2, ahnen)))
+        }
+    }
+}
+
+proc showvitals(person) {
+    “   “ call dateAndPlace(“b. “, birth(person))
+    “   “ call dateAndPlace(“d. “, death(person))
+}
+
+proc dateAndPlace(head, event) {
+    set(date, date(event))
+    set(place, place(event))
+    if (and(date, place)) { head date “, “ place }
+    elsif (and(date, not(place))) { head date }
+    elsif (and(not(date), place)) { head place }
+    else { head }
+    nl()
+}

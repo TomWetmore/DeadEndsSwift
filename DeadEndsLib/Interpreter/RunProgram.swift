@@ -40,7 +40,8 @@ public enum FrontEndError: Error, CustomStringConvertible {
 /// Run a program encoded in a string.
 @MainActor
 public func runProgram(source: String, database: Database,
-                       output: ProgramOutput) async throws -> InterpResult {
+                       output: ProgramOutput,
+                       interface: UserInterface) async throws -> InterpResult {
 
     let source = normalizedSource(source)
     var lexer = Lexer(source: source)  // Create lexer and get the tokens.
@@ -59,7 +60,7 @@ public func runProgram(source: String, database: Database,
     }
 
     let program = Program(parsedProgram: parsedProgram, database: database,
-                          output: output, userInterface: Patch())
+                          output: output, userInterface: interface)
     return try await program.interpretProgram()
 }
 

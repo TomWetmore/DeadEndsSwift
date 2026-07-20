@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 29 June 2026.
+//  Last changed on 20 July 2026.
 //
 
 import Foundation
@@ -172,7 +172,8 @@ extension Program {
     func bltinD(_ args: [ParsedExpr]) async throws -> ProgramValue {
         let value = try await self.evaluate(args[0])
         guard case let .integer(integer) = value else {
-            throw RuntimeError("d: arg must be an integer", line: args[0].line)
+            //throw RuntimeError("d: arg must be an integer", line: args[0].line)
+            return .null
         }
         return .string(String(integer))
     }

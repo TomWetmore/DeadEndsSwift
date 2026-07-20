@@ -52,8 +52,9 @@ struct DeadEndsCommand {
         // Parse and run program.
         do {
             let result = try await runProgram(source: source,database: database,
-                                              output: ConsoleOutput())
-            print(result) // Temporary, depending on what InterpResult represents.
+                                              output: ConsoleOutput(),
+                                              interface: TerminalInterface())
+            print("\nProgram returned \(result)") // Temporary, depending on what InterpResult represents.
         } catch {
             print("Program failed:")
             print(error)

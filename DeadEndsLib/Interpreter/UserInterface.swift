@@ -3,17 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 May 2026.
-//  Last changed on 22 May 2026.
+//  Last changed on 20 July 2026.
 //
 
 import Foundation
 
-/// The DeadEnds programming language includes some built-in functions that
-/// interact with users while programs are running. The details of user
-/// interface technologies are not included in those built-ins. Instead, the
-/// built-ins call functions that conform to the UserInterface protocol
-/// defined here. Different interface implementations can be written without
-/// changing the core interpreter.
+/// The DeadEnds programming language has built-in functions that interact with users.
+/// The details of specific user interface types are hidden from the built-in by their
+/// use of methods defined by this UserInterface protocol.
 
 @MainActor
 public protocol UserInterface {
