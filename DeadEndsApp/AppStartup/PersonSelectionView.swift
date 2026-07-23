@@ -3,7 +3,7 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed on 29 May 2026.
+//  Last changed on 23 July 2026.
 
 /// PersonSelectionView is used on the RootView to get a list of persons
 /// from a name pattern that the user selects an member of. The person chosen
@@ -16,25 +16,15 @@ import DeadEndsLib
 
 /// PersonMatch is a struct with a Gedcom key for id, and a Person record.
 struct PersonMatch: Identifiable {
+
     let id: String // Person key.
     let person: Person
-
-    var displayLine: String {
-        let name = person.displayName()
-        let birth = person.birthEvent?.summary
-        let death = person.deathEvent?.summary
-        switch (birth, death) {
-        case let (b?, d?): return "\(name) (born \(b) — died \(d))"
-        case let (b?, nil): return "\(name) (born \(b))"
-        case let (nil, d?): return "\(name) (died \(d))"
-        default: return name
-        }
-    }
 }
 
 /// A View that shows a list of Persons from a Database who have names that match
 /// a pattern and allows the user to select one.
 struct PersonSelectionView: View {
+
     @Environment(AppModel.self) var model
     @State private var namePattern: String = ""
     @State private var results: [PersonMatch] = []
@@ -61,7 +51,7 @@ struct PersonSelectionView: View {
                     Button {
                         model.path.append(Route.person(match.person))  // Goto person page.
                     } label: {
-                        Text(match.displayLine)
+                        Text(match.person.displayLine)
                             .font(.title3)
                             .padding(4)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -76,6 +66,7 @@ struct PersonSelectionView: View {
     /// Build array of PersonMatch objects that match query; sort them by name, and
     /// user event dates to improve the order.
     private func doNameSearch() {
+        
         guard let database = model.database else { return }
         results = database.persons(withName: namePattern)
             .map { PersonMatch(id: $0.key, person: $0) }

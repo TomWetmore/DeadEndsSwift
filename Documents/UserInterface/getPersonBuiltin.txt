@@ -1,0 +1,19 @@
+Notes on the "new" design for the getperson built-in.
+
+1. A getperson(name-pattern-string) is encountered in a DeadEnds program. It is "mostly" just going to call the "fixed" for all UserInterfaces method: getPerson(name: name-pattern string, index: RecordIndex) -> Person?
+
+2. A method defined on an extension of UserInterface is called. The method is fixed for all implemeters of UserInterface. It looks like this:
+
+   UserInterface.getPerson(index: RecordIndex) -> Person?
+
+
+Let the code grow below:
+
+Program.bltinGetPerson(args: [ParsedExpr]) -> ProgramValue {
+    1. Get the name-string pattern from args[0].
+    2. Call userInterface.getString("Enter a person's name pattern") to get a name pattern. If the returned name pattern is nil return .null.
+    3. Name string exists. Get the list of all persons who match that name, add vital facts, and sort the names lexicographically.
+    4. Call userInterface.chooseFromList("Choose person by entering index: ", list: [String]) -> Int?
+       If the returned value is nil or out of range, return .null.
+       return a .person value holding the chosen person.
+}

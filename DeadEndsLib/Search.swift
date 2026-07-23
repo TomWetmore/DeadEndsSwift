@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 26 November 2025.
-//  Last changed on 24 June 2026.
+//  Last changed on 21 July 2026.
 
 // This file has the code that searches databases for persons.
 // The criteria used include name, birth year range, death year
@@ -22,7 +22,9 @@ public struct SearchCriteria {
 
     /// Create a search criteria struct.
     public init(name: String? = nil, birthYearRange: ClosedRange<Year>? = nil,
-                deathYearRange: ClosedRange<Year>? = nil, birthPlace: String? = nil, deathPlace: String? = nil) {
+                deathYearRange: ClosedRange<Year>? = nil, birthPlace: String? = nil,
+                deathPlace: String? = nil) {
+
         self.name = name
         self.birthYearRange = birthYearRange
         self.deathYearRange = deathYearRange
@@ -48,12 +50,14 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
 
     /// Add a score increment to a search result.
     mutating func add(_ points: Int, reason: String) {
+        
         score += points
         reasons.append(reason)
     }
 
     /// Compare two search results; used to sort results.
     func compare(to other: SearchResult, in index: RecordIndex) -> ComparisonResult {
+
         if score < other.score { return .orderedDescending }
         if score > other.score { return .orderedAscending }
         let personOne = index.person(for: key)
@@ -63,6 +67,7 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
 
     /// Full description of result.
     public func fullDescription(in index: RecordIndex) -> String {
+
         guard let person = index.person(for: key) else { return "<unknown>" }
         let name = person.displayName()
         let birth = person.birthEvent?.summary ?? "-"
@@ -74,6 +79,7 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
 
     /// Description of result currently being used by the search panel.
     public func searchResultDescription(in index: RecordIndex) -> String {
+
         guard let person = index.person(for: key) else { return "<unknown>" }
         let name = person.displayName()
         let birth = person.birthEvent?.summary ?? "-"
@@ -83,6 +89,7 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
 
     /// Extra info to put in a select row during debugging.
     public func extraDebugDescription() -> String {
+
         let reasonList = reasons.map { $0 }.sorted().joined(separator: ", ")
         return "score: \(score)  reasons: [\(reasonList)]"
     }
@@ -191,6 +198,7 @@ private func nameBasedSearch(_ candidateSets: CandidateSets) -> SearchResults {
 
 /// Do non-name based search. All non-name criteria are used.
 private func datePlaceBasedSearch(_ candidateSets: CandidateSets) -> SearchResults {
+
     var results: SearchResults = [:]
     results.reserveCapacity(250)
 

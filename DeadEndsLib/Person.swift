@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 23 June 2026.
+//  Last changed on 23 July 2026.
 //
 
 import Foundation
@@ -55,6 +55,19 @@ extension Person {
         // Get the Gedcom name
         let name = GedcomName(from: self)
 
+    }
+
+    /// Return a single line display summary of a person.
+    public var displayLine: String {
+        let name = displayName()
+        let birth = birthEvent?.summary
+        let death = deathEvent?.summary
+        switch (birth, death) {
+        case let (b?, d?): return "\(name) (born \(b) — died \(d))"
+        case let (b?, nil): return "\(name) (born \(b))"
+        case let (nil, d?): return "\(name) (died \(d))"
+        default: return name
+        }
     }
 }
 

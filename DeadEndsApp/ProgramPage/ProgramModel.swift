@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 13 June 2026.
+//  Last changed on 22 July 2026.
 //
 
 import Foundation
@@ -231,6 +231,22 @@ func normalizedSource(_ text: String) -> String {
 /// Conformance of the user interface protocol for SwiftUI.
 @MainActor
 extension ProgramModel: UserInterface {
+    
+    func chooseFromList(prompt: String?, strings: [String]) async -> Int? {
+        return nil
+    }
+
+
+    // Added for conformance. Not used yet.
+    func chooseString(prompt: String?, strings: [String]) async -> String? {
+        return nil
+    }
+
+
+    // Added to conform to protocol -- not used yet.
+    func choosePerson(prompt: String?, persons: [DeadEndsLib.Person]) async -> DeadEndsLib.Person? {
+        return nil
+    }
 
     /// Protocol method for the getperson() operation.
     func getPerson(prompt: String?) async -> Person? {

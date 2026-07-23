@@ -232,7 +232,7 @@ struct PersonSearchSheet: View {
                 Text("No results.").italic()
             } else {
                 List(results) { match in
-                    Button(match.displayLine) {
+                    Button(match.person.displayLine) {
                         // Experiment; put card at upper left corner of desktop.
                         let x = CardSizes.startSize.width / 2
                         let y = CardSizes.startSize.height / 2

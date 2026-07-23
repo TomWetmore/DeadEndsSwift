@@ -3,7 +3,7 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 26 June 2026.
+//  Last changed on 21 July 2026.
 //
 
 import Foundation
@@ -78,6 +78,7 @@ func nameKey(value: String) -> String {
 
 /// Build a name index from a root list.
 func buildNameIndex(from persons: RootList) -> NameIndex {
+
     let index = NameIndex()
 
     for person in persons {
@@ -95,6 +96,7 @@ func buildNameIndex(from persons: RootList) -> NameIndex {
 
 // Find the Deadends-defined Soundex code of a string.
 func soundex(for surname: String) -> String {
+
 	var result = ""
 	var previousCode: String? = nil
 
@@ -129,6 +131,7 @@ func squeeze(_ input: String) -> [String] {
 
 // Check that all words in the partial array are found in the full array and in the same order.
 func exactMatch(partial: [String], complete: [String]) -> Bool {
+
 	var partialIndex = 0
 	var completeIndex = 0
 	while partialIndex < partial.count && completeIndex < complete.count {
@@ -143,6 +146,7 @@ func exactMatch(partial: [String], complete: [String]) -> Bool {
 /// Match a partial word to a complete word. The first chars in each must be the
 /// same, and all chars in partial must be in complete and be in order.
 func pieceMatch(_ partial: String, _ complete: String) -> Bool {
+
 	guard let firstPartial = partial.first, let firstComplete = complete.first
     else { return false }
 	guard firstPartial == firstComplete
