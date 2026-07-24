@@ -3,15 +3,16 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 20 July 2026.
-//  Last changed on 23 July 2026.
+//  Last changed on 24 July 2026.
 //
 
 import Foundation
 
 public struct TerminalInterface: UserInterface {
 
-    /// DEPRECATED. ngetPewrson should replace this as the new getPerson
+    /// DEPRECATED. ngetPerson should replace this as the new getPerson
     public func getPerson(prompt: String?) async -> Person? {
+        print("TerminalInterface.getPerson is deprecated")
         return nil
     }
 
@@ -23,11 +24,10 @@ public struct TerminalInterface: UserInterface {
         while true {
             // Show the prompt, either provided or generic.
             if let prompt {
-                print(prompt, terminator: ": ")
+                writeStandardOutput(prompt + ": ")
             } else {
-                print("Enter an integer: ")
+                writeStandardOutput("Enter an integer: ")
             }
-            fflush(stdout)
             // User may want to bail.
             guard let line = readLine() else { // EOF (Ctrl-D)
                 print()
@@ -51,11 +51,10 @@ public struct TerminalInterface: UserInterface {
 
         // Show the prompt, either provided or generic.
         if let prompt {
-            print(prompt, terminator: ": ")
+            writeStandardOutput(prompt + ": ")
         } else {
-            print("Enter a string: ")
+            writeStandardOutput("Enter a string: ")
         }
-        fflush(stdout)
         // User may want to bail.
         guard let line = readLine() else { // EOF (Ctrl-D)
             print()
@@ -101,86 +100,7 @@ extension TerminalInterface {
     }
 }
 
-extension TerminalInterface {
 
-//    public func choosePerson(prompt: String?, persons: [Person]) async -> Person? {
-//
-//        guard !persons.isEmpty else {
-//            return nil
-//        }
-//
-//        if let prompt {
-//            print(prompt)
-//        }
-//
-//        for (index, person) in persons.enumerated() {
-//            print("\(index + 1). \(personSummary(person))")
-//        }
-//
-//        while true {
-//            guard let choice = await getInteger(prompt: "Enter number") else {
-//                return nil
-//            }
-//
-//            let index = choice - 1
-//
-//            guard persons.indices.contains(index) else {
-//                print("Enter a number from 1 through \(persons.count).")
-//                continue
-//            }
-//
-//            return persons[index]
-//        }
-//    }
+private func writeStandardOutput(_ text: String) {
+    FileHandle.standardOutput.write(Data(text.utf8))
 }
-
-/// Eventually to replace the bltinGetPerson now used by the SwiftUI interface.
-/// What this method should do:
-/// 1.
-extension Program {
-    
-    
-}
-
-
-//    public func getPerson(prompt: String?) async -> Person? {
-//        while true {
-//            let searchText = await getString(
-//                prompt: prompt ?? "Enter a person's name"
-//            )
-//
-//            guard let searchText else {
-//                return nil
-//            }
-//
-//            let matches = database.persons(matching: searchText)
-//                .sorted(by: personLexicographicOrder)
-//
-//            guard !matches.isEmpty else {
-//                print("No matching persons.")
-//                continue
-//            }
-//
-//            if matches.count == 1 {
-//                print(personSummary(matches[0]))
-//                return matches[0]
-//            }
-//
-//            for (index, person) in matches.enumerated() {
-//                print("\(index + 1). \(personSummary(person))")
-//            }
-//
-//            while true {
-//                guard let choice = await getInteger(prompt: "Enter number") else {
-//                    return nil
-//                }
-//
-//                guard matches.indices.contains(choice - 1) else {
-//                    print("Please enter a number from 1 through \(matches.count).")
-//                    continue
-//                }
-//
-//                return matches[choice - 1]
-//            }
-//        }
-//    }

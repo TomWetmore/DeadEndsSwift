@@ -40,24 +40,32 @@ extension UserInterface {
 
     /// Implemented operation protocol method that uses primitive (per interface) methods
     /// to get a person from the user.
+    /// Shared person-selection operation implemented in terms of
+    /// interface-specific primitives.
     func ngetPerson(prompt: String?, database: Database) async -> Person? {
 
-        // Ask the user for a name pattern.
-        guard let pattern = await self.getString(prompt: prompt) else {
+        // Ask user for a name pattern using the getString primitive.
+        guard let pattern = await getString(prompt: prompt) else {
             return nil
         }
         // Get the persons who match the name.
         let persons = database.persons(withName: pattern)
         if persons.isEmpty { return nil }
 
-        /*
-         2. Use that name pattern to get a list of sorted names with basic vital info.
-         3. Use chooseFromList to have the user choose the line with the name.
-         4. Get the Person from that choice and return it.
-         */
-        print("hello, world\n")
-        return nil
+        // Get the array of person choice strings to show the user.
+        let choices = persons.map { person in person.displayLine }
+
+        // Get the user's choice using the chooseFromList primitive.
+        guard let choice = await chooseFromList(
+            prompt: "Enter the person's index: ", strings: choices) else {
+            return nil
+        }
+
+        guard persons.indices.contains(choice) else {
+            return nil
+        }
+
+        return persons[choice]
     }
 }
-
 

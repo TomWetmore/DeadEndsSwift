@@ -2,4 +2,7 @@ proc main () {
     "Hello, world\n"
     set(iii, getinteger("Please enter an integer"))
     d(iii)
+
+    set(per, ngetperson("Please enter a name pattern"))
+    name(per)
 }

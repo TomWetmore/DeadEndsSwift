@@ -159,6 +159,8 @@ extension Program {
             "getinteger": Builtin(min: 1, max: 1) { try await self.bltinGetInteger($0)},
             "getstring": Builtin(min: 1, max: 1) { try await self.bltinGetString($0)},
 
+            "ngetperson": Builtin(min: 1, max: 1) { try await self.nbltinGetPerson($0)}, 
+
             // Extract built-ins.
             "extractname": Builtin(min: 1, max: 1) { try await self.bltinExtractName($0)},
             "extractplace": Builtin(min: 1, max: 1) { try await self.bltinExtractPlace($0)},
