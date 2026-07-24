@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 October 2025.
-//  Last changed on 29 May 2026.
+//  Last changed on 24 July 2026.
 //
 
 import SwiftUI
@@ -256,18 +256,11 @@ struct PersonSearchSheet: View {
     }
 
     private func doSearch() {
+
         guard let database = appModel.database else { return }
         didSearch = true
         results = database.persons(withName: query)
             .map { PersonMatch(id: $0.key, person: $0) }
-            .sorted {
-                switch ($0.person.gedcomName, $1.person.gedcomName) {
-                case let (l?, r?): return l < r
-                case (nil, nil):   return $0.id < $1.id
-                case (nil, _):     return false
-                case (_, nil):     return true
-                }
-            }
     }
 }
 

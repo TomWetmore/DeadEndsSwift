@@ -3,7 +3,7 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 21 July 2026.
+//  Last changed on 24 July 2026.
 //
 
 import Foundation
@@ -201,17 +201,9 @@ extension Database {
     /// the results from personKeys, converting them to persons while also putting
     /// them into a name and event-based sort order.
     public func persons(withName pattern: String) -> [Person] {
+
         personKeys(forName: pattern)
             .compactMap { recordIndex.person(for: $0) }
-            .sorted { lhs, rhs in
-                switch lhs.compare(to: rhs, in: recordIndex) {
-                case .orderedAscending:
-                    return true
-                case .orderedDescending:
-                    return false
-                case .orderedSame:
-                    return lhs.key < rhs.key
-                }
-            }
+            .sorted { $0.compare(to: $1) == .orderedAscending }
     }
 }

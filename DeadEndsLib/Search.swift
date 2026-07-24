@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 26 November 2025.
-//  Last changed on 21 July 2026.
+//  Last changed on 24 July 2026.
 
 // This file has the code that searches databases for persons.
 // The criteria used include name, birth year range, death year
@@ -60,9 +60,12 @@ public struct SearchResult: Identifiable, CustomStringConvertible {
 
         if score < other.score { return .orderedDescending }
         if score > other.score { return .orderedAscending }
-        let personOne = index.person(for: key)
-        let personTwo = index.person(for: other.key)
-        return personOne!.compare(to: personTwo!, in: index)
+        guard let personOne = index.person(for: key),
+              let personTwo = index.person(for: other.key)
+        else {
+            preconditionFailure("SearchResult contains a key not found in the index")
+        }
+        return personOne.compare(to: personTwo)
     }
 
     /// Full description of result.

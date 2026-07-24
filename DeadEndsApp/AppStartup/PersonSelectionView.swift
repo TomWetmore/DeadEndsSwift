@@ -3,31 +3,28 @@
 //  DisplayPerson
 //
 //  Created by Thomas Wetmore on 28 June 2025.
-//  Last changed on 23 July 2026.
+//  Last changed on 24 July 2026.
 
-/// PersonSelectionView is used on the RootView to get a list of persons
-/// from a name pattern that the user selects an member of. The person chosen
-/// is then opened in the PersonPage view.
-///
-/// Currently only used on the RootView.
+/// This view is used on the RootView to get a list of persons so the
+/// user can select one. The chosen person is opened on a PersonPage.
 
 import SwiftUI
 import DeadEndsLib
 
-/// PersonMatch is a struct with a Gedcom key for id, and a Person record.
+/// Struct that holds a matched person.
 struct PersonMatch: Identifiable {
 
-    let id: String // Person key.
+    let id: RecordKey
     let person: Person
 }
 
-/// A View that shows a list of Persons from a Database who have names that match
-/// a pattern and allows the user to select one.
+/// View that shows a list of Persons with names that match
+/// a pattern, and then allows the user to select one.
 struct PersonSelectionView: View {
 
     @Environment(AppModel.self) var model
-    @State private var namePattern: String = ""
-    @State private var results: [PersonMatch] = []
+    @State private var namePattern: String = "" // Name pattern from user.
+    @State private var results: [PersonMatch] = [] // Persons that match.
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -63,8 +60,8 @@ struct PersonSelectionView: View {
         .padding()
     }
 
-    /// Build array of PersonMatch objects that match query; sort them by name, and
-    /// user event dates to improve the order.
+    /// Get the PersonMatch objects that match a name pattern;
+    /// they will be sorted by name and event dates.
     private func doNameSearch() {
         
         guard let database = model.database else { return }

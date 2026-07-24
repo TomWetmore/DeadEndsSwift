@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 23 July 2026.
+//  Last changed on 24 July 2026.
 //
 
 import Foundation
@@ -27,11 +27,11 @@ public struct Person: Record {
         self.root = root
     }
 
-// SAVE FOR POSSIBLE USE.
-//    public init?(_ root: GedcomNode) {
-//        guard root.tag == "INDI" else { return nil }
-//        self.root = root
-//    }
+    // SAVE FOR POSSIBLE USE.
+    //    public init?(_ root: GedcomNode) {
+    //        guard root.tag == "INDI" else { return nil }
+    //        self.root = root
+    //    }
 
     public var key: String {
         guard let key = root.key else { fatalError("person must have a key") }
@@ -392,23 +392,42 @@ extension Database {
 
 extension Person {
 
-    /// Compare persons by name, birth year, death year, and record key.
-    public func compare(to other: Person, in index: RecordIndex) -> ComparisonResult {
+    /// Compare persons by name presence, name, birth year,
+    /// death year, and record key.
+    public func compare(to other: Person) -> ComparisonResult {
 
-        if let nameOne = GedcomName(from: self.root), let nameTwo = GedcomName(from: other.root) {
+        let nameOne = GedcomName(from: root)
+        let nameTwo = GedcomName(from: other.root)
+
+        switch (nameOne, nameTwo) {
+        case let (nameOne?, nameTwo?):
             let relation = nameOne.compare(to: nameTwo)
-            if relation != .orderedSame { return relation }
+            if relation != .orderedSame {
+                return relation
+            }
+        case (_?, nil):
+            // Named persons sort before unnamed persons.
+            return .orderedAscending
+        case (nil, _?):
+            return .orderedDescending
+        case (nil, nil):
+            // Continue with birth, death, and key.
+            break
         }
-        let birthOne = self.birthEvent?.year
+        let birthOne = birthEvent?.year
         let birthTwo = other.birthEvent?.year
-        if let relation = compareOptionalInts(birthOne, birthTwo), relation != .orderedSame { return relation }
-
-        let deathOne = self.deathEvent?.year
+        if let relation = compareOptionalInts(birthOne, birthTwo),
+           relation != .orderedSame {
+            return relation
+        }
+        let deathOne = deathEvent?.year
         let deathTwo = other.deathEvent?.year
-        if let relation = compareOptionalInts(deathOne, deathTwo), relation != .orderedSame { return relation }
-
-        if self.key == other.key { return .orderedSame }
-        return self.key < other.key ? .orderedAscending : .orderedDescending
+        if let relation = compareOptionalInts(deathOne, deathTwo),
+           relation != .orderedSame {
+            return relation
+        }
+        if key == other.key { return .orderedSame }
+        return key < other.key ? .orderedAscending : .orderedDescending
     }
 }
 
