@@ -3,7 +3,7 @@
 //  DeadEndsCommand
 //
 //  Created by Thomas Wetmore on 17 July 2026.
-//  Last changed on 18 July 2026.
+//  Last changed on 25 July 2026.
 //
 
 import Foundation
@@ -37,7 +37,7 @@ struct DeadEndsCommand {
             print("\(errLog)\n")
             return
         }
-        print("\(database)\n") // DEBUG -- show standard contents of the database.
+        print("\(database)\n") // DEBUG -- show the summary of the database.
 
         // Parse program.
         let programURL = URL(fileURLWithPath: programFile)
@@ -51,7 +51,7 @@ struct DeadEndsCommand {
         }
         // Parse and run program.
         do {
-            let result = try await runProgram(source: source,database: database,
+            let result = try await runProgram(source: source, database: database,
                                               output: ConsoleOutput(),
                                               interface: TerminalInterface())
             print("\nProgram returned \(result)") // Temporary, depending on what InterpResult represents.

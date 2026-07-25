@@ -3,12 +3,27 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 20 July 2026.
-//  Last changed on 24 July 2026.
+//  Last changed on 25 July 2026.
 //
 
 import Foundation
 
+/// The is the Programming Language User Interface for use in CLI
+/// programs that use the terminal for the interpreter input and
+/// output channels. Standard error is used for output, and standard
+/// input is used for input.
+///
 public struct TerminalInterface: UserInterface {
+
+    /// The terminal interface output channel uses standard error.
+    public func write(_ string: String) {
+        FileHandle.standardError.write(Data(string.utf8))
+    }
+
+    /// The terminal interface input channel uses standard input.
+    public func readString() -> String? {
+        return readLine()
+    }
 
     /// DEPRECATED. ngetPerson should replace this as the new getPerson
     public func getPerson(prompt: String?) async -> Person? {
@@ -24,13 +39,13 @@ public struct TerminalInterface: UserInterface {
         while true {
             // Show the prompt, either provided or generic.
             if let prompt {
-                writeStandardOutput(prompt + ": ")
+                write(prompt + ": ")
             } else {
-                writeStandardOutput("Enter an integer: ")
+                write("Enter an integer: ")
             }
             // User may want to bail.
             guard let line = readLine() else { // EOF (Ctrl-D)
-                print()
+                writeLine()
                 return nil
             }
             // Try to convert user's response to an integer.
@@ -38,7 +53,7 @@ public struct TerminalInterface: UserInterface {
 
             // An empty response also means no value.
             guard !text.isEmpty else {
-                print()
+                writeLine()
                 return nil
             }
             // Successful return.
@@ -51,13 +66,13 @@ public struct TerminalInterface: UserInterface {
 
         // Show the prompt, either provided or generic.
         if let prompt {
-            writeStandardOutput(prompt + ": ")
+            write(prompt + ": ")
         } else {
-            writeStandardOutput("Enter a string: ")
+            write("Enter a string: ")
         }
         // User may want to bail.
-        guard let line = readLine() else { // EOF (Ctrl-D)
-            print()
+        guard let line = readString() else { // EOF (Ctrl-D)
+            writeLine()
             return nil
         }
         // Trim white space.
@@ -65,7 +80,7 @@ public struct TerminalInterface: UserInterface {
 
         // An empty response also means no value.
         guard !text.isEmpty else {
-            print()
+            writeLine()
             return nil
         }
         // Successful return.
@@ -82,10 +97,10 @@ extension TerminalInterface {
             return nil
         }
         if let prompt {
-            print(prompt)
+            write(prompt)
         }
         for (index, choice) in strings.enumerated() {
-            print("\(index + 1). \(choice)")
+            writeLine("\(index + 1). \(choice)")
         }
         while true {
             guard let number = await getInteger(prompt: "Enter number") else {
@@ -95,12 +110,7 @@ extension TerminalInterface {
             if strings.indices.contains(index) {
                 return index
             }
-            print("Enter a number from 1 through \(strings.count).")
+            writeLine("Enter a number from 1 through \(strings.count).")
         }
     }
-}
-
-
-private func writeStandardOutput(_ text: String) {
-    FileHandle.standardOutput.write(Data(text.utf8))
 }

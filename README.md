@@ -1,6 +1,6 @@
 # DeadEnds Swift
 
-DeadEndsSwift is a macOS genealogy software system written in Swift. It has a core genealogical library, a SwiftUI-based application for macOS and eventually iPad, and some command line programs.
+DeadEndsSwift is a mac, iPad, and Linux genealogy software system written in Swift. It has a core genealogical library, a SwiftUI-based application for macOS and eventually iPad, and some command line programs.
 
 DeadEnds is the successor to the DeadEnds C project, which succeeded my LifeLines C program from the 1990's. DeadEnds supports reading Gedcom files, building an in-memory database, and visualizing family relationships.
 
