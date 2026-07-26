@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 April 2026.
-//  Last changed on 20 May 2026.
+//  Last changed on 26 July 2026.
 //
 //  The built-ins in this file are used to inspect running
 //  programs. They are used to help users debug their programs
@@ -38,7 +38,7 @@ extension Program {
     /// Output the contents of the run time stack.
     func showRuntimeStack() {
         guard !callStack.isEmpty else {
-            output.writeln("Run Time Stack is empty")
+            output.writeLine("Run Time Stack is empty")
             return
         }
 
@@ -93,6 +93,6 @@ extension Program {
 
     private func showFrame() {
         guard let frame = callStack.last else { return }
-        output.writeln(formatFrame(frame))
+        output.writeLine(formatFrame(frame))
     }
 }

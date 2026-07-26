@@ -3,12 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 20 July 2026.
-//  Last changed on 25 July 2026.
+//  Last changed on 26 July 2026.
 //
 
 import Foundation
 
-/// The is the Programming Language User Interface for use in CLI
+/// This is the Programming Language User Interface for use in CLI
 /// programs that use the terminal for the interpreter input and
 /// output channels. Standard error is used for output, and standard
 /// input is used for input.
@@ -27,7 +27,7 @@ public struct TerminalInterface: UserInterface {
 
     /// DEPRECATED. ngetPerson should replace this as the new getPerson
     public func getPerson(prompt: String?) async -> Person? {
-        print("TerminalInterface.getPerson is deprecated")
+        writeLine("TerminalInterface.getPerson is deprecated")
         return nil
     }
 
@@ -99,6 +99,7 @@ extension TerminalInterface {
         if let prompt {
             write(prompt)
         }
+        writeLine()
         for (index, choice) in strings.enumerated() {
             writeLine("\(index + 1). \(choice)")
         }

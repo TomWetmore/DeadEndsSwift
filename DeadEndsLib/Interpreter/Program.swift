@@ -3,14 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 23 May 2026.
+//  Last changed on 26 July 2026.
 //
 
 import Foundation
 
 /// DeadEnds program; combines static program parts with runtime parts.
-/// To run a DeadEnds program/script a program object is created and its
-/// interpret program method is called.
+/// To run a DeadEnds program create a Program object and call its
+/// interpret method.
 @MainActor
 final public class Program {
 
@@ -21,16 +21,16 @@ final public class Program {
     var hasRun = false
     var globalSymbolTable: SymbolTable = [:]  // Global symbols.
     var database: Database  // Database.
-    let output: ProgramOutput  // Output sink.
+    let output: ProgramOutput  // Program output sink.
+    let userInterface: UserInterface // Program UI channel.
     var callStack: [RuntimeFrame] = []  // Runtime stack.
-    let userInterface: UserInterface
 
     var recordIndex: RecordIndex { database.recordIndex }
 
     private var stepCount = 0
-    private let maxSteps = 750_000
+    private let maxSteps = 750_000  // TODO: Remove?
 
-    /// Local symbol table, in the current frame.
+    /// Symbol table in the current frame.
     var localSymbolTable: SymbolTable {
         callStack.last?.symbols ?? [:]
     }
@@ -55,8 +55,8 @@ final public class Program {
         self.parsedProgram = parsedProgram
         self.database = database
         self.output = output
-        self.callStack  = [RuntimeFrame]()
         self.userInterface = userInterface
+        self.callStack  = [RuntimeFrame]()
 
         var procTable: [String: ParsedProcDefn] = [:]
         var funcTable: [String: ParsedFuncDefn] = [:]
@@ -92,7 +92,7 @@ public protocol ProgramOutput {
 
 public extension ProgramOutput {
 
-    func writeln(_ text: String) {
+    func writeLine(_ text: String) {
         write(text + "\n")
     }
 }
@@ -100,8 +100,10 @@ public extension ProgramOutput {
 /// Program output for standard console output.
 public final class ConsoleOutput: ProgramOutput {
 
-    public func write(_ text: String) {
-        print(text, terminator: "")
+    /// The program output channel uses standard output.
+    /// (The program UI channel uses standard error.)
+    public func write(_ string: String) {
+        FileHandle.standardOutput.write(Data(string.utf8))
     }
 
     @MainActor public func flush() async {}
