@@ -52,7 +52,7 @@ final public class Program {
     public init(parsedProgram: ParsedProgram, database: Database,
                 output: ProgramOutput, userInterface: UserInterface) {
 
-        self.parsedProgram = parsedProgram
+        self.parsedProgram = parsedProgram  // TODO: Probably do not need to keep this.
         self.database = database
         self.output = output
         self.userInterface = userInterface
@@ -61,6 +61,7 @@ final public class Program {
         var procTable: [String: ParsedProcDefn] = [:]
         var funcTable: [String: ParsedFuncDefn] = [:]
         var globals: SymbolTable = [:]
+        var includes: [String] = []
 
         for defn in parsedProgram.defns {
             switch defn {
@@ -70,6 +71,9 @@ final public class Program {
                 funcTable[funcDef.name] = funcDef
             case .global(let globalDef):
                 globals[globalDef.name] = .null
+            // In the final version these may have all been consumed.
+            case .include(let includeFile):
+                includes.append(includeFile.name)
             }
         }
         self.procTable = procTable

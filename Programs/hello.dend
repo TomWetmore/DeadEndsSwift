@@ -3,6 +3,6 @@ proc main () {
     set(iii, getinteger("Please enter an integer"))
     d(iii)
 
-    set(per, ngetperson("Please enter a name pattern"))
+    set(per, getperson("Please enter a name pattern"))
     name(per)
 }

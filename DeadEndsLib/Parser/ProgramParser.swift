@@ -46,6 +46,8 @@ struct DefnParser: Parser {
             return .funcDef(try FuncDefParser().parse(&input))
         case .identifier("global"):
             return .global(try GlobalDefParser().parse(&input))
+        case .identifier("include"):
+            return .include(try IncludeDefParser().parse(&input))
         default:
             throw ParseError("expecting a definiton", line: line)
         }
@@ -107,6 +109,24 @@ struct GlobalDefParser: Parser {
         try ExactToken(kind: .rParen).parse(&input)
         
         return ParsedGlobalDefn(name: globalName, line: line)
+    }
+}
+
+struct IncludeDefParser: Parser {
+
+    /// Parse an include definition.
+    func parse(_ input: inout TokStream) throws -> ParsedIncludeDefn {
+        let line = input.first?.line ?? 0
+        let name = try IdentifierToken().parse(&input)
+
+        guard name == "include" else {
+            throw ParseError("expected \"include\"", line: line)
+        }
+        try ExactToken(kind: .lParen).parse(&input)
+        let includeName = try IdentifierToken().parse(&input)
+        try ExactToken(kind: .rParen).parse(&input)
+
+        return ParsedIncludeDefn(name: includeName, line: line)
     }
 }
 

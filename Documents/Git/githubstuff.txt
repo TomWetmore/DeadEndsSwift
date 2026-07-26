@@ -8,3 +8,12 @@ If you run into problems, please contact support by visiting https://github.com/
 
 Thanks,
 The GitHub Team
+
+
+1. Go to the link.
+2. That goes to a page that wants you to get the mobile app on your iphone ready.
+3. When ready hit the Use GitHub Mobile button.
+4. Get a code number on iPhone that I enter.
+5. Then on mac I get a button to regenerate.
+6. Regenerate; copy and add to my account info file.
+7. Xcode -> Settings -> Source control -> do stuff I'm not sure of yet.

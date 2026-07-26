@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 10 July 2026.
+//  Last changed on 26 July 2026.
 //
 
 import Foundation
@@ -18,18 +18,20 @@ public struct ParsedProgram: Equatable, CustomStringConvertible {
     }
 }
 
-/// Parsed definition, holding the three definition types found in programs.
+/// Parsed definition; holds one of the four definition types found in programs.
 enum ParsedDefn: Equatable, CustomStringConvertible {
     
     case procDef(ParsedProcDefn)  // Procedure definition.
     case funcDef(ParsedFuncDefn)  // Function definition.
     case global(ParsedGlobalDefn)  // Global definition.
+    case include(ParsedIncludeDefn) // Include definition.
 
     var description: String {
         switch self {
         case .procDef(let p): return p.description
         case .funcDef(let f): return f.description
         case .global(let g): return g.description
+        case .include(let i): return i.description
         }
     }
 }
@@ -68,6 +70,17 @@ struct ParsedGlobalDefn: Equatable, CustomStringConvertible {
 
     var description: String {
         "GLOBAL(\(name))"
+    }
+}
+
+/// Parsed include definition, the "definition" of an include file.
+struct ParsedIncludeDefn: Equatable, CustomStringConvertible {
+
+    let name: String
+    let line: Int
+
+    var description: String {
+        "INCUDE(\(name))"
     }
 }
 

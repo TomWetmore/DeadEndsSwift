@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 15 April 2026.
-//  Last changed on 22 July 2026.
+//  Last changed on 26 July 2026.
 //
 
 import Foundation
@@ -232,26 +232,17 @@ func normalizedSource(_ text: String) -> String {
 @MainActor
 extension ProgramModel: UserInterface {
     
-    func chooseFromList(prompt: String?, strings: [String]) async -> Int? {
-        return nil
-    }
+    func write(_ string: String) { return }
 
+    func readString() -> String? { return nil }
 
-    // Added for conformance. Not used yet.
-    func chooseString(prompt: String?, strings: [String]) async -> String? {
-        return nil
-    }
-
-
-    // Added to conform to protocol -- not used yet.
-    func choosePerson(prompt: String?, persons: [DeadEndsLib.Person]) async -> DeadEndsLib.Person? {
-        return nil
-    }
+    func chooseFromList(prompt: String?, strings: [String]) async -> Int? { return nil }
 
     /// Protocol method for the getperson() operation.
-    func getPerson(prompt: String?) async -> Person? {
+    func getPerson(prompt: String?, database: Database) async -> Person? {
         programRequest = .getPerson(GetPersonRequest(
-            prompt: prompt ?? "Enter a person"
+            prompt: prompt ?? "Enter a person",
+            database: database
         ))
         return await withCheckedContinuation { continuation in
             personContinuation = continuation
@@ -297,6 +288,7 @@ extension ProgramModel: UserInterface {
 }
 
 enum CompileState {
+
     case notCompiled
     case compiling
     case success
@@ -304,6 +296,7 @@ enum CompileState {
 }
 
 enum RunState {
+
     case notRun
     case running
     case success

@@ -17,7 +17,7 @@ extension Program {
 
         let prompt = try await evaluateString(args[0], errMsg: "getperson: arg must be a prompt")
         await output.flush()
-        let person = await userInterface.getPerson(prompt: prompt)
+        let person = await userInterface.getPerson(prompt: prompt, database: database)
         if let person {
             return .person(person)
         }
@@ -25,16 +25,16 @@ extension Program {
     }
 
     /// This is the new version that uses the new version of getPerson
-    func nbltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let prompt = try await evaluateString(args[0], errMsg: "getperson: arg must be a prompt")
-        await output.flush()
-        let person = await userInterface.ngetPerson(prompt: prompt, database: database)
-        if let person {
-            return .person(person)
-        }
-        return .null
-    }
+//    func nbltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//
+//        let prompt = try await evaluateString(args[0], errMsg: "getperson: arg must be a prompt")
+//        await output.flush()
+//        let person = await userInterface.getPerson(prompt: prompt, database: database)
+//        if let person {
+//            return .person(person)
+//        }
+//        return .null
+//    }
 
 //    func nbuiltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
 //

@@ -12,7 +12,6 @@ import Foundation
 /// programs that use the terminal for the interpreter input and
 /// output channels. Standard error is used for output, and standard
 /// input is used for input.
-///
 public struct TerminalInterface: UserInterface {
 
     /// The terminal interface output channel uses standard error.
@@ -23,12 +22,6 @@ public struct TerminalInterface: UserInterface {
     /// The terminal interface input channel uses standard input.
     public func readString() -> String? {
         return readLine()
-    }
-
-    /// DEPRECATED. ngetPerson should replace this as the new getPerson
-    public func getPerson(prompt: String?) async -> Person? {
-        writeLine("TerminalInterface.getPerson is deprecated")
-        return nil
     }
 
     public init() {}
@@ -44,7 +37,7 @@ public struct TerminalInterface: UserInterface {
                 write("Enter an integer: ")
             }
             // User may want to bail.
-            guard let line = readLine() else { // EOF (Ctrl-D)
+            guard let line = readString() else { // EOF (Ctrl-D)
                 writeLine()
                 return nil
             }

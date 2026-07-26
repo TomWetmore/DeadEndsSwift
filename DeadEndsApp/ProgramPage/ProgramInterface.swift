@@ -27,6 +27,7 @@ enum ProgramRequest: Identifiable {
 struct GetPersonRequest: Identifiable {
     let id = UUID()
     let prompt: String
+    let database: Database
 }
 
 struct GetIntegerRequest: Identifiable {

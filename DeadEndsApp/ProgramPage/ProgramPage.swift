@@ -50,7 +50,7 @@ struct ProgramPage<ExtraCommands: View>: View {
             case .getPerson(let request):
                 GetPersonSheet(
                     request: request,
-                    database: database!,
+                    database: request.database,
                     onChoose: { model.finishGetPerson($0) },
                     onCancel: { model.finishGetPerson(nil) }
                 )

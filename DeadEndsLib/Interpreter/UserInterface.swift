@@ -18,28 +18,19 @@ public protocol UserInterface {
 
     func getInteger(prompt: String?) async -> Int?
     func getString(prompt: String?) async -> String?
-    func getPerson(prompt: String?) async -> Person?  // DEPRECATED
+    func getPerson(prompt: String?, database: Database) async -> Person?
 
     func chooseFromList(prompt: String?, strings: [String]) async -> Int?
 
     func write(_ string: String)
     func readString() -> String?
-
-
-    // TODO: ngetPerson is implemented in an extension. ChatGPT recommends
-    // that it
-    // also be defined here, but at present this is causing errors. Retry
-    // once the old getPerson is gone and ngetPerson is renamed to getPerson.
-    //func ngetPerson(prompt: String?, database: Database) async -> Person?
 }
 
 /// Implemented operations.
-/// NOTE: CHATGPT recommends not associating this with the interface but with the database.
-/// NOTE: SEE TO IT LATER.
 extension UserInterface {
 
     /// Get a person. TODO: This will morph into the final getPerson method.
-    func ngetPerson(prompt: String?, database: Database) async -> Person? {
+    public func getPerson(prompt: String?, database: Database) async -> Person? {
 
         // Ask the user for a name pattern.
         guard let pattern = await getString(prompt: prompt) else {
@@ -68,10 +59,3 @@ extension UserInterface {
         write(string + "\n")
     }
 }
-
-/*
- guard let data = prompt.data(using: .utf8) else { return }
- FileHandle.standardOutput.write(data)
-
- FileHandle.standardOutput.write(Data(prompt.utf8))
- */
