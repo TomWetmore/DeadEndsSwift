@@ -65,9 +65,9 @@ final public class Program {
 
         for defn in parsedProgram.defns {
             switch defn {
-            case .procDef(let procDef):
+            case .procDefn(let procDef):
                 procTable[procDef.name] = procDef
-            case .funcDef(let funcDef):
+            case .funcDefn(let funcDef):
                 funcTable[funcDef.name] = funcDef
             case .global(let globalDef):
                 globals[globalDef.name] = .null

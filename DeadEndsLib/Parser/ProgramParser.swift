@@ -15,14 +15,14 @@ import Parsing
 public struct ProgramParser: Parser {
 
     /// Parse a program. A program is a list of definitions.
-    public func parse(_ input: inout TokStream) throws -> ParsedProgram {
+    public func parse(_ input: inout TokStream) throws -> [ParsedDefn] {
 
         var defns: [ParsedDefn] = []
         
         while let tok = input.first, tok.kind != .eof {
             defns.append(try DefnParser().parse(&input))
         }
-        return ParsedProgram(defns: defns)
+        return defns
     }
 
     public init() {}  // Currently part of the public API
@@ -41,9 +41,9 @@ struct DefnParser: Parser {
         }
         switch tok.kind {
         case .proc:
-            return .procDef(try ProcDefParser().parse(&input))
+            return .procDefn(try ProcDefParser().parse(&input))
         case .funcTok:
-            return .funcDef(try FuncDefParser().parse(&input))
+            return .funcDefn(try FuncDefParser().parse(&input))
         case .identifier("global"):
             return .global(try GlobalDefParser().parse(&input))
         case .identifier("include"):
@@ -165,47 +165,99 @@ struct IdentifierListOptionalParser: Parser {
 }
 
 // Addition heading for the refactoring to include include.
+func parseFullProgram(fileURL: URL) throws -> ParsedProgram {
 
+    var pendingFiles: [URL] = [fileURL.standardizedFileURL]
+    var parsedFiles: Set<URL> = []
 
-//func parseFullProgram(fileName: String) throws -> ParsedProgram {
-//
-//    var pendingFiles: [String] = [fileName]
-//    var nextFileIndex = 0
-//
-//    var defns: [ParsedDefn] = []
-//
-//    while nextFileIndex < pendingFiles.count {
-//        let nextFile = pendingFiles[nextFileIndex]
-//        nextFileIndex += 1
-//
-//        let fileDefns = try parseFile(fileName: nextFile)
-//        defns.append(contentsOf: fileDefns)
-//    }
-//
-//    return ParsedProgram(defns: defns)
-//}
+    //var procDefns: [String: ParsedProcDefn] = [:]
+    //var funcDefns: [String: ParsedFuncDefn] = [:]
+    //var globals: Set<String> = []
+
+    // Map definitions to their files.
+    var procURLs: [String: URL] = [:]
+    var funcURLs: [String: URL] = [:]
+    var globalURLs: [String: URL] = [:]
+
+    var definitions: [ParsedDefn] = []
+
+    while let nextURL = pendingFiles.popLast() {
+
+        guard parsedFiles.insert(nextURL).inserted else {
+            continue
+        }
+
+        let defns = try parseFile(fileURL: nextURL)
+
+        for defn in defns {
+            switch defn {
+
+            case .procDefn(let procDefn):
+                let name = procDefn.name
+                guard procURLs[name] == nil else {
+                    let message = "proc \(name) defined in \(procURLs[name]!) and \(nextURL)"
+                    throw ParseError(message, line: procDefn.line)
+                }
+                procURLs[name] = nextURL
+                definitions.append(defn)
+
+            case .funcDefn(let funcDefn):
+                let name = funcDefn.name
+                guard funcURLs[name] == nil else {
+                    let message = "proc \(name) defined in \(funcURLs[name]!) and \(nextURL)"
+                    throw ParseError(message, line: funcDefn.line)
+                }
+                funcURLs[funcDefn.name] = nextURL
+                definitions.append(defn)
+
+            case .global(let globalDefn):
+                let name = globalDefn.name
+                guard globalURLs[name] == nil else {
+                    let message = "global \(name) defined in \(globalURLs[name]!) and \(nextURL)"
+                    throw ParseError(message, line: globalDefn.line)
+                }
+                globalURLs[globalDefn.name] = nextURL
+                definitions.append(defn)
+
+            case .include(let includeDefn):
+                let includeURL = nextURL
+                    .deletingLastPathComponent()
+                    .appendingPathComponent(includeDefn.name)
+                    .standardizedFileURL
+
+                pendingFiles.append(includeURL)
+            }
+        }
+    }
+
+    return ParsedProgram(definitions, procURLs: procURLs, funcURLs: funcURLs)
+}
+
+func parseFile(fileURL: URL) -> [ParsedDefn] {
+    return []
+}
 
 // Starting the refactoring needed to move to the include feature.
 
-func parseFile(source: String) throws -> ParsedProgram {
-
-    let normalized = normalizedSource(source)  // Temporary quote hack.
-    var lexer = Lexer(source: normalized)
-    let tokens = lexer.tokenize()
-    guard tokens.last?.kind == .eof else {
-        throw FrontEndError.missingEOF
-    }
-    var input = tokens[...]
-    let program = try ProgramParser().parse(&input)
-
-    if input.first?.kind == .eof {
-        input.removeFirst()
-    }
-    guard input.isEmpty else {
-        throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
-    }
-    return program
-}
+//func pparseFile(source: String) throws -> [ParsedDefn] {
+//
+//    let normalized = normalizedSource(source)  // Temporary quote hack.
+//    var lexer = Lexer(source: normalized)
+//    let tokens = lexer.tokenize()
+//    guard tokens.last?.kind == .eof else {
+//        throw FrontEndError.missingEOF
+//    }
+//    var input = tokens[...]
+//    let program = try ProgramParser().parse(&input)
+//
+//    if input.first?.kind == .eof {
+//        input.removeFirst()
+//    }
+//    guard input.isEmpty else {
+//        throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
+//    }
+//    return program
+//}
 
 /// Required because TextEditor uses smart quotes that are hard to turn off.
 public func normalizedSource(_ text: String) -> String {

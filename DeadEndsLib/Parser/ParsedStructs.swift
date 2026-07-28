@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 26 July 2026.
+//  Last changed on 27 July 2026.
 //
 
 import Foundation
@@ -12,6 +12,15 @@ import Foundation
 public struct ParsedProgram: Equatable, CustomStringConvertible {
 
     let defns: [ParsedDefn]  // A program is a list of definitions.
+    let procURLs: [String:URL]
+    let funcURLs: [String:URL]
+
+    public init(_ defns: [ParsedDefn], procURLs: [String:URL] = [:],
+                funcURLs: [String:URL] = [:]) {
+        self.defns = defns
+        self.procURLs = procURLs
+        self.funcURLs = funcURLs
+    }
 
     public var description: String {
         defns.map(\.description).joined(separator: "\n")
@@ -19,67 +28,67 @@ public struct ParsedProgram: Equatable, CustomStringConvertible {
 }
 
 /// Parsed definition; holds one of the four definition types found in programs.
-enum ParsedDefn: Equatable, CustomStringConvertible {
-    
-    case procDef(ParsedProcDefn)  // Procedure definition.
-    case funcDef(ParsedFuncDefn)  // Function definition.
+public enum ParsedDefn: Equatable, CustomStringConvertible {
+
+    case procDefn(ParsedProcDefn)  // Procedure definition.
+    case funcDefn(ParsedFuncDefn)  // Function definition.
     case global(ParsedGlobalDefn)  // Global definition.
     case include(ParsedIncludeDefn) // Include definition.
 
-    var description: String {
+    public var description: String {
         switch self {
-        case .procDef(let p): return p.description
-        case .funcDef(let f): return f.description
-        case .global(let g): return g.description
-        case .include(let i): return i.description
+        case .procDefn(let procDefn): return procDefn.description
+        case .funcDefn(let funcDefn): return funcDefn.description
+        case .global(let global): return global.description
+        case .include(let include): return include.description
         }
     }
 }
 
 /// Parsed procedure definition, the definition of a user procedure.
-struct ParsedProcDefn: Equatable, CustomStringConvertible {
+public struct ParsedProcDefn: Equatable, CustomStringConvertible {
 
     let name: String
     let params: [String]
     let body: [ParsedStatement]
     let line: Int
 
-    var description: String {
+    public var description: String {
         "proc \(name)(\(params.joined(separator: ", "))) \(body)"
     }
 }
 
 /// Parsed function definition, the definition of a user function.
-struct ParsedFuncDefn: Equatable, CustomStringConvertible {
+public struct ParsedFuncDefn: Equatable, CustomStringConvertible {
 
     let name: String
     let params: [String]
     let body: [ParsedStatement]
     let line: Int
 
-    var description: String {
+    public var description: String {
         "FUNC \(name)(\(params.joined(separator: ", "))) \(body)"
     }
 }
 
 /// Parsed global definition, the definition of a global variable.
-struct ParsedGlobalDefn: Equatable, CustomStringConvertible {
+public struct ParsedGlobalDefn: Equatable, CustomStringConvertible {
 
     let name: String
     let line: Int
 
-    var description: String {
+    public var description: String {
         "GLOBAL(\(name))"
     }
 }
 
 /// Parsed include definition, the "definition" of an include file.
-struct ParsedIncludeDefn: Equatable, CustomStringConvertible {
+public struct ParsedIncludeDefn: Equatable, CustomStringConvertible {
 
     let name: String
     let line: Int
 
-    var description: String {
+    public var description: String {
         "INCUDE(\(name))"
     }
 }
