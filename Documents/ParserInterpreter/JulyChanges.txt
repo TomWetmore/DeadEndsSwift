@@ -1,0 +1,101 @@
+THE PROGRAM PARSER -- The top level parser component. It returns a list of definitions,
+include definitions. It works at the tok stream level, so doesn't knwo the name of the
+file it is processing or whether the text comes from a file at all.
+
+public struct ProgramParser: Parser {
+    public func parse(_ input: inout TokStream) throws -> [ParsedDefn] {
+        var defns: [ParsedDefn] = []
+        while let tok = input.first, tok.kind != .eof {
+            defns.append(try DefnParser().parse(&input))
+        }
+        return defns
+    }
+}
+
+RUNPROGRAM -- The runProgram assumes that there are no includes. So it calls ProgramParser().parse() directly. This cannot happen when includes are included. Important note. In this code the variable parsedProgram has type [ParsedDefn].
+
+public func runProgram(source: String, database: Database, output: ProgramOutput,
+                       interface: UserInterface) async throws -> InterpResult {
+
+    let source = normalizedSource(source)
+    var lexer = Lexer(source: source)  // Create lexer and get the tokens.
+    let tokens = lexer.tokenize()
+    guard tokens.last?.kind == .eof else {
+        throw FrontEndError.missingEOF
+    }
+    var input = tokens[...]  // Parse the tokens into a parsed program syntax tree.
+    let definitions = try ProgramParser().parse(&input)
+    if let first = input.first, first.kind == .eof {
+        input.removeFirst()
+    }
+    if !input.isEmpty {
+        throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
+    }
+    let parsedProgram = ParsedProgram(definitions, procURLs: [:], funcURLs: [:])
+    let program = Program(parsedProgram: parsedProgram, database: database,
+                          output: output, userInterface: interface)
+    return try await program.interpretProgram()
+}
+
+PARSEDPROGRAM -- ParsedProgram is not a [ParsedDefn] (which is what ProgramParser returns).
+
+public struct ParsedProgram: Equatable, CustomStringConvertible {
+    let defns: [ParsedDefn]  // A program is a list of definitions.
+    let procURLs: [String:URL]
+    let funcURLs: [String:URL]
+    ....
+}
+
+PARSEFULLPROGRAM.
+
+func parseFullProgram(fileURL: URL) throws -> ParsedProgram {
+    var pendingFiles: [URL] = [fileURL.standardizedFileURL]
+    var parsedFiles: Set<URL> = []
+    var procURLs: [String: URL] = [:]
+    var funcURLs: [String: URL] = [:]
+    var globalURLs: [String: URL] = [:]
+    var definitions: [ParsedDefn] = []
+
+    while !pendingFiles.isEmpty {
+        let fileURL = pendingFiles.removeFirst()
+        guard parsedFiles.insert(fileURL).inserted else { continue }
+        let tokens = try tokensFromURL(fileURL)
+        var tokStream = TokStream(tokens)
+        let defns = try ProgramParser().parse(&tokStream)
+        for defn in defns {
+            switch defn {
+            case .procDefn(let procDefn):
+                let name = procDefn.name
+                guard procURLs[name] == nil else {
+                    let message = "proc \(name) defined in \(procURLs[name]!) and \(fileURL)"
+                    throw ParseError(message, line: procDefn.line)
+                }
+                procURLs[name] = fileURL
+                definitions.append(defn)
+            case .funcDefn(let funcDefn):
+                let name = funcDefn.name
+                guard funcURLs[name] == nil else {
+                    let message = "func \(name) defined in \(funcURLs[name]!) and \(fileURL)"
+                    throw ParseError(message, line: funcDefn.line)
+                }
+                funcURLs[funcDefn.name] = fileURL
+                definitions.append(defn)
+            case .global(let globalDefn):
+                let name = globalDefn.name
+                guard globalURLs[name] == nil else {
+                    let message = "global \(name) defined in \(globalURLs[name]!) and \(fileURL)"
+                    throw ParseError(message, line: globalDefn.line)
+                }
+                globalURLs[globalDefn.name] = fileURL
+                definitions.append(defn)
+            case .include(let includeDefn):
+                let includeURL = fileURL
+                    .deletingLastPathComponent()
+                    .appendingPathComponent(includeDefn.name)
+                    .standardizedFileURL
+                pendingFiles.append(includeURL)
+            }
+        }
+    }
+    return ParsedProgram(definitions, procURLs: procURLs, funcURLs: funcURLs)
+}

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 April 2026.
-//  Last changed on 21 July 2026.
+//  Last changed on 29 July 2026.
 //
 /// runProgram runs a DeadEnds program and sends its output to standard
 /// output. The program is passed in as a string. The function lexes and
@@ -51,7 +51,7 @@ public func runProgram(source: String, database: Database,
     }
 
     var input = tokens[...]  // Parse the tokens into a parsed program syntax tree.
-    let parsedProgram = try ProgramParser().parse(&input)
+    let definitions = try ProgramParser().parse(&input)
     if let first = input.first, first.kind == .eof {
         input.removeFirst()
     }
@@ -59,6 +59,7 @@ public func runProgram(source: String, database: Database,
         throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
     }
 
+    let parsedProgram = ParsedProgram(definitions, procURLs: [:], funcURLs: [:])
     let program = Program(parsedProgram: parsedProgram, database: database,
                           output: output, userInterface: interface)
     return try await program.interpretProgram()

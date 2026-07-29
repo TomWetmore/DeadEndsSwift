@@ -8,9 +8,11 @@
 
 import Foundation
 
-/// DeadEnds program; combines static program parts with runtime parts.
-/// To run a DeadEnds program create a Program object and call its
-/// interpret method.
+/// A Program object combines both static program parts
+/// and runtime parts.
+///
+/// To run a DeadEnds Program create a Program object and
+/// then call its interpret method.
 @MainActor
 final public class Program {
 
