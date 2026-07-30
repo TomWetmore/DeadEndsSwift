@@ -1,8 +1,15 @@
+global(a)
+include ("include.dend")
+
 proc main () {
     "Hello, world\n"
     set(iii, getinteger("Please enter an integer"))
-    d(iii)
+    d(iii) nl()
 
     set(per, getperson("Please enter a name pattern"))
-    name(per)
+    name(per) nl()
+
+    call test("a") nl()
+    call test(9) nl()
+    call test(add(14, 15)) nl()
 }

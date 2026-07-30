@@ -123,7 +123,7 @@ struct IncludeDefParser: Parser {
             throw ParseError("expected \"include\"", line: line)
         }
         try ExactToken(kind: .lParen).parse(&input)
-        let includeName = try IdentifierToken().parse(&input)
+        let includeName = try StringConstToken().parse(&input)
         try ExactToken(kind: .rParen).parse(&input)
 
         return ParsedIncludeDefn(name: includeName, line: line)
@@ -165,7 +165,7 @@ struct IdentifierListOptionalParser: Parser {
 }
 
 // Addition heading for the refactoring to include include.
-func parseFullProgram(fileURL: URL) throws -> ParsedProgram {
+public func parseFullProgram(fileURL: URL) throws -> ParsedProgram {
 
     var pendingFiles: [URL] = [fileURL.standardizedFileURL]
     var parsedFiles: Set<URL> = []
@@ -180,6 +180,7 @@ func parseFullProgram(fileURL: URL) throws -> ParsedProgram {
     while !pendingFiles.isEmpty {
 
         let fileURL = pendingFiles.removeFirst()
+        print("PARSING: \(fileURL)") // DEBUG.
         guard parsedFiles.insert(fileURL).inserted else { continue }
 
         let tokens = try tokensFromURL(fileURL)
@@ -230,10 +231,6 @@ func parseFullProgram(fileURL: URL) throws -> ParsedProgram {
     return ParsedProgram(definitions, procURLs: procURLs, funcURLs: funcURLs)
 }
 
-func parseFile(fileURL: URL) -> [ParsedDefn] {
-    return []
-}
-
 /// Get the sequence of tokens from a file URL.
 func tokensFromURL(_ url: URL) throws -> [Token] {
 
@@ -246,28 +243,6 @@ func tokensFromURL(_ url: URL) throws -> [Token] {
     }
     return tokens
 }
-
-// Starting the refactoring needed to move to the include feature.
-
-//func pparseFile(source: String) throws -> [ParsedDefn] {
-//
-//    let normalized = normalizedSource(source)  // Temporary quote hack.
-//    var lexer = Lexer(source: normalized)
-//    let tokens = lexer.tokenize()
-//    guard tokens.last?.kind == .eof else {
-//        throw FrontEndError.missingEOF
-//    }
-//    var input = tokens[...]
-//    let program = try ProgramParser().parse(&input)
-//
-//    if input.first?.kind == .eof {
-//        input.removeFirst()
-//    }
-//    guard input.isEmpty else {
-//        throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
-//    }
-//    return program
-//}
 
 /// Required because TextEditor uses smart quotes that are hard to turn off.
 public func normalizedSource(_ text: String) -> String {

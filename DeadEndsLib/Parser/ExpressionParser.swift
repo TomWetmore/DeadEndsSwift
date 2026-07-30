@@ -198,8 +198,8 @@ struct StringConstToken: Parser {
 public struct ParseError: Error, CustomStringConvertible {
 
     //case syntax(_ message: String, line: Int)
-    let message: String
-    let line: Int
+    public let message: String
+    public let line: Int
 
     init(_ message: String, line: Int) {
         self.message = message
