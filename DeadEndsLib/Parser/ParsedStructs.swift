@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 30 July 2026.
+//  Last changed on 31 July 2026.
 //
 
 import Foundation
@@ -12,11 +12,11 @@ import Foundation
 public struct ParsedProgram: Equatable, CustomStringConvertible {
 
     let defns: [ParsedDefn]  // A program is a list of definitions.
-    let procURLs: [String:URL]
-    let funcURLs: [String:URL]
+    let procURLs: [String:URL?]
+    let funcURLs: [String:URL?]
 
-    public init(_ defns: [ParsedDefn], procURLs: [String:URL] = [:],
-                funcURLs: [String:URL] = [:]) {
+    public init(_ defns: [ParsedDefn], procURLs: [String:URL?] = [:],
+                funcURLs: [String:URL?] = [:]) {
         self.defns = defns
         self.procURLs = procURLs
         self.funcURLs = funcURLs
