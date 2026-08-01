@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 31 July 2026.
+//  Last changed on 1 August 2026.
 //
 
 import Foundation
@@ -112,6 +112,7 @@ struct GlobalDefParser: Parser {
     }
 }
 
+/// Include definition parser.
 struct IncludeDefParser: Parser {
 
     /// Parse an include definition.
@@ -130,6 +131,7 @@ struct IncludeDefParser: Parser {
     }
 }
 
+/// Identifier list parser.
 struct IdentifierListParser: Parser {
 
     func parse(_ input: inout TokStream) throws -> [String] {
@@ -150,6 +152,7 @@ struct IdentifierListParser: Parser {
     }
 }
 
+/// Optional identifier list parser.
 struct IdentifierListOptionalParser: Parser {
 
     func parse(_ input: inout TokStream) throws -> [String] {
@@ -164,192 +167,6 @@ struct IdentifierListOptionalParser: Parser {
     }
 }
 
-// Addition heading for the refactoring to include include.
-public func oldParseFullProgram(fileURL: URL) throws -> ParsedProgram {
-
-    var pendingFiles: [URL] = [fileURL.standardizedFileURL]
-    var parsedFiles: Set<URL> = []
-
-    // Map definitions to their files.
-    var procURLs: [String: URL] = [:]
-    var funcURLs: [String: URL] = [:]
-    var globalURLs: [String: URL] = [:]
-
-    var definitions: [ParsedDefn] = []
-
-    while !pendingFiles.isEmpty {
-
-        let fileURL = pendingFiles.removeFirst()
-        print("PARSING: \(fileURL)") // DEBUG.
-        guard parsedFiles.insert(fileURL).inserted else { continue }
-
-        let tokens = try tokensFromURL(fileURL)
-        var tokStream = TokStream(tokens)
-        let defns = try ProgramParser().parse(&tokStream)
-
-        for defn in defns {
-            switch defn {
-
-            case .procDefn(let procDefn):
-                let name = procDefn.name
-                guard procURLs[name] == nil else {
-                    let message = "proc \(name) defined in \(procURLs[name]!) and \(fileURL)"
-                    throw ParseError(message, line: procDefn.line)
-                }
-                procURLs[name] = fileURL
-                definitions.append(defn)
-
-            case .funcDefn(let funcDefn):
-                let name = funcDefn.name
-                guard funcURLs[name] == nil else {
-                    let message = "func \(name) defined in \(funcURLs[name]!) and \(fileURL)"
-                    throw ParseError(message, line: funcDefn.line)
-                }
-                funcURLs[funcDefn.name] = fileURL
-                definitions.append(defn)
-
-            case .global(let globalDefn):
-                let name = globalDefn.name
-                guard globalURLs[name] == nil else {
-                    let message = "global \(name) defined in \(globalURLs[name]!) and \(fileURL)"
-                    throw ParseError(message, line: globalDefn.line)
-                }
-                globalURLs[globalDefn.name] = fileURL
-                definitions.append(defn)
-
-            case .include(let includeDefn):
-                let includeURL = fileURL
-                    .deletingLastPathComponent()
-                    .appendingPathComponent(includeDefn.name)
-                    .standardizedFileURL
-
-                pendingFiles.append(includeURL)
-            }
-        }
-    }
-
-    return ParsedProgram(definitions, procURLs: procURLs, funcURLs: funcURLs)
-}
-
-/// MASTER PARSEFULLPROGRAM
-//func parseFullProgram(fileURLs: [URL], defns: [ParsedDefn]) throws -> ParsedProgram? { // DEBUG: REMOVE THE ? !!
-//
-//    var pendingFiles: [URL] = []
-//    var parsedFiles: Set<URL> = []
-//
-//    // Map definitions to their files.
-//    var procURLs: [String: URL?] = [:]
-//    var funcURLs: [String: URL?] = [:]
-//    var globalURLs: [String: URL?] = [:]
-//
-//    var definitions: [ParsedDefn] = []
-//
-//    for url in fileURLs {
-//        pendingFiles.append(url)
-//    }
-//    for defn in defns {
-//        switch defn {
-//
-//        case .procDefn(let procDefn):
-//            procURLs[procDefn.name] = nil
-//            definitions.append(defn)
-//        case .funcDefn(let funcDefn):
-//            funcURLs[funcDefn.name] = nil
-//            definitions.append(defn)
-//        case .global(let globalDefn):
-//            globalURLs[globalDefn.name] = nil
-//            definitions.append(defn)
-//        case .include(let includeDefn):
-//            pendingFiles.append(includeURL)
-//        }
-//
-//        while !pendingFiles.isEmpty {
-//
-//            let fileURL = pendingFiles.removeFirst()
-//            print("PARSING: \(fileURL)") // DEBUG.
-//            guard parsedFiles.insert(fileURL).inserted else { continue }
-//
-//            let tokens = try tokensFromURL(fileURL)
-//            var tokStream = TokStream(tokens)
-//            let defns = try ProgramParser().parse(&tokStream)
-//
-//            for defn in defns {
-//                switch defn {
-//
-//                case .procDefn(let procDefn):
-//                    let name = procDefn.name
-//                    guard procURLs[name] == nil else {
-//                        let message = "proc \(name) defined in \(procURLs[name]!) and \(fileURL)"
-//                        throw ParseError(message, line: procDefn.line)
-//                    }
-//                    procURLs[name] = fileURL
-//                    definitions.append(defn)
-//
-//                case .funcDefn(let funcDefn):
-//                    let name = funcDefn.name
-//                    guard funcURLs[name] == nil else {
-//                        let message = "func \(name) defined in \(funcURLs[name]!) and \(fileURL)"
-//                        throw ParseError(message, line: funcDefn.line)
-//                    }
-//                    funcURLs[funcDefn.name] = fileURL
-//                    definitions.append(defn)
-//
-//                case .global(let globalDefn):
-//                    let name = globalDefn.name
-//                    guard globalURLs[name] == nil else {
-//                        let message = "global \(name) defined in \(globalURLs[name]!) and \(fileURL)"
-//                        throw ParseError(message, line: globalDefn.line)
-//                    }
-//                    globalURLs[globalDefn.name] = fileURL
-//                    definitions.append(defn)
-//
-//                case .include(let includeDefn):
-//                    let includeURL = fileURL
-//                        .deletingLastPathComponent()
-//                        .appendingPathComponent(includeDefn.name)
-//                        .standardizedFileURL
-//
-//                    pendingFiles.append(includeURL)
-//                }
-//            }
-//        }
-//
-//        return ParsedProgram(definitions, procURLs: procURLs, funcURLs: funcURLs)
-//
-//    }
-//
-//func parseFullProgram(fileURL: URL) {}
-
-func parseFullProgram(source: String, sourceURL: URL?) throws -> [ParsedDefn] {
-
-    // Parse the string specially into definitions.
-    let defns = try singleParse(source: source)
-    return defns
-
-}
-
-
-/// BRAND NEW STUFF.
-func singleParse(source: String) throws -> [ParsedDefn] {
-    let normalized = normalizedSource(source)  // Quote hack.
-    var lexer = Lexer(source: normalized)
-    let tokens = lexer.tokenize()
-    guard tokens.last?.kind == .eof else {
-        let message = "Missing end of file token"
-        throw ParseError(message, line: 0)
-    }
-    var input = tokens[...]
-    let definitions = try ProgramParser().parse(&input)
-    if let first = input.first, first.kind == .eof {
-        input.removeFirst()
-    }
-    if !input.isEmpty {
-        let message = "parse did not consume all input"
-        throw ParseError(message, line: 0)
-    }
-    return definitions
-}
-
 /// Get the sequence of tokens from a file URL.
 func tokensFromURL(_ url: URL) throws -> [Token] {
 
@@ -358,17 +175,27 @@ func tokensFromURL(_ url: URL) throws -> [Token] {
     var lexer = Lexer(source: source)
     let tokens = lexer.tokenize()
     guard tokens.last?.kind == .eof else {
-        throw FrontEndError.missingEOF
+        let message = "file does not end with an EOF token"
+        throw ParseError(message, line: 0)
     }
     return tokens
 }
 
-/// Parse definitions from a file holding a DeadEnds program.
+/// Parse the definitions from a file holding a DeadEnds program.
 func parseDefinitions(fileURL: URL) throws -> [ParsedDefn] {
 
-    let tokens = try tokensFromURL(fileURL) // Can throw FrontEndError.
-    // TODO: Convert FrontEndError into a ParseError.
-    return try ProgramParser().parse(tokens) // Can throw ParseError.
+    let tokens = try tokensFromURL(fileURL)
+    var input = TokStream(tokens)
+
+    let definitions = try ProgramParser().parse(&input)
+
+    try ExactToken(kind: .eof).parse(&input)
+    guard input.isEmpty else {
+        let message = "parse did not consume all input"
+        throw ParseError(message, line: input.first?.line ?? 0)
+    }
+
+    return definitions
 }
 
 /// Parse definitions from a text buffer holding a DeadEnds program.
@@ -376,10 +203,22 @@ func parseDefinitions(source: String) throws -> [ParsedDefn] {
 
     var lexer = Lexer(source: normalizedSource(source))
     let tokens = lexer.tokenize()
+
     guard tokens.last?.kind == .eof else {
-        throw FrontEndError.missingEOF
+        let message = "source does not end with an end of file"
+        throw ParseError(message, line: 0)
     }
-    return try ProgramParser().parse(tokens)
+    var input = TokStream(tokens)
+    let definitions = try ProgramParser().parse(&input)
+    try ExactToken(kind: .eof).parse(&input)
+
+    guard input.isEmpty else {
+        throw ParseError(
+            "parse did not consume all input",
+            line: input.first?.line ?? 0
+        )
+    }
+    return definitions
 }
 
 /// Required because TextEditor uses smart quotes that are hard to turn off.
@@ -391,11 +230,8 @@ public func normalizedSource(_ text: String) -> String {
         .replacingOccurrences(of: "’", with: "'")
 }
 
-
-/// BRAND BRAND NEW STUFF
-
-/// Generalization of a source for a single program file. It could be taken
-/// from a file or it could be taken from a text buffer.
+/// Generalization of a source for a program file. It can start
+/// as a file or a text buffer.
 private struct ProgramSource {
 
     let definitions: [ParsedDefn]
@@ -410,7 +246,9 @@ private struct DefnSource {
 /// Parse a full (using includes) program starting from a fileURL.
 public func parseFullProgram(fileURL: URL) throws -> ParsedProgram {
 
+    let fileURL = fileURL.standardizedFileURL
     let defns = try parseDefinitions(fileURL: fileURL)
+    //print("THERE ARE \(defns.count) DEFINIIONS")
 
     let source = ProgramSource(
         definitions: defns,
@@ -421,7 +259,7 @@ public func parseFullProgram(fileURL: URL) throws -> ParsedProgram {
 }
 
 /// Parse a full (using includes) program starting from a text buffer.
-func parseFullProgram(source: String, sourceURL: URL?, baseURL: URL?) throws -> ParsedProgram {
+public func parseFullProgram(source: String, sourceURL: URL?, baseURL: URL?) throws -> ParsedProgram {
 
     let definitions = try parseDefinitions(source: source)
     let source = ProgramSource(
@@ -441,13 +279,15 @@ private func assembleProgram(with initialSource: ProgramSource) throws -> Parsed
 
     var definitions: [ParsedDefn] = []
 
-    var procURLs: [String: URL?] = [:]
-    var funcURLs: [String: URL?] = [:]
-    var globalURLs: [String: URL?] = [:]
+    //let globalURLs: [String: URL?] = [:] // TODO: MUST BE CHANGED.
 
     var procSources: [String: DefnSource] = [:]
     var funcSources: [String: DefnSource] = [:]
     var globalSources: [String: DefnSource] = [:]
+
+    if let initialURL = initialSource.sourceURL {
+        parsedFiles.insert(initialURL.standardizedFileURL)
+    }
 
     while !pendingSources.isEmpty {
         // Get the next source to process.
@@ -503,9 +343,6 @@ private func assembleProgram(with initialSource: ProgramSource) throws -> Parsed
                 guard parsedFiles.insert(fileURL).inserted else {
                     continue
                 }
-
-                print("PARSING: \(fileURL)") // DEBUG.
-
                 let includedDefinitions = try parseDefinitions(fileURL: fileURL)
 
                 pendingSources.append(
@@ -518,6 +355,9 @@ private func assembleProgram(with initialSource: ProgramSource) throws -> Parsed
             }
         }
     }
+
+    let procURLs = procSources.mapValues(\.url)
+    let funcURLs = funcSources.mapValues(\.url)
 
     return ParsedProgram(
         definitions,

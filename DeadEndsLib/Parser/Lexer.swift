@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 3 April 2026.
-//  Last changed on 19 July 2026.
+//  Last changed on 1 August 2026.
 //
 
 import Foundation
@@ -309,7 +309,7 @@ extension TokenKind: CustomStringConvertible {
         case .breakTok: return "break"
         case .continueTok: return "continue"
         case .returnTok: return "return"
-        case .lParen: return "()"
+        case .lParen: return "("
         case .rParen: return ")"
         case .lBrace: return "{"
         case .rBrace: return "}"

@@ -57,36 +57,25 @@ final class ProgramModel {
         }
 
         do {
-            let normalized = normalizedSource(source)  // Quote hack.
-            var lexer = Lexer(source: normalized)
-            let tokens = lexer.tokenize()
-            guard tokens.last?.kind == .eof else {
-                throw FrontEndError.missingEOF
-            }
-            var input = tokens[...]
-            parsedProgram = try ProgramParser().parse(&input)
-            if let first = input.first, first.kind == .eof {
-                input.removeFirst()
-            }
-            if !input.isEmpty {
-                throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
-            }
+            let fakeIncludeDir = URL(filePath: "/Users/ttw4/Desktop/DeadEndsSwift/Programs",
+                                     directoryHint: .isDirectory)
+            parsedProgram = try parseFullProgram(source: source, sourceURL: nil, baseURL: fakeIncludeDir)
             compileState = .success
-
-        } catch let error as FrontEndError {
-            diagnostics = [convertFrontEndError(error)]
-            compileState = .failure
         } catch let error as ParseError {
-            diagnostics = [Diagnostic(
-                message: error.description,
-                line: nil
-            )]
+            diagnostics = [
+                Diagnostic(
+                    message: error.description,
+                    line: error.line
+                )
+            ]
             compileState = .failure
         } catch {
-            diagnostics = [Diagnostic(
-                message: error.localizedDescription,
-                line: nil
-            )]
+            diagnostics = [
+                Diagnostic(
+                    message: error.localizedDescription,
+                    line: nil
+                )
+            ]
             compileState = .failure
         }
     }
@@ -206,19 +195,6 @@ struct Diagnostic: Identifiable {
     public let line: Int?
 }
 
-func convertFrontEndError(_ error: FrontEndError) -> Diagnostic {
-    switch error {
-        
-    case .missingEOF:
-        return Diagnostic(message: "Missing EOF", line: nil)
-    case .parseDidNotConsumeAllInput(let tokens):
-        return Diagnostic(
-            message: "Unexpected input after end of program",
-            line: tokens.first?.line
-        )
-    }
-}
-
 /// Required because TextEditor uses smart quotes that are hard to turn off.
 func normalizedSource(_ text: String) -> String {
     text
@@ -231,7 +207,7 @@ func normalizedSource(_ text: String) -> String {
 /// Conformance of the user interface protocol for SwiftUI.
 @MainActor
 extension ProgramModel: UserInterface {
-    
+
     func write(_ string: String) { return }
 
     func readString() -> String? { return nil }
