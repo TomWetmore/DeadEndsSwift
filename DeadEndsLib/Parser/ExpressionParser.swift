@@ -201,7 +201,7 @@ public struct ParseError: Error, CustomStringConvertible {
     public let message: String
     public let line: Int
 
-    init(_ message: String, line: Int) {
+    public init(_ message: String, line: Int) {
         self.message = message
         self.line = line
     }

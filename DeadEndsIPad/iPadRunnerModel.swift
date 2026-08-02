@@ -72,6 +72,53 @@ final class IPadRunnerModel {
     /// Copied from ProgramModel.
     /// Handle the compile button; tries to compile a program.
     /// It will either succeed or display a diagnostic message.
+    ///
+    /// 
+//    func oldhandleCompileButton() {
+//
+//        compileState = .working
+//        diagnostics = []
+//        parsedProgram = nil
+//        output.clear()
+//
+//        guard !source.isEmpty else {
+//            compileState = .initial
+//            return
+//        }
+//
+//        do {
+//            let normalized = normalizedSource(source)  // Quote hack.
+//            var lexer = Lexer(source: normalized)
+//            let tokens = lexer.tokenize()
+//            guard tokens.last?.kind == .eof else {
+//                let message = "missing eof"
+//                throw ParseError(message, line: 0)
+//            }
+//            var input = tokens[...]
+//            parsedProgram = try ProgramParser().parse(&input)
+//            if let first = input.first, first.kind == .eof {
+//                input.removeFirst()
+//            }
+//            if !input.isEmpty {
+//                let message = "parse did not consume all ionput"
+//                throw ParseError(message, line: 1)
+//            }
+//            compileState = .success
+//        } catch let error as ParseError {
+//            diagnostics = [Diagnostic(
+//                message: error.description,
+//                line: nil
+//            )]
+//            compileState = .failure
+//        } catch {
+//            diagnostics = [Diagnostic(
+//                message: error.localizedDescription,
+//                line: nil
+//            )]
+//            compileState = .failure
+//        }
+//    }
+
     func handleCompileButton() {
 
         compileState = .working
@@ -85,36 +132,25 @@ final class IPadRunnerModel {
         }
 
         do {
-            let normalized = normalizedSource(source)  // Quote hack.
-            var lexer = Lexer(source: normalized)
-            let tokens = lexer.tokenize()
-            guard tokens.last?.kind == .eof else {
-                throw FrontEndError.missingEOF
-            }
-            var input = tokens[...]
-            parsedProgram = try ProgramParser().parse(&input)
-            if let first = input.first, first.kind == .eof {
-                input.removeFirst()
-            }
-            if !input.isEmpty {
-                throw FrontEndError.parseDidNotConsumeAllInput(Array(input))
-            }
+            let fakeIncludeDir = URL(filePath: "/Users/ttw4/Desktop/DeadEndsSwift/Programs",
+                                     directoryHint: .isDirectory)
+            parsedProgram = try parseFullProgram(source: source, sourceURL: nil, baseURL: fakeIncludeDir)
             compileState = .success
-
-        } catch let error as FrontEndError {
-            diagnostics = [convertFrontEndError(error)]
-            compileState = .failure
         } catch let error as ParseError {
-            diagnostics = [Diagnostic(
-                message: error.description,
-                line: nil
-            )]
+            diagnostics = [
+                Diagnostic(
+                    message: error.description,
+                    line: error.line
+                )
+            ]
             compileState = .failure
         } catch {
-            diagnostics = [Diagnostic(
-                message: error.localizedDescription,
-                line: nil
-            )]
+            diagnostics = [
+                Diagnostic(
+                    message: error.localizedDescription,
+                    line: nil
+                )
+            ]
             compileState = .failure
         }
     }
@@ -162,11 +198,19 @@ final class IPadRunnerModel {
 /// Model extension that implements the UserInterface protocol.
 @MainActor
 extension IPadRunnerModel: UserInterface {
+    
+    func chooseFromList(prompt: String?, strings: [String]) async -> Int? {
+        return nil
+    }
+
+    func write(_ string: String) { }
+
+    func readString() -> String? { }
+
 
     func getPerson(prompt: String?) async -> Person? {
         programRequest = .getPerson(GetPersonRequest(
-            prompt: prompt ?? "Enter a person"
-        ))
+            prompt: prompt ?? "Enter a person"))
 
         return await withCheckedContinuation { continuation in
             personContinuation = continuation
@@ -190,20 +234,4 @@ struct Diagnostic: Identifiable {
     let id = UUID()
     let message: String
     public let line: Int?
-}
-
-
-
-/// Copied from ProgramModel.
-func convertFrontEndError(_ error: FrontEndError) -> Diagnostic {
-    switch error {
-        
-    case .missingEOF:
-        return Diagnostic(message: "Missing EOF", line: nil)
-    case .parseDidNotConsumeAllInput(let tokens):
-        return Diagnostic(
-            message: "Unexpected input after end of program",
-            line: tokens.first?.line
-        )
-    }
 }
