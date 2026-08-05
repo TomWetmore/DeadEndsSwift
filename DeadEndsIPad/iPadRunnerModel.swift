@@ -3,14 +3,12 @@
 //  DeadEndsIPad
 //
 //  Created by Thomas Wetmore on 13 June 2026.
-//  Last changed on 16 June 2026.
+//  Last changed on 2 August 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 import UniformTypeIdentifiers
-
-
 
 @MainActor
 @Observable
@@ -28,9 +26,12 @@ final class IPadRunnerModel {
     var runState: StatusState = .initial
     var programRequest: ProgramRequest?
     var personContinuation: CheckedContinuation<Person?, Never>?
+    var integerContinuation: CheckedContinuation<Int?, Never>?
+    var stringContinuation: CheckedContinuation<String?, Never>?
 
     var diagnostics: [Diagnostic] = []
 
+    /// Handle the load program button.
     func loadProgram(from url: URL) {
         do {
             let ok = url.startAccessingSecurityScopedResource()
@@ -50,6 +51,7 @@ final class IPadRunnerModel {
         }
     }
 
+    /// Handle the load database button.
     func loadDatabase(from url: URL) {
         databaseState = .working
 
@@ -69,56 +71,8 @@ final class IPadRunnerModel {
         }
     }
 
-    /// Copied from ProgramModel.
     /// Handle the compile button; tries to compile a program.
-    /// It will either succeed or display a diagnostic message.
-    ///
-    /// 
-//    func oldhandleCompileButton() {
-//
-//        compileState = .working
-//        diagnostics = []
-//        parsedProgram = nil
-//        output.clear()
-//
-//        guard !source.isEmpty else {
-//            compileState = .initial
-//            return
-//        }
-//
-//        do {
-//            let normalized = normalizedSource(source)  // Quote hack.
-//            var lexer = Lexer(source: normalized)
-//            let tokens = lexer.tokenize()
-//            guard tokens.last?.kind == .eof else {
-//                let message = "missing eof"
-//                throw ParseError(message, line: 0)
-//            }
-//            var input = tokens[...]
-//            parsedProgram = try ProgramParser().parse(&input)
-//            if let first = input.first, first.kind == .eof {
-//                input.removeFirst()
-//            }
-//            if !input.isEmpty {
-//                let message = "parse did not consume all ionput"
-//                throw ParseError(message, line: 1)
-//            }
-//            compileState = .success
-//        } catch let error as ParseError {
-//            diagnostics = [Diagnostic(
-//                message: error.description,
-//                line: nil
-//            )]
-//            compileState = .failure
-//        } catch {
-//            diagnostics = [Diagnostic(
-//                message: error.localizedDescription,
-//                line: nil
-//            )]
-//            compileState = .failure
-//        }
-//    }
-
+    /// It succeeds or displays a diagnostic message.
     func handleCompileButton() {
 
         compileState = .working
@@ -130,27 +84,16 @@ final class IPadRunnerModel {
             compileState = .initial
             return
         }
-
         do {
             let fakeIncludeDir = URL(filePath: "/Users/ttw4/Desktop/DeadEndsSwift/Programs",
                                      directoryHint: .isDirectory)
             parsedProgram = try parseFullProgram(source: source, sourceURL: nil, baseURL: fakeIncludeDir)
             compileState = .success
         } catch let error as ParseError {
-            diagnostics = [
-                Diagnostic(
-                    message: error.description,
-                    line: error.line
-                )
-            ]
+            diagnostics = [Diagnostic(message: error.description, line: error.line)]
             compileState = .failure
         } catch {
-            diagnostics = [
-                Diagnostic(
-                    message: error.localizedDescription,
-                    line: nil
-                )
-            ]
+            diagnostics = [Diagnostic(message: error.localizedDescription, line: nil)]
             compileState = .failure
         }
     }
@@ -205,13 +148,14 @@ extension IPadRunnerModel: UserInterface {
 
     func write(_ string: String) { }
 
-    func readString() -> String? { }
+    func readString() -> String? { return nil }
 
-
-    func getPerson(prompt: String?) async -> Person? {
+    /// Protocol method for the getperson() operation.
+    func getPerson(prompt: String?, database: Database) async -> Person? {
         programRequest = .getPerson(GetPersonRequest(
-            prompt: prompt ?? "Enter a person"))
-
+            prompt: prompt ?? "Enter a person",
+            database: database
+        ))
         return await withCheckedContinuation { continuation in
             personContinuation = continuation
         }
@@ -224,8 +168,39 @@ extension IPadRunnerModel: UserInterface {
     }
 
 
-    func getInteger(prompt: String?) async -> Int? { return nil }
-    func getString(prompt: String?) async -> String? { return nil }
+    //func getInteger(prompt: String?) async -> Int? { return nil }
+    //func getString(prompt: String?) async -> String? { return nil }
+
+    /// Protocol method for the getinteger() built-in.
+    func getInteger(prompt: String?) async -> Int? {
+        programRequest = .getInteger(GetIntegerRequest(
+            prompt: prompt ?? "Enter an integer"
+        ))
+        return await withCheckedContinuation { continuation in
+            integerContinuation = continuation
+        }
+    }
+
+    func finishGetInteger(_ value: Int?) {
+        programRequest = nil
+        integerContinuation?.resume(returning: value)
+        integerContinuation = nil
+    }
+
+    /// Protocol method for the getstring() built-in.
+    func getString(prompt: String?) async -> String? {
+        programRequest = .getString(GetStringRequest(
+            prompt: prompt ?? "Enter a string"))
+        return await withCheckedContinuation { continuation in
+            stringContinuation = continuation
+        }
+    }
+
+    func finishGetString(_ value: String?) {
+        programRequest = nil
+        stringContinuation?.resume(returning: value)
+        stringContinuation = nil
+    }
 }
 
 /// Simple diagnostic to start with.

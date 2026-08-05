@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 31 July 2026.
+//  Last changed on 4 August 2026.
 //
 
 import Foundation
@@ -41,6 +41,32 @@ public enum ParsedDefn: Equatable, CustomStringConvertible {
         case .funcDefn(let funcDefn): return funcDefn.description
         case .global(let global): return global.description
         case .include(let include): return include.description
+        }
+    }
+
+    var name: String {
+        switch self {
+        case .procDefn(let defn):
+            return defn.name
+        case .funcDefn(let defn):
+            return defn.name
+        case .global(let defn):
+            return defn.name
+        case .include(let defn):
+            return defn.name
+        }
+    }
+
+    var line: Int {
+        switch self {
+        case .procDefn(let defn):
+            return defn.line
+        case .funcDefn(let defn):
+            return defn.line
+        case .global(let defn):
+            return defn.line
+        case .include(let defn):
+            return defn.line
         }
     }
 }
@@ -166,7 +192,7 @@ struct ParsedIfStmt: Equatable, CustomStringConvertible {
 
 /// Parsed else if statement.
 struct ParsedElseIf: Equatable, CustomStringConvertible {
-    
+
     let condition: ParsedCondition
     let body: [ParsedStatement]
     let line: Int
@@ -189,13 +215,13 @@ struct ParsedBreakStmt: Equatable, CustomStringConvertible {
 
 /// Parse continue statement.
 struct ParsedContinueStmt: Equatable, CustomStringConvertible {
-    
+
     var description: String { "continue()" }
 }
 
 /// Parsed foreach statement -- foreach(ListExpr, var[, var], var)
 struct ParsedForEachStmt: Equatable, CustomStringConvertible {
-    
+
     let listExpr: ParsedExpr
     let elementVar: String
     let valueVar: String?

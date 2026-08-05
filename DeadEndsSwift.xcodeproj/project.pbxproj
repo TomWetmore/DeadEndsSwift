@@ -159,6 +159,7 @@
 				Parser/ExpressionParser.swift,
 				Parser/Lexer.swift,
 				Parser/ParsedStructs.swift,
+				Parser/ParseProgram.swift,
 				Parser/ProgramParser.swift,
 				Parser/StatementParser.swift,
 				Partition/Connect.swift,
