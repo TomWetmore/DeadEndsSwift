@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 20 July 2026.
+//  Last changed on 6 August 2026.
 //
 
 import Foundation
@@ -103,9 +103,8 @@ extension Program {
             // Generic operations on lists, tables and person sets.
             "empty":  Builtin(min: 1, max: 1) { try await self.bltinEmpty($0)},
             "length": Builtin(min: 1, max: 1) { try await self.bltinLength($0)},
-            "clear":  Builtin(min: 1, max: 1) { try self.bltinClear($0)},
+            "clear":  Builtin(min: 1, max: 1) { try await self.bltinClear($0)},
             "subscript": Builtin(min: 2, max: 2) { try await self.bltinSubscript($0)},
-
             "traverse":  Builtin(min: 1, max: 1) { try await self.bltinNodes($0)},
 
             // List operations; the length and empty builtins are generic.
@@ -142,7 +141,9 @@ extension Program {
             "spouseset":     Builtin(min: 1, max: 1) { try await self.bltinSpouseSet($0)},
             "siblingset":    Builtin(min: 1, max: 1) { try await self.bltinSiblingSet($0)},
             "ancestorset":   Builtin(min: 1, max: 1) { try await self.bltinAncestorSet($0)},
+            "ancestors":     Builtin(min: 1, max: 1) { try await self.bltinAncestorSet($0)},
             "descendentset": Builtin(min: 1, max: 1) { try await self.bltinDescendentSet($0)},
+            "descendents":   Builtin(min: 1, max: 1) { try await self.bltinDescendentSet($0)},
             "namesort":      Builtin(min: 1, max: 1) { try await self.bltinNameSort($0)},
             "keysort":       Builtin(min: 1, max: 1) { try await self.bltinKeySort($0)},
 

@@ -10,7 +10,8 @@ import Foundation
 
 extension Program {
 
-    /// Interpret a foreach statement.
+    /// Interpret a foreach statement. Foreach statements can handle lists,
+    /// person sets, tables, all persons, all families, and all sub-nodes.
     func interpForEach(_ stmt: ParsedForEachStmt) async throws -> InterpResult {
 
         let line = stmt.listExpr.line
@@ -106,19 +107,21 @@ extension Program {
 
 extension GedcomNode {
 
+    /// Return a GedcomNode and its descendants in pre-order order for use
+    /// in foreach statements.
     func preorderNodes() -> [GedcomNode] {
+
         var result: [GedcomNode] = []
+        visit(self)
+        return result
 
-        func visit(_ node: GedcomNode) {
+        func visit(_ node: GedcomNode) {  // Internal func that visits a node.
             result.append(node)
-
             var child = node.kid
             while let current = child {
                 visit(current)
                 child = current.sib
             }
         }
-        visit(self)
-        return result
     }
 }

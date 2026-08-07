@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 4 July 2026.
+//  Last changed on 6 August 2026.
 //
 
 import Foundation
@@ -11,12 +11,12 @@ import Foundation
 /// Builtins are methods on Programs.
 extension Program {
 
-    /// Return an empty list.
+    /// Create and return an empty list.
     func bltinList(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .list(List())
     }
 
-    /// Return whether a list, table, person set or string is empty.
+    /// Return whether a list, table, personset or string is empty.
     func bltinEmpty(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
@@ -36,38 +36,26 @@ extension Program {
         }
     }
 
-    /// Clear the contents of a list, table, or person set.
-    func bltinClear(_ args: [ParsedExpr]) throws -> ProgramValue {
+    /// Clear the contents of a list, table, or personset.
+    func bltinClear(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard case let .identifier(name) = args[0].kind else {
-            throw RuntimeError(
-                "clear: arg must be a list, table, or personset variable",
-                line: args[0].line
-            )
-        }
-        guard let value = lookupSymbol(name) else {
-            throw RuntimeError("undefined variable: \(name)", line: args[0].line)
-        }
-        switch value {
+        switch try await evaluate(args[0]) {
         case .list(let list):
             list.clear()
-            assignToSymbol(name, value: .list(list))
             return .list(list)
         case .table(let table):
             table.clear()
-            assignToSymbol(name, value: .table(table))
             return .table(table)
         case .personset(let personset):
             personset.clear()
-            assignToSymbol(name, value: .personset(personset))
             return .personset(personset)
         default:
-            throw RuntimeError("clear: arg must be a list, table, or personset variable",
-                line: args[0].line)
+            throw RuntimeError("clear: arg must be a list, table, or personset",
+                               line: args[0].line)
         }
     }
 
-    /// Return the length of a list, table, person set or string.
+    /// Return the length of a list, table, personset or string.
     func bltinLength(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
@@ -81,15 +69,15 @@ extension Program {
             return .integer(string.count)
         default:
             throw RuntimeError("length: arg must be a list, table, personset, or string",
-                                            line: args[0].line)
+                               line: args[0].line)
         }
     }
 
-    /// Append a value to a list. This method requires the first argument to be a
-    /// variable with a list value in the symbol table.
+    /// Append a value to a list.
     func bltinAppend(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let list = try await evaluateListOpt(args[0], errMsg: "append: 1st arg must be a list")
+        guard let list = try await evaluateListOpt(args[0],
+                                                   errMsg: "append: 1st arg must be a list")
         else { return .null }
         await list.append(try evaluate(args[1]))
         return .list(list)
@@ -98,7 +86,8 @@ extension Program {
     /// Prepend a value to a list.
     func bltinPrepend(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let list = try await evaluateListOpt(args[0], errMsg: "prepend: 1st arg must be a list")
+        guard let list = try await evaluateListOpt(args[0],
+                                                   errMsg: "prepend: 1st arg must be a list")
         else { return .null }
         await list.prepend(try evaluate(args[1]))
         return .list(list)
@@ -107,15 +96,18 @@ extension Program {
     /// Remove the first value from a list.
     func bltinRemoveFirst(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let list = try await evaluateListOpt(args[0], errMsg: "removefirst: 1st arg must be a list")
+        guard let list = try await evaluateListOpt(args[0],
+                                                   errMsg: "removefirst: 1st arg must be a list")
         else { return .null }
         guard let first = list.removeFirst() else { return .null }
         return first
     }
 
+    /// Remove the last value from a list.
     func bltinRemoveLast(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let list = try await evaluateListOpt(args[0], errMsg: "removelast: 1st arg must be a list")
+        guard let list = try await evaluateListOpt(args[0],
+                                                   errMsg: "removelast: 1st arg must be a list")
         else { return .null }
         guard let last = list.removeLast() else { return .null }
         return last

@@ -246,28 +246,28 @@ Notes:
 Table Operations
 =====================================================================================
 
-table()                       -> .table            Create a table
-insert(.table, .string, .any) -> .null             Add a (key, value) pair to the table.
-lookup(.table, .string)       -> .any | .null      Lookup a value in a table
+table()                    -> table         Create a table
+insert(table, string, any) -> table         Add a (key, value) pair to the table
+lookup(table, string)      -> any|null      Lookup a value in a table
 
 =====================================================================================
 PersonSet Operations
 =====================================================================================
 
-personset    ()                             -> .personset    Create a person set
-addtoset     (.personset, .person [, .any]) -> .null         Add a person to a person set
-removefromset(.personset, .person)          -> .null         Remove a person from a person set
-union        (.personset, .personset)       -> .personset    Nondestructive union
-intersect    (.personset, .personset)       -> .personset    Nondestructive intersection
-difference   (.personset, .personset)       -> .personset    Nondestructive difference
-parentset    (.personset)                   -> .personset    Parent personset of personset
-childset     (.peronsset)                   -> .personset    Children set of personset
-spouseset    (.personset)                   -> .personset    Spouse set of personset
-siblingset   (.personset)                   -> .personset    Sibling set of personset
-ancestorset  (.personset)                   -> .personset    Ancestor set of personset
-descendentset(.personset)                   -> .personset    Descendant set of personset
-namesort     (.personset)                   -> .null         Sort personset by name
-keysort      (.personset)                   -> .null         Sort personset by key
+personset    ()                           -> personset    Create a person set
+addtoset     (personset, person [, any])  -> null         Add a person to a person set
+removefromset(personset, person)          -> null         Remove a person from a person set
+union        (personset, personset)       -> personset    Nondestructive union
+intersect    (personset, personset)       -> personset    Nondestructive intersection
+difference   (personset, personset)       -> personset    Nondestructive difference
+parentset    (personset)                  -> personset    Parent personset of personset
+childset     (peronsset)                  -> personset    Children set of personset
+spouseset    (personset)                  -> personset    Spouse set of personset
+siblingset   (personset)                  -> personset    Sibling set of personset
+ancestorset  (personset)                  -> personset    Ancestor set of personset
+descendentset(personset)                  -> personset    Descendant set of personset
+namesort     (personset)                  -> null         Sort personset by name
+keysort      (personset)                  -> null         Sort personset by key
 
 Notes:
 1. union, intersect, difference are nondestructive -- their argument still exist when the built-in returns (unless the actions of the built-in cause their last reference to dissappear). For example:

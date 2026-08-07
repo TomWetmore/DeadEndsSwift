@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 April 2026.
-//  Last changed on 4 July 2026.
+//  Last changed on 6 August 2026.
 //
 
 import Foundation
@@ -26,11 +26,14 @@ final public class ProgramTable {
 extension Program {
 
     /// Create an empty table program value.
+    /// table() -> Table
     func bltinTable(_ args: [ParsedExpr]) throws -> ProgramValue {
+
         return .table(ProgramTable())
     }
 
     /// Insert an entry into a table. There are no restrinctions on values.
+    /// insert(Table, String, Any) -> Table
     func bltinInsert(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let tableValue = try await evaluate(args[0])
@@ -47,6 +50,7 @@ extension Program {
     }
 
     /// Lookup an entry in a program tablel, returning its value if present.
+    /// lookup(Table, String) -> Any|Null
     func bltinLookup(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let tableValue = try await evaluate(args[0])

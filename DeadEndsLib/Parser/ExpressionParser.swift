@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 6 April 2026.
-//  Last changed on 18 May 2026.
+//  Last changed on 5 August 2026.
 //
 
 import Foundation
@@ -34,10 +34,13 @@ struct ConditionParser: Parser {
 
 /// Expression list parser.
 struct ExprListParser: Parser {
-    func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
-        var result: [ParsedExpr] = []
-        result.append(try ExprParser().parse(&input))
 
+    /// Parse a list of expressions.
+    func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
+
+        var result: [ParsedExpr] = []
+
+        result.append(try ExprParser().parse(&input))
         while true {
             let saved = input
             if (try? ExactToken(kind: .comma).parse(&input)) != nil {
@@ -53,6 +56,8 @@ struct ExprListParser: Parser {
 
 /// Optional expression list parser.
 struct ExprListOptionalParser: Parser {
+
+    /// Parse an optional list of expressions.
     func parse(_ input: inout TokStream) throws -> [ParsedExpr] {
         let saved = input
         if let exprs = try? ExprListParser().parse(&input) {

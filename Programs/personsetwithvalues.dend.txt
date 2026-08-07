@@ -1,0 +1,30 @@
+proc main() {
+
+    set(root, person("I1"))  /* Starting person. */
+    set(ahnen, personset())  /* Person set for persons with ahnen numbers. */
+    set(queue, list())       /* Queue for ancestors. */
+    set(nqueue, list())      /* Queue for ahnen numbers. */
+    enqueue(queue, root)     /* Add first person to ancestor queue.
+    enqueue(nqueue, 1)       /* Add first ahnen number to queue.
+
+    while(not(empty(queue))) {  /* Process the queue. */
+        set(person, dequeue(queue))
+        set(number, dequeue(nqueue))
+        addtoset(ahnen, person, number) /* Add new entry to anhen person set */
+        if (father, father(person)) {
+            enqueue(queue, father)
+            enqueue(nqueue, mul(number, 2))
+        }
+        if (mother, mother(person)) {
+            enqueue(queue, mother)
+            enqueue(nqueue, add(1, mul(2, number)))
+        }
+    }
+
+/* At this point ahnen is a person set with all ancestors, and the value fields
+   are set to the persons' anhen numbers. */
+
+    foreach(ahnen, person, value, n) {
+        d(n) "  " d(value) "  " name(person) nl()
+    }
+}

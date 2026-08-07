@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 April 2026.
-//  Last changed on 26 July 2026.
+//  Last changed on 6 August 2026.
 //
 //  The built-ins in this file are used to inspect running
 //  programs. They are used to help users debug their programs
@@ -14,20 +14,25 @@ import Foundation
 extension Program {
 
     /// Builtin function that shows the run time frame.
+    /// showframe() -> String
     func bltinShowFrame(_ args: [ParsedExpr]) throws -> ProgramValue {
+        
         showFrame()
         return .null
     }
 
     /// Builtin function that shows the run times stack and global symbol table.
+    /// showstack() -> String
     func bltinShowStack(_ args: [ParsedExpr]) throws -> ProgramValue {
+
         showRuntimeStack()
         return .null
     }
 
     /// Builtin function that returns the type and value of an evaluated expression
-    /// as a .string program value.
+    /// valueOf(Any) -> String
     func bltinValueOf(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         let value = try await evaluate(args[0])
         return .string("\(value.typeName): \(value.displayValue)")
     }
@@ -37,11 +42,11 @@ extension Program {
 
     /// Output the contents of the run time stack.
     func showRuntimeStack() {
+
         guard !callStack.isEmpty else {
             output.writeLine("Run Time Stack is empty")
             return
         }
-
         var buffer = ""
         buffer += "Run Time Stack\n"
         for frame in callStack.reversed() {
@@ -75,6 +80,7 @@ extension Program {
 
     /// Format the contents of a symbol table into a string.
     private func formatSymbolTable(_ table: SymbolTable, indent: String = "") -> String {
+
         if table.isEmpty {
             return "\(indent)<empty>"
         }
@@ -87,11 +93,13 @@ extension Program {
 
     /// Format a program value as a string.
     private func formatProgramValue(_ value: ProgramValue?) -> String {
+
         let v = value ?? .null
         return "\(v.typeName): \(v.displayValue)"
     }
 
     private func showFrame() {
+
         guard let frame = callStack.last else { return }
         output.writeLine(formatFrame(frame))
     }
