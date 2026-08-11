@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 3 July 2026.
+//  Last changed on 11 August 2026.
 //
 
 import Foundation
@@ -77,48 +77,21 @@ extension Program {
     }
 
     /// Returns the trimmed name of a person.
-    /// TODO: SHOULDN'T THIS HAVE A SECOND PARAMETER TO SET THE TRIM LENGTH?
-    func builtinTrimName(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func bltinTrimName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                                       errMsg: "trimName: arg must be a person") else {
-            return .null
-        }
-        return .string(person.displayName(limit: 40))
+                                                   errMsg: "trimName: 1st arg must be a person")
+        else { return .null }
+
+        let len = try await evalInteger(args[1],
+                                        errMsg: "trimname: 2nd arg must be an integer")
+        return .string(person.displayName(limit: len))
     }
 }
 
 /// Relationship reated built-ins.
 extension Program {
 
-    /// Return the next sibling of a person.
-    /// nextsibling(person) -> .person or .null
-    func builtinNextSibling(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        guard let person = try await evalPersonOpt(args[0],
-                                                       errMsg: "nextsib: arg must be a person") else {
-            return .null
-        }
-        if let nextSibling = person.nextSibling(in: self.recordIndex) {
-            return .person(nextSibling)
-        } else {
-            return .null
-        }
-    }
-
-    /// Return the previous sibling of a person.
-    func builtinPrevSibling(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        guard let person = try await evalPersonOpt(args[0],
-                                                       errMsg: "prevsib: arg must be a person") else {
-            return .null
-        }
-        if let previousSibling = person.previousSibling(in: self.recordIndex) {
-            return .person(previousSibling)
-        } else {
-            return .null
-        }
-    }
 
     /// Return the first father of a person.
     func bltinFather(_ args: [ParsedExpr]) async throws -> ProgramValue {
@@ -157,6 +130,30 @@ extension Program {
         }
     }
 
+    /// Return the next sibling of a person.
+    func bltinNextSib(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let value = try await evaluate(args[0])
+        switch value {
+        case .person(let person):
+            return person.nextSibling(in: recordIndex).map { .person($0) } ?? .null
+        default:
+            throw RuntimeError("nextsibling: arg must be a person",
+                               line: args[0].line)
+        }
+    }
+
+    /// Return the previohs sibling of a person.
+    func bltinPrevSib(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        let value = try await evaluate(args[0])
+        switch value {
+        case .person(let person):
+            return person.previousSibling(in: recordIndex).map { .person($0) } ?? .null
+        default:
+            throw RuntimeError("nextsibling: arg must be a person",
+                               line: args[0].line)
+        }
+    }
+
     /// Made generic so it can run on persons and families.
     func bltinWife(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
@@ -178,16 +175,27 @@ extension Program {
 /// Sex and role related built-ins.
 extension Program {
 
-    func builtinSex(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("TODO: builtinSex not implemented")
-        return .null
+    /// Return the sex of a person
+    /// sex(Person) -> String  [M, F or U]
+    func bltinSex(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        guard let person = try await evalPersonOpt(args[0],
+                                                  errMsg: "sex: arg must be a person")
+        else { return .null }
+
+        switch person.sex {
+        case .male: return .string("M")
+        case .female: return .string("F")
+        default: return .string("U")
+        }
     }
 
     /// Return true if a person is male.
     func bltinMale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                                       errMsg: "male: arg must be a person") else { return .null }
+                                                       errMsg: "male: arg must be a person")
+        else { return .null }
         return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 

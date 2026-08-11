@@ -1,6 +1,43 @@
-These are the built-in functions of the DeadEnds programming language. They are very similar to those of the LifeLines programming language.
+### DeadEnds Programming Feature
 
-The arguments to the built-in functions are ParsedExprs. These are tree structures created when a program is parsed. They are static and persistent and hold argument expressions as found in the source. When programs are interpreted the arguments are evaluated in the current context. They evaluate to ProgramValues that represent run-time values. Program values are transient objects that disappear when its value is used.
+
+
+Intended to document the DeadEnds Programming Language.
+
+##### Parsing and Interpreting
+
+The feature is broken into two software components: *parsing* and *interpreting*.
+
+The parsing component uses Point-Free's *Parsing package*. The result of parsing is a Swift structure that holds an immutable representation of the program.
+
+Here is an attempt to describe the language through its Swift structure
+
+```
+ParsedProgram: [ParsedDefn]
+ParsedDefn: ParsedProcDefn | ParsedFuncDefn | ParsedGlobalDefn | ParsedIncludeDefn
+ParsedProcDefn: String [String] [ParsedStatement]
+ParsedFuncDefn: String [String] [ParsedStatement]
+ParsedGlobalDefn: String
+ParsedIncludeDefn: String
+ParsedStatement: ParsedCallStatement | ParsedWhileStmt | ParsedIfStmt | ParsedReturnStmt   | ParsedBreakStmt | ParsedContinueStmt | ParsedForEachStmt | ParsedExpr
+ParsedCallStatement: String [ParsedExpr]
+ParsedWhileStatement: ParsedCondition [ParsedStatement]
+ParsedIfStatement: ParsedCondition [ParsedStatement][ParsedElseIf][ParsedStatement]?
+ParsedElseIf: ParsedCondition [ParsedStatement]
+ParsedReturnStmt: [ParsedExpr]
+ParsedBreakStmt: nil
+ParsedContinueStatement: nil
+ParsedForEachStmt: ParsedExpr String String? String [ParsedStatement]
+ParsedCondition: ParsedExpr | String ParsedExpr
+ParsedExpr: Identifier | IntegerConstant | DoubleConstant | stringConstant | functionCall 
+functionCall: String [ParsedExpr]
+```
+
+#### Built-Ins
+
+This section describes the built-in functions of the programming language.
+
+The arguments to the built-in functions are ParsedExprs. These are tree structures created when a program is parsed. They are static and persistent and hold argument expressions as found in the source. When programs are interpreted the args are evaluated in the current context. They evaluate to run-time values. Program values are transient objects that disappear when its value is used.
 
 In a few cases an identifier argument is needed for its name not its value. In these cases the argument is not evaluated. A good example is the assignment built-in, "set(identifier, any)". It evaluates the second argument which can be any ParsedExpr, and then assigns that value to the identifier in the symbol table. If the variable is in the symbol table its value is changed. If the variable is not in the symbol table it is added with the value.
 
@@ -10,39 +47,41 @@ The DeadEnds language is strongly typed. Every ProgramValue has an explicit type
 
 The types and their associated values are:
 
-null                -- an explicit null value and type
-integer(Int)        -- an integer constant; the associated Int is its value
-double(Double)      -- a double constant; the associated Double is its value
-boolean(Bool)       -- a boolean constant; the associated Bool is its value
-string(String)      -- a string constant; the associated String is its value
-gnode(GedcomNode)   -- a Gedcom node; the assoicated GedcomNode (reference semantics) is its value
-person(Person)      -- a Person; the associated Person structure (value semantics) is its value
-family(Family)      -- a Family; the associated Family structure (value semantics) is its value
-source(Source)      -- future
-list(List)          -- a List of ProgramValues (reference semantics)
-table(ProgramTable) -- a Dictionary of String to ProgramValue mappings (reference semantics)
-personset(PersonSet<ProgramValue>) -- A set of person set elements
+```
+null
+integer(Int)
+double(Double)
+boolean(Bool)
+string(String)
+gnode(GedcomNode)
+person(Person)
+family(Family)
+source(Source)
+list(List)
+table(ProgramTable)
+personset(PersonSet<any>)
 traverse(GedcomNode)
-allPersons          -- all Persons in the database
-allFamilies         -- all Families in the database.
+allPersons
+allFamilies
+```
 
-The type "any" is used in the tables below. There is no "any" type; it signifies that an argument can be of any type.
+The type `any` is used in the tables below. There is no `any` type; it indicates that an arg or return type can be of any type.
 
-Identifiers (variables in symbol tables) are not strongly typed. An identifier's type is that of the last ProgramValue assigned to it.
+Identifiers (variables in symbol tables) are not strongly typed. An identifier's type is that of the last value assigned to it.
 
 =========================================================
+
 Null Forwarding and Returning Empty Lists.
-=========================================================
 
-Many built-ins use null-forwarding. Null fowarding happens when a built-in returns a null value instead of the normal type expected. This can happen in two ways.
+Many built-ins are null-forwarding. Null fowarding happens when a built-in returns a null value instead of the normal type expected. This can happen in two ways.
 
-First, if the built-in cannot find the information requested it will return null instead. This is how null forwarding starts. Second, if a null is passed into a built-in, the built-in may pass (forward) the null along
+First, if the built-in cannot find the information requested it returns null. This is how null forwarding starts. Second, if a null is passed into a built-in, the built-in may pass (forward) the null along
 
- A good example is the father() function which is defined below as: "father(person|null) -> person|null". The function takes a person and returns the person's father. If the person does not have a father the function returns null. Also, if null is passed to father(), then father() returns null. This allows built-ins to be chained together without extra code that checks for nulls.
+ A good example is the `father` function defined as `father(person|null) -> person|null`. The function normally takes a person and returns the person's father. If the person does not have a father then the function returns null. Also, if null is passed in to `father`, then it returns null. This allows built-ins to be chained together without null-checking code.
 
-Consider this program that shows both types.
+Consider this program that shows both types of null forwarding.
 
-proc main () {
+```proc main () {
     set(p, getperson("enter a person"))
     "1 " name(p) nl()
     "2 " name(father(p)) nl()
@@ -51,280 +90,219 @@ proc main () {
     "5 " name(father(father(father(father(p))))) nl()
     "6 " name(father(father(father(father(father(p)))))) nl()
 }
+```
 
-This asks for a person and then tries to print the person's name and the names of the next five males in the person's paternal line. If I run this on my wife the output is:
+This asks for a person from the database and then tries to print that person's name and the names of the next five males in the person's paternal line. If I run this on my wife the output is:
 
+```
 1 Luann Frances Grenda
 2 Anthony Grenda
 3 Jan Grenda
 4 Frank Grenda
 5
 6
+```
 
-Her paternal great great grandfather and beyond are not known. On the fifth call to name(), father() is called on Frank Grenda, but it returns null because Frank's father is not in the database. On the sixth call father() is called with a null argument and returns null. Null forwarding is almost always the right thing to do; it can greatly simplify program structure.
+Her paternal great great grandfather and beyond are not known. On the fifth call to `name`, `father`  is called on Frank Grenda, but it returns null because Frank's father is not in the database. On the sixth call `father` is called with a null argument and returns null. Null forwarding is almost always the right thing to do.
 
-Some built-ins return lists. For example, "children(person|family) -> list(person)" can be applied to a person or a family and returns the children of that entity. If the person or family exists but has no children, it returns an empty list. If the argument itself is null, it also returns an empty list. Returning an empty list in this case is a form of null forwarding for sequence-valued built-ins. The alternative is to return null, but empty lists are usually more useful because they work naturally with foreach(), length(), and other list operations.
+Some built-ins return lists. For example, `children(person|family) -> list(person)` can be applied to a person or family and returns the children of the entity. If the person or family exists but has no children, `children` returns an empty list. If the argument itself is null, it also returns an empty list. Returning an empty list is a form of null forwarding for sequence-valued built-ins. The alternative is to return null, but empty lists are more useful because they work naturally with `foreach`, `length`, and other list operations.
 
-Summary
+###### Miscellaneous
 
-• Lists, Tables, and PersonSets have reference semantics. Mutating a
-  structure changes the original object; there is no need to assign it
-  back to a variable that references it.
+```
+d(integer)           -> string      Convert integer to string
+nl()                 -> string      Return newline character
+set(identifier, any) -> null        Assign value of expression to variable
+ord(integer)         -> string      Return ordinal form of a number as string
+card(integer)        -> string      Return the cardinal form of a number as string
+roman(integer)       -> string      Return the Roman form of a number as string
+null()               -> null        Return the null program value
+```
 
-=======================
-MISC Built-ins
-=======================
+`set` is the language's *assignment statement*. Its first arg must be an identifier.
 
-d(.integer)          -> string      Convert an integer to a string.
-nl()                 -> string      Return new line character.
-set(identifier, any) -> null        Assign value of expression to variable.
-ord(integer)         -> string      Return ordinal form of a number as a string.
-card(integer)        -> string      Return the cardinal form of a number as a string.
-roman(integer)       -> string      Return the Roman form of a number as a string.
-null()               -> null        Return the .null program value.
+###### Arithmetic
 
-===============================================================================
-Arithmetic Operators
-===============================================================================
-
+```
 add(integer|double|string, integer|double|string) -> integer|double|string
 sub(integer|double, integer|double) -> integer|double
 mul(integer|double, integer|double) -> integer|double
 div(integer|double, integer|double) -> integer|double
 mod(integer, integer)               -> integer
 neg(integer|double)                 -> integer|double
+```
+Arg types must match. For example, `sub` must be given two integers or two doubles, not one of each. This should be rethought because there are no current built-ins to coerce values.
 
-Notes:
-1. The argument types must match. For example, sub must be given either two integers or two doubles, not one of each. This should be rethought because there are no current built-ins to coerce program values.
-2. In LifeLines add and mul could have one to 32 arguments (like add and or currently allow). Maybe add and mul should be changed to match the LifeLines approach.
+In LifeLines `add` and `mul` could have two to 32 arguments (like `add` and `or`  allow). `add` and `mul` should be changed to use the LifeLines approach.
 
-===========================================================================================
-Increment and Decrement -- increment and decrement integers.
-===========================================================================================
+###### Increment and Decrement
 
+```
 incr(identifier) -> integer -- identifier must have an integer value
 decr(identifier) -> integer -- identifier must have an integer value
+```
+The arg must be an identifier that is the name of an integer variable in the symbol table. Its value is incremented or decremented in the symbol table.
 
-Notes:
-1. The arg is not evaluated, so identifier means the ParsedExpr type, not the ProgramValue type. The arg must be an identifier ParseExpr.
-2. The identifier must already be in a symbol table (it can be local or global) with an integer value.
-
-===========================================================================
-Comparison Operators
-============================================================================
-
-eq(any, any) -> bool        Returns whether two values are equal based on ProgramValue.==.
-ne(any, any) -> bool        Returns whether two values are not equal based on ProgramValue.==.
-lt(any, any) -> bool|null   Returns whether the first arg is less than the second.
-le(any, any) -> bool|null   Returns whether the first arg is less than or equal the second.
+###### Comparison
+```
+eq(any, any) -> bool        Returns whether two values are equal
+ne(any, any) -> bool        Returns whether two values are not equal
+lt(any, any) -> bool|null   Returns whether the first arg is less than the second
+le(any, any) -> bool|null   Returns whether the first arg is less or equal the second.
 gt(any, any) -> bool|null   Returns whether the first arg is greater than the second.
 ge(any, any) -> bool|null   Returns whether the first arg is greater than or equal the second.
+```
+`eq` and `ne` use an internal `==` operator. It is only as good as that operator.
 
-Notes.
-1. eq and ne use ProgramValue's == operator. It is only as good as that operator.
-2. lt, le, gt, and ge use ProgramValue's compare operator. This operator returns .null for non-simple comparisons. This may be an issue for the future.
+`lt`, `le`, `gt`, and `ge` use an internal compare operator. It returns `null` for non-simple comparisons. This is an issue for the future.
 
-=========================================================================
-Logical Operators
-=========================================================================
+###### Logical Operators
+```
+and(any [, any]*) -> bool     Return result of and'ing up to 32 boolean values
+or (any [, any]*) -> bool     Return result of or'ing up to 32 boolean values
+not(any)          -> bool     Return the not of a boolean value
+```
+`and` and `or` can have 1 to 32 arguments. Short circuiting is used, so args that do not need to be evaluated are not. The args can be `any` because there is a `toBool` function that coerces any value to boolean. However the `toBool` function is primitive.`not` also can have  `any` argument because it uses the same `toBool` function.
 
-and(any [, any]...) -> bool     Return the result of and'ing up to 32 boolean values.
-or (any [, any]...) -> bool     Return the result of or'ing up to 32 boolean values.
-not(any)            -> bool     Return the not of a boolean value.
+###### GedcomNode properties and operations
+```
+key (person|family|node|null) -> string|null   Node key
+tag (node|null) -> string|null                 Node tag
+val (node|null) -> string|null                 Node value
+lev (node|null) -> integer|null                Node level
+kid (node|null) -> node|null                   First kid
+sib (node|null) -> node|null                   Next sib
+kids (node|null) -> list(node)                 All kids
+sibs (node|null) -> list(node)                 All sibs
+dad (node|null) -> node|null                   Parent
+root (person|family|null) -> node|null         Root node
+kidwithtag (node|null, string) -> node|null    First kid with tag
+kidswithtag (node|null, string) -> list(node)  All kids with tag
+```
+Most forward null directly. `kids`, `sibs`, `kidswithtag` return empty lists as a form of null forwarding.
 
-Notes:
-1. and and or can have 1 to 32 arguments. Short circuiting is used for both, so args that do not need to be evaluated are not. The args can be .any because there is a toBool function that coerces any ProgramValue to boolean. However the toBool function is still primitive.
-2. not also can have .any argument because it uses the same toBool function as
-the other two.
+###### Person Operations
+```
+person (string)       -> person|null        Look up person in database by key
+name (person|null)    -> string|null        Standard form of person's name
+fullname (person|null, bool, bool, integer)
+                       -> string|null       Formatted name of person
+givens (person|null)   -> list(string)      Given names of person as a list
+surname (person|null)  -> string|null       Primary surname
+birth (person|null)    -> gnode|null        Primary birth event
+death (person|null)    -> gnode|null        Primary death event
+father (person|null)   -> person|null       Primary father
+mother (person|null)   -> person|null       Primary mother
+families (person|null) -> list(family)      Families person is spouse in
+allpersons ()          -> list(person)      All persons in database
+male (person)          -> bool|null         Whether person is male
+female (person)        -> bool|null         Whether person is female
 
-========================================================================================
-GedcomNode properties and operations.are null-forwarding.
-========================================================================================
+allfamilies()          -> list(family)      All families in database
+```
+These are all null forwarding.
 
-key (person|family|node|null) -> string|null    Return key of record or node
-tag (node|null) -> string|null                  Return tag of node
-val (node|null) -> string|null                  Return value of node
-lev (node|null) -> integer                      Return level of node
-kid (node|null) -> node|null                    Return first child of node
-sib (node|null) -> node|null                    Return next sibling of node
-kids(node|null) -> list(node)                   Return all children of a node
-sibs(node|null) -> list(node)                   Return all siblings of a node
-dad (node|null) -> node|null                    Return parent node of node
-root(person|family|null) -> node|null           Return the root node of a record
-kidwithtag(node|null, string) -> node|null      Return the first child of a node with given tag
-kidswithtag(node|null, string) -> list(node)    Return list of children with given tag
-
-Notes:
-1. These built-ins are all null forwarding. Most forward .null directly. The three (kids, sibs, kidswithtag) list returning built-ins return empty lists as their form of null forwarding.
-
-========================================================================================
-Person Operations
-========================================================================================
-
-person  (.string)       -> .person|.null          Look up person in database by key
-name    (.person|.null) -> .string|.null          Return vanilla version of person's name
-fullname(.person|.null, .bool, .bool, .integer)
-                        -> .string|.null          Return formatted name of person
-givens  (.person|.null) -> .list(.string)         Return the given names of a person as a .list
-surname (.person|.null) -> .string|.null          Return the surname of a person
-birth   (.person|.null) -> .gnode|.null           Return the primary birth event of a person
-death   (.person|.null) -> .gnode|.null           Return the primary death event of a person
-father  (.person|.null) -> .person|.null          Return the primary father of a person
-mother  (.person|.null) -> .person|.null          Return the primary father of a person
-families(.person|.null) -> .list(.family)         Return the list of families a person is a spouse in
-allpersons()            -> .list(.person)         Return the list of all persons in the database
-male(.person)           -> .bool|.null            Return whether a person is male
-female(.person)         -> .bool|.null            Return whether a person is female
-
-allfamilies()           -> .list(.family)         Return the list of all families in the database
-
-Notes:
-1. These are all null forwarding.
-
-============================================================================================
-Generic Operations on Persons and Families. The arguments must be ParsedExpr objects
-that evaluate to either a .person or .family.
-============================================================================================
-
-husband (.person|.family) -> .person|.null    Husband of person or family
-wife    (.person|.family) -> .person|.null    Wife of person or family
-husbands(.person|.family) -> .list(.person)   Husbands of person or family
-wives   (.person|.family) -> .list(.person)   Wives of person or family
-children(.person|.family) -> .list(.person)   Children of person or family
-spouses (.person|.family) -> .list(.person)   Spouses of person or family
-parents (.person|.family) -> .list(.person)   Parents of person or family
-siblings(.person)         -> .list(.person)   Siblings of person
-
-Notes:
-1. These are all null or empty list forwarding.
-
-====================================================================================
-Event-based Operations on Events. The arguments must be ParsedExpr objects that
-evaluate to an event node in a person or family.
-====================================================================================
-
-date (.node) -> .string|.null    Value of first DATE node that is a child of .node
-place(.node) -> .string|.null    Value of first PLAC node that is a child of .node
-
-===================================================================================
-Generic Operations on Lists, Tables and PersonSets. The subscript operator currently
-takes only .list arguments. It should take PersonSets and possibly Tables.
-====================================================================================
-
-empty (.list|.table|.personset|.string) -> .bool      Whether the structure or string is empty.
-length(.list|.table|.personset|.string) -> .integer   Length of the structure or string.
-clear (.list|.table|.personset)         -> .null      Empty the structure
-subscript(.list, .integer)              -> .any       Return 1-indexed element of list
-
+###### Person and Family Operations
+```
+husband (person|family)  -> person|null    Primary husband
+wife (person|family)     -> person|null    Primary wife
+husbands (person|family) -> list(person)   All husbands
+wives (person|family)    -> list(person)   All wives
+children (person|family) -> list(person)   Children
+spouses (person|family)  -> list(person)   Spouses
+parents (person|family)  -> list(person)   Parents
+siblings (person)        -> list(person)   Siblings
+```
+These are all null or empty list forwarding.
+###### Operations on Events
+```
+date (node) -> string|null    Value of first DATE node that is a child of node
+place(node) -> string|null    Value of first PLAC node that is a child of node
+```
+###### Generic List, Table, PersonSet and String Operations
+```
+empty (list|table|personset|string)        -> bool      Whether the object is empty
+length (list|table|personset|string)       -> integer   Length of the object
+clear (list|table|personset)               -> null      Empty the structure
+subscript (list|personset|string, integer) -> any       Return 1-indexed element
+```
             "traverse":  Builtin(min: 1, max: 1) { try await self.bltinNodes($0)},
 
-====================================================================
-List Operations
-====================================================================
+###### List Operations
 
-list   ()            -> .list       Create an empty list
-append (.list, .any) -> .null       Append a program value to the end of a list
-prepend(.list, .any) -> .null       Prepend a program value to the start of a list
-push   (.list, .any) -> .null       Push a program value onto a list used as a stack.
-pop    (.list)       -> .any        Pop a program value from a list used as a stack.
-enqueue(.list, .any) -> .null       Enqueue a program value onto a list used as a queue
-dequeue(.list)       -> .any        Dequeue a program value from a list used as a queue
-pair   (.any, .any)  -> .list(.any) Create a pair (two-element list) from any two program values
-first  (.list(.any)) -> .any        Return the first program value from a pair of values
-second (.list(.any)) -> .any        Return the second program value from a pair of values
-removefirst(.list)   -> .any        Remove the first ...
-removelast(.list)    -> .any        Remove the last ...
+```
+list ()             -> list       Create empty list
+append (list, any)  -> null       Append value to the end of a list
+prepend (list, any) -> null       Prepend value to the start of a list
+push (list, any)    -> null       Push value onto list used as stack.
+pop (list)          -> any        Pop value from a list used as stack.
+enqueue (list, any) -> null       Enqueue value onto list used as queue
+dequeue (list)      -> any        Dequeue value from list used as queue
+pair (any, any)     -> list(any)  Create pair from two values
+first (list(any))   -> any        Return first value of pair
+second (list(any))  -> any        Return second value of pair
+removefirst (list)  -> any        Remove and return first element of list
+removelast (list)   -> any        Remove and return last element of list
+```
+`append`, `prepend`, `push`, and `enqueue` return `null`. They cause side-effects. `pop`, `dequeue`, `removefirst` and `removelast` remove and return values from a list. They return `null` if the list is empty.
 
-Notes:
-1. append, prepend, push, and enqueue return .null. They only cause side-effects.
-2. pop, dequeue, removefirst and removelast remove and return values from a list. They return .null if the list is empty.
-3. Pair is now implemented as a two-element list; users should not rely on this implementation.
+###### Table Operations
 
-=====================================================================================
-Table Operations
-=====================================================================================
-
+```
 table()                    -> table         Create a table
 insert(table, string, any) -> table         Add a (key, value) pair to the table
 lookup(table, string)      -> any|null      Lookup a value in a table
+```
+###### PersonSet Operations
+```
+personset ()                          -> personset   Create person set
+addtoset (personset, person [, any]) -> null         Add person to set
+removefromset (personset, person)    -> null         Remove person from set
+union (personset, personset)      -> personset    Union of two set
+intersect (personset, personset)  -> personset    Intersection of two sets
+difference (personset, personset) -> personset    Difference of two sets
+parentset (personset)             -> personset    Parent set of set
+childset (peronsset)              -> personset    Children set of set
+spouseset (personset)             -> personset    Spouse set of set
+siblingset (personset)            -> personset    Sibling set of set
+ancestorset (personset)           -> personset    Ancestor set of set
+descendentset (personset)         -> personset    Descendant set of set
+namesort (personset)              -> null         Sort set by name
+keysort (personset)               -> null         Sort set by key
+```
+All operations are nondestructive; argument sets are not modified.
 
-=====================================================================================
-PersonSet Operations
-=====================================================================================
+`parentset`, `childset`, etc., *do not* add their arg sets to their result sets. However, members from arg sets may end up in the result sets if they have the given relationship with another member of the arg set. For example, `set(t, spouseset(s))` does not add the elements of `s` to set `t`. However if an element of `t` is a spouse of someone in `s`, then that member of `s` will be in `t`.
 
-personset    ()                           -> personset    Create a person set
-addtoset     (personset, person [, any])  -> null         Add a person to a person set
-removefromset(personset, person)          -> null         Remove a person from a person set
-union        (personset, personset)       -> personset    Nondestructive union
-intersect    (personset, personset)       -> personset    Nondestructive intersection
-difference   (personset, personset)       -> personset    Nondestructive difference
-parentset    (personset)                  -> personset    Parent personset of personset
-childset     (peronsset)                  -> personset    Children set of personset
-spouseset    (personset)                  -> personset    Spouse set of personset
-siblingset   (personset)                  -> personset    Sibling set of personset
-ancestorset  (personset)                  -> personset    Ancestor set of personset
-descendentset(personset)                  -> personset    Descendant set of personset
-namesort     (personset)                  -> null         Sort personset by name
-keysort      (personset)                  -> null         Sort personset by key
+Person set elements may have an optional value. Algorithms and output functions can use these values. The value is assigned when a person is added to a set.
 
-Notes:
-1. union, intersect, difference are nondestructive -- their argument still exist when the built-in returns (unless the actions of the built-in cause their last reference to dissappear). For example:
+###### Meta Operations
 
-    ...
-    set(a, personset())
-    set(b, personset())
-    ... /* Code that adds elements to a and b. */
-    set(a, union(a, b))
-    ...
+For debugging during development.
 
-    When union completes it returns a new set; sets a and b still exist and a and b still refer to them. But the action of the set causes variable a to now reference the new set. This may cause the original set a to be freed.
-2. parentset, childset, spouseset, siblingset, ancestorset, and descendentset do not add the members their arg sets to their result sets. However, members of the arg set may be in the result set if they have the necessary relationship with another member of the args. For example, consider:
-    ...                   /* code that creates, s, a set of person set elements. */
-    set(t, spouseset(s))  /* t generally does not contain elements from s unless s has persons who are their own spouses). */
-    set(t, spouseset(t))  /* t must contain all elements from s and likely many more (t contains all spouses of spouses of s, which includes all of s. */
-3. Elements of person sets have an optional .any "value" property. It can be any program value. Algorithms can take advantage of this extra property in any way that works. The value can only be assigned when a person is explicilty added to a set. The set operations do not have a way to compute new values for the elements that get added to the result sets.
-4. It may be useful to add a valuesort function.
+```
+showframe() -> string           Show the current frame
+showstack() -> string           Show the full run time stack
+valueof(any) -> string          Evaluate arg and show its type and value
+```
 
-                       // String operations.
-            "strcmp": Builtin(min: 2, max: 2) { try await self.bltinStrcmp($0)},
+###### User Interface
 
-===============================================================================
-Meta Operations. These are for debugging during program development.
-===============================================================================
+```
+getperson(string)  -> person | null    Request user to identify a person
+getinteger(string) -> integer | null   Request user to enter an integer
+getstring(string)  -> string | null    Request user to enter a string
+```
+These perform the user interface. The string arguments are prompts shown by the user interface.
 
-showframe() -> .string            Shows the current run time stack frame
-showstack() -> .stribng           Shows the full run time stack.
-valueof(.any) -> .string          Evaluates the argument and shows its type and value.
-
-Notes:
-1. When modules are called, their args are evaluated in the caller's frame. A new frame is made for the called module, and the arg values are assigned to the params there. The new frame is added to the stack, and the called module runs. Identifiers defined in the called module are stored in its frame. When a module returns its frame dissappears and the calling module continues.
-2. Meta operations let you inspect the local frame (showframe), the entire run time stack (all frames plus the global table) or the value and type of any expression.
-
-====================================================================================
-User Interface. These built-ins open sheets that request the user enter information.
-====================================================================================
-
-getperson(.string)  -> .person | .null    Request user to identify a persons.
-getinteger(.string) -> .integer | .null   Request user to enter an integer.
-getstring(.string)  -> .string | .null    Request user to enter a string.
-
-Notes:
-1. The .string arguments are prompts that are shown in the sheets.
-
-===========================================================================
-Built-ins that extract information from strings.
-===========================================================================
-
-extractname(.gedcomnode, .list, .integer, .integer) -> .null  Extract a GedcomName
+###### Information Extraction
+```
+extractname(gedcomnode, list, integer, integer) -> null  Extract a GedcomName
 extractdate ----------TBD
 extractplace ---------TBD
+```
+##### Lists of Lists, Tables of Tables, etc.
 
-============================================================================
-Lists of Lists, Tables of Tables
-============================================================================
+Lists and tables are reference values. This simplifies internal operations, and aids arbitrary structuring. For example, a list holds a list of values with no restrictions on their types -- they can be lists or tables.
 
-Lists and Tables are reference ProgramValues. This simplifies internal operations, and it arbitrary structuring. For example, a .list holds a list of ProgramValues with no restrictions on what the ProgramValues can be; for example, they can be .list or .table objects of their own.
-
-There is no requirement that the elements in a .list or the values in a .table have the same type. Each element or value must have a type, but that happens automatically.
-
-Of course, if you go crazy with "intersting" structures, using structure with mixed types, you will deserve the problems they cause.
+There is no requirement that elements in a list, values in a table, or the associaterd values in person sets have the same type. Each element has its own known type. Of course, if you go crazy with intersting structures, using structures with mixed types, you will deserve the problems it causes.

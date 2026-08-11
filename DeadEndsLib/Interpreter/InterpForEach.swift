@@ -3,15 +3,16 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 1 May 2026.
-//  Last changed on 11 June 2026.
+//  Last changed on 8 August 2026.
 //
 
 import Foundation
 
 extension Program {
 
-    /// Interpret a foreach statement. Foreach statements can handle lists,
-    /// person sets, tables, all persons, all families, and all sub-nodes.
+    /// Interpret a foreach statement. Foreach statements handle lists, person sets, tables,
+    /// strings, persons, families, and sub-nodes.
+    /// foreach(List|PersonSet|Table|String|Persons|Families|Nodes, String, String?, String)
     func interpForEach(_ stmt: ParsedForEachStmt) async throws -> InterpResult {
 
         let line = stmt.listExpr.line
@@ -34,12 +35,8 @@ extension Program {
             }
         case .table(let table):
             for (i, entry) in table.elements.enumerated() {
-                let result = try await interpBody(
-                    stmt,
-                    element: .string(entry.key),
-                    payload: entry.value,
-                    index: i + 1
-                )
+                let result = try await interpBody(stmt, element: .string(entry.key),
+                                                  payload: entry.value, index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
                 }
@@ -65,6 +62,14 @@ extension Program {
             for (i, node) in nodes.enumerated() {
                 let result = try await interpBody(stmt, element: .gnode(node),
                                         payload: .null, index: i + 1)
+                if let final = handleLoopResult(result) {
+                    return final
+                }
+            }
+        case .string(let string):
+            for (i, character) in string.enumerated() {
+                let result = try await interpBody(stmt, element: .string(String(character)),
+                                                  payload: .null, index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
                 }

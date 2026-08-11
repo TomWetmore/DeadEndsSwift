@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 6 August 2026.
+//  Last changed on 8 August 2026.
 //
 
 import Foundation
@@ -278,19 +278,38 @@ extension Program {
     }
 
     /// bltinSubscript returns the ith (relative one) element of a sequence.
-    /// subscript(sequence, i) -> value
-    /// TODO: Calling the list a sequence, anticipating making this a generic.
+    /// subscript(List|PersonSet|String, Integer) -> Any
     func bltinSubscript(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        guard let sequence = try await evaluateListOpt(args[0], errMsg: "subscript: 1st arg must be a sequence") else {
-            return .null
-        }
-        let index = try await evalInteger(args[1], errMsg: "subscript: 2nd arg must be an integer")
+        let sequenceValue = try await evaluate(args[0])
+        let index = try await evalInteger(args[1],
+                                          errMsg: "subscript: 2nd arg must be an integer")
         let internalIndex = index - 1
-        guard internalIndex >= 0 && internalIndex < sequence.count else {
-            throw RuntimeError("subscript: index \(index) is out of range", line: args[1].line)
+
+        switch sequenceValue { // Get the list or person set from the first arg.
+        case .list(let list):
+            guard list.values.indices.contains(internalIndex) else {
+                throw RuntimeError("subscript: index \(index) is out of range",
+                                   line: args[1].line)
+            }
+            return list[internalIndex]
+        case .personset(let personset):
+            guard personset.elements.indices.contains(internalIndex) else {
+                throw RuntimeError("subscript: index \(index) is out of range",
+                                   line: args[1].line)
+            }
+            return .person(personset.elements[internalIndex].person)
+        case .string(let string):
+            guard index >= 1 && index <= string.count else {
+                throw RuntimeError("subscript: index \(index) is out of range",
+                                   line: args[1].line)
+            }
+            let stringIndex = string.index(string.startIndex, offsetBy: internalIndex)
+            return .string(String(string[stringIndex]))
+        default:
+            throw RuntimeError("subscript: 1st arg must be a list or personset",
+                               line: args[0].line)
         }
-        return sequence[internalIndex]
     }
 }
 
@@ -341,7 +360,7 @@ extension Program {
 public class List {
 
     /// A .list program value is an array of program values.
-    private var values: [ProgramValue] = []
+    var values: [ProgramValue] = []
 
     /// The number of program values in this list.
     var count: Int { values.count }

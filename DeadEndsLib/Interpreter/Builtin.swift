@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 6 August 2026.
+//  Last changed on 11 August 2026.
 //
 
 import Foundation
@@ -24,6 +24,7 @@ extension Program {
         builtins = [
             "d":    Builtin(min: 1, max: 1) { try await self.bltinD($0)},
             "nl":   Builtin(min: 0, max: 0) { try self.bltinNl($0)},
+            "qt":   Builtin(min: 0, max: 0) { try self.bltinQuote($0)},
             "set":  Builtin(min: 2, max: 2) { try await self.bltinSet($0)},
             "ord":  Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
             "card":  Builtin(min: 1, max: 1) { try await self.bltinCard($0) },
@@ -75,10 +76,16 @@ extension Program {
             "fullname": Builtin(min: 4, max: 4) { try await self.bltinFullName($0)},
             "givens":   Builtin(min: 1, max: 1) { try await self.bltinGivens($0)},
             "surname":  Builtin(min: 1, max: 1) { try await self.bltinSurname($0)},
+            "trimname": Builtin(min: 2, max: 2) { try await self.bltinTrimName($0)},
+            "sex":      Builtin(min: 1, max: 1) { try await self.bltinSex($0)},
             "birth":    Builtin(min: 1, max: 1) { try await self.bltinBirth($0)},
             "death":    Builtin(min: 1, max: 1) { try await self.bltinDeath($0)},
+            "baptism":  Builtin(min: 1, max: 1) { try await self.bltinBaptism($0)},
+            "burial":   Builtin(min: 1, max: 1) { try await self.bltinBurial($0)},
             "father":   Builtin(min: 1, max: 1) { try await self.bltinFather($0)},
             "mother":   Builtin(min: 1, max: 1) { try await self.bltinMother($0)},
+            "nextsib": Builtin(min: 1, max: 1) { try await self.bltinNextSib($0)},
+            "prevsib": Builtin(min: 1, max: 1) { try await self.bltinPrevSib($0)},
             "families": Builtin(min: 1, max: 1) { try await self.bltinFamilyList($0)},
             "allpersons":  Builtin(min: 0, max: 0) { try self.bltinAllPersons($0)},
             "male":     Builtin(min: 1, max: 1) { try await self.bltinMale($0)},
@@ -183,7 +190,12 @@ extension Program {
     func bltinNl(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .string("\n")
     }
-    
+
+    /// Returns an ascii double quote.
+    func bltinQuote(_ args: [ParsedExpr]) throws -> ProgramValue {
+        return .string("\"")
+    }
+
     /// Assignment 'statement' of the scripting language; side effect only.
     func bltinSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
         guard case let .identifier(name) = args[0].kind else {

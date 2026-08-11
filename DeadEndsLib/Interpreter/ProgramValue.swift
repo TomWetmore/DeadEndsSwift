@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 2 July 2026.
+//  Last changed on 11 August 2026.
 //
 //  ProgramValue is the type of evaluated expression in the DeadEnds
 //  programming language.
@@ -84,7 +84,7 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         case .gnode(let node): return node.description
         case .personset(let set): return "\(set.count) persons"
         case .table(let table): return "\(table.count) entries" // adjust to your table wrapper
-        case .traverse(_): return "traverse"
+        case .traverse(let n): return "traverse(\(n.description))"
         case .allPersons: return "allPersons"
         case .allFamilies: return "allFamilies"
         case .list(let list):

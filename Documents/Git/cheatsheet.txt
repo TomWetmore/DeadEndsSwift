@@ -19,16 +19,12 @@ git version                        // Git version
 
 git config --global --list         // Show global properties
 
-
-
-
 git config --global user.name "User Name"
 git config --global user.email "ttw4@icloud.com"
 git init                      // Init a repository in the current directory
 
 
 GitHub Authentication (Linux)
-
 One-time setup:
 
     git config --global credential.helper store

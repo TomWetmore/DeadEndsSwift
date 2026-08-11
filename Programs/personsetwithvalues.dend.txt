@@ -4,8 +4,8 @@ proc main() {
     set(ahnen, personset())  /* Person set for persons with ahnen numbers. */
     set(queue, list())       /* Queue for ancestors. */
     set(nqueue, list())      /* Queue for ahnen numbers. */
-    enqueue(queue, root)     /* Add first person to ancestor queue.
-    enqueue(nqueue, 1)       /* Add first ahnen number to queue.
+    enqueue(queue, root)     /* Add first person to ancestor queue. */
+    enqueue(nqueue, 1)       /* Add first ahnen number to queue. */
 
     while(not(empty(queue))) {  /* Process the queue. */
         set(person, dequeue(queue))
@@ -27,4 +27,18 @@ proc main() {
     foreach(ahnen, person, value, n) {
         d(n) "  " d(value) "  " name(person) nl()
     }
+
+    set(name, name(root))
+    name " has length " d(length(name)) nl()
+    set(length, length(name))
+    set(index, 1)
+    while (le(index, length)) {
+        subscript(name, index)
+        set(index, add(1, index))
+    }
+    nl() "hello\n"
+    foreach(name, char, n) {
+        char
+    }
+    "\ngoodbye\n"
 }

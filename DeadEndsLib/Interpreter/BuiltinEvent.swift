@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 10 May 2026.
-//  Last changed on 3 July 2026.
+//  Last changed on 11 August 2026.
 //
 
 import Foundation
@@ -35,7 +35,7 @@ extension Program {
 
     /// Return the first burial event of a person.
     /// burial(person) -> .gnode or .null
-    func builtinBurial(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func bltinBurial(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "burial: arg must be a person")
         else { return .null }
@@ -45,8 +45,13 @@ extension Program {
 
     /// Return the first baptism event of a person.
     /// baptism(person) -> .gnode or .null
-    func builtinBaptism(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return try extractPersonEvent(from: args[0], tag: "BAPM", functionName: "baptism")
+    func bltinBaptism(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        guard let person = try await evalPersonOpt(args[0], errMsg: "baptism: arg must be a person")
+        else { return .null }
+
+        guard let baptism = person.kid(withTag: GedcomTag.CHR) else { return .null }
+        return .gnode(baptism)
     }
 }
 

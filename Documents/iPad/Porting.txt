@@ -1,13 +1,14 @@
-The program page is working well enough to move forward. I created a separate app for running programs. It's an app that links the library with a couple SwiftUI files. It is very useful as a test vehicle as it starts up on the program page and is immediately ready to load a database or a program. Do you know what would be involved in porting this to simple app to an iPad version. Here are some of the issues that come to mind:
-1. The application would need its own private file system to hold, for example, Gedcom files and program files. I'd had to learn how to create such a file system.
-2. I would have to somehow get the programm over to my iPad. I don't know the technologies for doing this, though I assume that Apple has made it quite simple.
-3. Would I be able to share the iPad app with others without having to use the app store facility.
-4. How do I set up the Xcode project to have the multiple target versions? Again I assume Apple has made this pretty simple.
+I created a separate app for running programs. It links the library with a couple SwiftUI files. It is useful as a test vehicle as it starts up on the program page and is immediately ready to load a database or program. What would be involved in porting this to iPad. Here are some of the issues that come to mind:
+1. The app needs a file system to hold Gedcom files and program files.
+2. I have to get the app to the iPad.
+3. Can I share the iPad app with others without having to use the app store.
+4. How do I set up the Xcode project to have the multiple target versions?
+
 ================================================================================
 That separate runner app sounds like exactly the right test vehicle: small surface area, fast startup, and no editing complications. I’ll frame this as a practical porting checklist rather than an abstract iOS tutorial. Yes. For your runner app, an iPad port is very plausible.
 
 1. Private file system.
-You mostly get this automatically. Every iPad app has a sandbox with its own Documents, Library, and tmp directories. You do not “create a file system”; you use URLs such as:
+You mostly get this automatically. Every iPad app has a sandbox with its own Documents, Library, and tmp directories. You do not create a file system; you use URLs such as:
 FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
 For a first version, I would use the app’s Documents folder for GEDCOM and program files.
 
