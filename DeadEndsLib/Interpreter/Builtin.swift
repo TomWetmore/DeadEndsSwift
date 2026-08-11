@@ -77,6 +77,7 @@ extension Program {
             "givens":   Builtin(min: 1, max: 1) { try await self.bltinGivens($0)},
             "surname":  Builtin(min: 1, max: 1) { try await self.bltinSurname($0)},
             "trimname": Builtin(min: 2, max: 2) { try await self.bltinTrimName($0)},
+            "title":    Builtin(min: 1, max: 1) { try await self.bltinTitle($0)},
             "sex":      Builtin(min: 1, max: 1) { try await self.bltinSex($0)},
             "birth":    Builtin(min: 1, max: 1) { try await self.bltinBirth($0)},
             "death":    Builtin(min: 1, max: 1) { try await self.bltinDeath($0)},

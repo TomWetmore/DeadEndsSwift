@@ -5,6 +5,7 @@
 ```
 d(int)           -> string      Integer as string
 nl()             -> string      Newline character
+qt()             -> string      Ascii double quote
 set(ident, any)  -> null        Assign value of expression to variable
 ord(int)         -> string      Return ordinal form of a number as string
 card(int)        -> string      Cardinal form of a number as string
@@ -69,6 +70,7 @@ fullname (person|null, bool, bool, int)
 givens (person|null)   -> list(string)      Given names of person as a list
 surname (person|null)  -> string|null       Primary surname
 trimname (person|null, int) -> string       Name trimmed in length
+title(person|null)     -> string|null       First title
 birth (person|null)    -> gnode|null        First birth event
 death (person|null)    -> gnode|null        First death event
 baptism (person|null)  -> gnode|null        First baptism event

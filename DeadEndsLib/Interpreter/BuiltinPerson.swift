@@ -76,7 +76,7 @@ extension Program {
         return .list(list)
     }
 
-    /// Returns the trimmed name of a person.
+    /// Return the trimmed name of a person.
     func bltinTrimName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
@@ -86,6 +86,19 @@ extension Program {
         let len = try await evalInteger(args[1],
                                         errMsg: "trimname: 2nd arg must be an integer")
         return .string(person.displayName(limit: len))
+    }
+
+    /// Return the title of a person: the value of the first 1 TITL node in the person.
+    func bltinTitle(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        guard let person = try await evalPersonOpt(args[0], errMsg: "title: arg must be a person")
+        else { return .null }
+
+        guard let title = person.kidVal(forTag: "TITL"), title.isEmpty == false
+        else { return .null }
+
+        return .string(title)
+
     }
 }
 
