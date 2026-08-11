@@ -1,14 +1,12 @@
-These are the built-in functions of the DeadEnds programming language.
+These are the built-in functions of the DeadEnds programming language. They are very similar to those of the LifeLines programming language.
 
-The arguments to the built-in functions are ParsedExprs. These are tree structures that are created when the program is parsed. They are static and persistent that hold arguments' expressions exactly as they are found in the source. When programs are interpreted the arguments are evaluated in the context of the running program. They evaluate to ProgramValue objects that represent the run-time value of the expression; they are transient objects that disappear as soon as its value is used.
+The arguments to the built-in functions are ParsedExprs. These are tree structures created when a program is parsed. They are static and persistent and hold argument expressions as found in the source. When programs are interpreted the arguments are evaluated in the current context. They evaluate to ProgramValues that represent run-time values. Program values are transient objects that disappear when its value is used.
 
-There is an exception. In a few cases identifier expressions for L-values ("names" of variables) are needed. One of the arguments will be a ParsedExpr identifier value (one of five types of ParsedExpr) that is not evaluated. In these cases the identifier names a variable in the program.
+In a few cases an identifier argument is needed for its name not its value. In these cases the argument is not evaluated. A good example is the assignment built-in, "set(identifier, any)". It evaluates the second argument which can be any ParsedExpr, and then assigns that value to the identifier in the symbol table. If the variable is in the symbol table its value is changed. If the variable is not in the symbol table it is added with the value.
 
-A good example is the assignment built-in, "set(identifier, any)". This built-in evaluates the second argument, which can be any ParsedExpr, to gets its ProgramValue. The first argument must be an identifier ParsedExpr; it is not evaluated because its value is not needed. The identifier itself is needed. The set built-in uses the identifier as a variable and assigns the value of the expression to it in the symbol table. If the variable is already in the symbol table its current value is changed. If the variable is not in the symbol table it is added with the expression value.
+In most cases, however, ParsedExpr identifiers are the names of variables whose values are needed by the evaluation. The identifier is be evaluated like any other expresssion, so its value taken from the variable in the symbol table.
 
-In most cases, however, ParsedExpr identifiers are the names of variables whose values are used in the evaluation. Then the identifier is be evaluated like any other expresssion, its value taken from the variable in the symbol table.
-
-The DeadEnds language is strongly typed. Every ProgramValue has an explicit type, and the type is kept as part of the value. See the valueof() built-in -- You can use it to inspect the type and value of any ProgramValue.
+The DeadEnds language is strongly typed. Every ProgramValue has an explicit type, and the type is kept as part of the value. See the "valueof()" built-in -- It can be used to inspect the type and value of any ProgramValue, very useful during debugging.
 
 The types and their associated values are:
 
