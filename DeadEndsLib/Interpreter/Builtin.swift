@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 11 August 2026.
+//  Last changed on 14 August 2026.
 //
 
 import Foundation
@@ -22,14 +22,24 @@ extension Program {
     func setupBuiltins() {
         
         builtins = [
-            "d":    Builtin(min: 1, max: 1) { try await self.bltinD($0)},
-            "nl":   Builtin(min: 0, max: 0) { try self.bltinNl($0)},
-            "qt":   Builtin(min: 0, max: 0) { try self.bltinQuote($0)},
-            "set":  Builtin(min: 2, max: 2) { try await self.bltinSet($0)},
-            "ord":  Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
-            "card":  Builtin(min: 1, max: 1) { try await self.bltinCard($0) },
+            // Miscellaneous operations.
+            "d":Builtin(min: 1, max: 1) { try await self.bltinD($0)},
+            "nl": Builtin(min: 0, max: 0) { try self.bltinNl($0)},
+            "qt": Builtin(min: 0, max: 0) { try self.bltinQuote($0)},
+            "set": Builtin(min: 2, max: 2) { try await self.bltinSet($0)},
+            "ord": Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
+            "card": Builtin(min: 1, max: 1) { try await self.bltinCard($0) },
             "roman": Builtin(min: 1, max: 1) { try await self.bltinRoman($0) },
             "null": Builtin(min: 0, max: 0) { try await self.bltinNull($0) },
+
+            // String operations.
+            "upper": Builtin(min: 1, max: 1) { try await self.bltinUpper($0)},
+            "lower": Builtin(min: 1, max: 1) { try await self.bltinLower($0)},
+            "capitalize": Builtin(min: 1, max: 1) { try await self.bltinCapitalize($0)},
+            "words": Builtin(min: 1, max: 1) { try await self.bltinWords($0)},
+            "tokens": Builtin(min: 1, max: 1) { try await self.bltinTokens($0)},
+            // "trim": Builtin(min: 1, max: 1) { try await self.bltinTrim($0)},
+            // "rjustify": Builtin(min: 1, max: 1) { try await self.bltinRJustify($0)},
 
             // Arithmetic operators.
             "add":  Builtin(min: 2, max: 2) { try await self.bltinAdd($0)},
@@ -71,56 +81,58 @@ extension Program {
             "kidswithtag": Builtin(min: 2, max: 2) { try await self.bltinKidsWithTag($0)},
 
             // Person operations.
-            "person":   Builtin(min: 1, max: 1) { try await self.bltinPerson($0)},
-            "name":     Builtin(min: 1, max: 1) { try await self.bltinName($0)},
+            "person": Builtin(min: 1, max: 1) { try await self.bltinPerson($0)},
+            "name": Builtin(min: 1, max: 1) { try await self.bltinName($0)},
+            "sex": Builtin(min: 1, max: 1) { try await self.bltinSex($0)},
             "fullname": Builtin(min: 4, max: 4) { try await self.bltinFullName($0)},
-            "givens":   Builtin(min: 1, max: 1) { try await self.bltinGivens($0)},
-            "surname":  Builtin(min: 1, max: 1) { try await self.bltinSurname($0)},
+            "givens": Builtin(min: 1, max: 1) { try await self.bltinGivens($0)},
+            "surname": Builtin(min: 1, max: 1) { try await self.bltinSurname($0)},
             "trimname": Builtin(min: 2, max: 2) { try await self.bltinTrimName($0)},
-            "title":    Builtin(min: 1, max: 1) { try await self.bltinTitle($0)},
-            "sex":      Builtin(min: 1, max: 1) { try await self.bltinSex($0)},
-            "birth":    Builtin(min: 1, max: 1) { try await self.bltinBirth($0)},
-            "death":    Builtin(min: 1, max: 1) { try await self.bltinDeath($0)},
-            "baptism":  Builtin(min: 1, max: 1) { try await self.bltinBaptism($0)},
-            "burial":   Builtin(min: 1, max: 1) { try await self.bltinBurial($0)},
-            "father":   Builtin(min: 1, max: 1) { try await self.bltinFather($0)},
-            "mother":   Builtin(min: 1, max: 1) { try await self.bltinMother($0)},
+            "title": Builtin(min: 1, max: 1) { try await self.bltinTitle($0)},
+            "birth": Builtin(min: 1, max: 1) { try await self.bltinBirth($0)},
+            "death": Builtin(min: 1, max: 1) { try await self.bltinDeath($0)},
+            "baptism": Builtin(min: 1, max: 1) { try await self.bltinBaptism($0)},
+            "burial": Builtin(min: 1, max: 1) { try await self.bltinBurial($0)},
+            "father": Builtin(min: 1, max: 1) { try await self.bltinFather($0)},
+            "mother":  Builtin(min: 1, max: 1) { try await self.bltinMother($0)},
+            "siblings": Builtin(min: 1, max: 1) { try await self.bltinSiblings($0)},
             "nextsib": Builtin(min: 1, max: 1) { try await self.bltinNextSib($0)},
             "prevsib": Builtin(min: 1, max: 1) { try await self.bltinPrevSib($0)},
             "families": Builtin(min: 1, max: 1) { try await self.bltinFamilyList($0)},
             "allpersons":  Builtin(min: 0, max: 0) { try self.bltinAllPersons($0)},
-            "male":     Builtin(min: 1, max: 1) { try await self.bltinMale($0)},
-            "female":   Builtin(min: 1, max: 1) { try await self.bltinFemale($0)},
+            "male":  Builtin(min: 1, max: 1) { try await self.bltinMale($0)},
+            "female": Builtin(min: 1, max: 1) { try await self.bltinFemale($0)},
 
             "allfamilies": Builtin(min: 0, max: 0) { try self.bltinAllFamilies($0)},
 
             /// Generic operations on persons and families.
-            "husband":  Builtin(min: 1, max: 1) { try await self.bltinHusband($0)},
-            "wife":     Builtin(min: 1, max: 1) { try await self.bltinWife($0)},
+            "husband": Builtin(min: 1, max: 1) { try await self.bltinHusband($0)},
+            "wife": Builtin(min: 1, max: 1) { try await self.bltinWife($0)},
             "husbands": Builtin(min: 1, max: 1) { try await self.bltinHusbands($0)},
-            "wives":    Builtin(min: 1, max: 1) { try await self.bltinWives($0)},
+            "wives": Builtin(min: 1, max: 1) { try await self.bltinWives($0)},
             "children": Builtin(min: 1, max: 1) { try await self.bltinChildren($0)},
-            "spouses":  Builtin(min: 1, max: 1) { try await self.bltinSpouses($0)},
-            "parents":  Builtin(min: 1, max: 1) { try await self.bltinParents($0)},
-            "siblings": Builtin(min: 1, max: 1) { try await self.bltinSiblings($0)},
+            "nchildren": Builtin(min: 1, max: 1) { try await self.bltinNChildren($0)},
+            "spouses": Builtin(min: 1, max: 1) { try await self.bltinSpouses($0)},
+            "nspouses": Builtin(min: 1, max: 1) { try await self.bltinNSpouses($0)},
+            "parents": Builtin(min: 1, max: 1) { try await self.bltinParents($0)},
 
             // Event operations.
             "date":  Builtin(min: 1, max: 1) { try await self.bltinDate($0)},
             "place": Builtin(min: 1, max: 1) { try await self.bltinPlace($0)},
 
             // Generic operations on lists, tables and person sets.
-            "empty":  Builtin(min: 1, max: 1) { try await self.bltinEmpty($0)},
+            "empty": Builtin(min: 1, max: 1) { try await self.bltinEmpty($0)},
             "length": Builtin(min: 1, max: 1) { try await self.bltinLength($0)},
-            "clear":  Builtin(min: 1, max: 1) { try await self.bltinClear($0)},
+            "clear": Builtin(min: 1, max: 1) { try await self.bltinClear($0)},
             "subscript": Builtin(min: 2, max: 2) { try await self.bltinSubscript($0)},
-            "traverse":  Builtin(min: 1, max: 1) { try await self.bltinNodes($0)},
+            "traverse": Builtin(min: 1, max: 1) { try await self.bltinNodes($0)},
 
             // List operations; the length and empty builtins are generic.
-            "list":    Builtin(min: 0, max: 0) { try self.bltinList($0)},
-            "append":  Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
+            "list": Builtin(min: 0, max: 0) { try self.bltinList($0)},
+            "append": Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
             "prepend": Builtin(min: 2, max: 2) { try await self.bltinPrepend($0)},
-            "push":    Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
-            "pop":     Builtin(min: 1, max: 1) { try await self.bltinRemoveLast($0)},
+            "push": Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
+            "pop": Builtin(min: 1, max: 1) { try await self.bltinRemoveLast($0)},
             "enqueue": Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
             "dequeue": Builtin(min: 1, max: 1) { try await self.bltinRemoveFirst($0)},
             "removefirst": Builtin(min: 1, max: 1) { try await self.bltinRemoveFirst($0)},

@@ -62,10 +62,10 @@ extension Program {
     func bltinGivens(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "givens: arg must be a person")
-        else { return .list(List()) }
-        
+        else { return .emptyList }
+
         guard let name = person.kidVal(forTag: "NAME"), let gedcomName = GedcomName(string: name)
-        else { return .list(List()) }
+        else { return .emptyList }
 
         let list = List()
         for (index, part) in gedcomName.parts.enumerated() {

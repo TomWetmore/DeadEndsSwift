@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 5/26/26.
-//  Last changed on 3 July 2026.
+//  Last changed on 14 August 2026.
 //
 //  This file has the built-in methods for Gedcom
 //  nodes.
@@ -92,7 +92,7 @@ extension Program {
     func bltinKids(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let node = try await evalGedcomNodeOpt(args[0], errMsg: "kids: arg must be a node")
-        else { return .list(List()) }
+        else { return .emptyList }
         return .list(List(node.kids.map { ProgramValue.gnode($0) }))
     }
 
@@ -101,7 +101,7 @@ extension Program {
     func bltinSibs(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let node = try await evalGedcomNodeOpt(args[0], errMsg: "sibs: arg must be a node")
-        else { return .list(List()) }
+        else { return .emptyList }
         return .list(List(node.sibs.map { ProgramValue.gnode($0) }))
     }
 
@@ -129,7 +129,7 @@ extension Program {
 
         guard let node =
                 try await evalGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
-            return .list(List())
+            return .emptyList
         }
         let tag = try await evaluateString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
         let list = List()
@@ -143,7 +143,7 @@ extension Program {
     func bltinKidsWithTag(_ args: [ParsedExpr]) async throws -> ProgramValue {
         guard let node =
                 try await evalGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
-            return .list(List())
+            return .emptyList
         }
         let tag = try await evaluateString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
 

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 25 May 2026.
-//  Last changed on 8 July 2026.
+//  Last changed on 14 August 2026.
 //
 
 import Foundation
@@ -29,7 +29,7 @@ extension Program {
                 .integer(gedcomName.surnameIndex.map { $0 + 1 } ?? 0)
             ))
         }
-        return .pair(Pair(.list(List()), .integer(0)))
+        return .pair(Pair(.emptyList, .integer(0)))
     }
 
     /// Built-in that extract the parts from a place string.
@@ -45,10 +45,8 @@ extension Program {
         case .string(let place):
             let values = extractPlaceParts(place).map(ProgramValue.string)
             return .list(List(values))
-
         case .null:
-            return .list(List())
-
+            return .emptyList
         default:
             throw RuntimeError("extractplace: arg must find a string", line: args[0].line)
         }

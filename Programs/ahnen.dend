@@ -1,12 +1,11 @@
 proc main ()
 {
-    set(indi, indi("@I1"))
+    set(indi, getperson("enter starting person for ahnentafel"))
     set(ilist, list())
     set(alist, list())
     set(table, table())
     enqueue(ilist, indi)
     enqueue(alist, 1)
-valueof(indi)
     while(indi, dequeue(ilist)) {
         set(ahnen, dequeue(alist))
 

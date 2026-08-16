@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 11 August 2026.
+//  Last changed on 14 August 2026.
 //
 //  ProgramValue is the type of evaluated expression in the DeadEnds
 //  programming language.
@@ -299,7 +299,9 @@ extension ProgramValue {
 }
 
 extension ProgramValue {
+    
     static var emptyList: ProgramValue {
+        
         .list(List())
     }
 }

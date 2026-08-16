@@ -1,7 +1,7 @@
 /* Show a list of a person and all their descendants, prefixed
    by their Henry numbers.
 
-   VERSION USING A PERSONSET
+   Version using PersonSet.
 
    Written by Tom Wetmore on 4 July 2026.
    Last changed on 4 July 2026. */   

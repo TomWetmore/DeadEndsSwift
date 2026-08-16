@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 8 August 2026.
+//  Last changed on 14 August 2026.
 //
 
 import Foundation
@@ -13,7 +13,7 @@ extension Program {
 
     /// Create and return an empty list.
     func bltinList(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return .list(List())
+        return .emptyList
     }
 
     /// Return whether a list, table, personset or string is empty.
@@ -156,6 +156,21 @@ extension Program {
         return .list(List(children.map { ProgramValue.person($0) }))
     }
 
+    /// Return the number of children or a person or family.
+    func bltinNChildren(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let children = try await bltinChildren(args)
+        switch children {
+        case .null:
+            return .null
+        case .list(let l):
+            return .integer(l.count);
+        default:
+            throw RuntimeError("nchildren: arg must be a person or family",
+                               line: args[0].line)
+        }
+    }
+
     /// Return the list of husbands of a person or family.
     func bltinHusbands(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
@@ -228,6 +243,21 @@ extension Program {
                                                 line: line)
         }
         return .list(List(spouses.map { ProgramValue.person($0) }))
+    }
+
+    /// Return the number of spouses or a person or family.
+    func bltinNSpouses(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let spouses = try await bltinSpouses(args)
+        switch spouses {
+        case .null:
+            return .null
+        case .list(let l):
+            return .integer(l.count);
+        default:
+            throw RuntimeError("nchildren: arg must be a person or family",
+                               line: args[0].line)
+        }
     }
 
     /// Return the list of parents of a person or family (the spouses).
@@ -348,7 +378,7 @@ extension Program {
             args[0],
             errMsg: "copy: arg must be a list"
         ) else {
-            return .list(List())
+            return .emptyList
         }
         return .list(list.copy())
     }
