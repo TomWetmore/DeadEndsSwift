@@ -1,0 +1,57 @@
+Programming Challenge
+
+Here is an interesting little problem with a sweet solution.
+
+Let's say I parse a Gedcom file into an array of records, where each record is a tree of Gedcom nodes. Here is the structure of the nodes:
+
+public class GedcomNode {
+    var key: String?          // Key only on level 0 nodes.
+    var tag: String           // Tag required on all nodes.
+    var val: String?          // Optional value on nodes.
+    var sib: GedcomNode?      // Next sibling in Gedcom tree.
+    var kid: GedcomNode?      // First child in Gedcom tree.
+    weak var dad: GedcomNode? // Parent node in tree.
+}
+
+This is perfect for representing Gedcom records as trees of Gedcom nodes. The key, tag, and val fields are the Gedcom fields verbatim. Nodes with children (deeper level) have a kid link. Nodes with sibs (same level) have a sib link. Every node (except root nodes) has a dad link.
+
+1. The Gedcom level number (0, 1, 2, 3, ...) is not in the structure. We compute it on the fly by following the dad chain.
+
+2. The original line number in the Gedcom file where the node came from is not in the structure. We compute it on the fly (how? -- this is the challenge!).
+
+With today's systems and their vast memory sizes, adding two fields to a couple million nodes isn't a problem, but I am an old C programmer, from the days of very limited resources, so adding these two fields to this structure is an anathema.
+
+So here is the challenge.
+
+Given an arbitrary node in a GedcomNode tree, how many nodes in its record precede it in the original Gedcom file. I am not asking for its actual line number -- rather its offset from the 0 line that is the root of its record. This assumes that there were no blank lines in the Gedcom file.
+
+This boils down to a simpler question -- Given an arbitrary node in a GedcomNode tree, how many nodes precede it in a top down, left to right, ordering of the nodes. So this is "just" a basic tree-theoretic problem, but it is a fun one.
+
+I had this problem when I wrote the code to validate Gedcom files. I had to issue error messages that pin-pointed the bad lines in the file. My first thought was, "Oh darn, I have to add a line number field to each node!". But a moment's reflection led to the thought that if I had a temporary table that had the line number where each record began, then all I had to find how many nodes precede an arbitrary node. I could add the two numbers to get the line number. And this is how I did it.
+
+The key insight is this: You need to move up the tree, counting the nodes in the sub-trees of all previous siblings at every level.
+
+Here is a Swift solution. It is a "computed property" named "index" the GedcomNode class. So if node is a GedcomNode variable, then "node.index" is the number of nodes before node in its tree.
+
+```
+extension GedcomNode {
+
+     /// Return the number of nodes before self in its tree.
+
+    public var offset: Int {
+        var count = 0
+        var curNode: GedcomNode? = self
+        while let node = curNode, let dad = node.dad {
+            var sibling = dad.kid // Count previous sibs.
+            while let cursibling = sibling, cursibling !== node {
+                count += cursibling.count
+                sibling = cursibling.sib
+            }
+            curNode = dad
+            count += 1  // Include parent.
+        }
+        return count
+    }
+}
+```
+

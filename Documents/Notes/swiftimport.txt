@@ -14,7 +14,6 @@ func getDatabasesFromPaths(paths, errorlog) -> [Database]?
             call validateFamilies
             return (index, persons, families)
         call getNameIndex
-        call getRefnIndex
         create and return database
     return array of databases
 ---------------------------------------------------------------------
@@ -28,7 +27,7 @@ I. func getDatabasesFromPaths(paths, errlog) -> databases
 II. func getDatabaseFromPath(path, errlog) -> database
     1. Create keymap.
     2. Call {getValidRecordsFromPath} to get (index, persons, families).
-    3. Create the nameIndex and refnIndex.
+    3. Create the nameIndex.
     4. Create and return the database using index, persons, families nameIndex, and refindex.
     N. Can be called directly (not via getDatabasesFromPaths}.
 ---------------------------------------------------------------------

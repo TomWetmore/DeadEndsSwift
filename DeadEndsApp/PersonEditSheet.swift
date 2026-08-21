@@ -3,15 +3,16 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 29 May 2026.
+//  Last changed on 21 August 2026.
 //
 
 import SwiftUI
 import DeadEndsLib
 
-/// PersonEditSheet is used as a sheet to edit Person Gedcom records. Records are converted to text and
-/// edited with a TextEditor. When editing is done the text is parsed into a Gedcom tree and validated.
-/// If the user selects to save the changes, the new Person replaces the original in the Database.
+/// PersonEditSheet is used as a sheet to edit Person Gedcom records. Records are converted
+/// to text and edited with a TextEditor. When editing is done the text is parsed into a
+/// Gedcom tree and validated. If the user selects to save the changes, the new Person replaces
+/// the original in the Database.
 ///
 /// The name should be changed as this does not need to be a Sheet.
 
@@ -28,6 +29,7 @@ struct PersonEditSheet: View {
 
     /// Create a person edit sheet.
     init(person: Person) {
+
         self.person = person
         _editedText = State(initialValue: person.gedcomText(indent: true))
     }
@@ -81,7 +83,6 @@ struct PersonEditSheet: View {
     }
 
     /// Handle the Save button. Parses text into a record; validates; replaces old person with new.
-
     func handleSave() {
 
         // Parse edited text into a Person record. This may fail.
@@ -188,12 +189,6 @@ extension PersonEditSheet {
         for name in removedNames { db.nameIndex.remove(value: name, recordKey: old.key) }
         for name in addedNames { db.nameIndex.add(value: name, recordKey: old.key) }
 
-        // Update RefnIndex (when implemented)
-//        let addedRefns = new.refns.subtracting(old.refns)
-//        let removedRefns = old.refns.subtracting(new.refns)
-//        for refn in removedRefns { db.refnIndex.remove(refn: refn) }
-//        for refn in addedRefns { db.refnIndex.add(refn: refn, key: old.key) }
-
         // Update the database with the edited person keeping the same Person root.
         old.root.root.replaceChildren(with: new.root.kid)
     }
@@ -229,7 +224,8 @@ struct ErrorSheet: View {
     }
 }
 
-/// Structure holding Person information.
+/// Structure holding Person information. This structure is used when validating changes
+/// made to persons by editing.
 struct PersonInfo {
     let root: Person
     let key: String
@@ -237,22 +233,22 @@ struct PersonInfo {
     let names: Set<String>
     let famcKeys: Set<String>
     let famsKeys: Set<String>
-    let refns: Set<String>
 }
 
-/// Returns the PersonInfo of a Person record. The internal structure (kid, sib, dad) is not affected.
+/// Return the PersonInfo structure from a Person record. The internal structure of the Person
+/// record's tree is not affected.
 
 func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
     
     var names: Set<String> = []
-    var refns: Set<String> = []
     var sex: String? = nil
     var famcKeys: Set<String> = []
     var famsKeys: Set<String> = []
     var errors: [String] = []
 
     var current = person.kid
-    while let node = current {
+    while let node = current {  // Look at all level 1 nodes.
+        
         let tag = node.tag
         if let value = node.val, !value.isEmpty {
             switch tag {
@@ -260,12 +256,11 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
             case "SEX":
                 if sex == nil { sex = value }
                 else { errors.append("Multiple SEX tags found.") }
-            case "REFN": refns.insert(value)
             case "FAMC": famcKeys.insert(value)
             case "FAMS": famsKeys.insert(value)
             default: break
             }
-        } else if ["NAME", "SEX", "REFN", "FAMC", "FAMS"].contains(tag) {
+        } else if ["NAME", "SEX", "FAMC", "FAMS"].contains(tag) {
             errors.append("Missing value for \(tag) line.")
         }
         current = node.sib
@@ -278,8 +273,7 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
         sex: sex,
         names: names,
         famcKeys: famcKeys,
-        famsKeys: famsKeys,
-        refns: refns
+        famsKeys: famsKeys
     )
     return (info, errors)
 }

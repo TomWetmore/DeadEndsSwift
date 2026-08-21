@@ -14,14 +14,13 @@ final public class Database -- DeadEnds in-RAM database.
     public var nameIndex: NameIndex -- Name index.
     public var dateIndex: DateIndex -- Date index.
     public var placeIndex: PlaceIndex -- Place index.
-    public var refnIndex: RefnIndex -- Refn index.
     var dirty: Bool -- Changed since last write.
     var personCount: Int -- Number of persons in database.
     var familyCount: Int -- Number of families in database.
 
     init(recordIndex: RecordIndex, persons: RecordList, families: RecordList,
          header: GedcomNode?, nameIndex: NameIndex, dateIndex: DateIndex, placeIndex: PlaceIndex,
-         refnIndex: RefnIndex, dirty: Bool = false) -- Create a DeadEnds database.
+         dirty: Bool = false) -- Create a DeadEnds database.
 
 public func loadDatabases(from paths: [String], errlog: inout ErrorLog) -> [Database] -- Load array of databases.
 public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? -- Load database from Gedcom file.

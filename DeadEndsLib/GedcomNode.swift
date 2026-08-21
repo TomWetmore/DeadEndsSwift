@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 29 June 2026.
+//  Last changed on 21 August 2026.
 //
 
 import Foundation
@@ -39,7 +39,6 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     }
 
     /// Return the sibs of a node as an array of nodes.
-    /// TODO: This code has not been tested.
     public var sibs: [GedcomNode] {
         var results: [GedcomNode] = []
         var node = sib
@@ -66,8 +65,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         self.val = val
     }
 
-    /// Return the level of a node by counting steps to the root;
-    /// infinite cycles are detected.
+    /// Return the level of a node by counting steps to the root; cycles are detected.
     public var lev: Int {
         var level = -1
         var node: GedcomNode? = self
@@ -80,6 +78,8 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 
     /// Print the Gedcom node tree to stdout; recurse to kids and sibs.
     public func printTree(level: Int = 0, indent: String = "") {
+
+        if level < 0 || level > 100 { return }
         let space = String(repeating: indent, count: level)
         print("\(space)\(level) \(self)")
         kid?.printTree(level: level + 1, indent: indent)
@@ -212,7 +212,7 @@ extension GedcomNode {
     }
 
     /// Return the number of nodes before this node in its tree.
-    public var offset: Int {
+    public var index: Int {
         var count = 0
         var curNode: GedcomNode? = self
         var loops = 0
@@ -552,116 +552,54 @@ public extension GedcomNode {
     }
 }
 
-/// TODO: REMOVE THIS
 extension GedcomNode {
 
-    /// Build deep copy of a Gedcom node tree or forest.
-    public func deepCopy(sibs: Bool = true) -> GedcomNode {
-        let node = GedcomNode(key: self.key, tag: self.tag, val: self.val)
-        node.kid = self.kid?.deepCopy(sibs: true)
-        if sibs { node.sib = self.sib?.deepCopy(sibs: true) }
-        return node
-    }
-
-    /// Build deep copy of this root node ignoring its siblings.
-    //public func deepTreeCopy()  -> GedcomNode { deepCopy(sibs: false) }
-
-    /// Build deep copy of this root node including its siblings.
-    //public func deepForestCopy() -> GedcomNode { deepCopy(sibs: true) }
-}
-
-/// TODO: ADD MODIFIED VERSION OF THIS
-extension GedcomNode {
-
+    /// Return a deep copy of this node and all its descendants. Sibs of this node
+    /// are not copied.
     public func deepTreeCopy() -> GedcomNode {
-        let newNode = GedcomNode(key: key, tag: tag, val: val)
-        newNode.kid = copyChildList(from: kid, parent: newNode)
-        return newNode
+
+        let copy = GedcomNode(key: key, tag: tag, val: val)
+        copy.kid = copyChildList(from: kid, dad: copy)
+        return copy
     }
 
+    /// Return a deep copy of this node, its siblings, and all their descendants.
     public func deepForestCopy() -> GedcomNode {
-        let newRoot = deepTreeCopy()
 
-        var oldSibling = sib
-        var previousNewSibling = newRoot
+        let firstCopy = deepTreeCopy()
+        var oldSib = sib
+        var lastCopy = firstCopy
 
-        while let sibling = oldSibling {
-            let newSibling = sibling.deepTreeCopy()
-            previousNewSibling.sib = newSibling
-            previousNewSibling = newSibling
-            oldSibling = sibling.sib
+        while let old = oldSib {
+            let copy = old.deepTreeCopy()
+            lastCopy.sib = copy
+            lastCopy = copy
+            oldSib = old.sib
         }
 
-        return newRoot
+        return firstCopy
     }
 
-    private func copyChildList(from firstChild: GedcomNode?, parent: GedcomNode) -> GedcomNode? {
-        var oldChild = firstChild
-        var firstNewChild: GedcomNode? = nil
-        var previousNewChild: GedcomNode? = nil
+    private func copyChildList(from kid: GedcomNode?, dad: GedcomNode) -> GedcomNode? {
 
-        while let child = oldChild {
-            let newChild = child.deepTreeCopy()
-            newChild.dad = parent
+        var oldKid = kid
+        var firstCopy: GedcomNode?
+        var lastCopy: GedcomNode?
 
-            if firstNewChild == nil {
-                firstNewChild = newChild
+        while let old = oldKid {
+            let copy = old.deepTreeCopy()
+            copy.dad = dad
+
+            if firstCopy == nil {
+                firstCopy = copy
             } else {
-                previousNewChild?.sib = newChild
+                lastCopy?.sib = copy
             }
 
-            previousNewChild = newChild
-            oldChild = child.sib
+            lastCopy = copy
+            oldKid = old.sib
         }
 
-        return firstNewChild
-    }
-}
-
-
-extension GedcomNode {
-
-    public func ddeepTreeCopy() -> GedcomNode {
-        let newNode = GedcomNode(key: key, tag: tag, val: val)
-        newNode.kid = copyChildList(from: kid, parent: newNode)
-        return newNode
-    }
-
-    public func ddeepForestCopy() -> GedcomNode {
-        let newRoot = deepTreeCopy()
-
-        var oldSibling = sib
-        var previousNewSibling = newRoot
-
-        while let sibling = oldSibling {
-            let newSibling = sibling.deepTreeCopy()
-            previousNewSibling.sib = newSibling
-            previousNewSibling = newSibling
-            oldSibling = sibling.sib
-        }
-
-        return newRoot
-    }
-
-    private func ccopyChildList(from firstChild: GedcomNode?, parent: GedcomNode) -> GedcomNode? {
-        var oldChild = firstChild
-        var firstNewChild: GedcomNode? = nil
-        var previousNewChild: GedcomNode? = nil
-
-        while let child = oldChild {
-            let newChild = child.deepTreeCopy()
-            newChild.dad = parent
-
-            if firstNewChild == nil {
-                firstNewChild = newChild
-            } else {
-                previousNewChild?.sib = newChild
-            }
-
-            previousNewChild = newChild
-            oldChild = child.sib
-        }
-
-        return firstNewChild
+        return firstCopy
     }
 }

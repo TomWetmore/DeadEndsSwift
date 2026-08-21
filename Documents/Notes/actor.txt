@@ -56,7 +56,6 @@ struct Database: Sendable { // Add Sendable conformance
     let persons: RootList
     let families: RootList
     let nameIndex: NameIndex
-    let refnIndex: RefnIndex
 }
 
 If Database cannot be made Sendable due to internal mutability, consider alternatives:
@@ -117,11 +116,10 @@ struct Database {
     var persons: RootList
     var families: RootList
     var nameIndex: NameIndex
-    var refnIndex: RefnIndex
 }
 
 Potential Issues:
-	•	RecordIndex, RootList, NameIndex, and RefnIndex might contain reference types (class) or mutable properties that make Database non-Sendable.
+	•	RecordIndex, RootList, and NameIndex might contain reference types (class) or mutable properties that make Database non-Sendable.
 
 Plan:
 	1.	Inspect each component type (RecordIndex, RootList, etc.).
@@ -196,12 +194,11 @@ struct RootList {
 	•	Problem: Same as RecordIndex—Node is non-Sendable.
 	•	Solution: Depends on Node being made Sendable (or @unchecked Sendable).
 
-c. NameIndex and RefnIndex
+c. NameIndex
 
-If these are defined as dictionaries:
+If this is defined as dictionaries:
 
 typealias NameIndex = [String: Set<String>]
-typealias RefnIndex = [String: Set<String>]
 
 	•	These are inherently Sendable because they consist of Swift value types.
 	•	No changes needed.
@@ -215,7 +212,6 @@ struct Database: Sendable {
     var persons: RootList
     var families: RootList
     var nameIndex: NameIndex
-    var refnIndex: RefnIndex
 }
 
 4. Alternative: Actor-Based Design
@@ -227,15 +223,13 @@ actor Database {
     var persons: RootList
     var families: RootList
     var nameIndex: NameIndex
-    var refnIndex: RefnIndex
 
     init(recordIndex: RecordIndex, persons: RootList, families: RootList,
-         nameIndex: NameIndex, refnIndex: RefnIndex) {
+         nameIndex: NameIndex) {
         self.recordIndex = recordIndex
         self.persons = persons
         self.families = families
         self.nameIndex = nameIndex
-        self.refnIndex = refnIndex
     }
 }
 

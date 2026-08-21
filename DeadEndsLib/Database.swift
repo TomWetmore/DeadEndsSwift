@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 31 March 2026.
+//  Last changed on 21 August 2026.
 //
 
 import Foundation
@@ -22,7 +22,6 @@ final public class Database: CustomStringConvertible {
 	public private(set) var nameIndex: NameIndex
     public private(set) var dateIndex: DateIndex
     public private(set) var placeIndex: PlaceIndex
-	public private(set) var refnIndex: RefnIndex
     public private(set) var path: String?
     var dirty: Bool = false
 
@@ -39,7 +38,6 @@ final public class Database: CustomStringConvertible {
         summary += "\n    Size of name index: \(nameIndex.count)"
         summary += "\n    Size of date index: \(dateIndex.count)"
         summary += "\n    Size of place index: \(placeIndex.count)"
-        summary += "\n    Size of refn index: \(refnIndex.count)"
         summary += "\n    Persons use \(size(of: persons)) nodes"
         summary += "\n    Families use \(size(of: families)) nodes"
         summary += "\n    Total size: \(size) nodes"
@@ -73,7 +71,6 @@ final public class Database: CustomStringConvertible {
         nameIndex = buildNameIndex(from: persons)
         dateIndex = buildDateIndex(from: recordIndex)
         placeIndex = buildPlaceIndex(from: recordIndex)
-        refnIndex = buildRefnIndex(from: recordIndex)
     }
 }
 

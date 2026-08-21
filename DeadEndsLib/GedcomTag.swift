@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 4 February 2026.
-//  Last changed on 30 April 2026.
+//  Last changed on 21 August 2026.
 //
 
 import Foundation
@@ -30,7 +30,6 @@ public enum GedcomTag: String {
     case div  = "DIV"
     case buri = "BURI"
     case chr  = "CHR"
-    case refn = "REFN"
 }
 
 extension GedcomNode {

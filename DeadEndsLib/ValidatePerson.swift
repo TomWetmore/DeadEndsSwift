@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 20 March 2026.
+//  Last changed on 21 August 2026.
 //
 
 import Foundation
@@ -32,8 +32,9 @@ func validatePersons(roots: RootList, context: ValidationContext, errlog: ErrorL
 // Methods on Persons.
 extension Root {
 
-	// validatePerson is a method that validates a Person. index is a record index; source is the the Gedcom source;
-	// keymap maps record keys to lines in the source; and errlog is the error log.
+	/// validatePerson is a method that validates a Person. index is a record index; source is
+    /// the the Gedcom source; keymap maps record keys to lines in the source; and errlog is
+    /// the error log.
 	func validatePerson(context: ValidationContext, errlog: ErrorLog) {
 		let person = self
 		var hasName = false
@@ -51,7 +52,7 @@ extension Root {
 				if let value = node.val, !value.isEmpty {
 					hasName = true
 				} else {
-					errlog.append(DeadEndsError(type: .validate, severity: .severe, line: line + node.offset,
+					errlog.append(DeadEndsError(type: .validate, severity: .severe, line: line + node.index,
 										message: "Person \(pkey) has an empty NAME line."))
 				}
 			case "SEX":
@@ -59,7 +60,7 @@ extension Root {
 				if let value = node.val, ["M", "F", "U"].contains(value) {
 					hasSex = true
 				} else {
-					errlog.append(DeadEndsError(type: .validate, severity: .severe, line: line + node.offset,
+					errlog.append(DeadEndsError(type: .validate, severity: .severe, line: line + node.index,
 										  message: "Person \(pkey) has an invalid SEX line."))
 				}
 			default:
@@ -108,18 +109,18 @@ extension GedcomNode { // Extension for internal Nodes.
 									context: ValidationContext, line: Int, errlog: ErrorLog) {
 		let pkey = person.key! // Must succeed
 		guard let fkey = self.val else { // The node must have a value.
-            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.offset,
+            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.index,
 						message: "Person \(pkey) has an illegal \(role.rawValue) value")
 			return
 		}
 		guard !seenkeys.contains(fkey) else { // The value of the node must not have been seen before.
-            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.offset,
+            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.index,
 						message: "Person \(pkey) has duplicate \(role.rawValue) value")
 			return
 		}
 		seenkeys.insert(fkey)
 		guard let family = context.index[fkey] else { // The family referred to by the node must exist.
-            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.offset,
+            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.index,
 						message: "Person \(pkey) has an illegal \(role.rawValue) link")
 			return
 		}

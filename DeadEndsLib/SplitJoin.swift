@@ -3,26 +3,24 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 22 July 2025.
+//  Last changed on 21 August 2026.
 //
 
 import Foundation
 
 // Splits a person GNode tree into its components.
-//public func splitPerson(indi: Root) -> (name: Root?, refn: Root?, sex: Root?, body: Root?, famc: Root?, fams: Root?) {
+//public func splitPerson(indi: Root) -> (name: Root?, sex: Root?, body: Root?, famc: Root?, fams: Root?) {
 //	guard indi.tag == GedcomTag.INDI else {
 //		fatalError("splitPerson called on non-person node")
 //	}
 //
 //	var name: GedcomNode?
-//	var refn: GedcomNode?
 //	var sex: GedcomNode?
 //	var body: GedcomNode?
 //	var famc: GedcomNode?
 //	var fams: GedcomNode?
 //
 //	var lnam: GedcomNode? = nil
-//	var lref: GedcomNode? = nil
 //	var lfmc: GedcomNode? = nil
 //	var lfms: GedcomNode? = nil
 //	var last: GedcomNode? = nil
@@ -39,9 +37,6 @@ import Foundation
 //		case "NAME":
 //			if name == nil { name = current } else { lnam?.sib = current }
 //			lnam = current
-//		case "REFN":
-//			if refn == nil { refn = current } else { lref?.sib = current }
-//			lref = current
 //		case "SEX":
 //			sex = current
 //		case "FAMC":
@@ -56,11 +51,11 @@ import Foundation
 //		}
 //	}
 //
-//	return (name, refn, sex, body, famc, fams)
+//	return (name, sex, body, famc, fams)
 //}
 //
 //// Joins a person GNode tree from its components.
-//public func joinPerson(indi: GedcomNode, name: GedcomNode?, refn: GedcomNode?, sex: GedcomNode?, body: GedcomNode?, famc: GedcomNode?, fams: GedcomNode?) {
+//public func joinPerson(indi: GedcomNode, name: GedcomNode?, sex: GedcomNode?, body: GedcomNode?, famc: GedcomNode?, fams: GedcomNode?) {
 //	guard indi.tag == GedcomTag.INDI else {
 //		fatalError("joinPerson called on non-person node")
 //	}
@@ -82,7 +77,6 @@ import Foundation
 //	}
 //
 //	append(name)
-//	append(refn)
 //	append(sex)
 //	append(body)
 //	append(famc)
@@ -90,18 +84,16 @@ import Foundation
 //}
 //
 //// Splits a family GNode tree into its components.
-//public func splitFamily(fam: Root) -> (refn: Root?, husb: Root?, wife: Root?, chil: Root?, rest: Root?) {
+//public func splitFamily(fam: Root) -> (husb: Root?, wife: Root?, chil: Root?, rest: Root?) {
 //	guard fam.tag == "FAM" else {
 //		fatalError("splitFamily called on non-family node")
 //	}
 //
-//	var refn: GedcomNode?
 //	var husb: GedcomNode?
 //	var wife: GedcomNode?
 //	var chil: GedcomNode?
 //	var rest: GedcomNode?
 //
-//	var lref: GedcomNode? = nil
 //	var lhsb: GedcomNode? = nil
 //	var lwfe: GedcomNode? = nil
 //	var lchl: GedcomNode? = nil
@@ -116,9 +108,6 @@ import Foundation
 //		current.sib = nil
 //
 //		switch tag {
-//		case "REFN":
-//			if refn == nil { refn = current } else { lref?.sib = current }
-//			lref = current
 //		case "HUSB":
 //			if husb == nil { husb = current } else { lhsb?.sib = current }
 //			lhsb = current
@@ -134,11 +123,11 @@ import Foundation
 //		}
 //	}
 //
-//	return (refn, husb, wife, chil, rest)
+//	return (husb, wife, chil, rest)
 //}
 //
 //// Joins a family GNode tree from its components.
-//public func joinFamily(fam: GedcomNode, refn: GedcomNode?, husb: GedcomNode?, wife: GedcomNode?, chil: GedcomNode?, rest: GedcomNode?) {
+//public func joinFamily(fam: GedcomNode, husb: GedcomNode?, wife: GedcomNode?, chil: GedcomNode?, rest: GedcomNode?) {
 //	guard fam.tag == "FAM" else {
 //		fatalError("joinFamily called on non-family node")
 //	}
@@ -159,7 +148,6 @@ import Foundation
 //		}
 //	}
 //
-//	append(refn)
 //	append(husb)
 //	append(wife)
 //	append(chil)
@@ -168,12 +156,12 @@ import Foundation
 //
 //// normalizePerson puts a person GNode tree into a standard format.
 //public func normalizePerson(_ indi: Root) {
-//	let (names, refns, sex, body, famcs, famss) = splitPerson(indi: indi)
-//	joinPerson(indi: indi, name: names, refn: refns, sex: sex, body: body, famc: famcs, fams: famss)
+//	let (names, sex, body, famcs, famss) = splitPerson(indi: indi)
+//	joinPerson(indi: indi, name: names, sex: sex, body: body, famc: famcs, fams: famss)
 //}
 //
 //// normalizeFamily puts a family GNode tree into a standard format.
 //public func normalizeFamily(_ fam: Root) {
-//	let (refns, husb, wife, chil, body) = splitFamily(fam: fam)
-//	joinFamily(fam: fam, refn: refns, husb: husb, wife: wife, chil: chil, rest: body)
+//	let (husb, wife, chil, body) = splitFamily(fam: fam)
+//	joinFamily(fam: fam,husb: husb, wife: wife, chil: chil, rest: body)
 //}

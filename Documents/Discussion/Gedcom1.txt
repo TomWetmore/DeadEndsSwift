@@ -1,0 +1,19 @@
+A goal of DeadEnds is "structured flexibility" -- data has to be structured so info can be extracted easily -- but data has to be flexible so missing info, extra info, unusually formatted info, and special purpose, custom info can be handled simply.
+
+As a consequence, a person record cannot be a simple structure with fixed fields for properties like names, events, and so on. A flexible tree structure is the right way to hold genealogical data.
+
+I considered three formats for LifeLines. XML had just come on the scene (this was the late 1980s), and I had been using my own "little language" in earlier software. Both would work. And there was Gedcom, a new tree language designed for genealogy. I choose Gedcom, and, for better or worse, have stuck with it.
+
+So in DeadEnds there is no special person or family record (a bit of a fib). A person is an INDI Gedcom tree. A person's birth is the first 1 BIRT node under the 0 INDI. A person's death date is the value of the first 2 DATE node under the first 1 DEAT node in the tree.
+
+For most systems Gedcom is just an import and export format, a way to get data into and out of a database. Programs typically have their own internal data types for persons, families, etc., and on input Gedcom records are converted to those format. But for DeadEnds Gedcom is both the database format, and the internal memory format for all records. It's Gedcom from the top to the bottom.
+
+DeadEnds does not enforce an official Gedcom version. It only requires that the Gedcom uses "lineage-linked" semantics, and all Gedcom standards seem to agree on the same tags and values to meet this criteria. So if INDI, FAM, NAME, SEX, BIRT, DEAT, MARR, DATE, PLAC, FAMC, FAMS, HUSB, WIFE, CHIL, are used in their normal and expected manner, DeadEnds accepts everthing else.
+
+DeadEnds uses that list of tags for semantics, and simply carries along all other tags and values. No data is lost when reading or writing Gedcom. DeadEnds should be able to read and create databases from any Gedcom files meeting the semantic requirements. Users are allowed to edit their records with great freedom, even inventing new tags for holding new types of information.
+
+DeadEnds only insists that the records in a Gedcom file be "closed" -- every record referred to must exist.
+
+The flexibility allowed in the use and invention of new tags goes hand in hand with the programming feature. The program does not know or care about tags outside the semantic set, but user programs can easily deal with specialty tags.
+
+This is the solution to structured flexibility first implemented forty years ago.

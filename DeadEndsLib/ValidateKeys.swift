@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2024.
-//  Last changed on 20 March 2026.
+//  Last changed on 21 August 2026.
 //
 
 import Foundation
@@ -34,7 +34,7 @@ func checkKeysAndReferences(records: RootList, path: String, keymap: KeyMap, err
             guard let value = node.val, value.isKey else { return }
             if !keyset.contains(value) {
                 var line = 0
-                if let key = key { line = keymap[key]! + node.offset }
+                if let key = key { line = keymap[key]! + node.index }
                 let error = DeadEndsError(type: .gedcom, severity: .fatal, source: path, line: line,
                                   message: "Invalid key value: \(value)")
                 errlog.append(error)
@@ -55,8 +55,6 @@ extension GedcomNode {
             child = curr.sib
         }
     }
-
-    
 }
 
 extension String {
