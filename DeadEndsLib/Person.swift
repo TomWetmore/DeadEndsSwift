@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 24 July 2026.
+//  Last changed on 22 August 2026.
 //
 
 import Foundation
@@ -53,7 +53,8 @@ extension Person {
     /// TODO: FINISH WRITING THIS METHOD.
     public func formattedName(_: Person, surnameCaps: Bool = false, surnameFirst: Bool = false, maxLength: Int = 68) {
         // Get the Gedcom name
-        let name = GedcomName(from: self)
+        //let name = GedcomName(from: self)
+        let _ = GedcomName(from: self)
 
     }
 

@@ -3,18 +3,18 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 2 January 2025.
-//  Last changed 21 August 2026.
+//  Last changed 22 August 2026.
 //
 
 import Foundation
 
-// validateFamilies validates the families in a RootList.
+/// Validate the families in a RootList.
 func validateFamilies(families: RootList, index: RecordIndex, source: String, keymap: KeyMap,
 					  errorlog: inout ErrorLog) {
-	var numFamiliesValidated = 0
+	var numValidated = 0
 	for family in families {
 		validateFamily(family: family, index: index, source: source, keymap: keymap, errlog: &errorlog)
-		numFamiliesValidated += 1
+		numValidated += 1
 	}
 }
 
@@ -25,7 +25,8 @@ func validateFamily(family: Root, index: RecordIndex, source: String, keymap: Ke
 	let line = keymap[fkey]! // Location of family in the source.
 	var errorCount = 0
 	var husbKeys: Set<String> = []
-	var wifeKeys: Set<String> = []
+	//var wifeKeys: Set<String> = []
+    let wifeKeys: Set<String> = [] // Temporary to keep compiler happy.
 	var chilKeys: Set<String> = []
 	var curnode = family.kid
 	while let node = curnode {

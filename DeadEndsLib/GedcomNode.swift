@@ -233,17 +233,20 @@ extension GedcomNode {
 
 extension GedcomNode {
 
-    /// Return all nodes below a node.
+    /// Return all nodes below a node. This returns an array of references to the nodes
+    /// that are in the tree. They are not copies.
     public var subnodes: [GedcomNode] {
+
         var result: [GedcomNode] = []
+        visit(self.kid)
+        return result
+
         func visit(_ node: GedcomNode?) {
             guard let node = node else { return }
             result.append(node)
             visit(node.kid)
             visit(node.sib)
         }
-        visit(self.kid)
-        return result
     }
 }
 

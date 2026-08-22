@@ -49,6 +49,7 @@ public struct StringGedcomSource: GedcomSource {
 
 /// Reduce the parameters used by the validation functions.
 struct ValidationContext {
+    
     let index: RecordIndex
     let keymap: KeyMap
     let source: String
@@ -89,6 +90,38 @@ public func loadRecords(from source: GedcomSource, errlog: inout ErrorLog) -> Ro
     return loadRecords(from: source, keyMap: &keyMap, errlog: &errlog)
 }
 
+/// Load a single record from a string. No semantic validation is done.
+public func loadRecordFromString(from string: String) -> (root: Root?, errlog: ErrorLog) {
+
+    let source = StringGedcomSource(name: "edit view", content: string)
+    var errlog = ErrorLog()
+
+    guard let nodes = loadRecords(from: source, errlog: &errlog) else {
+        return (nil, errlog)
+    }
+    if errlog.count > 0 { return (nil, errlog) }
+    guard nodes.count == 1 else { return (nil, errlog) } // TODO: MUST ADD AN ERROR TO THE LOG.
+
+    return (nodes[0], errlog)
+}
+
+public func getPersonFromString(from string: String) -> (person: Person?, errlog: ErrorLog) {
+
+    let (root, errlog) = loadRecordFromString(from: string)
+    guard let root else {
+        return (nil, errlog)
+    }
+    return (Person(root), errlog)
+}
+
+public func getFamilyFromString(from string: String) -> (family: Family?, errlog: ErrorLog) {
+    let (root, errlog) = loadRecordFromString(from: string)
+    guard let root else {
+        return (nil, errlog)
+    }
+    return (Family(root), errlog) 
+}
+
 /// Load data nodes from source; levs not checked.
 func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
                    errlog: inout ErrorLog) -> DataNodes<Int>? {
@@ -113,10 +146,11 @@ func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
 
 /// Process data nodes to build record list; uses lev-based state machine.
 func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RootList {
-    enum State { case initial, main, error } // States.
+
+    enum State { case initial, main, error }
     var state: State = .initial
 
-    var recordList = RootList()  // Returned records.
+    var results = RootList()
     var prevNode: GedcomNode? = nil
     var prevLev = 0
     var curRoot: GedcomNode? = nil
@@ -134,7 +168,7 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorL
             }
         case .main: // Building records.
             if (curLev == 0) { // Next root.
-                recordList.append(curRoot!) // Save record.
+                results.append(curRoot!) // Save record.
                 curRoot = curNode; // Root of next record.
             } else if (curLev == prevLev) { // Found sib.
                 curNode.dad = prevNode!.dad;
@@ -142,7 +176,7 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorL
             } else if (curLev == prevLev + 1) { // Found kid.
                 curNode.dad = prevNode
                 prevNode!.kid = curNode
-            } else if (curLev < prevLev) { // Found 'uncle'.
+            } else if (curLev < prevLev) { // Found uncle.
                 var count = 0;
                 while (curLev < prevLev) {
                     count += 1
@@ -172,14 +206,15 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorL
         prevLev = curLev
         prevNode = curNode
     }
-    if (state == .main) { // Aappend last record.
-        recordList.append(curRoot!)
+    if (state == .main) { // Append last record.
+        results.append(curRoot!)
     }
-    return recordList;
+    return results;
 }
 
 /// Result returned by parseLine; on success holds Gedcom fields; on failure holds error message.
 enum ParseResult {
+    
     case success(lev: Int, key: String?, tag: String, val: String?)
     case failure(errmsg: String)
 }
