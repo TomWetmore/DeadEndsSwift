@@ -53,24 +53,26 @@ public struct DeadEndsError: CustomStringConvertible {
     }
 }
 
+public typealias ErrorLog = [DeadEndsError]
+
 /// Error log class.
-public class ErrorLog: CustomStringConvertible {
-
-    var log: [DeadEndsError] = []  // Array of errors.
-    public var count: Int { return log.count }  // Number of entries in log.
-
-    /// Create an error log.
-    public init() {}
-
-    /// Description of error log.
-    public var description: String {
-        var string = ""
-        for entry in log { string += "\n\(entry)" }
-        return string
-    }
-
-    /// Append an error to the log.
-    public func append(_ error: DeadEndsError) {
-        log.append(error)
-    }
-}
+//public class ErrorLog: CustomStringConvertible {
+//
+//    var log: [DeadEndsError] = []  // Array of errors.
+//    public var count: Int { return log.count }  // Number of entries in log.
+//
+//    /// Create an error log.
+//    public init() {}
+//
+//    /// Description of error log.
+//    public var description: String {
+//        var string = ""
+//        for entry in log { string += "\n\(entry)" }
+//        return string
+//    }
+//
+//    /// Append an error to the log.
+//    public func append(_ error: DeadEndsError) {
+//        log.append(error)
+//    }
+//}

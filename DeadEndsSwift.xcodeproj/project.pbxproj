@@ -165,6 +165,7 @@
 				Partition/Connect.swift,
 				Partition/Partition.swift,
 				Person.swift,
+				PersonEditing.swift,
 				PersonSet/PersonSet.swift,
 				PersonSet/PersonSetAlgebra.swift,
 				PersonSet/PersonSetGedcom.swift,

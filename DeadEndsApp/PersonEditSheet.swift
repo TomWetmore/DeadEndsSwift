@@ -86,9 +86,15 @@ struct PersonEditSheet: View {
     func handleSave() {
 
         // Parse edited text into a Person record. This may fail.
-        var (editedPerson, errors) = parsePerson(text: editedText)
-        if errors.count > 0 {
-            presentErrorSheet(errors: errors)
+//        var (editedPerson, errors) = parsePerson(text: editedText)
+//        if errors.count > 0 {
+//            presentErrorSheet(errors: errors)
+//            return
+//        }
+
+        let (editedPerson, errlog) = getPersonFromString(from: editedText)
+        if errlog.count > 0 {
+            presentErrorSheet(errors: ["There was an error"])
             return
         }
 
@@ -97,17 +103,17 @@ struct PersonEditSheet: View {
         let (new, extractErrors) = getPersonInfo(for: editedPerson!)
         
         // Initialze errors with those from the new PersonInfo.
-        errors.append(contentsOf: extractErrors)
+        //errors.append(contentsOf: extractErrors)
 
         // Validate the edited person.
         let recordIndex = model.database!.recordIndex
-        errors.append(contentsOf: validateEditedPerson(old: old, new: new, index: recordIndex))
+        //errors.append(contentsOf: validateEditedPerson(old: old, new: new, index: recordIndex))
 
         // Show any errors found..
-        if !errors.isEmpty {
-            presentErrorSheet(errors: errors)
-            return
-        }
+//        if !errors.isEmpty {
+//            presentErrorSheet(errors: errors)
+//            return
+//        }
 
         // Update the person and refresh the PersonView with the changes.
         applyPersonUpdates(old: old, new: new)

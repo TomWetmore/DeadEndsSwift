@@ -11,10 +11,11 @@ import Foundation
 typealias StringSet = Set<String>
 
 /// Validate the records.
-func validateRecords(roots: RootList, context: ValidationContext, errlog: ErrorLog) {
+func validateRecords(roots: RootList, context: ValidationContext, errlog: inout ErrorLog) {
+
     for root in roots {
         switch root.tag {
-        case GedcomTag.INDI: root.validatePerson(context: context, errlog: errlog)
+        case GedcomTag.INDI: root.validatePerson(context: context, errlog: &errlog)
         //case GedcomTag.FAM: root.validateFamily(context: context, errlog: errlog)
         default: break
         }
@@ -22,10 +23,10 @@ func validateRecords(roots: RootList, context: ValidationContext, errlog: ErrorL
 }
 
 // validatePersons validates the persons in a RootList.
-func validatePersons(roots: RootList, context: ValidationContext, errlog: ErrorLog) {
+func validatePersons(roots: RootList, context: ValidationContext, errlog: inout ErrorLog) {
     for root in roots {
         if root.tag != GedcomTag.INDI { continue }
-        root.validatePerson(context: context, errlog: errlog)
+        root.validatePerson(context: context, errlog: &errlog)
     }
 }
 
@@ -35,7 +36,8 @@ extension Root {
 	/// validatePerson is a method that validates a Person. index is a record index; source is
     /// the the Gedcom source; keymap maps record keys to lines in the source; and errlog is
     /// the error log.
-	func validatePerson(context: ValidationContext, errlog: ErrorLog) {
+	func validatePerson(context: ValidationContext, errlog: inout ErrorLog) {
+
 		let person = self
 		var hasName = false
 		var hasSex = false
@@ -85,10 +87,10 @@ extension Root {
 			switch node.tag {
 			case "FAMC":
 				node.validateFamilyLink(person: person, role: .child, seenkeys: &famKeys,
-										context: context, line: line, errlog: errlog)
+                                        context: context, line: line, errlog: &errlog)
 			case "FAMS":
 				node.validateFamilyLink(person: person, role: .spouse, seenkeys: &famKeys,
-										context: context, line: line, errlog: errlog)
+                                        context: context, line: line, errlog: &errlog)
 			default:
 				break
 			}
@@ -106,31 +108,32 @@ extension GedcomNode { // Extension for internal Nodes.
 	// seen for the person; index is the full record index; source is the record source; line is the location of the
 	// person in the source; and errlog is the error log.
 	private func validateFamilyLink(person: Root, role: FamilyRole, seenkeys: inout StringSet,
-									context: ValidationContext, line: Int, errlog: ErrorLog) {
+									context: ValidationContext, line: Int, errlog: inout ErrorLog) {
 		let pkey = person.key! // Must succeed
 		guard let fkey = self.val else { // The node must have a value.
-            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.index,
+            appendError(errlog: &errlog, type: .linkage, source: context.source, line: line + self.index,
 						message: "Person \(pkey) has an illegal \(role.rawValue) value")
 			return
 		}
 		guard !seenkeys.contains(fkey) else { // The value of the node must not have been seen before.
-            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.index,
+            appendError(errlog: &errlog, type: .linkage, source: context.source, line: line + self.index,
 						message: "Person \(pkey) has duplicate \(role.rawValue) value")
 			return
 		}
 		seenkeys.insert(fkey)
 		guard let family = context.index[fkey] else { // The family referred to by the node must exist.
-            appendError(errlog: errlog, type: .linkage, source: context.source, line: line + self.index,
+            appendError(errlog: &errlog, type: .linkage, source: context.source, line: line + self.index,
 						message: "Person \(pkey) has an illegal \(role.rawValue) link")
 			return
 		}
-		if !family.validateReciprocalLink(to: pkey, for: role, source: context.source, errlog: errlog) {
+        if !family
+            .validateReciprocalLink(to: pkey, for: role, source: context.source, errlog: &errlog) {
 			return
 		}
 	}
 }
 
-private func appendError(errlog: ErrorLog, type: ErrorType, source: String, line: Int = 0, message: String) {
+private func appendError(errlog: inout ErrorLog, type: ErrorType, source: String, line: Int = 0, message: String) {
 	errlog.append(DeadEndsError(type: type, severity: .severe, source: source, line: line, message: message))
 }
 
@@ -172,18 +175,18 @@ extension GedcomNode {
 extension Root {
 
 	func validateReciprocalLink(to personKey: String, for type: FamilyRole, source: String,
-								errlog: ErrorLog) -> Bool {
+								errlog: inout ErrorLog) -> Bool {
 		switch type {
 		case .child: // Family should have a CHIL link to person with personKey.
 			if !self.hasChildLink(to: personKey) {
 				let message = "Family \(self.key ?? "unknown") has no CHIL link back to person \(personKey)."
-				appendError(errlog: errlog, type: .linkage, source: source, message: message)
+				appendError(errlog: &errlog, type: .linkage, source: source, message: message)
 				return false
 			}
 		case .spouse: // Family should have a HUSB or WIFE link to person with personKey.
 			if !self.hasSpouseLink(to: personKey) {
 				let message = "Family \(self.key ?? "unknown") has no spouse link back to person \(personKey)."
-				appendError(errlog: errlog, type: .linkage, source: source, message: message)
+				appendError(errlog: &errlog, type: .linkage, source: source, message: message)
 				return false
 			}
 		}

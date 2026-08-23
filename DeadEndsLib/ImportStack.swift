@@ -63,7 +63,7 @@ func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
     else { return nil }
 
     // Check key closure.
-    checkKeysAndReferences(records: roots, path: source.name, keymap: keyMap, errlog: errlog)
+    checkKeysAndReferences(records: roots, path: source.name, keymap: keyMap, errlog: &errlog)
 
     // Need index for inter-record validation.
     var index = RecordIndex()
@@ -72,7 +72,7 @@ func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
     }
     // Validate.
     let context = ValidationContext(index: index, keymap: keyMap, source: source.name)
-    validateRecords(roots: roots, context: context, errlog: errlog)
+    validateRecords(roots: roots, context: context, errlog: &errlog)
     return errlog.count == 0 ? roots : nil
 }
 
@@ -81,7 +81,7 @@ public func loadRecords(from source: GedcomSource, keyMap: inout KeyMap,
                         errlog: inout ErrorLog) -> RootList? {
     guard let dataNodes = loadDataNodes(from: source, keyMap: &keyMap, errlog: &errlog)
     else { return nil }
-    return buildRecords(from: dataNodes, keymap: keyMap, errlog: errlog)
+    return buildRecords(from: dataNodes, keymap: keyMap, errlog: &errlog)
 }
 
 /// Load records from source; differs from previous by creating a key map.
@@ -100,26 +100,13 @@ public func loadRecordFromString(from string: String) -> (root: Root?, errlog: E
         return (nil, errlog)
     }
     if errlog.count > 0 { return (nil, errlog) }
-    guard nodes.count == 1 else { return (nil, errlog) } // TODO: MUST ADD AN ERROR TO THE LOG.
-
+    guard nodes.count == 1 else {
+        let error = DeadEndsError(type: .gedcom, severity: .severe,
+                                  message: "Expected one record in string; found \(nodes.count)")
+        errlog.append(error)
+        return (nil, errlog)
+    }
     return (nodes[0], errlog)
-}
-
-public func getPersonFromString(from string: String) -> (person: Person?, errlog: ErrorLog) {
-
-    let (root, errlog) = loadRecordFromString(from: string)
-    guard let root else {
-        return (nil, errlog)
-    }
-    return (Person(root), errlog)
-}
-
-public func getFamilyFromString(from string: String) -> (family: Family?, errlog: ErrorLog) {
-    let (root, errlog) = loadRecordFromString(from: string)
-    guard let root else {
-        return (nil, errlog)
-    }
-    return (Family(root), errlog) 
 }
 
 /// Load data nodes from source; levs not checked.
@@ -145,7 +132,7 @@ func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
 }
 
 /// Process data nodes to build record list; uses lev-based state machine.
-func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: ErrorLog) -> RootList {
+func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout ErrorLog) -> RootList {
 
     enum State { case initial, main, error }
     var state: State = .initial

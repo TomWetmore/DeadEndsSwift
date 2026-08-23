@@ -9,7 +9,7 @@
 import Foundation
 
 // Check that record keys are unique and closed.
-func checkKeysAndReferences(records: RootList, path: String, keymap: KeyMap, errlog: ErrorLog) {
+func checkKeysAndReferences(records: RootList, path: String, keymap: KeyMap, errlog: inout ErrorLog) {
     var keyset = Set<String>() // Encountered keys.
 
     for root in records {  // Existance and uniqueness.
