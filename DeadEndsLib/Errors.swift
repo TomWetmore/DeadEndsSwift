@@ -3,13 +3,16 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 21 December 2025.
-//  Last changed on 25 February 2026.
+//  Last changed on 26 August 2026.
 //
 
 import Foundation
 
+public typealias ErrorLog = [DeadEndsError]
+
 ///  ErrorType is the type of a DeadEnds Error.
 enum ErrorType: String {
+
 	case system = "system"
 	case syntax = "syntax"
 	case gedcom = "gedcom"
@@ -19,6 +22,7 @@ enum ErrorType: String {
 
 /// Severity is the severity of a DeadEnds Error.
 enum Severity: String {
+
 	case fatal = "fatal"   // Quit loading database
 	case severe = "severe"  // Continue with source but don't keep database
 	case warning = "warning" // Continue with source and load database
@@ -27,6 +31,7 @@ enum Severity: String {
 
 /// DeadEnds error.
 public struct DeadEndsError: CustomStringConvertible {
+
 	let type: ErrorType
 	let severity: Severity
 	let source: String?
@@ -36,6 +41,7 @@ public struct DeadEndsError: CustomStringConvertible {
     /// Create an error.
 	init(type: ErrorType, severity: Severity, source: String? = nil, line: Int? = 0,
 		 message: String) {
+
 		self.type = type
 		self.severity = severity
 		self.source = source
@@ -45,6 +51,7 @@ public struct DeadEndsError: CustomStringConvertible {
 
     /// Description of error.
     public var description: String {
+
         var string = "error: \(type.rawValue) \(severity.rawValue)"
         if let line = line { string += " line \(line)" }
         if let source = source { string += " in \(source)" }
@@ -53,26 +60,4 @@ public struct DeadEndsError: CustomStringConvertible {
     }
 }
 
-public typealias ErrorLog = [DeadEndsError]
 
-/// Error log class.
-//public class ErrorLog: CustomStringConvertible {
-//
-//    var log: [DeadEndsError] = []  // Array of errors.
-//    public var count: Int { return log.count }  // Number of entries in log.
-//
-//    /// Create an error log.
-//    public init() {}
-//
-//    /// Description of error log.
-//    public var description: String {
-//        var string = ""
-//        for entry in log { string += "\n\(entry)" }
-//        return string
-//    }
-//
-//    /// Append an error to the log.
-//    public func append(_ error: DeadEndsError) {
-//        log.append(error)
-//    }
-//}

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 23 June 2026.
+//  Last changed on 27 August 2026.
 //
 //  Birth, death and marriage places are indexed. Keys combine
 //  place parts and event types. Values are the sets of
@@ -13,25 +13,25 @@
 import Foundation
 
 /// Place index keys combine a place part with an event kind.
-struct PlaceIndexKey: Hashable {
+struct PlaceKey: Hashable {
 
     let part: String
     let event: EventKind
 }
 
 /// Place index for DeadEnds database. The index is built when
-/// the database is built. It is modified when the user makes
-/// changes to the database.
+/// the database is built. It is modified when the user changes
+/// the database.
 final public class PlaceIndex {
 
-    /// Dictionary that implements the index.
-    private(set) var index: [PlaceIndexKey : Set<RecordKey>] = [:]
+    /// Dictionary that holds the index.
+    private(set) var index: [PlaceKey : Set<RecordKey>] = [:]
 
-    /// Number of place keys and their values in the index.
+    /// Number of place keys in the index.
     public var count: Int { index.count }
 
     /// Add entries to the index. Place is the value of a PLAC node. It
-    /// is expanded into part strings which are then added to the index.
+    /// is expanded into parts which are added individually.
     public func add(place: String, event: EventKind, recordKey: RecordKey) {
 
         for part in placeParts(place) {
@@ -39,34 +39,38 @@ final public class PlaceIndex {
         }
     }
 
-    /// Add an entry to the index; part is a component extracted from the
-    /// value of a PLAC value.
-    fileprivate func add(part: String, event: EventKind, recordKey: RecordKey) {
+    /// Add an entry to the index; part is a component extracted from
+    /// a PLAC value.
+    public func add(part: String, event: EventKind, recordKey: RecordKey) {
 
-        index[PlaceIndexKey(part: part, event: event), default: Set()].insert(recordKey)
+        index[PlaceKey(part: part, event: event), default: Set()].insert(recordKey)
     }
 
-    /// Remove entries from the index; place is expanded into its parts.
-    /// This method is used when a PLAC node is removed from the database.
-    /// The value is expanded into part strings which are removed individually.
+    /// Remove entries from the index; place is expanded into parts
+    /// that are removed individually.
     func remove(place: String, event: EventKind, recordKey: RecordKey) {
 
         for part in placeParts(place) {
-            let placeIndexKey = PlaceIndexKey(part: part, event: event)
-            guard var keys = index[placeIndexKey] else { continue }
-            keys.remove(recordKey)
-            if keys.isEmpty { index.removeValue(forKey: placeIndexKey) }
-            else { index[placeIndexKey] = keys }
+            remove(part: part, event: event, recordKey: recordKey)
         }
     }
 
-    /// Expands a PLAC value into an array place parts and then returns the
-    /// array of dictionaries that map those name parts to record keys.
+    func remove(part: String, event: EventKind, recordKey: RecordKey) {
+
+        let placeKey = PlaceKey(part: part, event: event)
+        guard var keys = index[placeKey] else { return }
+        keys.remove(recordKey)
+        if keys.isEmpty { index.removeValue(forKey: placeKey) }
+        else { index[placeKey] = keys }
+    }
+
+    /// Expand a PLAC value into parts and return the array of dictionaries that
+    /// map those parts to record keys.
     func recordKeys(place: String, event: EventKind) -> [String : Set<RecordKey>] {
 
         var partMap: [String : Set<RecordKey>] = [:]
         for part in placeParts(place) {
-            let recordSet = index[PlaceIndexKey(part: part, event: event)] ?? []
+            let recordSet = index[PlaceKey(part: part, event: event)] ?? []
             if recordSet.count > 0 {
                 partMap[part] = recordSet
             }
@@ -74,33 +78,33 @@ final public class PlaceIndex {
         return partMap
     }
 
-    /// Returns the set of record keys that match a specify place part and
-    /// event kind.
+    /// Return the set of record keys that match a specific part and event.
     func recordKeys(part: String, event: EventKind) -> Set<RecordKey> {
 
-        return index[PlaceIndexKey(part: part, event: event)] ?? []
+        return index[PlaceKey(part: part, event: event)] ?? []
     }
 }
 
-/// Returns the array of place parts extracted from a Gedcom PLAC value.
+/// Return the array of parts extracted from a Gedcom PLAC value. Both placeComponents
+/// and placeKeys perform non-trivial text manipulation.
 func placeParts(_ raw: String) -> [String] {
 
     placeComponents(raw).flatMap(placeKeys(phrase:))
 }
 
-/// Expands a PLAC value in components. Further processing is done in placeKeys.
-/// TODO: Write a more complete description.
+/// Expand a PLAC value into the initial set of components.
 private func placeComponents(_ raw: String) -> [String] {
 
     // Lowercase and clean whitespace.
     var string = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
     while string.contains("  ") { string = string.replacingOccurrences(of: "  ", with: " ") }
 
-    // Split value around commas and other bracket characters.
+    // Split value around commas and brackets.
      let commaParts = string
          .split { ",()[]{}".contains($0) }
          .map { $0.trimmingCharacters(in: .whitespaces) }
          .filter { !$0.isEmpty }
+
     // Split values around " or ".
     var orParts: [String] = []
     for part in commaParts {
@@ -113,9 +117,7 @@ private func placeComponents(_ raw: String) -> [String] {
             orParts.append(part)
         }
     }
-    // orParts is now an array of components from the original value that have been
-    // lower-cased and have multiple spaces reduced to single. The next step is
-    // to remove noise words and certain prefixes and suffixes.
+
     let noisePrefixes: [String] = [
         "probable ", "probably ", "prob ", "maybe ",
         "possible ", "possibly ", "poss ",
@@ -126,6 +128,7 @@ private func placeComponents(_ raw: String) -> [String] {
         "usa", "u.s.", "u.s.a", "us",
         "canada"
     ]
+    // Strip noise.
     let stripped = orParts.compactMap { original -> String? in
         var part = original
         var changed = true
@@ -139,11 +142,10 @@ private func placeComponents(_ raw: String) -> [String] {
         return part.isEmpty ? nil : part
     }
 
-    // Stripped is an array of place parts with noise words stripped from
-    // their fronts. Now check to see if any countries should be stripped.
+    // Check if country names should be stripped.
     let withoutCountries = stripped.filter { !dropCountries.contains($0) }
 
-    // Keep countries only if they were the only remaining parts.
+    // Keep countries if they are the only remaining parts.
     orParts = withoutCountries.isEmpty ? stripped : withoutCountries
     return orParts
 }
@@ -198,7 +200,7 @@ public func buildPlaceIndex(from recordIndex: RecordIndex) -> PlaceIndex {
         default: break
         }
     }
-    //placeIndex.showContents(using: recordIndex)
+    //placeIndex.showContents(using: recordIndex) // DEBUG
     return placeIndex
 }
 

@@ -3,13 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 November 2025.
-//  Last changed on 13 March 2026.
+//  Last changed on 27 August 2026.
 //
 
 import Foundation
 
 /// Date index key; combines year with event kind.
-public struct DateIndexKey: Hashable {
+public struct DateKey: Hashable {
     let year: Year
     let event: EventKind
 }
@@ -17,19 +17,19 @@ public struct DateIndexKey: Hashable {
 /// Date index for DeadEnds database.
 final public class DateIndex {
 
-    private(set) var index: [DateIndexKey : Set<RecordKey>] = [:]  // Representation.
+    private(set) var index: [DateKey : Set<RecordKey>] = [:]  // Representation.
 
     public var count: Int { index.count }
 
     /// Add entry to date index.
     func add(year: Year, event: EventKind, recordKey: RecordKey) {
-        let dateKey = DateIndexKey(year: year, event: event)
+        let dateKey = DateKey(year: year, event: event)
         index[dateKey, default: Set()].insert(recordKey)
     }
 
     /// Remove entry from date index.
     func remove(year: Year, event: EventKind, recordKey: RecordKey) {
-        let dateKey = DateIndexKey(year: year, event: event)
+        let dateKey = DateKey(year: year, event: event)
         if var records = index[dateKey] {
             records.remove(recordKey)
             if records.isEmpty { index.removeValue(forKey:dateKey) }
@@ -39,11 +39,11 @@ final public class DateIndex {
 
     /// Get the record keys for a year and event.
     public func recordKeys(year: Year, event: EventKind) -> Set<RecordKey>? {
-        recordKeys(for: DateIndexKey(year: year, event: event))
+        recordKeys(for: DateKey(year: year, event: event))
     }
 
     /// Get the record keys for a date index key.
-    public func recordKeys(for dateIndexKey: DateIndexKey) -> Set<RecordKey>? {
+    public func recordKeys(for dateIndexKey: DateKey) -> Set<RecordKey>? {
         index[dateIndexKey]
     }
 
@@ -61,6 +61,7 @@ final public class DateIndex {
 
 /// Build date index for a record index.
 public func buildDateIndex(from recordIndex: RecordIndex) -> DateIndex {
+
     let dateIndex = DateIndex()
 
     for (_, root) in recordIndex {
@@ -79,6 +80,7 @@ extension DateIndex {
 
     /// Index the date nodes in an event tree.
     private func indexDates(in eventNode: GedcomNode, kind: EventKind, recordKey: RecordKey) {
+
         for dateNode in eventNode.kids(withTag: GedcomTag.DATE) {
             guard let year = year(from: dateNode) else { continue }
             add(year: year, event: kind, recordKey: recordKey)
@@ -88,6 +90,7 @@ extension DateIndex {
     /// TODO: If the argument is a person root, the caller to this method is simpler.
     /// Index the birth and death dates of a person.
     func indexDates(from person: Person) {
+
         guard let key = person.root.key else { return }
         for eventNode in person.root.kids where eventNode.hasTag(.birt) || eventNode.hasTag(.deat) {
             let kind: EventKind = eventNode.hasTag(.birt) ? .birth : .death
@@ -98,6 +101,7 @@ extension DateIndex {
     /// TODO: If the argument is a family root, the caller to this method is simpler.
     /// Index the marriage dates of a family.
     func indexDates(from family: Family) {
+
         guard let key = family.root.key else { return }
         for eventNode in family.root.kids where eventNode.hasTag(.marr) {
             indexDates(in: eventNode, kind: .marriage, recordKey: key)
@@ -110,6 +114,7 @@ extension DateIndex {
 
     /// Print contents of a date index.
     public func showContents(using recordIndex: RecordIndex) {
+        
         let sortedEntries = index.sorted { $0.key.year < $1.key.year }
         for (dateKey, recordKeys) in sortedEntries {
             let event = dateKey.event.rawValue.capitalized

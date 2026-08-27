@@ -3,13 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 June 2025.
-//  Last changed on 18 February 2026.
+//  Last changed on 24 August 2026.
 //
 
 import Foundation
 
 /// May not need to have a raw value base on some current uses.
 public enum EventKind: String {
+
     case birth = "BIRT"
     case death = "DEAT"
     case marriage = "MARR"
