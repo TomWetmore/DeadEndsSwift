@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 21 August 2026.
+//  Last changed on 28 August 2026.
 //
 
 import SwiftUI
@@ -85,118 +85,17 @@ struct PersonEditSheet: View {
     /// Handle the Save button. Parses text into a record; validates; replaces old person with new.
     func handleSave() {
 
-        // Parse edited text into a Person record. This may fail.
-//        var (editedPerson, errors) = parsePerson(text: editedText)
-//        if errors.count > 0 {
-//            presentErrorSheet(errors: errors)
-//            return
-//        }
-
-        let (editedPerson, errlog) = getPersonFromString(from: editedText)
-        if errlog.count > 0 {
-            presentErrorSheet(errors: ["There was an error"])
+        let database = model.database!
+        let errors = updatePerson(oldPerson: person, newString: editedText, in: database)
+        if !errors.isEmpty {
+            presentErrorSheet(errors: errors)
             return
         }
-
-        // Get PersonInfo for the two versions.
-        let (old, _) = getPersonInfo(for: self.person)
-        let (new, extractErrors) = getPersonInfo(for: editedPerson!)
-        
-        // Initialze errors with those from the new PersonInfo.
-        //errors.append(contentsOf: extractErrors)
-
-        // Validate the edited person.
-        let recordIndex = model.database!.recordIndex
-        //errors.append(contentsOf: validateEditedPerson(old: old, new: new, index: recordIndex))
-
-        // Show any errors found..
-//        if !errors.isEmpty {
-//            presentErrorSheet(errors: errors)
-//            return
-//        }
-
-        // Update the person and refresh the PersonView with the changes.
-        applyPersonUpdates(old: old, new: new)
         if model.path.count > 0 {
             model.path.removeLast()
             model.path.append(Route.person(person))
         }
-
-        // Close the edit sheet
         dismiss()
-    }
-}
-
-extension PersonEditSheet {
-
-    /// Parse edited text into a Person; return Person if okay, else return the errors.
-
-    func parsePerson(text: String) -> (edited: Person?, errors: [String]) {
-        
-        let source = StringGedcomSource(name: "edit view", content: text)
-        var errlog = ErrorLog()
-
-        guard let nodes = loadRecords(from: source, errlog: &errlog) else {
-            return (nil, ["Error parsing record"])
-        }
-        if errlog.count > 0 { return (nil, ["Error parsing record"]) }
-        guard nodes.count == 1 else { return (nil, ["Found \(nodes.count) records"]) }
-        return (Person(nodes[0]), [])
-    }
-
-    /// Validates an edited Person record.
-    func validateEditedPerson(old: PersonInfo, new: PersonInfo, index: RecordIndex) -> [String] {
-
-        var problems: [String] = []
-        // Person must have at least one NAME line with value.
-        if new.names.isEmpty {
-            problems.append("Edited person must have at least one NAME.")
-        }
-        // New Person should have a SEX value that is consistent with his/her role in the FAMS families.
-//        if let sex = new.sex {
-//            for famKey in new.famsKeys {
-//                guard let fam = index[famKey] else { continue }
-//                let ( _, husb, wife, _, _) = splitFamily(fam: fam)
-//                if sex == "M" && !containsPointer(to: old.key, in: husb) {
-//                    problems.append("SEX is M, but person is not HUSB in FAMS family \(famKey).")
-//                }
-//                if sex == "F" && !containsPointer(to: old.key, in: wife) {
-//                    problems.append("SEX is F, but person is not WIFE in FAMS family \(famKey).")
-//                }
-//            }
-//        }
-        // Edited Person must have the same FAMC and FAMS values, though they may be reordered.
-        if old.famcKeys != new.famcKeys {
-            problems.append("FAMC lines cannot be changed, only reordered")
-        }
-        if old.famsKeys != new.famsKeys {
-            problems.append("FAMS lines cannot be changed, only reordered")
-        }
-        // All cross-references in new record must refer to existing records
-        let allPointers = new.root.root.subnodes
-            .compactMap { $0.val }
-            .filter { $0.isKey }
-        for key in allPointers {
-            if index[key] == nil {
-                problems.append("Pointer to nonexistent record: \(key).")
-            }
-        }
-        return problems
-    }
-
-    /// Update the database after successfully editing a person.
-    func applyPersonUpdates(old: PersonInfo, new: PersonInfo) {
-
-        let db = model.database!
-
-        // Update NameIndex
-        let addedNames = new.names.subtracting(old.names)
-        let removedNames = old.names.subtracting(new.names)
-        for name in removedNames { db.nameIndex.remove(value: name, recordKey: old.key) }
-        for name in addedNames { db.nameIndex.add(value: name, recordKey: old.key) }
-
-        // Update the database with the edited person keeping the same Person root.
-        old.root.root.replaceChildren(with: new.root.kid)
     }
 }
 
@@ -228,58 +127,4 @@ struct ErrorSheet: View {
         .padding()
         .frame(width: 400, height: 300)
     }
-}
-
-/// Structure holding Person information. This structure is used when validating changes
-/// made to persons by editing.
-struct PersonInfo {
-    let root: Person
-    let key: String
-    let sex: String?
-    let names: Set<String>
-    let famcKeys: Set<String>
-    let famsKeys: Set<String>
-}
-
-/// Return the PersonInfo structure from a Person record. The internal structure of the Person
-/// record's tree is not affected.
-
-func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
-    
-    var names: Set<String> = []
-    var sex: String? = nil
-    var famcKeys: Set<String> = []
-    var famsKeys: Set<String> = []
-    var errors: [String] = []
-
-    var current = person.kid
-    while let node = current {  // Look at all level 1 nodes.
-        
-        let tag = node.tag
-        if let value = node.val, !value.isEmpty {
-            switch tag {
-            case "NAME": names.insert(value)
-            case "SEX":
-                if sex == nil { sex = value }
-                else { errors.append("Multiple SEX tags found.") }
-            case "FAMC": famcKeys.insert(value)
-            case "FAMS": famsKeys.insert(value)
-            default: break
-            }
-        } else if ["NAME", "SEX", "FAMC", "FAMS"].contains(tag) {
-            errors.append("Missing value for \(tag) line.")
-        }
-        current = node.sib
-    }
-
-    // Construct PersonInfo even if errors.
-    let info = PersonInfo(
-        root: person,
-        key: person.key,
-        sex: sex,
-        names: names,
-        famcKeys: famcKeys,
-        famsKeys: famsKeys
-    )
-    return (info, errors)
 }

@@ -3,15 +3,45 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 August 2026.
-//  Last changed on 27 August 2026.
+//  Last changed on 28 August 2026.
 //
 
 import Foundation
 
-/// Try to extract a person record from a string.
-public func getPersonFromString(from string: String) -> (person: Person?, errors: [String]) {
+/// Attempt to update a person in the database with a modified version of the person.
+/// The first version arrives as a person structure; the second version arrives as a
+/// string. That string is parsed into new version of the person. The new version is
+/// then checked to see if it can become a new version. If so the database is changed.
+/// If updating is not possible, one or more error strings are returned that say why.
+public func updatePerson(oldPerson: Person, newString: String, in database: Database) -> [String] {
 
-    let (root, errlog) = loadRecordFromString(from: string)  // Hard work done here.
+    // Get a person by parsing the string.
+    let results = getPersonFromString(from: newString)
+    if results.errors.count > 0 {
+        return results.errors
+    }
+    // Get person info for the two versions.
+    let (oldinfo, _) = getPersonInfo(for: oldPerson)
+    let newPerson = results.person!
+    let (newinfo, errors) = getPersonInfo(for: newPerson)
+    if errors.count > 0 {
+        return errors
+    }
+    // See if there are any semantic errors in the new version.
+    let policyErrors = validatePersonChanges(old: oldinfo, new: newinfo, in: database.recordIndex)
+    if !policyErrors.isEmpty {
+        return policyErrors
+    }
+    // There are no errors so update the database with new version of person.
+    database.applyPersonUpdates(old: oldinfo, new: newinfo)
+    return []
+}
+
+/// Try to extract a person record from a string.
+func getPersonFromString(from string: String) -> (person: Person?, errors: [String]) {
+
+    // loadRecordFromString does the hard work.
+    let (root, errlog) = loadRecordFromString(from: string)
 
     guard let root else {
         return (nil, errlog.map(\.description))
@@ -22,56 +52,38 @@ public func getPersonFromString(from string: String) -> (person: Person?, errors
     return (Person(root), [])
 }
 
-/// Want this to 1. Get Person from String; 2. Validate the changes; 3. Update the database.
-func updatePerson(oldPerson: Person, newString: String, in database: Database) -> [String] {
-
-    let results = getPersonFromString(from: newString)
-    if results.errors.count > 0 {
-        return results.errors
-    }
-
-    // Get person info for the two versions.
-    let (oldinfo, _) = getPersonInfo(for: oldPerson)
-    let newPerson = results.person!
-    let (newinfo, errors) = getPersonInfo(for: newPerson)
-
-    if errors.count > 0 {
-        return errors
-    }
-
-    let policyErrors = validatePersonChanges(old: oldinfo, new: newinfo)
-    if !policyErrors.isEmpty {
-        return policyErrors
-    }
-
-    database.applyPersonUpdates(old: oldinfo, new: newinfo)
-    return []
-}
-
-func validatePersonChanges(old: PersonInfo, new: PersonInfo) -> [String] {
+/// Validate the person changes -- Make sure all changes are okay.
+func validatePersonChanges(old: PersonInfo, new: PersonInfo, in index: RecordIndex) -> [String] {
 
     var errors: [String] = []
 
     if new.names.isEmpty {
         errors.append("Person must have at least one NAME line")
     }
-
-    if new.sex == nil {
-        errors.append("Person must have one SEX line")
+    if new.sexCount != 1 {
+        errors.append("Person must have exactly one SEX line")
     }
-
+    if let sex = new.sex, !["M", "F", "U", "?"].contains(sex) {
+        errors.append("SEX value must be M, F, U, or ?")
+    }
     if new.famcKeys != old.famcKeys {
         errors.append("FAMC relationships cannot be added or removed")
     }
-
     if new.famsKeys != old.famsKeys {
         errors.append("FAMS relationships cannot be added or removed")
     }
-
     if new.key != old.key {
         errors.append("Person key cannot be changed")
     }
 
+    for node in new.person.root.subnodes {
+        guard let value = node.val, value.isKey else { continue }
+
+        if index[value] == nil {
+            let line = node.index + 1
+            errors.append("\(line): Pointer to nonexistent record: \(value)")
+        }
+    }
     return errors
 }
 
@@ -113,16 +125,17 @@ extension Database {
         }
 
         // Update the database with the edited person keeping the same Person root.
-        old.root.root.replaceChildren(with: new.root.kid)
+        old.person.root.replaceChildren(with: new.person.kid)
     }
 }
 
-/// Structure holding Person information that is used when validating edit changes.
+/// Structure holding Person information that is used when validating.
 struct PersonInfo: CustomStringConvertible {
 
-    let root: Person
+    let person: Person
     let key: String
     let sex: String?
+    let sexCount: Int
     let names: Set<String>
     let famcKeys: Set<RecordKey>
     let famsKeys: Set<RecordKey>
@@ -130,7 +143,8 @@ struct PersonInfo: CustomStringConvertible {
     let placeKeys: Set<PlaceKey>
 
     var description: String {
-        "PersonInfo(root: key: \(key), sex: \(sex ?? "nil"), names: \(names) " +
+        "PersonInfo(root: key: \(key), sex: \(sex ?? "nil"), sexCount: \(sexCount), " +
+            "names: \(names) " +
             "famcKeys: \(famcKeys), famsKeys: \(famsKeys), dateKeys: \(dateKeys), " +
             "placeKeys: \(placeKeys))"
     }
@@ -141,6 +155,7 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
 
     var names: Set<String> = []
     var sex: String? = nil
+    var sexCount = 0
     var famcKeys: Set<RecordKey> = []
     var famsKeys: Set<RecordKey> = []
     var dateKeys: Set<DateKey> = []
@@ -162,12 +177,13 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
                 errors.append("\(line): Missing value for NAME line")
             }
         case "SEX":
-            if let val = val {
+            sexCount += 1
+            if let val {
                 if sex == nil {
                     sex = val
-                } else {
-                    errors.append("\(line): Multiple SEX lines")
                 }
+            } else {
+                errors.append("\(line): Missing value for SEX line")
             }
         case "FAMC":
             if let val = val {
@@ -192,24 +208,23 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
                 }
             }
         case "DEAT":
-                for value in node.kidVals(forTag: "DATE") {
-                    guard let year = year(from: value) else { continue }
-                    dateKeys.insert(DateKey(year: year, event: .death))
+            for value in node.kidVals(forTag: "DATE") {
+                guard let year = year(from: value) else { continue }
+                dateKeys.insert(DateKey(year: year, event: .death))
+            }
+            for value in node.kidVals(forTag: "PLAC") {
+                for part in placeParts(value) {
+                    placeKeys.insert(PlaceKey(part: part, event: .death))
                 }
-                for value in node.kidVals(forTag: "PLAC") {
-                    for part in placeParts(value) {
-                        placeKeys.insert(PlaceKey(part: part, event: .death))
-                    }
-                }
+            }
         default: break
         }
         current = node.sib  // Next level 1 node.
     }
 
-    //  Build and re3turn the person info.
-    let info = PersonInfo(root: person, key: person.key, sex: sex,
+    //  Build and return the person info.
+    let info = PersonInfo(person: person, key: person.key, sex: sex, sexCount: sexCount,
                           names: names, famcKeys: famcKeys, famsKeys: famsKeys,
                           dateKeys: dateKeys, placeKeys: placeKeys)
     return (info, errors)
 }
-
