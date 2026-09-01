@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 4 August 2026.
+//  Last changed on 1 September 2026.
 //
 
 import Foundation
@@ -138,6 +138,7 @@ struct ParsedStatement: Equatable, CustomStringConvertible {
     }
 
     var description: String {
+        
         switch kind {
         case .callStatement(let s): return s.description
         case .whileStatement(let s): return s.description
@@ -154,9 +155,9 @@ struct ParsedStatement: Equatable, CustomStringConvertible {
 /// Parsed call statement.
 struct ParsedCallStatement: Equatable, CustomStringConvertible {
 
-    let name: String
-    let args: [ParsedExpr]
-    let line: Int
+    let name: String  // Name of the procedure.
+    let args: [ParsedExpr]  // Argument expressions.
+    let line: Int  // Line number in program.
 
     var description: String {
         let argDescriptions = args.map { expr in
@@ -169,9 +170,9 @@ struct ParsedCallStatement: Equatable, CustomStringConvertible {
 /// Parsed while statement.
 struct ParsedWhileStmt: Equatable, CustomStringConvertible {
 
-    let condition: ParsedCondition
-    let body: [ParsedStatement]
-    let line: Int
+    let condition: ParsedCondition  // Condition expression.
+    let body: [ParsedStatement]  // Body of the while loop.
+    let line: Int  // Line number in program.
 
     var description: String { "while(\(condition)) { \(body) }" }
 }
@@ -179,11 +180,11 @@ struct ParsedWhileStmt: Equatable, CustomStringConvertible {
 /// Parsed if statement.
 struct ParsedIfStmt: Equatable, CustomStringConvertible {
 
-    let condition: ParsedCondition
-    let thenBody: [ParsedStatement]
-    let elseIfs: [ParsedElseIf]
-    let elseBody: [ParsedStatement]?
-    let line: Int
+    let condition: ParsedCondition  // Condition expression.
+    let thenBody: [ParsedStatement]  // Then clause.
+    let elseIfs: [ParsedElseIf]  // Else if clauses.
+    let elseBody: [ParsedStatement]?  // Final else clause.
+    let line: Int  // Line number in program.
 
     var description: String {
         "if(\(condition)) then \(thenBody) elsifs \(elseIfs) else \(String(describing: elseBody))"
@@ -193,16 +194,17 @@ struct ParsedIfStmt: Equatable, CustomStringConvertible {
 /// Parsed else if statement.
 struct ParsedElseIf: Equatable, CustomStringConvertible {
 
-    let condition: ParsedCondition
-    let body: [ParsedStatement]
-    let line: Int
+    let condition: ParsedCondition  // Conditional expression
+    let body: [ParsedStatement]  // Statements in else if clause.
+    let line: Int  // Line nummber if program.
 
     var description: String { "elsif(\(condition)) \(body)" }
 }
 
 /// Parsed return statement.
 struct ParsedReturnStmt: Equatable, CustomStringConvertible {
-    let values: [ParsedExpr]
+    
+    let values: [ParsedExpr]  // Return expressions.
 
     var description: String { "return(\(values))" }
 }
@@ -222,12 +224,12 @@ struct ParsedContinueStmt: Equatable, CustomStringConvertible {
 /// Parsed foreach statement -- foreach(ListExpr, var[, var], var)
 struct ParsedForEachStmt: Equatable, CustomStringConvertible {
 
-    let listExpr: ParsedExpr
-    let elementVar: String
-    let valueVar: String?
-    let indexVar: String
-    let body: [ParsedStatement]
-    let line: Int
+    let listExpr: ParsedExpr  // List expression.
+    let elementVar: String  // Ident assigned to value of each element.
+    let valueVar: String?  // Ident assiged to the associated value of the element when meaningful.
+    let indexVar: String  // Ident assigned to index number of each eleent.
+    let body: [ParsedStatement]  // Statements making up the body of the loop.
+    let line: Int  // Line in program where the statement starts.
 
     var description: String {
         "foreach(\(listExpr), \(elementVar), \(indexVar)) { ... }"
@@ -252,6 +254,7 @@ enum ParsedCondition: Equatable, CustomStringConvertible {
 
 /// Parsed expressions.
 struct ParsedExpr: Equatable, CustomStringConvertible {
+
     let kind: Kind
     let line: Int
 

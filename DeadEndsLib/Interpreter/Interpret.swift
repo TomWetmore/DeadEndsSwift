@@ -3,26 +3,31 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 23 May 2026.
+//  Last changed on 31 August 2026.
 //
+//  This file has the interpreters for all statement types except the
+//  foreach statement
 
 import Foundation
 
-/// Result values from interpreter methods.
+/// Result values returned by the interpreter methods.
 public enum InterpResult: Sendable {
 
-    case okay  // Normal end.
-    case returning(ProgramValue?)  // Return statement end.
-    case breaking  // Break statement end.
-    case continuing  // Continue statement end.
+    case okay  // Normal.
+    case returning(ProgramValue?)  // Return statement.
+    case breaking  // Break statement.
+    case continuing  // Continue statement.
     case error  // Error result.
 }
 
-/// List of statements and enumerated statements.
+/// Interpreters for all statement types except the foreach statement. Each
+/// takes one or more immutable parsed entities and returns an interp result.
+
 extension Program {
 
-    /// Interpret a list of statements.
+    /// Interpret a list of statements. The argument is a list of parsed statements.
     func interpStmtList(_ stmts: [ParsedStatement]) async throws -> InterpResult {
+
         for stmt in stmts {
             let result = try await interpStatement(stmt)
             switch result {
@@ -37,8 +42,10 @@ extension Program {
         return .okay
     }
 
-    /// Interpret an enumerated statement.
+    /// Interpret a statement. The argument is a parsed statement. The method checks
+    /// the type of the statement and calls the interpreter for that type.
     func interpStatement(_ stmt: ParsedStatement) async throws -> InterpResult {
+        
         try await tick(line: stmt.line)  // Lazy man infinite loop protection.
 
         switch stmt.kind {
@@ -64,13 +71,10 @@ extension Program {
             return .okay
         }
     }
-}
-
-/// While and if statements.
-extension Program {
 
     /// Interpret a while statement.
     func interpWhile(_ whileStmt: ParsedWhileStmt) async throws -> InterpResult {
+
         while true {
             if await !(try evalCondition(whileStmt.condition)) { break }
             let result = try await interpStmtList(whileStmt.body)
@@ -90,6 +94,7 @@ extension Program {
 
     /// Interpret an if statement.
     func interpIf(_ ifStmt: ParsedIfStmt) async throws -> InterpResult {
+
         if try await evalCondition(ifStmt.condition) {
             return try await interpStmtList(ifStmt.thenBody)
         }
@@ -103,20 +108,13 @@ extension Program {
         }
         return .okay
     }
-}
-
-/// Return statement.
-extension Program {
 
     /// Interpret a return statement.
     func interpReturn(_ stmt: ParsedReturnStmt) async throws -> InterpResult {
+
         if stmt.values.isEmpty { return .returning(nil) }
         return try await .returning(evaluate(stmt.values[0]))
     }
-}
-
-/// Procedure call statement
-extension Program {
 
     /// Interpret a procedure call statement.
     func interpProcCall(_ procCall: ParsedCallStatement) async throws -> InterpResult {
@@ -146,4 +144,3 @@ extension Program {
         return try await interpStmtList(procDef.body)
     }
 }
-

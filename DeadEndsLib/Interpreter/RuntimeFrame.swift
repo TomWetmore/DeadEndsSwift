@@ -10,6 +10,7 @@ import Foundation
 
 public typealias SymbolTable = [String : ProgramValue?]
 
+/// The kind of routines.
 enum RoutineKind: String {
 
     case proc
@@ -21,21 +22,23 @@ struct RuntimeFrame {
 
     let name: String  // Name of proc or func.
     let kind: RoutineKind  // Whether proc or func.
-    let defnLine: Int  // Line where defined.
-    let callLine: Int  // Line where calling.
-    let params: [String]  // Params as strings.
+    let defnLine: Int  // Line where routine defined.
+    let callLine: Int  // Line where routine called.
+    let params: [String]  // Params as string identifiers.
     var symbols: SymbolTable  // Local symbol table.
 }
 
 extension Program {
 
-    /// Push a new local frame when a procedure or function is called.
+    /// Push a new frame when a proc or func is called.
     func pushCallFrame(_ frame: RuntimeFrame) {
+
         callStack.append(frame)
     }
 
-    /// Pop the current frame when a procedure or function returns.
+    /// Pop the current frame when a proc or func returns.
     func popCallFrame() {
+
         precondition(!callStack.isEmpty, "Cannot pop empty call stack")
         callStack.removeLast()
     }
@@ -43,6 +46,7 @@ extension Program {
     /// Look up an identifier in the local symbol table; if not there try
     /// the global table.
     func lookupSymbol(_ name: String) -> ProgramValue? {
+
         if let localValue = callStack.last?.symbols[name] {
             return localValue
         }
@@ -54,6 +58,7 @@ extension Program {
 
     /// Assign a value to an identifier in the local symbol table.
     func assignLocal(_ name: String, value: ProgramValue) {
+        
         guard !callStack.isEmpty else {
             fatalError("No frame available")
         }
