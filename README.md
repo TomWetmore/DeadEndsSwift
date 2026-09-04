@@ -1,24 +1,25 @@
 # DeadEnds Swift
 
-DeadEndsSwift is a mac, iPad, and Linux genealogy software system written in Swift. It has a core genealogical library, a SwiftUI-based application for macOS and eventually iPad, and some command line programs.
+DeadEndsSwift is a Mac, iPad, and Linux genealogy software system written in Swift. It has a core genealogical library, SwiftUI-based apps for Mac and iPad, and command line programs for Mac and Linux.
 
-DeadEnds is the successor to the DeadEnds C project, which succeeded my LifeLines C program from the 1990's. DeadEnds supports reading Gedcom files, building an in-memory database, and visualizing family relationships.
+DeadEnds Swift is the successor to the DeadEnds C project, which is the successor to my LifeLines C program from the 1990's. The switch to SwifUI was based on Swift's support for memory management, Unicode, and its core library. DeadEnds Swift (*DeadEnds* from now on) supports reading Gedcom files, building an in-memory database, modifying that database and visualizing family relationships. It has a programming subsystem.
 
 ## Features
-- Reads Gedcom files into in-RAM databases. DeadEnds can read Gedcom files from any standard that uses the normal lineage-linking tags (FAMS, FAMC, HUSB, WIFE, CHIL), and a few other standard tags (NAME, SEX, BIRT, DEAT, MARR, DATE, PLAC, SOUR). DeadEnds uses Gedcom files as its backing store when it is not running.
-- The SwiftUI app displays Person, Family, Pedigree, and other pages. The views making up the SwiftUI app are numerous though the UI is still being developed.
-- One exciting page is the Desktop, in which persons show up as index cards that are moved and manipulated. I continue developing this metaphor; it uses ideas formulated more than 40 years ago when I began writing genealogical software.
-- Supports editing of genealogical data -- adding, deleting and modifying records, adding, removing and changing family relationships. Because the records are Gedcom-based trees, I am experimenting with two editing metaphors -- edit the Gedcom record as pure text, or edit the Gedcom record as a tree. Examples of both styles are implemented.
-- Supports searching. LifeLines uses a name index to provide searching by name. DeadEnds extends this by adding date and place indexes. DeadEnds can search based on name and/or time and place of vital events.
-- Supports a builtin scripting language nearly identical to one in LifeLines. Current access to the feature is a bit awkward becuase I have not written Swift parser for the scripting language (LifeLines used yacc). There is a workaround. I wrote a yacc-based C program that parses LifeLines scripts that converts them to S-expressions ("Lisp"). DeadEnds Swift has a command program that reads the S-expressions, converts them to abstract syntax tre matching those of LifeLines, and then interprets the scripts with a database. Though really a proof of concept, it works.
+
+- Reads Gedcom files into an in-memory databases. It reads Gedcom files from any standard that uses the usual lineage-linking tags (INDI, FAM, FAMS, FAMC, HUSB, WIFE, CHIL), and a few other standard tags (NAME, SEX, BIRT, DEAT, MARR, DATE, PLAC, SOUR). DeadEnds does not have a persistant database; it uses Gedcom files as its backing store.
+- The SwiftUI app displays Person, Family, Pedigree, and severl other pages. The number of views that make up the SwiftUI app are numerous and growing.
+- One exciting page is the Desktop, in which persons show up as index cards that are moved and manipulated. I continue developing this metaphor; it uses ideas developed more than 40 years ago when I began writing genealogical software.
+- Supports editing of genealogical data -- adding, deleting and modifying records, adding, removing and changing family relationships. Because the records are Gedcom-based trees, I am experimenting with two editing styles --- editing records as pure text, or editing the record as a Gedcom tree. Examples of both styles are implemented.
+- Supports searching. LifeLines used a name index to provide searching by name. DeadEnds extends this with date and place indexes; it can search based on any combination of names with dates and times of vital events.
+- Supports a builtin programming language similar to the one in LifeLines. This is a major feature.
 
 ## Targets
 
-The DeadEnds project consists of  targets. Here is an introduction to the main ones.
+The DeadEnds project and repository contains several  targets. Here is an introduction to the main ones.
 
-- DeadEndsLib -- the base genealogical library. It contains the database and its import stack; the Gedcom node, record, person, family datatypes; the interpreter; and other code.
+- DeadEndsLib -- the base genealogical library. It contains the database and its import stack; the Gedcom node, record, person, family datatypes; the interpreter; and other code. The code is common to Mac, IPad, and Linux.
 
-- DeadEndsApp -- the SwiftUI application; it has several standard genealogical screens (called pages), includling person, family, pedigree, editing, merging, and desktop (see above).
+- DeadEndsApp -- the SwiftUI application; it has several standard genealogical screens (called pages), includling person, family, pedigree, editing, merging, and desktop (see above). It is Mac only.
 
 - RunScript -- the Swift half of the script interpretation process. It reads a LifeLines script from an S-expression file, then loads a database using the import stack, and then interprets the script within the context of the database.
 
@@ -34,9 +35,15 @@ Currently under active development. All versions found at GitHub should compile 
 
 ### Building
 
-DeadEndsSwift is packaged in GitHub repository: TomWetmore/DeadEndsSwift. Though under development I keep the targets buildable and runnable at all times.
+DeadEndSwift is packaged in a GitHub repository at https://github.com/TomWetmore/DeadEndsSwift. It contains the code targets, documentation, notes, example Gedcom files, and DeadEnds programs. Though under development I keep the targets buildable and runnable at all (well, most) times.
 
-After you pull the repository, the main two targets to build are DeadEndsLib, the underlying genealogical library, and DeadEndsApp, the SwiftUI app. Swift is an open source language available on macOS, Linux and Windows; on the other hand SwiftUI is Apple propritary. I assume you will pull the repository into an Xcode project on a mac, where it will build immediately. If you wish to work on a non-Apple platform, the DeadEndsLib should build natively anywhere. You're then on your own for attaching a user interface.
+After you pull the repository, the main two targets to build (for the Mac) are *DeadEndsLib*, the underlying genealogical library, and *DeadEndsApp*, the SwiftUI app. Swift is an open source language available on Mac, Linux and Windows; on the other hand SwiftUI is Apple propritary. If you pull the repository onto a Mac you can build all targets immediately with Xcode. If you pull it onto a Linux system you can use the included ```package.swift``` file to build *DeadEndsLib* and *DeadEndsCommand*, a command line program that runs DeadEnds programs.
+
+If you would like to experiment with the iPad you can build the *DeadEndsIPad* target and run it in a simulator or load it onto a real iPad. The iPad app is currently a single SwiftUI page with the DeadEnds *programming IDE*. You can only develop and run DeadEnds programs with the app. 
+
+To run on Linux you need to install the Swift tool chain. I installed it on *Ubuntu* using *Swiftly 1.1.3*, Swift’s toolchain manager, and then used *swiftly* to install the Swift toolchain. I then installed some Ubuntu development packages I thought I might need, and then verified that the command `swift build` built *DeadEndsLib* and *DeadEndsCommand* from the `Package.swift` file.
+
+I don't have a Linux machine so I created a Ubuntu VM on my Mac, where I do all my Linux testing. The Swift tool chain also runs on Windows, but I have no plans for that platform.
 
 ### Starting the App
 
@@ -66,33 +73,39 @@ Click on the Descendancy List button on the Person Page to move to the Descendan
 
 The Desktop Page represents a desktop surface and "index cards" that can be moved around the desktop. There are two ways to get to the Desktop Page. First from the Person Page you can hit the Open Desktop button, which opens the Desktop with a card for the person. The Family Page also has an Open Desktop button. When you hit that button the Desktop opens along with index cards for the parents and the children laid out nicely on the Desktop. There's not a whole lot you can do on the page for now. But you can resize the cards, move the cards, group the cards and move groups together, and bring cards to the front if you overlap them. The cards have a context menu that allows you to open spouses if they are not  yet open. There is a context menu for the entire page that allows you to search for and add any person to the Desktop.
 
-### Gedcom Tree Editor
+### Gedcom Record Editors
 
-I have experimented with a few ways to edit records and one of them is now available in the user interface. From the Person Page you can select the Tree Editor button, and this will open a new page where you will see the person's record rendered as a Gedcom tree.
+I have experimented with two ways to edit records and both are available in the user interface. From the Person Page you can select the Tree Editor or Text Editor button, and each will open a new page where you will see and edit the person's record.
+
+#### Gedcom Tree Editor
+
+ Gedcom tree.
 
 - Expand and Collapse  -- lines in the tree can be expanded or collapsed. If a line is expanded its children are also shown; if the line is collapsed its children are not shown. You control this state using the disclosure chevron at the left end of line. Leaves of the tree, of course, cannot be expanded so don't have chevrons.
 - Select -- one line is always selected (shown by the blue selection color)editing features, but little of them are now brought forward to the current set of pages. The issue of editing boils down, in my opinion, as to how far to implement Gedcom tree based editing. Bottom line is that I am very much in favor of that approach.
 
+#### Gedcom Text Editor
+
+The
+
 ### The Database
 
-The DeadEnds database is a collection in-RAM, non persistent indexes and lists. The main component of the database is called the 'record index', a map from record keys (Gedcom cross-reference identifiers) to records. The records are tree structures composed of nodes, each node representing one line of Gedcom. There are other components in the database, including name, date and place indexes.
+The DeadEnds database is a collection in-RAM, non persistent indexes and lists. The main component of the database is the **record index**, a map from record keys (Gedcom's *cross-reference identifiers*) to records. The records are tree structures composed of nodes, each node representing one line of Gedcom. There are other components in the database, including the name, date and place indexes.
 
-The key point about a DeadEnds database is that it is not persistent. It exists only while the app is running. The 'backing store' of DeadEnds are Gedcom files. When the app starts up its first task is to interact with the user and identify the Gedcom file to read to become the initial state of the database.
+A DeadEnds database is not persistent -- it exists only while the app is running. The *backing store* of DeadEnds are Gedcom files. When the app starts up its first task is to interact with the user to identify a Gedcom file to read to become that becomes initial state of the database.
 
 ### Use of Gedcom
 
-Most genealogical programs use Gedcom as intended, as the file format for importing and exporting genealogical data. Early on (forty plus years ago) I decided to also use Gedcom as the format for all records in my generalogicsl software. I have always represented records as node trees, where each node is a Gedcom line.
+Most genealogical programs use Gedcom as a file format for importing and exporting genealogical data. Early on (forty plus years ago) I decided to also use Gedcom as the format for all records in my genealogical software. I represent records as node trees, where each node is a Gedcom line.
 
-Using Gedcom as the internal record format does not imply DeadEnds enforces any official Gedcom standard. My software has never worried about official Gedcom standards. However, I do have to enforce a minimalist set of rules. They boil down to:
+Using Gedcom as the internal record format does not imply that DeadEnds enforces an official Gedcom standard. My software has never worried about standards. However, I do have to enforce a small set of rules. They boil down to:
 
 - Person, Family and Source records must use INDI, FAM, and SOUR tags.
-- Persons must link to Families via FAMS and FAMC values.
+- Persons must link to Families via FAMS and FAMC values. Families must have reciprocal HUSB, WIFE, and CHIL links.
 - Persons with name and sex values must use NAME and SEX lines; values of NAME lines must set off surnames with slashes.
-- Families must link to Persons via HUSB, WIFE, and CHIL nodes.
 - Birth, death, and marriage events must use BIRT, DEAT, and MARR tags.
-- Date and places of events must use DATE and PLAC lines.
-- Records must be closed -- all records must have a unique key and all keys that are referred to must exist.
-- I hope these rules are consistent with every version of lineage-linked Gedcom standards.
+- Date and places of events must use DATE and PLAC lines. The values of these lines are treated as free format.
+- Records must be closed -- all records must have a unique key and all keys used as values must refer to existing records.
 
 Using Gedcom for the internal representation of genealogical data was unconventional in the late 1980s, but no longer is so.
 

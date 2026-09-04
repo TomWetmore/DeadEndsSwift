@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 11 August 2026.
+//  Last changed on 2 September 2026.
 //
 
 import Foundation
@@ -11,8 +11,7 @@ import Foundation
 /// Name related built-ins.
 extension Program {
 
-    /// builtinName returns a vanilla version of a person's name.
-    /// name(person)
+    /// Return a basic version of a person's name.
     func bltinName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let value = try await evalPersonOpt(args[0], errMsg: "name: arg must be a person")
@@ -22,17 +21,17 @@ extension Program {
         return .null
     }
 
-    /// Returns a person's name with processing.
+    /// Return a person's name with some formatting.
     /// fullname(person, bool, bool, int) -> string
     func bltinFullName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                                       errMsg: "fullname: 1st arg must be a person") else {
+                                        errMsg: "fullname: 1st arg must be a person") else {
             return .null
         }
-        let upSurname = try await evaluate(args[1]).toBool
-        let surnameFirst = try await evaluate(args[2]).toBool
-        let limit = try await evaluate(args[3])
+        let upSurname = try await evaluate(args[1]).toBool  // Show surname in uppercase
+        let surnameFirst = try await evaluate(args[2]).toBool  // Show surname first with comma.
+        let limit = try await evaluate(args[3])  // Limit the length of the name.
         guard case let .integer(intvalue) = limit else {
             throw RuntimeError("fullname: 4th arg must be an integer",
                                line: args[3].line)
@@ -43,11 +42,11 @@ extension Program {
 
     }
 
-    /// Returns a person's surname as found on the first 1 NAME line in the record.
+    /// Return a person's surname from the first 1 NAME line in the record.
     func bltinSurname(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                                       errMsg: "surname: arg must be a person") else {
+                                        errMsg: "surname: arg must be a person") else {
             return .null
         }
         guard let name = person.kidVal(forTag: "NAME") else { return .null }
@@ -57,8 +56,8 @@ extension Program {
 
     }
 
-    /// Return the given names from the first NAME line in a person record. The name
-    /// parts are return in a .list.
+    /// Return a person's given names from the first 1 NAME line in the record. The name
+    /// parts are returned in a .list.
     func bltinGivens(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "givens: arg must be a person")
@@ -80,15 +79,15 @@ extension Program {
     func bltinTrimName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                                   errMsg: "trimName: 1st arg must be a person")
+                                        errMsg: "trimName: 1st arg must be a person")
         else { return .null }
 
         let len = try await evalInteger(args[1],
-                                        errMsg: "trimname: 2nd arg must be an integer")
+                                errMsg: "trimname: 2nd arg must be an integer")
         return .string(person.displayName(limit: len))
     }
 
-    /// Return the title of a person: the value of the first 1 TITL node in the person.
+    /// Return the title of a person, the value of the first 1 TITL node in the person.
     func bltinTitle(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "title: arg must be a person")
@@ -104,7 +103,6 @@ extension Program {
 
 /// Relationship reated built-ins.
 extension Program {
-
 
     /// Return the first father of a person.
     func bltinFather(_ args: [ParsedExpr]) async throws -> ProgramValue {
@@ -126,7 +124,7 @@ extension Program {
         return .person(mother)
     }
 
-    /// Made generic so it can run on persons and families.
+    /// Generic. Return the first husband of a person or family.
     func bltinHusband(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let value = try await evaluate(args[0])
@@ -139,6 +137,23 @@ extension Program {
             return .null
         default:
             throw RuntimeError("husband: arg must be a person or family",
+                               line: args[0].line)
+        }
+    }
+
+    /// Generic. Return the first wife of a person or family.
+    func bltinWife(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let value = try await evaluate(args[0])
+        switch value {
+        case .person(let person):
+            return person.wife(in: recordIndex).map { .person($0) } ?? .null
+        case .family(let family):
+            return family.wife(in: recordIndex).map { .person($0) } ?? .null
+        case .null:
+            return .null
+        default:
+            throw RuntimeError("wife: arg must be a person or family",
                                line: args[0].line)
         }
     }
@@ -166,34 +181,16 @@ extension Program {
                                line: args[0].line)
         }
     }
-
-    /// Made generic so it can run on persons and families.
-    func bltinWife(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let value = try await evaluate(args[0])
-        switch value {
-        case .person(let person):
-            return person.wife(in: recordIndex).map { .person($0) } ?? .null
-        case .family(let family):
-            return family.wife(in: recordIndex).map { .person($0) } ?? .null
-        case .null:
-            return .null
-        default:
-            throw RuntimeError("wife: arg must be a person or family",
-                               line: args[0].line)
-        }
-    }
 }
 
 /// Sex and role related built-ins.
 extension Program {
 
-    /// Return the sex of a person
-    /// sex(Person) -> String  [M, F or U]
+    /// Return the sex of a person, M, F, or U as a .string.
     func bltinSex(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                                  errMsg: "sex: arg must be a person")
+                                        errMsg: "sex: arg must be a person")
         else { return .null }
 
         switch person.sex {
@@ -207,7 +204,7 @@ extension Program {
     func bltinMale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                                       errMsg: "male: arg must be a person")
+                                        errMsg: "male: arg must be a person")
         else { return .null }
         return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
@@ -216,11 +213,12 @@ extension Program {
     func bltinFemale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                                       errMsg: "female: arg must be a person") else { return .null }
-        return person.isFemale ? ProgramValue.trueProgramValue
-        : ProgramValue.falseProgramValue
+                                        errMsg: "female: arg must be a person")
+        else { return .null }
+        return person.isFemale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
+    /// Return a pronoun to refer to a person.
     func builtinPronouns(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtInPronouns not implemented")
         return .null
