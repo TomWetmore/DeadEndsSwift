@@ -1,0 +1,374 @@
+/* bothways.dend —- Last changed on 12 June 2026. */
+
+/* Global variables. */
+
+global(numb)
+global(up)
+global(down)
+global(generations)
+global(genMarker)
+global(infinity)
+
+/* main -- Main program. */
+proc main () {
+    "Cousins finds the relationship between two persons.\n"
+
+/* Get the persons to connect. */
+    set(persons, getPersons())
+    if (not(first(persons))) { "Program ended\n" return() }
+    set(onekey, key(first(persons)))
+    set(twokey, key(second(persons)))
+    "Searching for a relationship between: " name(first(persons)) " and " name(second(persons)) ".\n"
+    "Each dot is 25 persons considered. "
+
+    call setGlobals()
+
+/* Get the link and dir tables for the two sides. */
+    set(onelinks, table())
+    set(twolinks, table())
+    set(onerels, table())
+    set(tworels, table())
+    set(code, bothWays(onekey, twokey, onelinks, twolinks, onerels, tworels))
+    set(midkey, null())
+    if(ne(second(code), null())) { set(midkey, second(code)) }
+
+/* Get the full list from the from to to person and write it. */
+    set(fulllist, list())
+    set(fullrels, list())
+    call firstHalf(midkey, fulllist, fullrels, onelinks, onerels)
+    call secondHalf(midkey, fulllist, fullrels, twolinks, tworels)
+
+    "\nFull Path Between the Persons\n\n"
+    call fullPath(fulllist, fullrels)
+
+/* Get the nexus data and document the connection. */
+    set(nexusData, getNexusLists(fulllist, fullrels))
+
+    "\nNexus Path Between the Persons\n\n"
+    call showNexusPath(first(nexusData), second(nexusData))
+}
+
+/* Get and return the persons to connect. */
+func getPersons() {
+    set(one, getperson("Enter the first person"))
+    if(not(one)) { return(pair(0,0)) }
+    set(two, getperson("Enter the second person"))
+    if(not(two)) { return(pair(0,0)) }
+    return(pair(one, two))
+}
+
+/* Find the connection between two persons by moving outward, back and
+   forth, from the from person and the two person. Only keys are used. */
+
+func bothWays(onekey, twokey, onelinks, twolinks, onerels, tworels) {
+
+    if(eq(onekey, twokey)) { return(pair("found", onekey)) }
+    set(onequeue, list())
+    set(twoqueue, list())
+    insert(onelinks, onekey, onekey)
+    insert(onerels, onekey, 0)
+    enqueue(onequeue, onekey)
+    enqueue(onequeue, genMarker)
+    insert(twolinks, twokey, twokey)
+    insert(tworels, twokey, 0)
+    enqueue(twoqueue, twokey)
+    enqueue(twoqueue, genMarker)
+
+    set(infinity, 30)
+    while (1) {
+        set(code, oneStep(onelinks, onerels, onequeue, twolinks))
+        if(ne("not found", first(code))) { return(code) }
+        set(code, oneStep(twolinks, tworels, twoqueue, onelinks))
+        if(ne("not found", first(code))) { return(code) }
+    }
+}
+
+/* oneStep -- do a single generation in a single direction. */
+
+func oneStep(links, rels, queue, otherlinks) {
+
+    if (ge(0, length(queue))) { return(pair("empty", null())) }
+
+    while (gt(length(queue), 1)) {
+        set(key, dequeue(queue))  /* Get next element from queue. */
+        if (eq(genMarker, key)) {  /* At end of a generation? */
+           incr(generations)
+           if (gt(generations, infinity)) { return(pair("infinity", null())) }  /* Check for too long path. */
+           enqueue(queue, genMarker)  /* Marks the end of next generation. */
+           return(pair("not found", null()))  /* Let other side run. */
+        }
+        set(person, person(key))
+        set(code, include(key, father(person), links, rels, queue, otherlinks, down))
+        if (eq("found", first(code))) { return(code) }
+        set(code, include(key, mother(person), links, rels, queue, otherlinks, down))
+        if (eq("found", first(code))) { return(code) }
+        foreach(children(person), child, num) {
+            set(code, include(key, child, links, rels, queue, otherlinks, up))
+            if (eq("found", first(code))) { return(code) }
+        }
+    }
+    return(pair("not found", null()))
+}
+
+/* include -- adds a person to the queue if it has not been seen before. If the person is new and
+   is in otherlinks, it is 'middle' person in the search so include returns "found". */
+
+func include(key, person, links, rels, queue, otherlinks, dir) {
+
+    if (and(person, not(lookup(links, key(person))))) {
+        set(new, key(person))
+        insert(links, new, key)
+        insert(rels, new, dir)
+        incr(numb)
+        if (eq(0, mod(numb, 25))) { "." }
+        if (lookup(otherlinks, new)) {
+            " (" d(numb) ")\n"
+            return(pair("found", new))
+        }
+        enqueue(queue, new)
+    }
+    return(pair("not found", null()))
+}
+
+/* firstHalf -- starts fullllist and fullrels by adding the path from the from person to
+   the mid person. The fulllist has all those persons; fulldirs will not have a direction
+   for the midkey -- that is supplied by secondHalf. */
+
+proc firstHalf(midkey, fulllist, fullrels, onelinks, onerels) {
+
+    set(key, midkey)
+    prepend(fulllist, midkey)
+    while (1) {
+        set(prev, lookup(onelinks, key))
+        if (eq(prev, key)) { break() }
+        prepend(fulllist, prev)
+        prepend(fullrels, neg(lookup(onerels, key)))
+        set(key, prev)
+    }
+}
+
+/* secondHalf completes fulllist and fullrels by appending the path from the middle
+   person to the to person. The direction for the middle person, not provided by
+   firstHalf, is added at the start. */
+
+proc secondHalf(midkey, fulllist, fullrels, twolinks, tworels) {
+
+    set(key, midkey)
+    append(fullrels, lookup(tworels, key))
+
+    while (1) {
+        set(next, lookup(twolinks, key))
+        if (eq(key, next)) { break() }
+        append(fulllist, next)
+        if (eq(next, lookup(twolinks, next))) {
+            append(fullrels, 0)
+            break()
+        } else {
+            append(fullrels, lookup(tworels, next))
+        }
+        set(key, next)
+    }
+}
+
+/* fullPath -- Show the full path between the two persons. */
+proc fullPath(fulllist, fullrels) {
+
+    foreach(fulllist, key, count) {
+        name(person(key)) 
+        set(dir, subscript(fullrels, count))
+        if(eq(dir, 1)) { " is the " childWord(key) " of\n" }
+        if(eq(dir, -1)) { " is the " parentWord(key) " of\n" }
+        if(eq(dir, 0)) { ".\n" }
+    }
+}
+
+/* getNexusLists -- gets the nexus lists needed to show nexus based relationships. */
+func getNexusLists(fulllist, fullrels) {
+
+    set(nexlist, list())
+    set(nexlens, list())
+
+    foreach(fulllist, key, count) {
+        set(dir, subscript(fullrels, count))
+        if(eq(count, 1)) {
+            set(nexus, key)
+            set(dist, dir)
+            set(curdir, dir)
+            continue()
+        }
+        if(eq(count, length(fulllist))) {
+            append(nexlist, nexus)
+            append(nexlens, dist)
+            append(nexlist, key)
+            append(nexlens, 0)
+            break()
+        }
+        if(eq(curdir, dir)) {
+            set(dist, add(dist, curdir))
+        } else {
+            append(nexlist, nexus)
+            append(nexlens, dist)
+            set(nexus, key)
+            set(dist, dir)
+            set(curdir, dir)
+        } 
+    }
+    return(pair(nexlist, nexlens))
+}
+
+
+/* setGlobals -- set the globals. */
+proc setGlobals() {
+    set(up, 1)
+    set(down, neg(1))
+    set(numb, 0)
+    set(genMarker, 0)
+    set(generations, 0)
+    set(pathLength, 0)
+    set(infinity, 30)
+}
+
+/* childWord -- return word for a child. */
+func childWord(key) {
+    if (male(person(key))) { return("son") }
+    if (female(person(key))) { return("daughter") }
+    return("child")
+}
+
+/* parentWord -- return word for a parent. */
+func parentWord(key) {
+    if (male(person(key))) { return("father") }
+    if (female(person(key))) { return("mother") }
+    return("parent")
+}
+
+/* showNexusPath -- show the relationships in a nexus path. */
+proc showNexusPath(nexkeys, nexlens) {
+
+    set(one, dequeue(nexkeys))
+    set(len, dequeue(nexlens))
+    set(again, 1)
+    while (and(again, length(nexkeys))) {
+        set(llen, length(nexkeys))
+        if (lt(len, 0)) {
+            set(two, dequeue(nexkeys))
+            set(new, dequeue(nexlens))
+            call showancs(one, two, neg(len))
+            set(one, two)
+            set(len, new)
+        } elsif (gt(len, 0)) {
+            if (eq(1, llen)) {
+                set(two, dequeue(nexkeys))
+                set(new, dequeue(nexlens))
+                call showdesc(one, two, len)
+                set(again, 0)
+            } else {
+                set(two, dequeue(nexkeys))
+                set(tmp, dequeue(nexlens))
+                set(three, dequeue(nexkeys))
+                set(new, dequeue(nexlens))
+                call showcous(one, two, three, len, neg(tmp))
+                set(one, three)
+                set(len, new)
+            }
+        } else {
+            "They're the same person.\n"
+            set(again, 0)
+        }
+    }
+}
+
+/* showancs -- Show a direct ancestry relation. */
+proc showancs (one, two, len)
+{
+    set(indi, person(one))
+    if (male(indi))         { set(pword, "father ") }
+    elsif (female(indi)) { set(pword, "mother ") }
+    else             { set(pword, "parent ") }
+    if (eq(1, len))         { set(aword, "the ") }
+    else             { set(aword, "a ") }
+
+    name(indi) " is " aword
+    if (eq(2, len))       { "grand" }
+    elsif (eq(3, len)) { "great grand" }
+    elsif (lt(3, len)) {
+        "great(" d(sub(len, 2)) ") grand"
+    }
+    pword "of\n  " name(person(two)) ".\n"
+}
+
+/* showdesc -- Show a direct descendent relation. */
+proc showdesc (one, two, len) {
+    set(indi, person(one))
+    if (male(indi))         { set(pword, "son ") }
+    elsif (female(indi)) { set(pword, "daughter ") }
+    else             { set(pword, "child ") }
+
+    name(indi) " is a "
+    if (eq(2, len))       { "grand" }
+    elsif (eq(3, len)) { "great grand" }
+    elsif (lt(3, len)) {
+        "great(" d(sub(len, 2)) ") grand"
+    }
+    pword "of\n  " name(person(two)) ".\n"
+}
+
+/* showcous -- Show a cousin relation (sibs, uncles, aunts, nieces, nephews). */
+proc showcous (one, two, three, up, down) {
+    set(indi, person(one))
+    if (male(indi)) {
+        set(sword, " brother ")
+        set(nword, " nephew ")
+        set(uword, " uncle ")
+    } elsif (female(indi)) {
+        set(sword, " sister ")
+        set(nword, " niece ")
+        set(uword, " aunt ")
+    } else {
+        set(sword, " sibling ")
+        set(nword, " niece or nephew ")
+        set(uword, " uncle or aunt ")
+    }
+    name(person(one)) " is a"
+    if (and(eq(up,1), eq(down, 1))) {    /* sibling cases */
+        sword "of"
+    } elsif (eq(up, 1)) {            /* uncle/aunt cases */
+        if (eq(down, 2)) {
+            "n" uword "of"
+        } elsif (eq(down, 3)) {
+            " great" uword "of"
+        } else {
+            " great(" d(sub(down, 2)) ")" uword "of"
+        }
+    } elsif (eq(down, 1)) {            /* niece/nephew cases */
+        if (eq(up, 2)) {
+            nword "of"
+        } elsif (eq(up, 3)) {
+            " great" nword "of"
+        } else {
+            " great(" d(sub(up, 2)) ")" nword "of"
+        }
+    } else {                /* cousin cases */
+        if (gt(up, down)) {
+            set(gen, down)
+            set(rem, sub(up, down))
+        } else {
+            set(gen, up)
+            set(rem, sub(down, up))
+        }
+
+
+        " " ord(sub(gen,1)) " cousin "
+        if (ne(rem, 0)) {
+            if (eq(rem,1)) { "once"}
+            elsif (eq(rem,2)) { "twice"}
+            elsif (eq(rem,3)) { "thrice"}
+            else {
+                card(rem) " times" }
+            " removed "
+        }
+        "of"
+    }
+    "\n  " name(person(three))
+    ", through their ancestor,\n  " name(person(two)) ".\n"
+}

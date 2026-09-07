@@ -1,0 +1,52 @@
+/* Version One -- Determine if Two Persons are Related. */
+
+global(seen)   /* keys of persons already seen */
+
+proc main () {
+
+    /* Get the two persons. Quit if user does not supply them. */
+    set(from, getperson("Enter the first person"))
+    if(not(from)) { return() }
+    set(to, getperson("Enter the second person"))
+    if(not(to)) { return() }
+
+    "Searching for a relationship between:\n\t"
+    name(from) " and " name(to) ".\n"
+
+    if (relate(key(from), key(to))) {
+        "They are related.\n"
+    } else {
+        "They are not related.\n"
+    }
+    d(length(seen)) " persons were visited.\n"
+}
+
+/* See if two persons are related. */
+
+func relate (fromkey, tokey) {
+
+    set(queue, list())
+    enqueue(queue, fromkey)
+    set(seen, table())
+
+    while(not(empty(queue))) {
+        set(key, dequeue(queue))
+        if (contains(seen, key)) { continue() }
+        insert(seen, key, 0)
+
+        if (eq(key, tokey)) { return(1) }
+
+        set(person, person(key))
+
+        if (father, father(person)) {
+            enqueue(queue, key(father))
+        }
+        if (mother, mother(person)) {
+            enqueue(queue, key(mother))
+        }
+        foreach(children(person), child, num) {
+            enqueue(queue, key(child))
+        }
+    }
+    return(0)
+}

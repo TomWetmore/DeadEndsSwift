@@ -115,7 +115,7 @@ extension Program {
                             errMsg: "kidwithtag: 1st arg must be a node") else {
             return .null
         }
-        let tag = try await evaluateString(args[1],
+        let tag = try await evalString(args[1],
                                 errMsg: "kidwithtag: 2nd arg must be a tag string")
         guard let kid = node.kid(withTag: tag) else {
             return .null
@@ -131,7 +131,7 @@ extension Program {
                 try await evalGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
             return .emptyList
         }
-        let tag = try await evaluateString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
+        let tag = try await evalString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
         let list = List()
         for kid in node.kids(withTag: tag) {
             list.append(.gnode(kid))
@@ -145,7 +145,7 @@ extension Program {
                 try await evalGedcomNodeOpt(args[0], errMsg: "kidswithtag: 1st arg must be a node") else {
             return .emptyList
         }
-        let tag = try await evaluateString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
+        let tag = try await evalString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
 
         return .list(List(node.kids(withTag: tag).map(ProgramValue.gnode)))
 

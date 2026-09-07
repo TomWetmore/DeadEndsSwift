@@ -15,7 +15,7 @@ extension Program {
     /// This is the original version used by the SwiftUI based interface.
     func bltinGetPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let prompt = try await evaluateString(args[0], errMsg: "getperson: arg must be a prompt")
+        let prompt = try await evalString(args[0], errMsg: "getperson: arg must be a prompt")
         await output.flush()
         let person = await userInterface.getPerson(prompt: prompt, database: database)
         if let person {
@@ -65,7 +65,7 @@ extension Program {
     /// getinteger(messagte: String) -> Int?
     func bltinGetInteger(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let prompt = try await evaluateString(args[0], errMsg: "getinteger: arg must be a prompt")
+        let prompt = try await evalString(args[0], errMsg: "getinteger: arg must be a prompt")
         await output.flush()
         let result = await userInterface.getInteger(prompt: prompt)
         if let result {
@@ -77,7 +77,7 @@ extension Program {
     /// Get the user to enter a string.
     /// getstring(prompt) -> string?
     func bltinGetString(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let prompt = try await evaluateString(args[0], errMsg: "getstring: arg must be a prompt")
+        let prompt = try await evalString(args[0], errMsg: "getstring: arg must be a prompt")
         await output.flush()
         let result = await userInterface.getString(prompt: prompt)
         if let result {
@@ -108,7 +108,7 @@ extension Program {
 extension Program {
 
     /// Evaluate an expression to a non-optional string.
-    func evaluateString(_ expr: ParsedExpr, errMsg: String) async throws -> String {
+    func evalString(_ expr: ParsedExpr, errMsg: String) async throws -> String {
         switch try await evaluate(expr) {
         case .string(let string):
             return string

@@ -14,12 +14,12 @@ null()           -> null        Null program value
 ```
 ###### Arithmetic
 ```
-add(int|double|string, int|double|string)  -> int|double|string
-sub(int|double, int|double)                -> int|double
-mul(int|double, int|double)                -> int|double
-div(int|double, int|double)                -> int|double
-mod(int, int)                              -> int
-neg(int|double)                            -> int|double
+add(int|double|string, int|double|string) -> int|double|string   Add or catenate
+sub(int|double, int|double)               -> int|double          Subtract
+mul(int|double, int|double)               -> int|double          Multiply
+div(int|double, int|double)               -> int|double          Divide
+mod(int, int)                             -> int                 Modulus
+neg(int|double)                           -> int|double          Negate
 ```
 ###### Increment and Decrement
 ```
@@ -28,18 +28,18 @@ decr(ident) -> int           Decrement integer variable
 ```
 ###### Comparison
 ```
-eq(any, any) -> bool        True if values are equal
-ne(any, any) -> bool        True if values are not equal
-lt(any, any) -> bool|null   True if first arg is less than second
-le(any, any) -> bool|null   True if first arg is less or equal second
-gt(any, any) -> bool|null   True if first arg is greater than second
-ge(any, any) -> bool|null   True if first arg is greater than or equal second
+eq(any, any) -> bool          True iif values are equal
+ne(any, any) -> bool          True iif values are not equal
+lt(any, any) -> bool|null     True iif first arg is less than second
+le(any, any) -> bool|null     True iif first arg is less or equal second
+gt(any, any) -> bool|null     True iif first arg is greater than second
+ge(any, any) -> bool|null     True iif first arg is greater than or equal second
 ```
 ###### Logical
 ```
-and(any [, any]*) -> bool        And up to 32 boolean values
-or (any [, any]*) -> bool        Or up to 32 boolean values
-not(any)          -> bool        Not a boolean value
+and(any [, any]*) -> bool      And up to 32 boolean values
+or (any [, any]*) -> bool      Or up to 32 boolean values
+not(any)          -> bool      Not a boolean value
 ```
 ###### Strings
 ```
@@ -67,15 +67,15 @@ kidswithtag (node|null, string) -> list<node>  All kids with tag
 ```
 ###### Person
 ```
-person (string)        -> person|null     Look up person by key
+person (string)        -> person|null     Get person from key
 name (person|null)     -> string|null     Standard form of person's name
-sex(person|null)       -> string|null     Sex (M, F, U) of person
+sex (person|null)      -> string|null     Sex (M, F, U) of person
 fullname (person|null, bool, bool, int)
                        -> string|null     Formatted name of person
 givens (person|null)   -> list<string>    Given names of as list
 surname (person|null)  -> string|null     Primary surname
 trimname (person|null, int) -> string     Name trimmed in length
-title(person|null)     -> string|null     First title
+title (person|null)     -> string|null    First title
 birth (person|null)    -> gnode|null      First birth event
 death (person|null)    -> gnode|null      First death event
 baptism (person|null)  -> gnode|null      First baptism event
@@ -137,9 +137,10 @@ removelast (list)   -> any        Remove and return last element of list
 ```
 ###### Table
 ```
-table()                    -> table         Create a table
-insert(table, string, any) -> table         Add a (key, value) pair to the table
-lookup(table, string)      -> any|null      Lookup a value in a table
+table()                    -> table      Create a table
+insert(table, string, any) -> table      Add a (key, value) pair to the table
+lookup(table, string)      -> any|null   Lookup a value in a table
+contains(table, string)    -> boolean    Check if a key is in the table
 ```
 ###### PersonSet
 ```
@@ -165,6 +166,7 @@ showstack()  -> string           Show full run time stack
 valueof(any) -> string           Eval arg and show its type and value
 ```
 ###### User Interface
+
 ```
 getperson(string)  -> person | null    Request user to identify a person
 getinteger(string) -> int | null       Request user to enter an int

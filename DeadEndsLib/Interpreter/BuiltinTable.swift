@@ -26,14 +26,14 @@ final public class ProgramTable {
 extension Program {
 
     /// Create an empty table program value.
-    /// table() -> Table
+    /// table() -> .table
     func bltinTable(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         return .table(ProgramTable())
     }
 
     /// Insert an entry into a table. There are no restrinctions on values.
-    /// insert(Table, String, Any) -> Table
+    /// insert(.table, .string, any) -> .table
     func bltinInsert(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let tableValue = try await evaluate(args[0])
@@ -49,8 +49,8 @@ extension Program {
         return .table(table)
     }
 
-    /// Lookup an entry in a program tablel, returning its value if present.
-    /// lookup(Table, String) -> Any|Null
+    /// Lookup an entry in a program table, returning its value if present.
+    /// lookup(.table, .string) -> any|.null
     func bltinLookup(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let tableValue = try await evaluate(args[0])
@@ -62,5 +62,19 @@ extension Program {
             throw RuntimeError("lookup: 2nd arg must be a string", line: args[1].line)
         }
         return table.elements[key] ?? .null
+    }
+
+    /// Determine if a program table contains a key; its value is not used.
+    func bltinContains(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let tableValue = try await evaluate(args[0])
+        guard case let .table(table) = tableValue else {
+            throw RuntimeError("contains: 1st arg must be a table", line: args[0].line)
+        }
+        let keyValue = try await evaluate(args[1])
+        guard case let .string(key) = keyValue else {
+            throw RuntimeError("contains: 2nd arg must be a key (string)", line: args[1].line)
+        }
+        return .boolean(table.elements.keys.contains(key))
     }
 }

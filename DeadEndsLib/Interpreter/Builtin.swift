@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 14 August 2026.
+//  Last changed on 4 September 2026.
 //
 
 import Foundation
@@ -148,6 +148,7 @@ extension Program {
             "table":  Builtin(min: 0, max: 0) { try self.bltinTable($0)},
             "insert": Builtin(min: 3, max: 3) { try await self.bltinInsert($0)},
             "lookup": Builtin(min: 2, max: 2) { try await self.bltinLookup($0)},
+            "contains": Builtin(min: 2, max: 2) { try await self.bltinContains($0)},
 
             // Person set operations.
             "personset":     Builtin(min: 0, max: 0) { try self.bltinPersonSet($0)},
