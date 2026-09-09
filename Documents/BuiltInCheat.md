@@ -13,6 +13,7 @@ roman(int)       -> string      Roman form of a number as string
 null()           -> null        Null program value
 ```
 ###### Arithmetic
+
 ```
 add(int|double|string, int|double|string) -> int|double|string   Add or catenate
 sub(int|double, int|double)               -> int|double          Subtract
@@ -36,6 +37,7 @@ gt(any, any) -> bool|null     True iif first arg is greater than second
 ge(any, any) -> bool|null     True iif first arg is greater than or equal second
 ```
 ###### Logical
+
 ```
 and(any [, any]*) -> bool      And up to 32 boolean values
 or (any [, any]*) -> bool      Or up to 32 boolean values

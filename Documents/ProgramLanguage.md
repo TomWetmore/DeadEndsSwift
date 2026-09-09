@@ -34,165 +34,103 @@ For example, the expression *name(person)*, where *person* is a person, returns 
 
 The language includes *if* statements, *while* statements and procedure call statements,with the following formats:
 
-​    if ([*varb*,] *expr*) { *statements* } [ elsif ([*varb*], *expr*) { *statements* } ]  [ else { *statements* } ]
+​    if ([*varb*,] *expr*) { *statements* } [ elsif ([*varb*], *expr*) { *statements* } ]\* [ else { *statements* } ]
 
 ​    while ([*varb*,] *expr* ) { *statements* }
 
 ​    call *name* ( *args* )
 
-Square brackets indicate optional parts. An *if* statement is run by evaluating the conditional expression in the *if* clause. If true, the statements in the *if* clause are evaluated, and the rest of the *if* statement, if any, is ignored. If the value is false, and there is an *elsif* clause following, the conditional in the *elsif* clause is evaluated, and if non-zero, the statements in that clause are executed. Conditionals are evaluated until one of them is true, or until there are no more. If no conditional is true, and if the *if* statement ends with an *else* clause, the statements in the *else* clause are executed.
+Square brackets means optional, and the asterisk means zero or more. An *if* statement is run by evaluating the conditional expression in the *if* clause. If true the *if* clause is run, and the rest of the *if* statement is ignored. If the value is false, and there is an *elsif* clause following, the conditional in the *elsif* clause is evaluated, and if non-zero, the else clause is run. Conditionals are evaluated until one of them is true, or until there are no more. If no conditional is true, and if the *if* statement ends with an *else* clause, the *else* clause is executed.
 
-**Important**: There are two forms of conditional expressions. If the conditional is a single expression, it is just evaluated. If the conditional is a variable followed by an expression, the expression is evaluated and its value is assigned to the variable.
+There are two forms of conditional expression. If it is a single expression, it is just evaluated. If it is a variable followed by an expression, the expression is evaluated and assigned to the variable.
 
-The *while* statement provides a looping mechanism. The conditional is evaluated, and if true, the body of the loop is executed. After each iteration the expression is reevaluated; as long as it remains true, the loop is repeated.
+The *while* statement provides a looping mechanism. The conditional is evaluated, and if true, the body of the loop is run. After each iteration the expression is reevaluated; as long as it remains true, the loop is repeated.
 
-The call statement provides procedure calls. *Name* must match one of the procedures defined in the report program. *Args* is a list of argument expressions separated by commas. Recursion is allowed. When a call is run, the arguments are evaluated and used to initialize the procedure's parameters. The procedure is then executed. When the procedure completes, execution resumes with the first item after the call.
+The call statement provides procedure calls. *Name* must match one of the procedures defined in the report program. *Args* is a list of expressions separated by commas. Recursion is allowed. When a call is run, the arguments are evaluated and used to initialize the procedure's parameters. The procedure is then run. When the procedure completes, execution resumes with the first statement after the call.
 
-The report language also includes the following statement types:
+#### Foreach Statement
 
-include(*string*)
+The LifeLines language has special iterator statement for iterating different data structures. The DeadEnds version consolidates all those iterators into a single foreach statement. It has the format:
 
-global(*varb*)
+*foreach(structure, element[, value], count) { statements }*
 
-set(*varb*, *expr*)
+#### Other Statements
 
-continue()
+The language also has these statements:
 
-break()
+​    include(*string*)
 
-return([*expr*])
+​    global(*varb*)
 
-The *include* statement includes the contents of another file into the current file; its string expression is
+​    set(*varb*, *expr*)
 
-the name of another LifeLines program file. It is described in more detail below. The *global* statement
+​    continue()
 
-must be used *outside* the scope of any procedure or function; it declares a variable to have global scope.
+​    break()
 
-The *set* statement is the *assignment* statement; the expression is evaluated, and its value is assigned
+​    return([*expr*])
 
-to the variable. The *continue* statement jumps to the bottom of the current loop, but does not leave the
+The *include* and *global* statements are used at the top level, outside the scope of any procedure or function. The *include* statement includes the contents of another file into the program. The string names another program file. An included file can include other files, to any depth. This feature is useful for commonly used routines and *user libraries*.
 
-loop. The *break* statement breaks out of the most closely nested loop. The *return* statement returns from
+The *global* statement declares a variable to have global scope. Global variables are accessible from any point in a program unless its name is *hidden* by a local parameter or variable. A global variable provides a way for all activations of a recursive function to access the same variable.
 
-the current procedure or function. Procedures have *return* statements without expressions; functions
+The *set* statement is the *assignment* statement; the expression is evaluated, and its value is assigned to the variable. The *set* statement is really *just* a top level expression, one of many built-in functions in the DeadEnds library, but because it serves as the language's assignment statement, it deserves this special mention.
 
-have *return* statements with expressions. None of these statements return a value, so none has a direct
+The *continue* statement jumps to the bottom of the current loop, but does not leave the loop.
 
-effect on program output.
+The *break* statement breaks out of the most closely nested loop.
 
-In addition to these conventional statements, the report generator provides other iterator statements
-
-for looping through genealogical and other types of data. For example, the *children* statement
-
-iterates through the children of a family, the *spouses* statement iterates through the spouses of a
-
-person, and the *families* statement iterates through the families that a person is a spouse or parent in.
-
-These iterators and others are described in more detail later under the appropriate data types.
+The *return* statement returns from the current procedure or function. Procedures can have *return* statements without expressions; functions have *return* statements with expressions.
 
 **Expressions**
 
-There are four types of expressions: *literals*, *integers*, *variables* and built-in or user defined *function*
+There are four types of expressions: *literals*, *integers*, *variables* and built-in or user defined *function* *calls*.
 
-*calls*.
+A *literal* is any string enclosed in double quotes; its value is itself. An *integer* is any integer constant; its value is itself. A *variable* is a named location in the local or global symbol table that can be assigned different values during program execution. The value of a variable is the last value assigned to it. Variables do not have fixed type. However all values have an explicitly known type.
 
-A *literal* is any string enclosed in double quotes; its value is itself. An *integer* is any integer constant;
-
-its value is itself. A *variable* is a named location that can be assigned different values during program
-
-execution. The value of a variable is the last value assigned to it. Variables do not have fixed type; at
-
-different times in a program, the same variable may be assigned data of completely different types. An
-
-identifier followed by comma-separated list of expressions enclosed in parentheses, is either a call to a
-
-built-in function or a call to a user-defined *function*.
-
-**Include Feature**
-
-The LifeLines programming language provides an *include* feature. Using this feature one LifeLines*LifeLines Reference Manual – 29*
-
-program can refer to other LifeLines programs. This feature is provided by the include statement:
-
-include(*string*)
-
-where *string* is a quoted string that is the name of another LifeLines program file. When an include
-
-statement is encountered, the program that it refers to is read at that point, exactly as if the contents of
-
-included file had been in the body of the original file at that point. This allows you to create LifeLines
-
-program library files that can be used by many programs. Included files may in turn contain include
-
-statements, and so on to any depth. LifeLines will use the *LLPROGRAMS* shell variable, if set, to
-
-search for the include files.
+An identifier followed by comma-separated list of expressions enclosed in parentheses, is either a call to a built-in function or a call to a user-defined *function*. The language has a long list of built-in functions that are listed later.
 
 **Built-in Functions**
 
-There is a long list of built-in functions, and this list will continue to grow for some time. The first
+There is a long list of built-in functions, and this list will continue to grow for some time. The first subsection below describes the value types used in DeadEnds programs; these are the types of variables, function parameters and function return values. In the remaining sections the built-in functions are separated into logical categories and described.
 
-subsection below describes the value types used in LifeLines programs; these are the types of variables,
+**Program Value Types**
 
-function parameters and function return values. In the remaining sections the built-in functions are
+The DeadEnds language is *strongly typed* -- every value has a specific, known type. One of the built-in functions is *valueof(expr)*. This is a *meta* function. Calling it evaluates the expression and writes its value and type to the output stream -- often all you need to debug a DeadEnds program.
 
-separated into logical categories and described.
+​    null --- Empty type and value
 
-**Value Types**
+​    integer --- Integer
 
-ANY
+​    double --- Double
 
-INT
+​    boolean --- Boolean
 
-BOOL
+​    string --- Unicode string
 
-STRING
+​    gnode --- Gedcom node
 
-LIST
+​    person --- Person record
 
-TABLE
+​    family --- Family record
 
-INDI
+​    source --- Source record
 
-FAM
+​    list --- List
 
-SET
+​    table --- String to program value map
 
-NODE
+​    personset --- Person set (with associated type)
 
-EVENT
+​    pair --- Pair of values
 
-VOID
+  case traverse(GedcomNode)
 
-union of all types
+  case allPersons
 
-integer (on most systems a 32-bit signed value)
+  case allFamilies
 
-boolean (0 represents *false*; anything else represents *true*)
-
-text string
-
-arbitrary length list of any values
-
-keyed look-up table
-
-person; reference to a GEDCOM *INDI* record
-
-family; reference to a GEDCOM *FAM* record
-
-arbitrary length set of persons
-
-GEDCOM node; reference to a line in a GEDCOM tree/record
-
-event; reference to substructure of nodes in a GEDCOM record
-
-type with no values
-
-In the summaries of built-in functions below, each function is shown with its argument types and its
-
-return type. The types are from the preceding list. Sometimes an argument to a built-in function must be
-
-a variable; when this is so its type is given as *XXX_V*, where *XXX* is one of the types above. The
+In the summaries of built-in functions below, each function is shown with its argument types and its return type. The types are from the preceding list. In three cases (set, incr, decr) an argument to a built-in function must be an identifie a variable; when this is so its type is given as *XXX_V*, where *XXX* is one of the types above. The
 
 built-ins do not check the types of their arguments. Variables can hold values of any type, though at
 

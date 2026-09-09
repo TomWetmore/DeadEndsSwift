@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 22 August 2026.
+//  Last changed on 8 September 2026.
 //
 
 import Foundation
@@ -15,25 +15,25 @@ public enum SexType: String {
     case unknown = "U"
 }
 
-/// Person structure.
+/// Person structure. A person is a wrapped 0 INDI root node with methods.
 public struct Person: Record {
 
-    public let root: Root
+    public let root: Root  // Only stored property of a person.
+}
 
-    /// Create person. Fatal error if not possible.
+extension Person {
+
+    /// Create a person from a root node. Fatal error if not possible.
     public init(_ root: Root) {
+
         guard root.tag == GedcomTag.INDI, root.key != nil
         else { fatalError("Root \(root) is not a valid 0 INDI node") }
         self.root = root
     }
 
-    // SAVE FOR POSSIBLE USE.
-    //    public init?(_ root: GedcomNode) {
-    //        guard root.tag == "INDI" else { return nil }
-    //        self.root = root
-    //    }
-
+    /// Return the person's key.
     public var key: String {
+
         guard let key = root.key else { fatalError("person must have a key") }
         return key
     }
@@ -43,6 +43,7 @@ extension Person {
 
     /// Return display name from the first 1 NAME node.
     public var name: String {
+
         guard let nameNode = root.kid(withTag: GedcomTag.NAME),
               let gedcomName = GedcomName(from: nameNode)
         else { return "no name" }
@@ -60,6 +61,7 @@ extension Person {
 
     /// Return a single line display summary of a person.
     public var displayLine: String {
+
         let name = displayName()
         let birth = birthEvent?.summary
         let death = deathEvent?.summary
@@ -77,11 +79,13 @@ extension Person {
 
     /// Return first birth event.
     public var birthEvent: Event? {
+
         root.eventOfKind(.birth)
     }
 
     /// Return first death event.
     public var deathEvent: Event? {
+
         root.eventOfKind(.death)
     }
 }
@@ -91,11 +95,13 @@ extension Person: Equatable, Hashable {
 
     /// Equate two persons.
     public static func == (lhs: Person, rhs: Person) -> Bool {
+
         lhs.root.key == rhs.root.key
     }
 
     /// Return person hash.
     public func hash(into hasher: inout Hasher) {
+
         hasher.combine(root.key)
     }
 }
@@ -104,6 +110,7 @@ public extension Person {
 
     /// Return sex type person.
     var sex: SexType {
+        
         guard let value = kidVal(forTag: GedcomTag.SEX)?.uppercased()
         else { return .unknown }
         switch value {
@@ -115,6 +122,7 @@ public extension Person {
 
     /// Return sex symbol of person.
     var sexSymbol: String {
+
         switch sex {
         case .male: return "♂️"
         case .female: return "♀️"
@@ -124,6 +132,7 @@ public extension Person {
 
     /// Return Gedcom name of person from its first 1 NAME node.
     var gedcomName: GedcomName? {
+
         GedcomName(from: self.root)
     }
 
@@ -139,6 +148,7 @@ public extension Person {
 
     /// Return all person's parents.
     func parents(in index: RecordIndex) -> [Person] {
+
         var result: [Person] = []
         var seen: Set<RecordKey> = []
         for family in childFamilies(in: index) {
@@ -153,6 +163,7 @@ public extension Person {
 
     /// Return person's parents.
     private func parents(in index: RecordIndex, role: Tag) -> [Person] {
+
         var result: [Person] = []
         var seen: Set<RecordKey> = []
 
@@ -169,21 +180,25 @@ public extension Person {
 
     /// Return person's father from first husband in person's first FAMC with a husband.
     func father(in index: RecordIndex) -> Person? {
+
         parents(in: index, role: GedcomTag.HUSB).first
     }
 
     /// Return person's mother by finding first wife in person's first FAMC with a wife.
     func mother(in index: RecordIndex) -> Person? {
+
         parents(in: index, role: GedcomTag.WIFE).first
     }
 
     /// Return all person's fathers by finding all husbands in all person's FAMC families.
     func fathers(in index: RecordIndex) -> [Person] {
+
         parents(in: index, role: GedcomTag.HUSB)
     }
 
     /// Return all person's mothers by finding all wives in all person's FAMC families.
     func mothers(in index: RecordIndex) -> [Person] {
+
         parents(in: index, role: GedcomTag.WIFE)
     }
 }
@@ -193,6 +208,7 @@ public extension Person {
 
     /// Return the families a person is in as a spouse.
     func spouseFamilies(in index: RecordIndex) -> [Family] {
+
         var families: [Family] = []
         for famsKey in kidVals(forTag: GedcomTag.FAMS) {
             let family = requireFamily(for: famsKey, in: index)
@@ -203,6 +219,7 @@ public extension Person {
 
     /// Return the families a person is in as a child.
     func childFamilies(in index: RecordIndex) -> [Family] {
+
         var families: [Family] = []
         for famcKey in kidVals(forTag: GedcomTag.FAMC) {
             let family = requireFamily(for: famcKey, in: index)
@@ -214,6 +231,7 @@ public extension Person {
 
 /// Return the family a key refers to. Fatal error if cannot be done.
 func requireFamily(for key: RecordKey, in index: RecordIndex) -> Family {
+
     guard let family = index.family(for: key), family.root.tag == GedcomTag.FAM
     else { fatalError("key \(key) must refer to a family") }
     return family
@@ -221,6 +239,7 @@ func requireFamily(for key: RecordKey, in index: RecordIndex) -> Family {
 
 /// Return the person a key refers to. Fatal error if it cannot be done.
 public func requirePerson(with key: RecordKey, in index: RecordIndex) -> Person {
+
     guard let person = index.person(for: key), person.root.tag == GedcomTag.INDI
     else { fatalError("key \(key) must refer to a person") }
     return person
@@ -228,17 +247,19 @@ public func requirePerson(with key: RecordKey, in index: RecordIndex) -> Person 
 
 /// Return the person a node is the root of. Fatal error if it cannot be done.
 public func requirePerson(with root: Root, in index: RecordIndex) -> Person {
+
     let key = requireKey(on: root)
     guard let person = index.person(for: key), person.root.tag == GedcomTag.INDI
     else { fatalError("root \(root) must be the root of a person") }
     return person
 }
 
-/// Extension for Spouses, Husbands, and Wives
+/// Extension for spouses, husbands, and wives.
 public extension Person {
 
-    /// Return first spouse of self by role; is no restriction on sex of spouse.
+    /// Return the first spouse of self by role; is no restriction on sex of spouse.
     func spouse(in index: RecordIndex, roles: [Tag]) -> Person? {
+
         for family in spouseFamilies(in: index) {
             for role in roles {
                 for key in family.kidVals(forTag: role) where key != self.key {
@@ -251,11 +272,13 @@ public extension Person {
 
     /// Return first husband of person; person can be male or female.
     func husband(in index: RecordIndex) -> Person? {
+
         spouse(in: index, roles: [GedcomTag.HUSB])
     }
 
     /// Return first wife of person; person can be male or female.
     func wife(in index: RecordIndex) -> Person? {
+
         spouse(in: index, roles: [GedcomTag.WIFE])
     }
 
@@ -297,11 +320,13 @@ public extension Person {
 
     /// Return all husbands of person, deduped and in order; person can be male or female.
     func husbands(in index: RecordIndex) -> [Person] {
+
         spouses(in: index, roles: [GedcomTag.HUSB])
     }
 
     /// Return all wives of person, deduped and in order; person can be male or female.
     func wives(in index: RecordIndex) -> [Person] {
+
         spouses(in: index, roles: [GedcomTag.WIFE])
     }
 }
@@ -311,6 +336,7 @@ extension Person {
 
     /// Return person's siblings from all FAMC families, deduped and in gedcom order.
     public func siblings(in index: RecordIndex) -> [Person] {
+
         var seen: Set<RecordKey> = []
         var result: [Person] = []
 
@@ -347,6 +373,7 @@ public extension Person {
 
     /// Return children of self, in all FAMS families, deduped in Gedcom order.
     func children(in index: RecordIndex) -> [Person] {
+
         var seen: Set<RecordKey> = []
         var result: [Person] = []
 
@@ -363,12 +390,14 @@ public extension Person {
 public extension Person {
 
     func ancestors(in index: RecordIndex) -> [Person] {
+
         index.ancestors(ofPersonRoot: root).map { ancestorRoot in
             Person(ancestorRoot)
         }
     }
 
     func descendants(in index: RecordIndex) -> [Person] {
+
         index.descendants(ofPersonRoot: root).map { descendantRoot in
             Person(descendantRoot)
         }
@@ -387,6 +416,7 @@ extension Database {
     }
 
     public func updatePerson(_ person: Person) {
+
         recordIndex[person.key] = person.root
     }
 }
@@ -434,6 +464,7 @@ extension Person {
 
 /// Compare optional integers.
 private func compareOptionalInts(_ a: Int?, _ b: Int?) -> ComparisonResult? {
+
     switch (a, b) {
     case let (x?, y?) where x != y:
         return x < y ? .orderedAscending : .orderedDescending

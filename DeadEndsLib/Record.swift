@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 29 March 2026.
+//  Last changed on 8 September 2026.
 //
 
 import Foundation
@@ -20,13 +20,14 @@ enum RecordKind: String {
 }
 
 /// Record protocol. This protocol allow person, family, source, etc, to be types.
+/// The protocol requires a record to have a root and a key.
 public protocol Record {
 
     var root: Root { get }  // Record root.
     var key: String { get }  // Record key.
 }
 
-/// Properties forwarded to the record root.
+/// Gedcom node properties that are forwarded to the record root.
 public extension Record {
 
     // Forwarded properties.
