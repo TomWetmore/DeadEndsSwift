@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 8 September 2026.
+//  Last changed on 10 September 2026.
 //
 
 import Foundation
@@ -19,43 +19,69 @@ enum RecordKind: String {
     case other =  "OTHR"
 }
 
-/// Record protocol. This protocol allow person, family, source, etc, to be types.
-/// The protocol requires a record to have a root and a key.
+/// Record protocol. It allows person, family, source, etc, to be types.
 public protocol Record {
 
     var root: Root { get }  // Record root.
     var key: String { get }  // Record key.
 }
 
-/// Gedcom node properties that are forwarded to the record root.
+/// Gedcom node properties that are forwarded to the root node.
 public extension Record {
 
-    // Forwarded properties.
     var key: String { root.key! }
+
     var tag: String { root.tag }
+
     var val: String? { root.val }
+
     var kid: GedcomNode? { root.kid }
+
     var sib: GedcomNode? { root.sib }
 
-    // Forwarded methods.
-    func kid(withTag tag: Tag) -> GedcomNode? { root.kid(withTag: tag) }
-    func kid(atPath path: [Tag]) -> GedcomNode? { root.kid(atPath: path) }
+    var subnodes: [GedcomNode] { root.subnodes }
 
-    func kidVal(forTag tag: Tag) -> String? { root.kidVal(forTag: tag) }
-    func kidVal(atPath path: [Tag]) -> String? { root.kidVal(atPath: path) }
-
-    func kids(withTag tag: Tag) -> [GedcomNode] { root.kids(withTag: tag) }
-    func kids(withTags tags: [Tag]) -> [GedcomNode] { root.kids(withTags: tags) }
-    func kidVals(forTag tag: Tag) -> [String] { root.kidVals(forTag: tag) }
-    func kidVals(forTags tags: [Tag]) -> [String] {root.kidVals(forTags: tags) }
+    var count: Int { root.count }
 }
 
-/// Foward useful methods to the Gedcom node level.
+/// Gedcom node methods that are forwarded to the root node.
 public extension Record {
 
-    func gedcomText(level: Int = 0, indent: Bool = false) -> String { root.gedcomText(level: level, indent: indent) }
-    var subnodes: [GedcomNode] { root.subnodes }
-    func count() -> Int { root.count }
+    func kid(withTag tag: Tag) -> GedcomNode? {
+        root.kid(withTag: tag)
+    }
+
+    func kid(atPath path: [Tag]) -> GedcomNode? {
+        root.kid(atPath: path)
+    }
+
+    func kidVal(forTag tag: Tag) -> String? {
+        root.kidVal(forTag: tag)
+    }
+
+    func kidVal(atPath path: [Tag]) -> String? {
+        root.kidVal(atPath: path)
+    }
+
+    func kids(withTag tag: Tag) -> [GedcomNode] {
+        root.kids(withTag: tag)
+    }
+
+    func kids(withTags tags: [Tag]) -> [GedcomNode] {
+        root.kids(withTags: tags)
+    }
+
+    func kidVals(forTag tag: Tag) -> [String] {
+        root.kidVals(forTag: tag)
+    }
+
+    func kidVals(forTags tags: [Tag]) -> [String] {
+        root.kidVals(forTags: tags)
+    }
+
+    func gedcomText(level: Int = 0, indent: Bool = false) -> String {
+        root.gedcomText(level: level, indent: indent)
+    }
 }
 
 public extension Record {

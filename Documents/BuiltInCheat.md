@@ -1,4 +1,4 @@
-### DeadEnds 'Built-in' Cheat Sheet
+### DeadEnds Built-in Summary
 
 ###### Miscellaneous
 

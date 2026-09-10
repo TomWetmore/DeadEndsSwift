@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 10 July 2026.
+//  Last changed on 10 September 2026.
 //
 
 import Foundation
@@ -156,6 +156,19 @@ extension Program {
             return nil
         default:
             throw RuntimeError(errMsg, line: expr.line)
+        }
+    }
+
+    /// Evaluate an expression for an optional family; allows null-forwarding of families.
+    func evalFamilyOpt(_ expr: ParsedExpr, errMsg: String) async throws -> Family? {
+
+        switch try await evaluate(expr) {
+            case .family(let family):
+            return family
+        case .null:
+            return nil
+        default:
+            throw RuntimeError(errMsg, line: expr.line) 
         }
     }
 

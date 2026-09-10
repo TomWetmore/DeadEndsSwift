@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 4 September 2026.
+//  Last changed on 9 September 2026.
 //
 
 import Foundation
@@ -103,6 +103,9 @@ extension Program {
             "male":  Builtin(min: 1, max: 1) { try await self.bltinMale($0)},
             "female": Builtin(min: 1, max: 1) { try await self.bltinFemale($0)},
 
+            // Family operations.
+            "marriage": Builtin(min: 1, max: 1) { try await self.bltinMarriage($0)},
+            "divorce": Builtin(min: 1, max: 1) { try await self.bltinDivorce($0)},
             "allfamilies": Builtin(min: 0, max: 0) { try self.bltinAllFamilies($0)},
 
             /// Generic operations on persons and families.

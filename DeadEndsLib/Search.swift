@@ -125,7 +125,7 @@ fileprivate func updateResult(_ results: inout SearchResults, _ key: RecordKey,
 /// Search person operation added to database.
 extension Database {
 
-    /// Search database for persons based on five criteria: name, birth and death year,
+    /// Search the database for persons based on five criteria: name, birth and death year,
     /// birth and death place.
     public func searchPersons(_ criteria: SearchCriteria) -> [SearchResult] {
 

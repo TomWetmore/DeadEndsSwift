@@ -30,8 +30,8 @@ final public class PlaceIndex {
     /// Number of place keys in the index.
     public var count: Int { index.count }
 
-    /// Add entries to the index. Place is the value of a PLAC node. It
-    /// is expanded into parts which are added individually.
+    /// Add entries to the index; place is the value of a PLAC node. It is expanded
+    /// into parts which are added individually.
     public func add(place: String, event: EventKind, recordKey: RecordKey) {
 
         for part in placeParts(place) {
@@ -39,15 +39,14 @@ final public class PlaceIndex {
         }
     }
 
-    /// Add an entry to the index; part is a component extracted from
-    /// a PLAC value.
+    /// Add an entry to the index; part is a component extracted fromba PLAC value.
     public func add(part: String, event: EventKind, recordKey: RecordKey) {
 
         index[PlaceKey(part: part, event: event), default: Set()].insert(recordKey)
     }
 
-    /// Remove entries from the index; place is expanded into parts
-    /// that are removed individually.
+    /// Remove entries from the index; place is the value of a PLAC node. It is expanded
+    /// into parts that are removed individually.
     func remove(place: String, event: EventKind, recordKey: RecordKey) {
 
         for part in placeParts(place) {
@@ -55,6 +54,7 @@ final public class PlaceIndex {
         }
     }
 
+    /// Remove an entry from the index; part is a component extracted from a PLAC value.
     func remove(part: String, event: EventKind, recordKey: RecordKey) {
 
         let placeKey = PlaceKey(part: part, event: event)
