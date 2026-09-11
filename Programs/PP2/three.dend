@@ -1,0 +1,87 @@
+/* Version Two -- Determine if two persons are related and show the path
+   between them. */
+
+global(seen)   /* keys of persons already seen */
+global(back)   /* Table of back links. */
+
+proc main () {
+
+    /* Get the two persons. Quit if user does not supply them. */
+    set(from, getperson("Enter the first person"))
+    if(not(from)) { return() }
+    set(to, getperson("Enter the second person"))
+    if(not(to)) { return() }
+
+    "Searching for a relationship between:\n\t"
+    name(from) " and " name(to) ".\n"
+
+    if (relate(key(from), key(to))) {
+        "They are related.\n"
+        call showpath(key(to))
+    } else {
+        "They are not related.\n"
+    }
+    d(length(seen)) " persons were visited.\n"
+}
+
+/* See if two persons are related. */
+
+func relate (fromkey, tokey) {
+
+    set(queue, list())
+    set(back, table())
+    set(seen, table())
+
+    enqueue(queue, fromkey)
+    insert(back, fromkey, fromkey) /* First person point to himself. */
+
+    while(not(empty(queue))) {
+        set(key, dequeue(queue))
+        if (contains(seen, key)) { continue() }
+        insert(seen, key, 0)
+
+        if (eq(key, tokey)) { return(1) }
+
+        set(person, person(key))
+
+        if (father, father(person)) {
+            set(fatherkey, key(father))
+            if (not(contains(back, fatherkey))) {
+                enqueue(queue, fatherkey)
+                insert(back, fatherkey, key)
+            }
+        }
+        if (mother, mother(person)) {
+            set(motherkey, key(mother))
+            if (not(contains(back, motherkey))) {
+                enqueue(queue, motherkey)
+                insert(back, motherkey, key)
+            }
+        }
+        foreach(children(person), child, num) {
+            set(childkey, key(child))
+            if (not(contains(back, childkey))) {
+                enqueue(queue, childkey)
+                insert(back, childkey, key)
+            }
+        }
+    }
+    return(0)
+}
+
+proc showpath (tokey) {
+
+    set(currkey, tokey)
+    set(loops, 0)
+    while (1) {
+        incr(loops)
+        if(gt(loops, 100)) {
+            "FORCE QUIT\n"
+            return()
+        }
+        name(person(currkey)) nl()
+        set(backkey, lookup(back, currkey))
+        if (eq(backkey, currkey)) { return() }
+        set(currkey, backkey)
+    }
+}

@@ -137,10 +137,23 @@ extension Program {
         }
         // Create the run time frame for the callee.
         let frame = RuntimeFrame(name: name, kind: .proc, defnLine: procDef.line,
-            callLine: procCall.line, params: procDef.params, symbols: table)
+                                 callLine: procCall.line, params: procDef.params, symbols: table)
         pushCallFrame(frame)
         defer { popCallFrame() }
+        
         // Interpret the body of the proc.
-        return try await interpStmtList(procDef.body)
+        let result = try await interpStmtList(procDef.body)
+
+        switch result {
+        case .returning:
+            return .okay
+        case .okay:
+            return .okay
+        case .breaking, .continuing:
+            throw RuntimeError("break/continue statement outside of loop",
+                               line: procCall.line)
+        case .error:
+            return .error
+        }
     }
 }
