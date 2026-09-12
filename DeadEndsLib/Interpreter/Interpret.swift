@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 31 August 2026.
+//  Last changed on 12 September 2026.
 //
 //  This file has the interpreters for all statement types except the
 //  foreach statement
@@ -20,12 +20,10 @@ public enum InterpResult: Sendable {
     case error  // Error result.
 }
 
-/// Interpreters for all statement types except the foreach statement. Each
-/// takes one or more immutable parsed entities and returns an interp result.
-
+/// Interpreters for all statements except foreach.
 extension Program {
 
-    /// Interpret a list of statements. The argument is a list of parsed statements.
+    /// Interpret a statement list.
     func interpStmtList(_ stmts: [ParsedStatement]) async throws -> InterpResult {
 
         for stmt in stmts {
@@ -42,27 +40,35 @@ extension Program {
         return .okay
     }
 
-    /// Interpret a statement. The argument is a parsed statement. The method checks
-    /// the type of the statement and calls the interpreter for that type.
+    /// Interpret a statement. The method checks the statement type and calls the type's
+    /// interpreter.
     func interpStatement(_ stmt: ParsedStatement) async throws -> InterpResult {
         
         try await tick(line: stmt.line)  // Lazy man infinite loop protection.
 
         switch stmt.kind {
+
         case .callStatement(let call):
             return try await interpProcCall(call)
+
         case .whileStatement(let whileStmt):
             return try await interpWhile(whileStmt)
+
         case .ifStatement(let ifStmt):
             return try await interpIf(ifStmt)
+
         case .returnStatement(let ret):
             return try await interpReturn(ret)
+
         case .breakStatement:
             return .breaking
+
         case .continueStatement:
             return .continuing
+
         case .forEachStatement(let stmt):
             return try await interpForEach(stmt)
+            
         case .expressionStatement(let expr):
             let pvalue: ProgramValue = try await evaluate(expr)
             if case let .string(string) = pvalue {
@@ -76,15 +82,20 @@ extension Program {
     func interpWhile(_ whileStmt: ParsedWhileStmt) async throws -> InterpResult {
 
         while true {
+
             if await !(try evalCondition(whileStmt.condition)) { break }
             let result = try await interpStmtList(whileStmt.body)
+
             switch result {
             case .breaking:
                 return .okay
+
             case .returning:
                 return result
+
             case .error:
                 return .error
+
             case .continuing, .okay:
                 continue
             }
@@ -145,13 +156,16 @@ extension Program {
         let result = try await interpStmtList(procDef.body)
 
         switch result {
+
         case .returning:
             return .okay
+
         case .okay:
             return .okay
+
         case .breaking, .continuing:
-            throw RuntimeError("break/continue statement outside of loop",
-                               line: procCall.line)
+            throw RuntimeError("break/continue statement outside of loop", line: procCall.line)
+            
         case .error:
             return .error
         }

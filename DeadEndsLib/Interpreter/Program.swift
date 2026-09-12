@@ -166,6 +166,7 @@ extension Program {
 
     /// Return a function defn or throw an undefined error.
     func requireFuncDefn(_ name: String, line: Int) throws -> ParsedFuncDefn {
+
         guard let funcDefn = funcTable[name] else {
             throw RuntimeError("\(name): undefined function", line: line)
         }

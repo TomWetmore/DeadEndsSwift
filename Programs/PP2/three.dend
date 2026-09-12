@@ -1,8 +1,9 @@
-/* Version Two -- Determine if two persons are related and show the path
-   between them. */
+/* Version Three -- Determine if two persons are related and show the path
+   between them with directions. */
 
 global(seen)   /* keys of persons already seen */
 global(back)   /* Table of back links. */
+global(dirs)   /* Table of directions. */
 
 proc main () {
 
@@ -16,7 +17,6 @@ proc main () {
     name(from) " and " name(to) ".\n"
 
     if (relate(key(from), key(to))) {
-        "They are related.\n"
         call showpath(key(to))
     } else {
         "They are not related.\n"
@@ -30,25 +30,27 @@ func relate (fromkey, tokey) {
 
     set(queue, list())
     set(back, table())
+    set(dirs, table())
     set(seen, table())
 
     enqueue(queue, fromkey)
-    insert(back, fromkey, fromkey) /* First person point to himself. */
+    insert(back, fromkey, fromkey) /* First persons points to itself. */
+    insert(dirs, fromkey, "none")  /* First person has no direction. */
 
     while(not(empty(queue))) {
         set(key, dequeue(queue))
         if (contains(seen, key)) { continue() }
         insert(seen, key, 0)
 
-        if (eq(key, tokey)) { return(1) }
+        if (eq(key, tokey)) { return(1) } /* Found a path. */
 
         set(person, person(key))
-
         if (father, father(person)) {
             set(fatherkey, key(father))
             if (not(contains(back, fatherkey))) {
                 enqueue(queue, fatherkey)
                 insert(back, fatherkey, key)
+                insert(dirs, fatherkey, "up")
             }
         }
         if (mother, mother(person)) {
@@ -56,6 +58,7 @@ func relate (fromkey, tokey) {
             if (not(contains(back, motherkey))) {
                 enqueue(queue, motherkey)
                 insert(back, motherkey, key)
+                insert(dirs, motherkey, "up")
             }
         }
         foreach(children(person), child, num) {
@@ -63,6 +66,7 @@ func relate (fromkey, tokey) {
             if (not(contains(back, childkey))) {
                 enqueue(queue, childkey)
                 insert(back, childkey, key)
+                insert(dirs, childkey, "down")
             }
         }
     }
@@ -75,13 +79,21 @@ proc showpath (tokey) {
     set(loops, 0)
     while (1) {
         incr(loops)
-        if(gt(loops, 100)) {
-            "FORCE QUIT\n"
+        if(gt(loops, 100)) { /* Infinite loop protection. */
+            "FORCE QUIT!\n"
             return()
         }
-        name(person(currkey)) nl()
+        set(dir, lookup(dirs, currkey))
         set(backkey, lookup(back, currkey))
         if (eq(backkey, currkey)) { return() }
+        name(person(currkey)) relation(dir) name(person(backkey)) nl()
         set(currkey, backkey)
     }
+}
+
+func relation (dir) {
+
+    if(eq(dir, "up")) { " is the parent of " }
+    elsif (eq(dir, "down")) { " is the child of "}
+    else { return("") }
 }

@@ -331,11 +331,13 @@ extension Program {
 
     /// Return the all persons program value.
     func bltinAllPersons(_ args: [ParsedExpr]) throws -> ProgramValue {
+
         return .allPersons
     }
 
     /// Return the all families program value.
     func bltinAllFamilies(_ args: [ParsedExpr]) throws -> ProgramValue {
+        
         return .allFamilies
     }
 }
