@@ -1,16 +1,14 @@
 ### DeadEnds Programming Feature
 
-
-
-Intended to document the DeadEnds Programming Language.
+Intended to document the DeadEnds Programming Language at the development level.
 
 ##### Parsing and Interpreting
 
-The feature is broken into two software components: *parsing* and *interpreting*.
+The feature has two components: *parsing* and *interpreting*.
 
-The parsing component uses Point-Free's *Parsing package*. The result of parsing is a Swift structure that holds an immutable representation of the program.
+The parsing component uses Point-Free's *Parsing package*. The result of parsing is a single Swift structure that holds an immutable representation of the program.
 
-Here is an attempt to describe the language through its Swift structure
+Here is a description of the language as Swift structs.
 
 ```
 ParsedProgram: [ParsedDefn]
