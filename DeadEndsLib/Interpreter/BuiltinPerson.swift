@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 2 September 2026.
+//  Last changed on 15 September 2026.
 //
 
 import Foundation
@@ -66,7 +66,7 @@ extension Program {
         guard let name = person.kidVal(forTag: "NAME"), let gedcomName = GedcomName(string: name)
         else { return .emptyList }
 
-        let list = List()
+        let list = ListValue()
         for (index, part) in gedcomName.parts.enumerated() {
             if index != gedcomName.surnameIndex {
                 list.append(.string(part))

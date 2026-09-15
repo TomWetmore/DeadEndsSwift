@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 25 May 2026.
-//  Last changed on 14 August 2026.
+//  Last changed on 15 September 2026.
 //
 
 import Foundation
@@ -22,7 +22,7 @@ extension Program {
         )
         if let gedcomName {
             let nameParts = gedcomName.parts.map { ProgramValue.string($0) }
-            let partsList = List(nameParts)
+            let partsList = ListValue(nameParts)
 
             return .pair(Pair(
                 .list(partsList),
@@ -44,7 +44,7 @@ extension Program {
         switch value {
         case .string(let place):
             let values = extractPlaceParts(place).map(ProgramValue.string)
-            return .list(List(values))
+            return .list(ListValue(values))
         case .null:
             return .emptyList
         default:

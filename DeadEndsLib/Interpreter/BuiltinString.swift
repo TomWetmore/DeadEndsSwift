@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 12 May 2026.
-//  Last changed on 14 August 2026.
+//  Last changed on 15 September 2026.
 //
 
 import Foundation
@@ -41,7 +41,7 @@ extension Program {
                                                        errMsg: "words: arg must be a string")
         else { return .null }
         let words = strng.words().map { ProgramValue.string($0) }
-        return .list(List(words))
+        return .list(ListValue(words))
     }
 
     func bltinTokens(_ args: [ParsedExpr]) async throws -> ProgramValue {
@@ -50,7 +50,7 @@ extension Program {
                                                        errMsg: "words: arg must be a string")
         else { return .null }
         let words = strng.tokens().map { ProgramValue.string($0) }
-        return .list(List(words))
+        return .list(ListValue(words))
     }
 
     /// Compare two strings.

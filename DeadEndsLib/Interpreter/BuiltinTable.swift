@@ -3,14 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 April 2026.
-//  Last changed on 6 August 2026.
+//  Last changed on 15 September 2026.
 //
 
 import Foundation
 
 /// Dictionary used as the DeadEnds program table data type; it maps strings
 /// to program values.
-final public class ProgramTable {
+final public class TableValue {
     
     var elements: [String: ProgramValue] = [:]  // Underlying dictionary.
 
@@ -29,7 +29,7 @@ extension Program {
     /// table() -> .table
     func bltinTable(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        return .table(ProgramTable())
+        return .table(TableValue())
     }
 
     /// Insert an entry into a table. There are no restrinctions on values.

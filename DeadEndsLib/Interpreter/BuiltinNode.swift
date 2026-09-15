@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 5/26/26.
-//  Last changed on 14 August 2026.
+//  Last changed on 15 September 2026.
 //
 //  This file has the built-in methods for Gedcom
 //  nodes.
@@ -93,7 +93,7 @@ extension Program {
 
         guard let node = try await evalGedcomNodeOpt(args[0], errMsg: "kids: arg must be a node")
         else { return .emptyList }
-        return .list(List(node.kids.map { ProgramValue.gnode($0) }))
+        return .list(ListValue(node.kids.map { ProgramValue.gnode($0) }))
     }
 
     /// Returns the list of sibs of a node.
@@ -102,7 +102,7 @@ extension Program {
 
         guard let node = try await evalGedcomNodeOpt(args[0], errMsg: "sibs: arg must be a node")
         else { return .emptyList }
-        return .list(List(node.sibs.map { ProgramValue.gnode($0) }))
+        return .list(ListValue(node.sibs.map { ProgramValue.gnode($0) }))
     }
 
     /// Returns the first kid of a node that has a given tag; returns .null if there
@@ -132,7 +132,7 @@ extension Program {
             return .emptyList
         }
         let tag = try await evalString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
-        let list = List()
+        let list = ListValue()
         for kid in node.kids(withTag: tag) {
             list.append(.gnode(kid))
         }
@@ -147,7 +147,7 @@ extension Program {
         }
         let tag = try await evalString(args[1], errMsg: "kidswithtag: 2nd arg must be a tag string")
 
-        return .list(List(node.kids(withTag: tag).map(ProgramValue.gnode)))
+        return .list(ListValue(node.kids(withTag: tag).map(ProgramValue.gnode)))
 
     }
 }

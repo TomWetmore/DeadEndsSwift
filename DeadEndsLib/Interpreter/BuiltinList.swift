@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 14 August 2026.
+//  Last changed on 15 September 2026.
 //
 
 import Foundation
@@ -114,7 +114,7 @@ extension Program {
     }
 
     /// Evaluate an expression and be sure it is a list.
-    func evaluateList(_ expr: ParsedExpr, errMsg: String) async throws -> List {
+    func evaluateList(_ expr: ParsedExpr, errMsg: String) async throws -> ListValue {
         guard case let .list(list) = try await evaluate(expr) else {
             throw RuntimeError(errMsg, line: expr.line)
         }
@@ -122,7 +122,7 @@ extension Program {
     }
 
     /// Evaluate an expression and be sure it is a list or nil.
-    func evaluateListOpt(_ expr: ParsedExpr, errMsg: String) async throws -> List? {
+    func evaluateListOpt(_ expr: ParsedExpr, errMsg: String) async throws -> ListValue? {
         switch try await evaluate(expr) {
         case .list(let list):
             return list
@@ -153,7 +153,7 @@ extension Program {
         default:
             throw RuntimeError("children: arg must be a person or family", line: line)
         }
-        return .list(List(children.map { ProgramValue.person($0) }))
+        return .list(ListValue(children.map { ProgramValue.person($0) }))
     }
 
     /// Return the number of children or a person or family.
@@ -187,7 +187,7 @@ extension Program {
         default:
             throw RuntimeError("husbands: arg must be a person or family", line: line)
         }
-        return .list(List(husbands.map { ProgramValue.person($0)}))
+        return .list(ListValue(husbands.map { ProgramValue.person($0)}))
     }
 
     /// Return the list of wives of a person or family.
@@ -205,7 +205,7 @@ extension Program {
         default:
             throw RuntimeError("wives: arg must be a person or family", line: line)
         }
-        return .list(List(wives.map { ProgramValue.person($0)}))
+        return .list(ListValue(wives.map { ProgramValue.person($0)}))
     }
 
     /// Return the list of siblings of a person.
@@ -222,7 +222,7 @@ extension Program {
         default:
             throw RuntimeError("siblings: arg must be a person", line: line)
         }
-        return .list(List(siblings.map { ProgramValue.person($0)}))
+        return .list(ListValue(siblings.map { ProgramValue.person($0)}))
     }
 
     /// Return the list of spouses of a person or family.
@@ -242,7 +242,7 @@ extension Program {
             throw RuntimeError("spouses: arg must be a person or family",
                                                 line: line)
         }
-        return .list(List(spouses.map { ProgramValue.person($0) }))
+        return .list(ListValue(spouses.map { ProgramValue.person($0) }))
     }
 
     /// Return the number of spouses or a person or family.
@@ -276,7 +276,7 @@ extension Program {
         default:
             throw RuntimeError("parents: arg must be a person", line: line)
         }
-        return .list(List(parents.map { ProgramValue.person($0) }))
+        return .list(ListValue(parents.map { ProgramValue.person($0) }))
     }
 
     /// Return the list of families a person is in as a spouse.
@@ -293,7 +293,7 @@ extension Program {
         default:
             throw RuntimeError("families: arg must be a person", line: line)
         }
-        let result = List(families.map { ProgramValue.family($0)})
+        let result = ListValue(families.map { ProgramValue.family($0)})
         return .list(result)
     }
 
@@ -389,7 +389,7 @@ extension Program {
 /// Structure that holds the programming language's list values. These are the
 /// enumerated .list elements that have an array of program values for their
 /// associated types.
-public class List {
+public class ListValue {
 
     /// A .list program value is an array of program values.
     var values: [ProgramValue] = []
@@ -452,8 +452,8 @@ public class List {
     }
 
     /// Returns a shallow copy of a list.
-    public func copy() -> List {
-        List(values)
+    public func copy() -> ListValue {
+        ListValue(values)
     }
 
     /// Simple subscript operation for a list.
@@ -469,29 +469,9 @@ public class List {
 }
 
 /// Needed to make List mappable.
-extension List: Sequence {
+extension ListValue: Sequence {
     
     public func makeIterator() -> IndexingIterator<[ProgramValue]> {
         values.makeIterator()
-    }
-}
-
-extension Program {
-
-    /// Convenience method for methods that need a modifiable list argument.
-    func requireListVariable(_ expr: ParsedExpr, errMsg: String )
-        throws -> (name: String, list: List) {
-
-        guard case let .identifier(name) = expr.kind else {
-            throw RuntimeError(errMsg, line: expr.line)
-        }
-        guard let value = lookupSymbol(name) else {
-            throw RuntimeError("undefined variable: \(name)", line: expr.line)
-        }
-        guard case let .list(list) = value else {
-            throw RuntimeError(errMsg, line: expr.line)
-        }
-
-        return (name, list)
     }
 }

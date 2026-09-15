@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 14 August 2026.
+//  Last changed on 15 September 2026.
 //
 //  ProgramValue is the type of evaluated expression in the DeadEnds
 //  programming language.
@@ -25,8 +25,8 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     //case source(GedcomNode)
     //case event(GedcomNode)
     //case other(GedcomNode)
-    case list(List)
-    case table(ProgramTable)
+    case list(ListValue)
+    case table(TableValue)
     case personset(PersonSet<ProgramValue>)
     case traverse(GedcomNode)
     case allPersons
@@ -302,6 +302,6 @@ extension ProgramValue {
     
     static var emptyList: ProgramValue {
         
-        .list(List())
+        .list(ListValue())
     }
 }
