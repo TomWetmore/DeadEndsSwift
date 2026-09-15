@@ -1,43 +1,35 @@
-/* Show a list of a person and all their descendants, prefixed
-   by their Henry numbers.
+/* Show the names of a person and all their descendants, prefixed by Henry numbers. */
 
-   Version using PersonSet.
-
-   Written by Tom Wetmore on 4 July 2026.
-   Last changed on 4 July 2026. */   
-
-
+/* Main program. Get the person, get his/her Henry list, print results. */
 proc main () {
-    set(root, getperson("enter person 1 for the henry listing"))
+    set(root, getperson("Enter a person for the henry listing"))
     set(set, gethenryset(root))
     foreach(set, person, code, n) {
         call showperson(person, code)
     }
 }
 
+/* Show a single person with code and name. */
 proc showperson(person, code) {
     foreach(code, number, n) { d(number) " " }
     name(person) nl()
 }
 
-/* This func and the following proc provide a "library service" for
-   generating a list of persons in Henry order with their Henry numbers
-   computed. */
+/* Get the person's Henry set. */
 func gethenryset(person) {
-    set(code, list())  /* Henry codes are lists of integers */
-    append(code, 1) /* First code is a single 1 */
-    set(set, personset()) /* Persons in order with Henry codes */
-    addtoset(set, person, code) /* Init list with top person */
-
-    call addhenrychildren(set, person, code) /* Add top's children */
-    return(set) /* Return the full Henry set with codes */
+    set(code, list())  /* Create the list for the code. */
+    append(code, 1) /* Set the first code to [1] */
+    set(set, personset()) /* Create the personset. */
+    addtoset(set, person, code) /* Add the first person to the set. */
+    call addhenrychildren(set, person, code) /* Add first person's children. */
+    return(set) /* Return the full set with codes. */
 }
 
+/* Add the children of a person to the Henry set. Recursive. */
 proc addhenrychildren(set, person, code) {
     foreach(children(person), child, n) {
-        set(childcode, append(shallowcopy(code), n)) /* Create its Henry code */
-        addtoset(set, child, childcode)
-        call addhenrychildren(set, child, childcode)
+        set(childcode, append(shallowcopy(code), n)) /* Create child's code. */
+        addtoset(set, child, childcode) /* Add child to the person set. */
+        call addhenrychildren(set, child, childcode) /* Recurse to child's children. */
     }
 }
-

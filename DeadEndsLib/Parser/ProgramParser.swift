@@ -3,7 +3,10 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 5 August 2026.
+//  Last changed on 14 September 2026.
+//
+//  This file has the parsers for full programs, procedure and function definitions, and
+//  include and global definition lines.
 //
 
 import Foundation
@@ -39,12 +42,16 @@ struct DefnParser: Parser {
         switch tok.kind {
         case .proc:
             return .procDefn(try ProcDefParser().parse(&input))
+
         case .funcTok:
             return .funcDefn(try FuncDefParser().parse(&input))
+
         case .identifier("global"):
             return .global(try GlobalDefParser().parse(&input))
+
         case .identifier("include"):
             return .include(try IncludeDefParser().parse(&input))
+
         default:
             throw ParseError("expecting a definiton", line: line)
         }
@@ -72,6 +79,9 @@ struct ProcDefParser: Parser {
 
 /// Function definition parser.
 struct FuncDefParser: Parser {
+
+    // TODO: When parsing a user function definition, must make sure that its name does
+    // not conflict with a built-in function name.
 
     /// Parse a function definition.
     func parse(_ input: inout TokStream) throws -> ParsedFuncDefn {

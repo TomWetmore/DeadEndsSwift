@@ -3,13 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 4 August 2026.
-//  Last changed on 5 August 2026.
+//  Last changed on 14 September 2026.
 //
 
 import Foundation
 
-/// Generaled source for a DeadEndsprogram file. It can be
-/// a file (URL) or string.
+/// Generalized source for a DeadEnds program file. It can be a file (URL) or a string.
 private struct ProgramSource {
 
     let defns: [ParsedDefn]
@@ -17,8 +16,9 @@ private struct ProgramSource {
     let baseURL: URL?
 }
 
-/// Allow sources to have three states -- has URL, does not have URL, does not exist.
+/// Allow sources to have three states -- has a URL, does not have a URL, does not exist.
 private struct DefnSource {
+
     let url: URL?
 }
 
@@ -29,7 +29,7 @@ func parseDefinitions(fileURL: URL) throws -> [ParsedDefn] {
     return try parseDefinitions(source: source)
 }
 
-/// Parse the definitions from a string with a DeadEnds program.
+/// Parse the definitions from a string holding a DeadEnds program.
 func parseDefinitions(source: String) throws -> [ParsedDefn] {
 
     var lexer = Lexer(source: normalizedSource(source))
@@ -104,12 +104,21 @@ private func assembleProgram(from source: ProgramSource) throws -> ParsedProgram
             case .procDefn:
                 try addDefn(defn, sourceURL: source.sourceURL, sources: &procSources,
                     defns: &parsedDefns)
+
             case .funcDefn:
+                if BuiltinInfo.names.contains(defn.name) {
+                    throw ParseError(
+                        "\(defn.name) is the name of a built-in function",
+                        line: defn.line
+                    )
+                }
                 try addDefn(defn, sourceURL: source.sourceURL, sources: &funcSources,
                     defns: &parsedDefns)
+
             case .global:
                 try addDefn(defn, sourceURL: source.sourceURL, sources: &globalSources,
                     defns: &parsedDefns)
+
             case .include(let includeDefn):
                 guard let baseURL = source.baseURL else {
                     throw ParseError(
@@ -146,16 +155,16 @@ private func assembleProgram(from source: ProgramSource) throws -> ParsedProgram
     )
 }
 
-/// Add a definition to a program's parsed definitions and adds an entry to
+/// Add a definition to a program's parsed definitions and add an entry to
 /// specify the URL the definition came from.
 private func addDefn(_ defn: ParsedDefn, sourceURL: URL?,
     sources: inout [String: DefnSource], defns: inout [ParsedDefn]) throws {
 
     if let prevSource = sources[defn.name] {
-        let first = prevSource.url?.path ?? "the editor"
-        let second = sourceURL?.path ?? "the editor"
-        throw ParseError("\(defn.name) defined in both \(first) and \(second)",
-            line: defn.line)
+        let first = prevSource.url?.path ?? "editor"
+        let second = sourceURL?.path ?? "editor"
+        throw ParseError("\(defn.kind) \(defn.name) defined in both \(first) and \(second)",
+                line: defn.line)
     }
     sources[defn.name] = DefnSource(url: sourceURL)
     defns.append(defn)

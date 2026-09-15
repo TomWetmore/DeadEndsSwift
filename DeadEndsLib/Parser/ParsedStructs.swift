@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 8 April 2026.
-//  Last changed on 1 September 2026.
+//  Last changed on 14 September 2026.
 //
 
 import Foundation
@@ -67,6 +67,15 @@ public enum ParsedDefn: Equatable, CustomStringConvertible {
             return defn.line
         case .include(let defn):
             return defn.line
+        }
+    }
+
+    var kind: String {
+        switch self {
+        case .procDefn: "proc"
+        case .funcDefn: "func"
+        case .global:   "global"
+        case .include:  "include"
         }
     }
 }

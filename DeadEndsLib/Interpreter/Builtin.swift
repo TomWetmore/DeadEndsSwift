@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 9 September 2026.
+//  Last changed on 14 September 2026.
 //
 
 import Foundation
@@ -130,7 +130,7 @@ extension Program {
             "subscript": Builtin(min: 2, max: 2) { try await self.bltinSubscript($0)},
             "traverse": Builtin(min: 1, max: 1) { try await self.bltinNodes($0)},
 
-            // List operations; the length and empty builtins are generic.
+            // List operations.
             "list": Builtin(min: 0, max: 0) { try self.bltinList($0)},
             "append": Builtin(min: 2, max: 2) { try await self.bltinAppend($0)},
             "prepend": Builtin(min: 2, max: 2) { try await self.bltinPrepend($0)},
@@ -143,9 +143,9 @@ extension Program {
             "shallowcopy": Builtin(min: 1, max: 1) { try await self.bltinShallowCopy($0)},
 
             // Tuple shorthands for lists.
-            "pair":   Builtin(min: 2, max: 2) { try await self.bltinPair($0)},
-            "first":    Builtin(min: 1, max: 1) { try await self.bltinFirst($0)},
-            "second":    Builtin(min: 1, max: 1) { try await self.bltinSecond($0)},
+            "pair":  Builtin(min: 2, max: 2) { try await self.bltinPair($0)},
+            "first": Builtin(min: 1, max: 1) { try await self.bltinFirst($0)},
+            "second": Builtin(min: 1, max: 1) { try await self.bltinSecond($0)},
 
             // Table operations.
             "table":  Builtin(min: 0, max: 0) { try self.bltinTable($0)},
@@ -154,22 +154,22 @@ extension Program {
             "contains": Builtin(min: 2, max: 2) { try await self.bltinContains($0)},
 
             // Person set operations.
-            "personset":     Builtin(min: 0, max: 0) { try self.bltinPersonSet($0)},
-            "addtoset" :     Builtin(min: 2, max: 3) { try await self.bltinAddToSet($0)},
+            "personset": Builtin(min: 0, max: 0) { try self.bltinPersonSet($0)},
+            "addtoset" : Builtin(min: 2, max: 3) { try await self.bltinAddToSet($0)},
             "removefromset": Builtin(min: 2, max: 2) { try await self.bltinDeleteFromSet($0)},
-            "union"    :     Builtin(min: 2, max: 2) { try await self.bltinUnion($0)},
-            "intersect":     Builtin(min: 2, max: 2) { try await self.bltinIntersect($0)},
-            "difference":    Builtin(min: 2, max: 2) { try await self.bltinDifference($0)},
-            "parentset" :    Builtin(min: 1, max: 1) { try await self.bltinParentSet($0)},
-            "childset" :     Builtin(min: 1, max: 1) { try await self.bltinChildSet($0)},
-            "spouseset":     Builtin(min: 1, max: 1) { try await self.bltinSpouseSet($0)},
-            "siblingset":    Builtin(min: 1, max: 1) { try await self.bltinSiblingSet($0)},
-            "ancestorset":   Builtin(min: 1, max: 1) { try await self.bltinAncestorSet($0)},
-            "ancestors":     Builtin(min: 1, max: 1) { try await self.bltinAncestorSet($0)},
+            "union": Builtin(min: 2, max: 2) { try await self.bltinUnion($0)},
+            "intersect": Builtin(min: 2, max: 2) { try await self.bltinIntersect($0)},
+            "difference": Builtin(min: 2, max: 2) { try await self.bltinDifference($0)},
+            "parentset" : Builtin(min: 1, max: 1) { try await self.bltinParentSet($0)},
+            "childset" : Builtin(min: 1, max: 1) { try await self.bltinChildSet($0)},
+            "spouseset": Builtin(min: 1, max: 1) { try await self.bltinSpouseSet($0)},
+            "siblingset": Builtin(min: 1, max: 1) { try await self.bltinSiblingSet($0)},
+            "ancestorset": Builtin(min: 1, max: 1) { try await self.bltinAncestorSet($0)},
+            "ancestors": Builtin(min: 1, max: 1) { try await self.bltinAncestorSet($0)},
             "descendentset": Builtin(min: 1, max: 1) { try await self.bltinDescendentSet($0)},
-            "descendents":   Builtin(min: 1, max: 1) { try await self.bltinDescendentSet($0)},
-            "namesort":      Builtin(min: 1, max: 1) { try await self.bltinNameSort($0)},
-            "keysort":       Builtin(min: 1, max: 1) { try await self.bltinKeySort($0)},
+            "descendents": Builtin(min: 1, max: 1) { try await self.bltinDescendentSet($0)},
+            "namesort": Builtin(min: 1, max: 1) { try await self.bltinNameSort($0)},
+            "keysort": Builtin(min: 1, max: 1) { try await self.bltinKeySort($0)},
 
             // String operations.
             "strcmp": Builtin(min: 2, max: 2) { try await self.bltinStrcmp($0)},
@@ -177,7 +177,7 @@ extension Program {
             // Meta operations.
             "showframe": Builtin(min: 0, max: 0) { try self.bltinShowFrame($0)},
             "showstack": Builtin(min: 0, max: 0) { try self.bltinShowStack($0)},
-            "valueof":   Builtin(min: 1, max: 1) { try await self.bltinValueOf($0)},
+            "valueof": Builtin(min: 1, max: 1) { try await self.bltinValueOf($0)},
 
             // User interface.
             "getperson": Builtin(min: 1, max: 1) { try await self.bltinGetPerson($0)},
@@ -241,4 +241,57 @@ public final class Pair {
     }
 }
 
-
+enum BuiltinInfo {
+    
+    static let names: Set<String> = [
+        // Miscellaneous.
+       "d", "nl", "qt", "set", "ord", "card", "roman", "null",
+       // Strings.
+       "upper", "lower", "capitalize", "words", "tokens",
+       // "trim",
+       // "rjustify",
+       // Arithmetic.
+       "add", "sub", "mul", "div", "mod", "neg",
+       // Increment and decrement.
+       "incr", "decr",
+       // Comparison.
+       "eq", "ne", "lt", "le", "gt", "ge",
+       // Logical.
+       "and", "or", "not",
+       // Gedcom nodes.
+       "key", "tag", "val", "lev", "kid", "sib", "kids", "sibs", "dad", "root",
+       "kidwithtag", "kidswithtag",
+       // Persons.
+       "person", "name", "sex", "fullname", "givens", "surname", "trimname", "title",
+       "birth", "death", "baptism", "burial", "father", "mother", "siblings", "nextsib",
+       "prevsib", "families", "allpersons", "male", "female",
+       // Families.
+       "marriage", "divorce", "allfamilies",
+       /// Generic operations on persons and families.
+       "husband", "wife", "husbands", "wives", "children", "nchildren", "spouses",
+       "nspouses", "parents",
+       // Events.
+       "date", "place",
+       // Generics.
+       "empty", "length", "clear", "subscript", "traverse",
+       // Lists.
+       "list", "append", "prepend", "push", "pop", "enqueue", "dequeue", "removefirst",
+       "removelast", "shallowcopy",
+       // Tuples.
+       "pair", "first", "second",
+       // Tables.
+       "table", "insert", "lookup", "contains",
+       // Personsets.
+       "personset", "addtoset" , "removefromset", "union", "intersect", "difference",
+       "parentset" , "childset" , "spouseset", "siblingset", "ancestorset",
+       "ancestors", "descendentset", "descendents", "namesort", "keysort",
+       // Strings.
+       "strcmp",
+       // Metas.
+       "showframe", "showstack", "valueof",
+       // User interface.
+       "getperson", "getinteger", "getstring",
+       // Extracts.
+       "extractname", "extractplace",
+    ]
+}
