@@ -8,7 +8,7 @@
 
 import Foundation
 
-/// Dictionary used as the DeadEnds program table data type; it maps strings
+/// Dictionary used as the DeadEnds language table data type; it maps strings
 /// to program values.
 final public class TableValue {
     
@@ -22,7 +22,7 @@ final public class TableValue {
     }
 }
 
-/// Built-in functions that implement the table user interface.
+/// Built-in functions that implement the table data type.
 extension Program {
 
     /// Create an empty table program value.

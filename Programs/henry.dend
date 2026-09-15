@@ -25,7 +25,7 @@ proc showperson(person, code) {
 /* Show the Henry codes and names of a person's children. */
 proc dofamily(person, code) {
     foreach(children(person), child, n) {
-        set(copy, shallowcopy(code))
+        set(copy, copy(code))
         append(copy, n) /* Add child's number to the Henry code. */
         call showperson(child, copy)
         call dofamily(child, copy) /* Recurse to the next generation. */

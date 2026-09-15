@@ -58,7 +58,7 @@ After adding person 1 to the set, the function calls *addhenrychildren*, which a
 ```
 proc addhenrychildren(set, person, code) {
     foreach(children(person), child, n) {
-        set(childcode, append(shallowcopy(code), n)) /* Create child's code. */
+        set(childcode, append(copy(code), n)) /* Create child's code. */
         addtoset(set, child, childcode) /* Add child to the person set. */
         call addhenrychildren(set, child, childcode) /* Recurse to child's children. */
     }

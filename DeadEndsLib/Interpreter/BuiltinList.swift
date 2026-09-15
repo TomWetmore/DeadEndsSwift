@@ -375,7 +375,7 @@ extension Program {
 
 extension Program {
 
-    func bltinShallowCopy(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func bltinCopy(_ args: [ParsedExpr]) async throws -> ProgramValue {
         guard let list = try await evaluateListOpt(
             args[0],
             errMsg: "copy: arg must be a list"
