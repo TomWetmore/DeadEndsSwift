@@ -3,14 +3,37 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 12 September 2026.
+//  Last changed on 16 September 2026.
 //
 
 import Foundation
 
+/// Basic evaluators.
 extension Program {
 
-    /// Evaluate a parsed expression that must be an integer.
+    /// Evaluate a parsed expression.
+    func evaluate(_ expr: ParsedExpr) async throws -> ProgramValue {
+
+        switch expr.kind {
+
+        case .identifier(let string):
+            return try evalIdentifier(string, line: expr.line)
+
+        case .functionCall(let name, let args):
+            return try await evalFunction(name, args: args, line: expr.line)
+
+        case .integerConstant(let integer):
+            return ProgramValue.integer(integer)
+
+        case .stringConstant(let string):
+            return ProgramValue.string(string)
+
+        case .doubleConstant(let double):
+            return ProgramValue.double(double)
+        }
+    }
+
+    /// Evaluate an expression that must be an integer.
     func evalInteger(_ expr: ParsedExpr, errMsg: String) async throws -> Int {
 
         guard case let .integer(integer) = try await evaluate(expr) else {
@@ -19,55 +42,18 @@ extension Program {
         return integer
     }
 
-    // Evaluate a parsed expression.
-    func evaluate(_ expr: ParsedExpr) async throws -> ProgramValue {
-
-        switch expr.kind {
-
-        case .identifier(let string): // Identifier.
-            return try evalIdentifier(string, line: expr.line)
-
-        case .functionCall(let name, let args): // Builtin or user function.
-            return try await evalFunction(name, args: args, line: expr.line)
-
-        case .integerConstant(let integer): // Integer.
-            return ProgramValue.integer(integer)
-
-        case .stringConstant(let string): // String.
-            return ProgramValue.string(string)
-            
-        case .doubleConstant(let double): // Double.
-            return ProgramValue.double(double)
-        }
-    }
-
-    /// Evaluate a conditional expression.
-    func evalCondition(_ cond: ParsedCondition) async throws -> Bool {
-
-        switch cond {
-
-        case .expr(let expr):
-            let value = try await evaluate(expr)
-            return value.toBool
-
-        case .assign(let name, let expr):
-            let value = try await evaluate(expr)
-            assignToSymbol(name, value: value)
-            return value.toBool
-        }
-    }
-
     /// Evaluate an identifer by looking it up in a symbol table.
     func evalIdentifier(_ ident: String, line: Int) throws -> ProgramValue {
 
         guard let value = lookupSymbol(ident) else {
-            // TODO: Set a line number for the identifier.
             throw RuntimeError("undefined variable: \(ident)", line: line)
         }
         return value
     }
+
 }
 
+//// Evaluate functions for function calls.
 extension Program {
 
     /// Evaluate a builtin or user function.
@@ -129,20 +115,42 @@ extension Program {
         switch result {
 
         case .returning(let value):
-
             return value ?? .null // Allow return().
+
         case .okay:
             return .null // Allow no return().
 
         case .breaking, .continuing:
-            throw RuntimeError("break/continue statement outside of loop", line: line)
+            throw RuntimeError("Break or continue statement outside of loop", line: line)
 
-        case .error: // Probably not needed.
+        case .error:
             throw RuntimeError("Error during function execution", line: line)
         }
     }
 }
 
+extension Program {
+
+    /// Evaluate a conditional expression.
+    func evalCondition(_ cond: ParsedCondition) async throws -> Bool {
+
+        switch cond {
+
+        case .expr(let expr):
+            let value = try await evaluate(expr)
+            return value.toBool
+
+        case .assign(let name, let expr):
+            let value = try await evaluate(expr)
+            assignToSymbol(name, value: value)
+            return value.toBool
+        }
+    }
+
+
+}
+
+// Evaluate functions for records.
 extension Program {
 
     /// Evaluate an expression that should return a person.
@@ -155,51 +163,36 @@ extension Program {
         return person
     }
 
-    /// Evaluate an expression for an optional person; allows null-forwarding of persons.
+    /// Evaluate an expression for an optional person.
     func evalPersonOpt(_ expr: ParsedExpr, errMsg: String) async throws -> Person? {
 
         switch try await evaluate(expr) {
 
-        case .person(let person):
-            return person
-
-        case .null:
-            return nil
-
-        default:
-            throw RuntimeError(errMsg, line: expr.line)
+        case .person(let person): return person
+        case .null: return nil
+        default: throw RuntimeError(errMsg, line: expr.line)
         }
     }
 
-    /// Evaluate an expression for an optional family; allows null-forwarding of families.
+    /// Evaluate an expression for an optional family.
     func evalFamilyOpt(_ expr: ParsedExpr, errMsg: String) async throws -> Family? {
 
         switch try await evaluate(expr) {
 
-        case .family(let family):
-            return family
-
-        case .null:
-            return nil
-
-        default:
-            throw RuntimeError(errMsg, line: expr.line) 
+        case .family(let family): return family
+        case .null: return nil
+        default: throw RuntimeError(errMsg, line: expr.line)
         }
     }
 
-    /// Evaluate an expression for an optional gedcom nodei; allows null-forwarding of nodes.
+    /// Evaluate an expression for an optional gedcom node.
     func evalGedcomNodeOpt(_ expr: ParsedExpr, errMsg: String) async throws -> GedcomNode? {
 
         switch try await evaluate(expr) {
 
-        case .gnode(let gnode):
-            return gnode
-
-        case .null:
-            return nil
-
-        default:
-            throw RuntimeError(errMsg, line: expr.line)
+        case .gnode(let gnode): return gnode
+        case .null: return nil
+        default: throw RuntimeError(errMsg, line: expr.line)
         }
     }
 }
@@ -207,7 +200,7 @@ extension Program {
 /// Evaluators for person sets.
 extension Program {
 
-    /// Evaluate a parsed expression to a person set.
+    /// Evaluate an expression for a a person set.
     func evalPersonSet(_ expr: ParsedExpr, errMsg: String)
         async throws -> PersonSet<ProgramValue> {
 
@@ -217,5 +210,3 @@ extension Program {
         return personset
     }
 }
-
-

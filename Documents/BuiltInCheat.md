@@ -69,7 +69,7 @@ kidswithtag (node|null, string) -> list<node>  All kids with tag
 ```
 ###### Person
 ```
-person (string)        -> person|null     Get person from key
+person (string|null)   -> person|null     Get person from key
 name (person|null)     -> string|null     Standard form of person's name
 sex (person|null)      -> string|null     Sex (M, F, U) of person
 fullname (person|null, bool, bool, int)
@@ -94,9 +94,10 @@ female (person)        -> bool|null       Whether person is female
 ```
 ###### Family
 ```
-marriage(family)  -> node|null        First marriage event
-divorce(family)   -> node|null        First divorce event
-allfamilies()     -> list<family>     All families in database
+family (string|null) -> family|null      Get family from key
+marriage(family)     -> node|null        First marriage event
+divorce(family)      -> node|null        First divorce event
+allfamilies()        -> list<family>     All families in database
 ```
 ###### Person and Family
 ```
@@ -136,6 +137,7 @@ first (list(any))   -> any        Return first value of pair
 second (list(any))  -> any        Return second value of pair
 removefirst (list)  -> any        Remove and return first element of list
 removelast (list)   -> any        Remove and return last element of list
+copy (list)         -> list       Returns a copy of a list
 ```
 ###### Table
 ```

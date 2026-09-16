@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 15 September 2026.
+//  Last changed on 16 September 2026.
 //
 //  ProgramValue is the type of evaluated expression in the DeadEnds
 //  programming language.
@@ -29,8 +29,8 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     case table(TableValue)
     case personset(PersonSet<ProgramValue>)
     case traverse(GedcomNode)
-    case allPersons
-    case allFamilies
+    case allPersons  // Hide this as a user type.
+    case allFamilies  // Hide this as a user type.
     case pair(Pair)
 
     /// Description of a program value.
@@ -141,7 +141,10 @@ extension ProgramValue {
         case .double(let value):  return value != 0.0
         case .string(let value):  return !value.isEmpty
         case .null:               return false
-        default:                  return true // TODO: Other types now default to true; this needs work.
+        case .list(let list):     return list.count > 0
+        case .table(let table):   return table.count > 0
+        case .personset(let set): return set.count > 0
+        default:                  return true // TODO: Needs work.
         }
     }
 }
@@ -149,49 +152,55 @@ extension ProgramValue {
 /// Numeric string operations.
 extension ProgramValue {
 
-    // Add two program values and return the result; works for integers, doubles and strings.
+    // Add two program numeric or string program values.
     public static func addPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
 
         switch (val1, val2) {
         case let (.integer(i1), .integer(i2)): return .integer(i1 + i2)
         case let (.double(f1), .double(f2)):   return .double(f1 + f2)
+        case let (.integer(i1), .double(f2)):  return .double(Double(i1) + f2)
+        case let (.double(a1), .integer(a2)):  return .double(a1 + Double(a2))
         case let (.string(s1), .string(s2)):   return .string(s1 + s2)
         default:                               return .null
         }
     }
 
-    /// Subtract the second program value from the first and return the result.
+    /// Subtract two numeric program values.
     static func subPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
 
         switch (val1, val2) {
         case let (.integer(i1), .integer(i2)): return .integer(i1 - i2)
         case let (.double(f1), .double(f2)):   return .double(f1 - f2)
+        case let (.integer(a1), .double(a2)):  return .double(Double(a1) - a2)
+        case let (.double(a1), .integer(a2)):  return .double(a1 - Double(a2))
         default:                               return .null
         }
     }
 
-    /// Multiply two program values and return the result.
+    /// Multiply two numeric program values.
     static func mulPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
         switch (val1, val2) {
         case let (.integer(i1), .integer(i2)): return .integer(i1 * i2)
         case let (.double(f1), .double(f2)):   return .double(f1 * f2)
+        case let (.integer(a1), .double(a2)):  return .double(Double(a1) * a2)
+        case let (.double(a1), .integer(a2)):  return .double(a1 * Double(a2))
         default:                               return .null
         }
     }
 
-    /// Divides the first program value by the second and return the result;
-    /// zero divisors are not allowed.
+    /// Divide two numeric program values.
     static func divPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
 
         switch (val1, val2) {
-        case let (.integer(i1), .integer(i2)) where i2 != 0: return .integer(i1 / i2)
-        case let (.double(f1), .double(f2)) where f2 != 0.0: return .double(f1 / f2)
-        default:                                             return .null
+        case let (.integer(i1), .integer(i2)) where i2 != 0:   return .integer(i1 / i2)
+        case let (.double(f1), .double(f2))   where f2 != 0.0: return .double(f1 / f2)
+        case let (.integer(a1), .double(a2))  where a2 != 0.0: return .double(Double(a1) / a2)
+        case let (.double(a1), .integer(a2))  where a2 != 0:   return .double(a1 / Double(a2))
+        default:                                               return .null
         }
     }
 
-    /// Takes the modulus of the first value by the second and returns the result;
-    /// a zero modulus is not allowed.
+    /// Takes the modulus of two integers.
     static func modPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
 
         switch (val1, val2) {
@@ -200,8 +209,9 @@ extension ProgramValue {
         }
     }
 
-    /// Negate a program value and return the result; works for integers and doubles.
+    /// Negate a numeric program value.
     static func negPValue(_ val: ProgramValue) -> ProgramValue {
+
         switch val {
         case let .integer(i): return .integer(-i)
         case let .double(f):  return .double(-f)
@@ -209,26 +219,7 @@ extension ProgramValue {
         }
     }
 
-    /// Increment a program value and return the result.
-    /// THIS METHOD IS NOT USED.
-    static func incrPValue(_ val: ProgramValue) -> ProgramValue {
-
-        switch val {
-        case let .integer(i): return .integer(i + 1)
-        default:              return .null
-        }
-    }
-
-    /// Decrement a program value and return the result.
-    /// THIS METHOD IS NOT USED.
-    static func decrPValue(_ val: ProgramValue) -> ProgramValue {
-        switch val {
-        case let .integer(i): return .integer(i - 1)
-        default:              return .null
-        }
-    }
-
-    /// Raise the first program value by the second and return the result.
+    /// Raise the first program value by the second.
     static func expPValues(_ base: ProgramValue, _ exponent: ProgramValue) -> ProgramValue {
         switch (base, exponent) {
         case let (.integer(b), .integer(e)) where e >= 0: return .integer(Int(pow(Double(b), Double(e))))

@@ -16,6 +16,7 @@ extension Program {
 
     /// Addition function.
     func bltinAdd(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         let arg1 = try await self.evaluate(args[0])
         let arg2 = try await self.evaluate(args[1])
         let result = ProgramValue.addPValues(arg1, arg2)

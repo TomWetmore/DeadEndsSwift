@@ -187,15 +187,10 @@ extension RecordIndex {
 
 extension RecordIndex {
 
-
-
-    
-
-    
-
-    /// Require a node to have a key for its value, require that key to
-    /// map to a root node, and return that node. Must succeed.
+    /// Require a node to have a key value, require the key to a root, and
+    /// return the node.
     func requireRoot(from node: GedcomNode, tag: Tag) -> Root {
+        
         guard let key = node.val, let root = self[key], root.tag == tag
         else { fatalError("expected \(tag) record referenced by \(node)") }
         return root

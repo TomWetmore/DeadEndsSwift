@@ -17,6 +17,7 @@ extension Program {
     }
 
     /// Return whether a list, table, personset or string is empty.
+    /// empty(list|table|personset|string) -> bool
     func bltinEmpty(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
@@ -37,6 +38,7 @@ extension Program {
     }
 
     /// Clear the contents of a list, table, or personset.
+    /// clear(list|table|personset) -> (list|table|personset)
     func bltinClear(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
@@ -56,6 +58,7 @@ extension Program {
     }
 
     /// Return the length of a list, table, personset or string.
+    /// length(list|table|personset|string) -> int
     func bltinLength(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
@@ -115,6 +118,7 @@ extension Program {
 
     /// Evaluate an expression and be sure it is a list.
     func evaluateList(_ expr: ParsedExpr, errMsg: String) async throws -> ListValue {
+
         guard case let .list(list) = try await evaluate(expr) else {
             throw RuntimeError(errMsg, line: expr.line)
         }
@@ -123,6 +127,7 @@ extension Program {
 
     /// Evaluate an expression and be sure it is a list or nil.
     func evaluateListOpt(_ expr: ParsedExpr, errMsg: String) async throws -> ListValue? {
+
         switch try await evaluate(expr) {
         case .list(let list):
             return list
@@ -280,8 +285,9 @@ extension Program {
     }
 
     /// Return the list of families a person is in as a spouse.
-    /// families(person) -> .list(Family)
+    /// families(person) -> list<family>
     func bltinFamilyList(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         let line = args[0].line
         var families = [Family]()
 
@@ -375,11 +381,11 @@ extension Program {
 
 extension Program {
 
+    /// Return a shallow copy of a list.
+    /// copy(list|null) -> list
     func bltinCopy(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        guard let list = try await evaluateListOpt(
-            args[0],
-            errMsg: "copy: arg must be a list"
-        ) else {
+        guard let list = try await evaluateListOpt(args[0],
+                                        errMsg: "copy: arg must be a list") else {
             return .emptyList
         }
         return .list(list.copy())
@@ -391,7 +397,7 @@ extension Program {
 /// associated types.
 public class ListValue {
 
-    /// A .list program value is an array of program values.
+    /// A list program value is an array of program values.
     var values: [ProgramValue] = []
 
     /// The number of program values in this list.

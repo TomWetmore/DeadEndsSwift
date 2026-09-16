@@ -11,7 +11,31 @@ import Foundation
 /// Name related built-ins.
 extension Program {
 
+    /// Lookup a person in the database by key; the @-signs may be omitted.
+    /// person(string|null) -> person|null
+    func bltinPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let line = args[0].line
+        let value = try await evaluate(args[0])
+
+        if case .null = value {  // Allow null propagation.
+            return .null
+        }
+        guard case let .string(key) = value else {  // Arg must be a string.
+            throw RuntimeError("person: arg must be a string", line: line)
+        }
+        let normalized = normalizeGedcomKey(key)
+        guard let root = recordIndex[normalized] else {  // If key not in database return null.
+            return .null
+        }
+        guard root.tag == GedcomTag.INDI else {  // If key exists record must be a person.
+            throw RuntimeError("person: \(normalized) does not identify a person", line: line)
+        }
+        return .person(Person(root))
+    }
+
     /// Return a basic version of a person's name.
+    /// name(person|null) -> string|null
     func bltinName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let value = try await evalPersonOpt(args[0], errMsg: "name: arg must be a person")
@@ -43,6 +67,7 @@ extension Program {
     }
 
     /// Return a person's surname from the first 1 NAME line in the record.
+    /// surname(person|null) -> string|null
     func bltinSurname(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
@@ -58,6 +83,7 @@ extension Program {
 
     /// Return a person's given names from the first 1 NAME line in the record. The name
     /// parts are returned in a .list.
+    /// givens(person|null) -> list<string>
     func bltinGivens(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "givens: arg must be a person")
@@ -76,10 +102,11 @@ extension Program {
     }
 
     /// Return the trimmed name of a person.
+    /// trimname(person|null, int) -> string|null
     func bltinTrimName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                        errMsg: "trimName: 1st arg must be a person")
+                                        errMsg: "trimname: 1st arg must be a person")
         else { return .null }
 
         let len = try await evalInteger(args[1],
@@ -88,6 +115,7 @@ extension Program {
     }
 
     /// Return the title of a person, the value of the first 1 TITL node in the person.
+    /// title(person|null) -> string|null
     func bltinTitle(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "title: arg must be a person")
@@ -186,7 +214,8 @@ extension Program {
 /// Sex and role related built-ins.
 extension Program {
 
-    /// Return the sex of a person, M, F, or U as a .string.
+    /// Return the sex of a person, M, F, or U as a string.
+    /// sex(person|null) -> string|null
     func bltinSex(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
@@ -201,6 +230,7 @@ extension Program {
     }
 
     /// Return true if a person is male.
+    /// male(person|null) -> bool|null
     func bltinMale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
@@ -210,6 +240,7 @@ extension Program {
     }
 
     /// Return true if a person is female.
+    /// female(person|null) -> bool|null
     func bltinFemale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
@@ -219,6 +250,7 @@ extension Program {
     }
 
     /// Return a pronoun to refer to a person.
+    /// pronoun(person|null, int) -> string|null
     func builtinPronouns(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtInPronouns not implemented")
         return .null
@@ -243,7 +275,7 @@ extension Program {
     }
 
     /// Return the key of a record or a root node.
-    /// TODO: Extend to the other record types.
+    /// key(person|family|gnode|null) -> string|null
     func bltinKey(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
@@ -255,7 +287,7 @@ extension Program {
             node = person.root
         case .family(let family):
             node = family.root
-        case .null:
+        case .null:  // Null propagation.
             return .null
         case .gnode(let gnode):
             node = gnode
@@ -273,8 +305,8 @@ extension Program {
         return .null
     }
 
-    /// Buitin that returns the root node of a record.
-    /// TODO: Extend to the other record types.
+    /// Return the root node of a record.
+    /// root(person|family|null) -> gnode|null
     func bltinRoot(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
@@ -284,30 +316,15 @@ extension Program {
             return .gnode(person.root)
         case .family(let family):
             return .gnode(family.root)
-        case .null:
+        case .null:  // Null propagation.
             return .null
         default:
             throw RuntimeError("root: arg must be a person or family", line: line)
         }
     }
 
-    /// Look up a person in the database by its key; the @-signs may be omitted.
-    func bltinPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let line = args[0].line
-        let value = try await evaluate(args[0])
-        guard case let .string(key) = value else {
-            throw RuntimeError("person: arg must be a person key", line: line)
-        }
-        let normalized = normalizeGedcomKey(key)
-        guard let root = recordIndex[normalized], root.tag == GedcomTag.INDI else {
-            throw RuntimeError("person: arg must be a person key", line: line)
-        }
-        return .person(Person(root))
-    }
-
     /// Normalize a key (add @-signs if not present).
-    private func normalizeGedcomKey(_ key: String) -> String {
+    func normalizeGedcomKey(_ key: String) -> String {
         var k = key.trimmingCharacters(in: .whitespacesAndNewlines)
         if !k.hasPrefix("@") { k = "@" + k }
         if !k.hasSuffix("@") { k = k + "@" }

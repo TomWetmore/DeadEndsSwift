@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 14 September 2026.
+//  Last changed on 15 September 2026.
 //
 
 import Foundation
@@ -99,11 +99,12 @@ extension Program {
             "nextsib": Builtin(min: 1, max: 1) { try await self.bltinNextSib($0)},
             "prevsib": Builtin(min: 1, max: 1) { try await self.bltinPrevSib($0)},
             "families": Builtin(min: 1, max: 1) { try await self.bltinFamilyList($0)},
-            "allpersons":  Builtin(min: 0, max: 0) { try self.bltinAllPersons($0)},
             "male":  Builtin(min: 1, max: 1) { try await self.bltinMale($0)},
             "female": Builtin(min: 1, max: 1) { try await self.bltinFemale($0)},
+            "allpersons":  Builtin(min: 0, max: 0) { try self.bltinAllPersons($0)},
 
             // Family operations.
+            "family": Builtin(min: 1, max: 1) { try await self.bltinFamily($0)},
             "marriage": Builtin(min: 1, max: 1) { try await self.bltinMarriage($0)},
             "divorce": Builtin(min: 1, max: 1) { try await self.bltinDivorce($0)},
             "allfamilies": Builtin(min: 0, max: 0) { try self.bltinAllFamilies($0)},
@@ -194,8 +195,11 @@ extension Program {
 extension Program {
     
     /// Returns an integer as a string.
+    /// d(int) -> string|null
     func bltinD(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         let value = try await self.evaluate(args[0])
+        if value == .null { return .null }  // Allow null propagation.
         guard case let .integer(integer) = value else {
             //throw RuntimeError("d: arg must be an integer", line: args[0].line)
             return .null
@@ -266,7 +270,7 @@ enum BuiltinInfo {
        "birth", "death", "baptism", "burial", "father", "mother", "siblings", "nextsib",
        "prevsib", "families", "allpersons", "male", "female",
        // Families.
-       "marriage", "divorce", "allfamilies",
+       "family", "marriage", "divorce", "allfamilies",
        /// Generic operations on persons and families.
        "husband", "wife", "husbands", "wives", "children", "nchildren", "spouses",
        "nspouses", "parents",
