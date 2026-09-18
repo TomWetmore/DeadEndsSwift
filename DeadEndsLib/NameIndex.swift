@@ -3,14 +3,18 @@
 //  NameIndex.swift
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 24 July 2026.
+//  Last changed on 17 September 2026.
 //
 
 import Foundation
 
 typealias NameKey = String
 
-/// NameIndex maps name keys to sets of record keys of persons with names that match.
+/// The Name Index maps name keys to the sets of persons (their keys) with names that match the
+/// name key. Name keys are designed so similar names have similar keys. This is done by using
+/// Soundex-like rules. The rules should be enhanced so that names with non-ascii characters do
+/// a better job.
+
 final public class NameIndex {
 
 	static let map: [Character: String] = [ // Soundex based.
@@ -30,38 +34,46 @@ final public class NameIndex {
 
 	/// Add an entry to the name index; convert the value to a name key.
 	public func add(value: String, recordKey: RecordKey) {
+
         guard let gedcomName = GedcomName(string: value) else { return }
 		self.add(nameKey: gedcomName.nameKey, recordKey: recordKey)
 	}
 
 	/// Add an entry to the name index.
 	func add(nameKey: NameKey, recordKey: RecordKey) {
+
 		index[nameKey, default: Set()].insert(recordKey)
 	}
 
     /// Remove an entry from the name index; convert value name key.
     public func remove(value: String, recordKey: RecordKey) {
-        guard let gedcomName = GedcomName(string: value)
-		else { return }
+
+        guard let gedcomName = GedcomName(string: value) else { return }
         remove(nameKey: gedcomName.nameKey, recordKey: recordKey)
     }
 
     /// Remove an entry from the name index.
     func remove(nameKey: NameKey, recordKey: RecordKey) {
+
         if var records = index[nameKey] {
             records.remove(recordKey)
-            if records.isEmpty { index.removeValue(forKey: nameKey) }
-            else { index[nameKey] = records } // Update record set.
+            if records.isEmpty {
+                index.removeValue(forKey: nameKey)
+            } else {
+                index[nameKey] = records
+            }
         }
     }
 
 	/// Get record keys that match a name or pattern; convert value to a name key.
 	func recordKeys(forName value: String) -> Set<RecordKey> {
+
 		return index[nameKey(value: value)] ?? []
 	}
 
-	/// Show contents of name index.
+	/// Show contents of name index. Debug method.
 	func showContents() {
+
 		for (nameKey, recordKeys) in index {
 			print("\(nameKey) => \(Array(recordKeys))")
 		}
@@ -113,7 +125,7 @@ func soundex(for surname: String) -> String {
 	return result
 }
 
-// Extension of Gedcom node where self is a person root.
+/// Extension of Person that returns the 1 NAME values of a person.
 extension Person {
 
 	/// Return the array of non-nil values of the 1 NAME lines in a Person.
@@ -174,14 +186,16 @@ extension GedcomName {
 
 extension Database {
 
-    /// Return array of record keys of all persons with names that match a pattern.
-    /// Keys are in no particular order. Method Database.persons(withName:) does the sort.
+    /// Return the person keys of all persons with a name that matches a pattern. The keys
+    /// will be in no particular order. Use Database.persons(withName:) for sorted results.
     public func personKeys(forName pattern: String) -> [RecordKey] {
 		
         var matchingKeys: [String] = []
-        let nameKey = nameKey(value: pattern) // Name key of name pattern.
-        guard let recordKeys = nameIndex.index[nameKey] else { return [] }  // Persons keys that match nameKey.
-        let squeezedPattern: [String] = squeeze(pattern) // Prepare pattern for matching.
+        let nameKey = nameKey(value: pattern)
+        guard let recordKeys = nameIndex.index[nameKey]
+        else { return [] }
+
+        let squeezedPattern: [String] = squeeze(pattern)
         // Filter candidates based on exactMatch logic.
         for recordKey in recordKeys {
             if let person = recordIndex.person(for: recordKey) {
@@ -197,8 +211,8 @@ extension Database {
         return matchingKeys
     }
 
-    /// Return array of all persons with names that match a pattern. This uses
-    /// the results from personKeys, converting them to persons while also putting
+    /// Return the array of all persons with names that match a pattern. This uses the
+    /// results of personKeys(forName:), converting the keys to persons while putting
     /// them into a name and event-based sort order.
     public func persons(withName pattern: String) -> [Person] {
 

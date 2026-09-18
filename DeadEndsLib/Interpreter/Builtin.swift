@@ -12,7 +12,7 @@ extension Program {
 
     /// Structure that holds a builtin function.
     struct Builtin {
-        
+
         let min: Int
         let max: Int
         let function: @MainActor ([ParsedExpr]) async throws -> ProgramValue
@@ -20,10 +20,10 @@ extension Program {
 
     /// Build the dictionary of built-in functions.
     func setupBuiltins() {
-        
+
         builtins = [
             // Miscellaneous operations.
-            "d":Builtin(min: 1, max: 1) { try await self.bltinD($0)},
+            "d": Builtin(min: 1, max: 1) { try await self.bltinD($0)},
             "nl": Builtin(min: 0, max: 0) { try self.bltinNl($0)},
             "qt": Builtin(min: 0, max: 0) { try self.bltinQuote($0)},
             "set": Builtin(min: 2, max: 2) { try await self.bltinSet($0)},
@@ -31,6 +31,8 @@ extension Program {
             "card": Builtin(min: 1, max: 1) { try await self.bltinCard($0) },
             "roman": Builtin(min: 1, max: 1) { try await self.bltinRoman($0) },
             "null": Builtin(min: 0, max: 0) { try await self.bltinNull($0) },
+            "true": Builtin(min: 0, max: 0) { try await self.bltinTrue($0) },
+            "false": Builtin(min: 0, max: 0) { try await self.bltinFalse($0) },
 
             // String operations.
             "upper": Builtin(min: 1, max: 1) { try await self.bltinUpper($0)},
@@ -231,6 +233,13 @@ extension Program {
     func bltinNull(_ args: [ParsedExpr]) async throws -> ProgramValue {
         .null
     }
+
+    func bltinTrue(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        return .boolean(true)
+    }
+    func bltinFalse(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        return .boolean(false)
+    }
 }
 
 
@@ -249,7 +258,7 @@ enum BuiltinInfo {
     
     static let names: Set<String> = [
         // Miscellaneous.
-       "d", "nl", "qt", "set", "ord", "card", "roman", "null",
+       "d", "nl", "qt", "set", "ord", "card", "roman", "null", "true", "false",
        // Strings.
        "upper", "lower", "capitalize", "words", "tokens",
        // "trim",

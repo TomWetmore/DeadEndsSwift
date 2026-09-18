@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 26 July 2026.
+//  Last changed on 18 September 2026.
 //
 
 import Foundation
@@ -16,7 +16,6 @@ import Foundation
 @MainActor
 final public class Program {
 
-    let parsedProgram: ParsedProgram  // Immutable parsed program.
     var builtins: [String: Builtin] = [:]  // Built-in library.
     let procTable: [String: ParsedProcDefn]  // User defined procs.
     let funcTable: [String: ParsedFuncDefn]  // User defined funcs.
@@ -33,12 +32,16 @@ final public class Program {
     private let maxSteps = 750_000  // TODO: Remove?
 
     /// Symbol table in the current frame.
+
     var localSymbolTable: SymbolTable {
+
         callStack.last?.symbols ?? [:]
     }
 
     /// Current frame in the run time stack.
+
     var currentFrame: RuntimeFrame {
+
         get {
             guard let frame = callStack.last else { fatalError("No frame available") }
             return frame
@@ -51,10 +54,10 @@ final public class Program {
 
     /// Create a runnable program from a parsed program, database, output sink
     /// and user interface conformance.
+
     public init(parsedProgram: ParsedProgram, database: Database,
                 output: ProgramOutput, userInterface: UserInterface) {
 
-        self.parsedProgram = parsedProgram  // TODO: Probably do not need to keep this.
         self.database = database
         self.output = output
         self.userInterface = userInterface
@@ -82,12 +85,16 @@ final public class Program {
         self.funcTable = funcTable
         self.globalSymbolTable = globals
 
+        // Create the array of builtins with the current program in their closures.
+        // Because of the approach used here, a new array has to be created for every
+        // program that gets interpreted.
         setupBuiltins()
     }
 }
 
 /// Generalize program output. Standard output, buffered output, and UI text view output
 /// are used in DeadEnds.
+
 public protocol ProgramOutput {
 
     func write(_ text: String)
@@ -104,10 +111,12 @@ public extension ProgramOutput {
 }
 
 /// Program output for standard console output.
+
 public final class ConsoleOutput: ProgramOutput {
 
-    /// The program output channel uses standard output.
-    /// (The program UI channel uses standard error.)
+    /// The program output channel uses standard output. (The program UI channel uses
+    /// standard error.)
+
     public func write(_ string: String) {
         FileHandle.standardOutput.write(Data(string.utf8))
     }
@@ -148,7 +157,8 @@ extension Program {
         if mainProc.params.count != 0 {
             throw RuntimeError("main: cannot have params", line: mainProc.line)
         }
-        let mainCall = ParsedCallStatement(name: "main", args: [], line: 0)  // Bootstrap.
+        // Bootstrap the interpreter with a synthetic call to main.
+        let mainCall = ParsedCallStatement(name: "main", args: [], line: 0)
         return try await interpProcCall(mainCall)
     }
 }

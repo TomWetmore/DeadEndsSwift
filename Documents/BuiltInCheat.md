@@ -1,7 +1,6 @@
 ### DeadEnds Built-in Summary
 
 ###### Miscellaneous
-
 ```
 d(int)           -> string      Integer as string
 nl()             -> string      Newline character
@@ -11,9 +10,10 @@ ord(int)         -> string      Return ordinal form of a number as string
 card(int)        -> string      Cardinal form of a number as string
 roman(int)       -> string      Roman form of a number as string
 null()           -> null        Null program value
+true()           -> bool        True program value
+false()          -> bool        False program value
 ```
 ###### Arithmetic
-
 ```
 add(int|double|string, int|double|string) -> int|double|string   Add or catenate
 sub(int|double, int|double)               -> int|double          Subtract
@@ -37,7 +37,6 @@ gt(any, any) -> bool|null     True iif first arg is greater than second
 ge(any, any) -> bool|null     True iif first arg is greater than or equal second
 ```
 ###### Logical
-
 ```
 and(any [, any]*) -> bool      And up to 32 boolean values
 or (any [, any]*) -> bool      Or up to 32 boolean values
@@ -50,7 +49,6 @@ lower (string) -> string          Lowercase a string
 capitalize (string) -> string     Capitalize a string
 words (string)  -> list<string>   Extract words from a string
 tokens (string) -> list<string>   Extract tokens from a string
-
 ```
 ###### Nodes
 ```

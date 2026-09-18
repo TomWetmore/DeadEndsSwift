@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 26 November 2025.
-//  Last changed on 24 July 2026.
+//  Last changed on 17 September 2026.
 
 // This file has the code that searches databases for persons.
 // The criteria used include name, birth year range, death year
@@ -33,7 +33,7 @@ public struct SearchCriteria {
     }
 }
 
-/// Search result structure; consists of record key, score, and array of reasons.
+/// Person search rsult; consists of record key, score, and array of reasons.
 public struct SearchResult: Identifiable, CustomStringConvertible {
 
     public let key: RecordKey
@@ -206,8 +206,12 @@ private func datePlaceBasedSearch(_ candidateSets: CandidateSets) -> SearchResul
     results.reserveCapacity(250)
 
     // Create and update search result for every person found in the indexes.
-    candidateSets.birthDateSet.forEach { key in updateResult(&results, key, score: 20, reason: "birthDate") }
-    candidateSets.deathDateSet.forEach { key in updateResult(&results, key, score: 20, reason: "deathDate") }
+    candidateSets.birthDateSet.forEach { key in
+        updateResult(&results, key, score: 20, reason: "birthDate")
+    }
+    candidateSets.deathDateSet.forEach { key in
+        updateResult(&results, key, score: 20, reason: "deathDate")
+    }
     for (_, keySet) in candidateSets.birthPartSets {
         for key in keySet {
             updateResult(&results, key, score: 20, reason: "birthPlace")
