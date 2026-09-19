@@ -14,19 +14,22 @@ public typealias ProgramPersonSet = PersonSet<ProgramValue>
 extension Program {
 
     /// Create and return a person set.
-    /// personset() -> PersonSet
+    /// personset() -> personset
+
     func bltinPersonSet(_ args: [ParsedExpr]) throws -> ProgramValue {
+
         return .personset(ProgramPersonSet())
     }
 
-    /// Add an element to a person set
-    /// addtoset(PersonSet, Person[, Any]) -> Null
+    /// Built-in that adds an element to a person set. If there is no associated value use null.
+    /// addtoset(personset, person[, any]) -> null
+
     func bltinAddToSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let personSet = try await evalPersonSet(args[0],
-                                                errMsg: "addtoset: 1st arg must be a personset")
+                                    errMsg: "addtoset: 1st arg must be a personset")
         let person = try await evalPerson(args[1],
-                                          errMsg: "addtoset: 2nd arg must be a person")
+                                    errMsg: "addtoset: 2nd arg must be a person")
         var any = ProgramValue.null
         if args.count == 3 {
             any = try await evaluate(args[2])
@@ -35,9 +38,11 @@ extension Program {
         return .null
     }
 
-    /// Delete an element from an indiseq.
-    /// deletefromset(PersonSet, Person) -> Null
-    /// the bool is to remove all elements with same person.
+    /// Built-in that deletes an element from a person set.
+    /// deletefromset(personset, person) -> null
+    /// TODO: Current definitions allows the same person to be in the set multiple times!!!!!
+    /// What are the ramifications of this???
+
     func bltinDeleteFromSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let set = try await evalPersonSet(args[0],
@@ -48,49 +53,38 @@ extension Program {
         return .null
     }
 
-    /// Sort a person set by name.
-    /// namesort(PersonSet) -> Null
+    /// Built-in that sorts a person set by name.
+    /// namesort(personset) -> null
+
     func bltinNameSort(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let setValue = try await evaluate(args[0])
-        guard case let .personset(set) = setValue else {
-            throw RuntimeError("namesort: arg must be a personset", line: args[0].line)
-        }
+        let set = try await evalPersonSet(args[0],
+                                    errMsg: "namesort: arg must be a personset")
         set.nameSort()
         return .null
     }
 
-    /// Sort an person set by key.
-    /// keysort(PersonSet) -> Null
+    /// Builtin that sorts a person set by key.
+    /// keysort(personset) -> null
+
     func bltinKeySort(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let setValue = try await evaluate(args[0])
-        guard case let .personset(set) = setValue else {
-            throw RuntimeError("keysort: arg must be a personset", line: args[0].line)
-        }
+        let set = try await evalPersonSet(args[0],
+                                    errMsg: "keysort: arg must be a personset")
         set.keySort()
         return .null
     }
 
     // Placeholder for valuesort.
 
+    /// Built-in that uniques a personset.
+    /// uniqueset(personset) -> null
+
     func builtinUniqueset(_ args: [ParsedExpr]) throws -> ProgramValue {
         throw RuntimeError("uniqueset: not implemented", line: args[0].line)
     }
 }
 
-
-///*==========================================
-// * uniqueset -- Eliminate dupes from INDISEQ
-// *   uniqueset(SET) -> VOID
-// *========================================*/
-//WORD __uniqueset (node, stab, eflg)
-//INTERP node; TABLE stab; BOOLEAN *eflg;
-//{
-//    INDISEQ seq = (INDISEQ) evaluate(ielist(node), stab, eflg);
-//    if (*eflg || !seq) return NULL;
-//    return (WORD) unique_indiseq(seq);
-//}
 
 /// Set operations
 extension Program {

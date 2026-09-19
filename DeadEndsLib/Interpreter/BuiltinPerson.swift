@@ -274,57 +274,36 @@ extension Program {
         return .null
     }
 
-    /// Return the key of a record or a root node.
-    /// key(person|family|gnode|null) -> string|null
-    func bltinKey(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let line = args[0].line
-        let value = try await evaluate(args[0])
-        let node: GedcomNode
-
-        switch value {
-        case .person(let person):
-            node = person.root
-        case .family(let family):
-            node = family.root
-        case .null:  // Null propagation.
-            return .null
-        case .gnode(let gnode):
-            node = gnode
-        default:
-            throw RuntimeError("key: arg must be a record or root node", line: line)
-        }
-        guard let key = node.key else {
-            throw RuntimeError("key: arg must be a record or root node", line: line)
-        }
-        return .string(key)
-    }
+    
 
     func builtinSoundex(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtinSoundes not implemented")
         return .null
     }
 
-    /// Return the root node of a record.
+    /// Built-in that returns the root node of a record.
     /// root(person|family|null) -> gnode|null
+
     func bltinRoot(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
         let value = try await evaluate(args[0])
         switch value {
-        case .person(let person):
-            return .gnode(person.root)
-        case .family(let family):
-            return .gnode(family.root)
-        case .null:  // Null propagation.
-            return .null
-        default:
-            throw RuntimeError("root: arg must be a person or family", line: line)
+
+        case .person(let person): return .gnode(person.root)
+
+        case .family(let family): return .gnode(family.root)
+
+        case .null: return .null
+
+        default: throw RuntimeError("root: arg must be a person or family", line: line)
         }
     }
 
-    /// Normalize a key (add @-signs if not present).
+    /// Normalize a Gedcom key (add @-signs if not present).
+    ///
     func normalizeGedcomKey(_ key: String) -> String {
+
         var k = key.trimmingCharacters(in: .whitespacesAndNewlines)
         if !k.hasPrefix("@") { k = "@" + k }
         if !k.hasSuffix("@") { k = k + "@" }

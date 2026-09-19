@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 10 May 2026.
-//  Last changed on 10 September 2026.
+//  Last changed on 19 September 2026.
 //
 
 import Foundation
@@ -12,7 +12,8 @@ import Foundation
 extension Program {
 
     /// Return the first birth event of a person.
-    /// birth(person) -> gnode|null
+    /// birth(person|null) -> gnode|null
+
     func bltinBirth(_ args: [ParsedExpr]) async throws -> ProgramValue {
         
         guard let person = try await evalPersonOpt(args[0], errMsg: "birth: arg must be a person")
@@ -23,7 +24,8 @@ extension Program {
     }
 
     /// Return the first death event of a person
-    /// death(person) -> gnode|null
+    /// death(person|null) -> gnode|null
+
     func bltinDeath(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "death: arg must be a person")
@@ -34,7 +36,8 @@ extension Program {
     }
 
     /// Return the first burial event of a person.
-    /// burial(person) -> gnode|null
+    /// burial(person|null) -> gnode|null
+
     func bltinBurial(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "burial: arg must be a person")
@@ -44,7 +47,8 @@ extension Program {
         return .gnode(burial)    }
 
     /// Return the first baptism event of a person.
-    /// baptism(person) -> gnode|null
+    /// baptism(person|null) -> gnode|null
+
     func bltinBaptism(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "baptism: arg must be a person")
@@ -55,7 +59,8 @@ extension Program {
     }
 
     /// Return the first marriage event of a family.
-    /// marriage(family) -> gnode|null
+    /// marriage(family|null) -> gnode|null
+
     func bltinMarriage(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let family = try await evalFamilyOpt(args[0], errMsg: "marriage: arg must be a family")
@@ -66,7 +71,8 @@ extension Program {
     }
 
     /// Return the first divorce event of a family.
-    /// divorce(family) -> gnode|null
+    /// divorce(family|null) -> gnode|null
+
     func bltinDivorce(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let family = try await evalFamilyOpt(args[0], errMsg: "divorce: arg must be a family")
@@ -80,11 +86,12 @@ extension Program {
 extension Program {
 
     ///  Return the value of the first date node under an event node.
-    ///  date(gnode<event>) -> string
+    ///  date(gnode|null) -> string|null
+
     func bltinDate(_ arg: [ParsedExpr]) async throws -> ProgramValue {
+
         let node = try await evalGedcomNodeOpt(arg[0], errMsg: "date: arg must be a node")
-        if let node = node, let date = node.kid(withTag: GedcomTag.DATE),
-                                                let value = date.val {
+        if let node = node, let date = node.kid(withTag: GedcomTag.DATE), let value = date.val {
             return .string(value)
         }
         return .null
@@ -92,10 +99,11 @@ extension Program {
 
     /// Return the value of the first place node under an event node.
     /// place(gnode<event>) -> string
+
     func bltinPlace(_ arg: [ParsedExpr]) async throws -> ProgramValue {
+
         let node = try await evalGedcomNodeOpt(arg[0], errMsg: "place: arg must be a node")
-        if let node = node, let place = node.kid(withTag: GedcomTag.PLAC),
-           let value = place.val {
+        if let node = node, let place = node.kid(withTag: GedcomTag.PLAC), let value = place.val {
             return .string(value)
         }
         return .null

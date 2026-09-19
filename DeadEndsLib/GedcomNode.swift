@@ -66,7 +66,9 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     }
 
     /// Return the level of a node by counting steps to the root; cycles are detected.
+
     public var lev: Int {
+
         var level = -1
         var node: GedcomNode? = self
         while let current = node, level < 100 {
@@ -77,6 +79,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     }
 
     /// Print the Gedcom node tree to stdout; recurse to kids and sibs.
+
     public func printTree(level: Int = 0, indent: String = "") {
 
         if level < 0 || level > 100 { return }

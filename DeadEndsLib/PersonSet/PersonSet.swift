@@ -32,6 +32,10 @@ public struct PersonSetElement<Payload>: Hashable, CustomStringConvertible {
     let key: String
     let payload: Payload?
 
+    var name: String {
+        person.name
+    }
+
     /// Create a person set element.
     public init(_ person: Person, payload: Payload? = nil) {
 
@@ -55,7 +59,6 @@ public struct PersonSetElement<Payload>: Hashable, CustomStringConvertible {
     /// Return the description of an element as a person's name.
     public var description: String {
 
-        let name = person.kid(withTag: "NAME")?.val ?? "<no name>"
         return "\(key): \(name)"
     }
     
