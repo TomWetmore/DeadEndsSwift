@@ -3,12 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 6 August 2026.
+//  Last changed on 20 September 2026.
 //
 
 import Foundation
 
-public typealias ProgramPersonSet = PersonSet<ProgramValue>
+//public typealias ProgramPersonSet = PersonSet<ProgramValue>
 
 
 extension Program {
@@ -18,7 +18,7 @@ extension Program {
 
     func bltinPersonSet(_ args: [ParsedExpr]) throws -> ProgramValue {
 
-        return .personset(ProgramPersonSet())
+        return .personset(PersonSet())
     }
 
     /// Built-in that adds an element to a person set. If there is no associated value use null.
@@ -34,7 +34,7 @@ extension Program {
         if args.count == 3 {
             any = try await evaluate(args[2])
         }
-        personSet.append(person, payload: any)
+        personSet.append(person, value: any)
         return .null
     }
 

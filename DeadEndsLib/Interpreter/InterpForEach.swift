@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 1 May 2026.
-//  Last changed on 8 August 2026.
+//  Last changed on 20 September 2026.
 //
 
 import Foundation
@@ -28,7 +28,7 @@ extension Program {
         case .personset(let set):
             for (i, element) in set.enumerated() {
                 let result = try await interpBody(stmt, element: .person(element.person),
-                                        payload: element.payload ?? .null, index: i + 1)
+                                        payload: element.value ?? .null, index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
                 }

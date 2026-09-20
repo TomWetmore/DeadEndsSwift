@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 16 September 2026.
+//  Last changed on 20 September 2026.
 //
 
 import Foundation
@@ -202,7 +202,7 @@ extension Program {
 
     /// Evaluate an expression for a a person set.
     func evalPersonSet(_ expr: ParsedExpr, errMsg: String)
-        async throws -> PersonSet<ProgramValue> {
+        async throws -> PersonSet {
 
         guard case .personset(let personset) = try await evaluate(expr) else {
             throw RuntimeError(errMsg, line: expr.line)

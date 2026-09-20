@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 18 April 2026.
+//  Last changed on 20 September 2026.
 //
 
 import Foundation
@@ -11,7 +11,7 @@ import Foundation
 extension PersonSet {
 
     /// Return the children person set of a person set.
-    public func childrenSet(in index: RecordIndex) -> PersonSet<Payload> {
+    public func childrenSet(in index: RecordIndex) -> PersonSet {
         
         var seen = Set<RecordKey>()
         var children = [Person]()
@@ -27,7 +27,7 @@ extension PersonSet {
     }
 
     /// Return the parent person set of a person set.
-    public func parentsSet(in index: RecordIndex) -> PersonSet<Payload> {
+    public func parentsSet(in index: RecordIndex) -> PersonSet {
 
         var seen = Set<RecordKey>()
         var parents = [Person]()
@@ -45,7 +45,7 @@ extension PersonSet {
 
     /// Return the set of all spouses of persons in this set.
     /// The result may overlap with self.
-    public func spouseSet(in index: RecordIndex) -> PersonSet<Payload> {
+    public func spouseSet(in index: RecordIndex) -> PersonSet {
 
         var seen = Set<RecordKey>()
         var spouses = [Person]()
@@ -61,7 +61,7 @@ extension PersonSet {
     }
 
     /// Return the sibling person set of a person set.
-    public func siblingSet(in index: RecordIndex) -> PersonSet<Payload> {
+    public func siblingSet(in index: RecordIndex) -> PersonSet {
 
         var seen = Set<RecordKey>()
         var siblings: [Person] = []
@@ -77,7 +77,7 @@ extension PersonSet {
     }
 
     /// Return the ancestors person set of a person set.
-    public func ancestorSet(in index: RecordIndex) -> PersonSet<Payload> {
+    public func ancestorSet(in index: RecordIndex) -> PersonSet {
 
         var seen: Set<RecordKey> = []
         var ancestors = [Person]()
@@ -93,7 +93,7 @@ extension PersonSet {
     }
 
     /// Return the descendants person set of a person set.
-    public func descendantSet(in index: RecordIndex) -> PersonSet<Payload> {
+    public func descendantSet(in index: RecordIndex) -> PersonSet {
 
         var seen = Set<RecordKey>()
         var descendants = [Person]()

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 30 June 2026.
+//  Last changed on 20 September 2026.
 //
 //  A PersonSet ...
 //  PersonSets are the objects used by the programming system to hold
@@ -13,37 +13,37 @@
 
 import Foundation
 
-public enum NoPayload {}
-public typealias PlainPersonSet = PersonSet<NoPayload>
-
 /// A person set can be in one of three sorted states.
+
 enum SortType {
 
     case notSorted
     case keySorted
     case nameSorted
-    //case payloadSorted // TODO: Future enhancement.
+  //case valueSorted // Possible future enhancement.
 }
 
-/// Element in a person set.
-public struct PersonSetElement<Payload>: Hashable, CustomStringConvertible {
+/// Element in a person set. It contains a person, the person's key, and an optional value
+/// of any
+
+public struct PersonSetElement: Hashable, CustomStringConvertible {
 
     let person: Person
     let key: String
-    let payload: Payload?
+    let value: ProgramValue?
 
     var name: String {
         person.name
     }
 
     /// Create a person set element.
-    public init(_ person: Person, payload: Payload? = nil) {
+    public init(_ person: Person, value: ProgramValue? = nil) {
 
         guard person.tag == GedcomTag.INDI
         else { fatalError("person \(person.root) must be a keyed 0 INDI person") }
         self.person = person
         self.key = person.key
-        self.payload = payload
+        self.value = value
     }
 
     /// Check if two elements are equal.
@@ -84,9 +84,9 @@ public struct PersonSetElement<Payload>: Hashable, CustomStringConvertible {
 }
 
 /// Person set is a class that wraps an array of person set elements.
-public class PersonSet<Payload>: Collection {
+public class PersonSet: Collection {
 
-    var elements: [PersonSetElement<Payload>] = []
+    var elements: [PersonSetElement] = []
     var sortType: SortType = .notSorted
     // TODO: Change code so unique is no longer needed.
     var unique: Bool = true
@@ -96,26 +96,27 @@ public class PersonSet<Payload>: Collection {
 
     public func index(after i: Int) -> Int { elements.index(after: i) }
 
-    public subscript(position: Int) -> PersonSetElement<Payload> { elements[position] }
+    public subscript(position: Int) -> PersonSetElement { elements[position] }
 
     public var count: Int { elements.count }
     public var isEmpty: Bool { elements.isEmpty }
 
     /// Append an existing element to the set.
-    func append(_ element: PersonSetElement<Payload>) {
+    func append(_ element: PersonSetElement) {
         elements.append(element)
         sortType = .notSorted
     }
 
     /// Append new a sequence element to the set.
-    func append(_ person: Person, payload: Payload? = nil) {
-        append(PersonSetElement(person, payload: payload))
+    func append(_ person: Person, value: ProgramValue? = nil) {
+        append(PersonSetElement(person, value: value))
         sortType = .notSorted
     }
 
     /// Return deep copy of a set.
-    func copy() -> PersonSet<Payload> {
-        let copy = PersonSet<Payload>()
+    func copy() -> PersonSet {
+        
+        let copy = PersonSet()
         copy.elements = self.elements
         copy.sortType = self.sortType
         copy.unique = self.unique
@@ -192,13 +193,13 @@ extension PersonSet {
     /// Create a person set from an array of person roots.
     public convenience init(persons: [Person]) {
         self.init()
-        persons.forEach { self.elements.append(PersonSetElement<Payload>($0)) }
+        persons.forEach { self.elements.append(PersonSetElement($0)) }
     }
 
     /// Create a person set form a single person root.
     public convenience init(person: Person) {
         self.init()
-        self.elements.append(PersonSetElement<Payload>(person))
+        self.elements.append(PersonSetElement(person))
     }
 }
 
