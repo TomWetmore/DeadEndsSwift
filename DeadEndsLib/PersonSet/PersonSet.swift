@@ -5,7 +5,6 @@
 //  Created by Thomas Wetmore on 18 December 2024.
 //  Last changed on 20 September 2026.
 //
-//  A PersonSet ...
 //  PersonSets are the objects used by the programming system to hold
 //  rich collections of persons.
 //  PersonSets are not used within the main (non-programming) part of DeadEnds.
@@ -13,30 +12,33 @@
 
 import Foundation
 
-/// A person set can be in one of three sorted states.
+/// A PersonSet can be in one of three sorted states.
 
 enum SortType {
 
     case notSorted
     case keySorted
     case nameSorted
-  //case valueSorted // Possible future enhancement.
+
 }
 
-/// Element in a person set. It contains a person, the person's key, and an optional value
-/// of any
+/// Element of a PersonSet. It contains a Person, the Person's key, and an optional
+/// ProgramValue.
 
 public struct PersonSetElement: Hashable, CustomStringConvertible {
 
     let person: Person
+
     let key: String
+
     let value: ProgramValue?
 
     var name: String {
         person.name
     }
 
-    /// Create a person set element.
+    /// Create a PersonSetElement.
+
     public init(_ person: Person, value: ProgramValue? = nil) {
 
         guard person.tag == GedcomTag.INDI
@@ -46,23 +48,29 @@ public struct PersonSetElement: Hashable, CustomStringConvertible {
         self.value = value
     }
 
-    /// Check if two elements are equal.
+    /// Check if two PersonSetElements are equal.
+
     public static func == (lhs: PersonSetElement, rhs: PersonSetElement) -> Bool {
+
         return lhs.key == rhs.key
     }
 
-    /// Hash an element using its key.
+    /// Hash a PersonSetElement using its key.
+
     public func hash(into hasher: inout Hasher) {
+
         hasher.combine(key)
     }
 
-    /// Return the description of an element as a person's name.
+    /// Return the description of a PersonSetElement as the Person's name.
+    ///
     public var description: String {
 
         return "\(key): \(name)"
     }
     
-    /// Compare two elements for name sorting.
+    /// Compare two PersonSetElements for name sorting.
+
     func nameSortsBefore(_ other: PersonSetElement) -> Bool {
 
         let lhsName = GedcomName(from: person.root)
@@ -73,25 +81,29 @@ public struct PersonSetElement: Hashable, CustomStringConvertible {
             if lhs < rhs { return true }
             if rhs < lhs { return false }
             return key < other.key
+
         case (_?, nil):
             return true      // named before unnamed
+
         case (nil, _?):
             return false     // unnamed after named
+
         case (nil, nil):
             return key < other.key
         }
     }
 }
 
-/// Person set is a class that wraps an array of person set elements.
+/// PersonSet is a class that wraps an array of PersonSetElements.
+
 public class PersonSet: Collection {
 
     var elements: [PersonSetElement] = []
+
     var sortType: SortType = .notSorted
-    // TODO: Change code so unique is no longer needed.
-    var unique: Bool = true
 
     public var startIndex: Int { elements.startIndex }
+    
     public var endIndex: Int { elements.endIndex }
 
     public func index(after i: Int) -> Int { elements.index(after: i) }
@@ -99,37 +111,43 @@ public class PersonSet: Collection {
     public subscript(position: Int) -> PersonSetElement { elements[position] }
 
     public var count: Int { elements.count }
+    
     public var isEmpty: Bool { elements.isEmpty }
 
-    /// Append an existing element to the set.
+    /// Append an existing PersonSetElement to the PersonSet.
+
     func append(_ element: PersonSetElement) {
+
         elements.append(element)
         sortType = .notSorted
     }
 
-    /// Append new a sequence element to the set.
+    /// Create and append a new PersonSetElement to the PersonSet.
+
     func append(_ person: Person, value: ProgramValue? = nil) {
+
         append(PersonSetElement(person, value: value))
         sortType = .notSorted
     }
 
-    /// Return deep copy of a set.
+    /// Return a deep copy of a PersonSet.
+
     func copy() -> PersonSet {
         
         let copy = PersonSet()
         copy.elements = self.elements
         copy.sortType = self.sortType
-        copy.unique = self.unique
         return copy
     }
 
-    /// Check if a set contains an element with a specific key.
-    func isInSequence(key: RecordKey) -> Bool {
+    /// Check if a PersonSet contains a PersonSetElement with a specific key.
 
-        switch sortType {
-        case .keySorted:  // Binary search if set is key sorted.
+    func isInPersonSet(key: RecordKey) -> Bool {
+
+        if sortType == .keySorted {
             var low = 0
             var high = elements.count
+
             while low < high {
                 let mid = (low + high) / 2
                 let midKey = elements[mid].key
@@ -143,68 +161,74 @@ public class PersonSet: Collection {
                 }
             }
             return false
-
-        default:
-            return elements.contains { $0.key == key }  // Otherwise linear search.
         }
+
+        return elements.contains { $0.key == key }
     }
 
-    /// Remove an element with a specific key from a set.
+    /// Remove all PersonSetElements with a specific key from a PersonSet.
+
     @discardableResult
     func remove(key: String) -> Bool {
 
-        if let index = elements.firstIndex(where: { $0.key == key }) {
-            elements.remove(at: index)
-            return true
-        }
-        return false
+        let oldCount = elements.count
+        elements.removeAll { $0.key == key }
+        return elements.count != oldCount
     }
 
+    /// Remove all PersonSetElements from a PersonSet.
+
     func clear() {
+
         elements.removeAll(keepingCapacity: true)
     }
 
-    /// Sort a person set by name.
+    /// Sort a PersonSet by name.
+
     func nameSort() {
+
         if sortType != .nameSorted {
             elements.sort { $0.nameSortsBefore($1) }
         }
         sortType = .nameSorted
     }
 
-    /// Remove duplicates from a person set.
+    /// Remove duplicates from a PersonSet.
+
     func removeDuplicates() {
+
         var seenKeys = Set<String>()
         elements = elements.filter { element in
-            if seenKeys.contains(element.key) {
-                return false
-            } else {
-                seenKeys.insert(element.key)
-                return true
-            }
+            seenKeys.insert(element.key).inserted
         }
-        unique = true
     }
 }
 
 /// Convenience initializers.
+
 extension PersonSet {
 
-    /// Create a person set from an array of person roots.
+    /// Create a PersonSet from an array of Persons.
+
     public convenience init(persons: [Person]) {
+
         self.init()
         persons.forEach { self.elements.append(PersonSetElement($0)) }
     }
 
-    /// Create a person set form a single person root.
+    /// Create a PersonSet from a Person.
+
     public convenience init(person: Person) {
+
         self.init()
         self.elements.append(PersonSetElement(person))
     }
 }
 
 extension PersonSet: CustomStringConvertible {
+    
     public var description: String {
+
         var buf = ""
         buf += "PersonSet(\(elements.count) elements)\n"
         elements.forEach { buf += "\($0)\n" }
@@ -214,14 +238,10 @@ extension PersonSet: CustomStringConvertible {
 
 extension PersonSet {
 
-    /// Ensure that a person set is key sorted and possibly deduped.
-//    func keySort(unique: Bool = true) {
-//        if sortType != .keySorted { keySort() }
-//        if !self.unique && unique { removeDuplicates() }
-//    }
+    /// Sort a PersonSet by key.
 
-    /// Sort a person set by key.
     func keySort() {
+
         if sortType != .keySorted {
             elements.sort { $0.key < $1.key }
         }

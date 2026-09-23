@@ -372,16 +372,20 @@ public extension GedcomNode {
     }
 
     /// Returns the previous sib of a node.
+
     var prevSib: GedcomNode? {
 
-        guard let dad = self.dad, var curr = dad.kid, curr !== self else { return nil }
-        while let next = curr.sib, next !== self {
+        guard let dad, var curr = dad.kid, curr !== self else {
+            return nil
+        }
+        while let next = curr.sib {
+            if next === self {
+                return curr
+            }
             curr = next
         }
-        return curr
+        return nil
     }
-
-
 
     /// Insert a forest (one node or a sib chain) into this node's kid list.
     /// - Parameters:

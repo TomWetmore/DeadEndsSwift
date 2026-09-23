@@ -3,183 +3,85 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 20 September 2026.
+//  Last changed on 21 September 2026.
 //
 
 import Foundation
 
-/// Union operations.
 extension PersonSet {
 
-    /// Return union of two person sets.
-    public func unionSet(_ other: PersonSet) -> PersonSet {
-        self.keySort()
-        other.keySort()
-        return self.sortedUnion(with: other)
-    }
-    
-    /// Form union of two person sets in the first person set.
-    func formUnion(_ other: PersonSet) {
-        self.keySort()
-        other.keySort()
-        self.elements = self.sortedUnion(with: other).elements
-        self.sortType = .keySorted
-        self.unique = true
-    }
+    /// Return the union of two PersonSets with duplicate keys removed.
 
-    /// Form union of key-sorted person sets.
-    private func sortedUnion(with other: PersonSet) -> PersonSet {
+    func union(_ other: PersonSet) -> PersonSet {
+
         let result = PersonSet()
-        var i = startIndex
-        var j = other.startIndex
+        var seen = Set<RecordKey>()
 
-        while i < endIndex && j < other.endIndex {
-            let elem1 = self[i]
-            let elem2 = other[j]
-            if elem1.key < elem2.key {
-                result.append(elem1)
-                i += 1
-            } else if elem1.key > elem2.key {
-                result.append(elem2)
-                j += 1
-            } else {
-                result.append(elem1)
-                i += 1
-                j += 1
+        for element in elements {
+            if seen.insert(element.key).inserted {
+                result.append(element)
             }
         }
-        while i < endIndex {
-            result.append(self[i])
-            i += 1
+        for element in other.elements {
+            if seen.insert(element.key).inserted {
+                result.append(element)
+            }
         }
-        while j < other.endIndex {
-            result.append(other[j])
-            j += 1
-        }
-        result.sortType = .keySorted
-        result.unique = true
         return result
     }
-}
 
-/// Intersection operations.
-extension PersonSet {
+    /// Return intersection of two PersonSets with duplicte keys removed.
 
-    /// Intersection of two sequences, not affecting the two sequences.
     func intersection(_ other: PersonSet) -> PersonSet {
-        self.keySort()
-        other.keySort()
-        return self.sortedIntersection(with: other)
-    }
 
-    func formIntersection(_ other: PersonSet) {
-        self.keySort()
-        other.keySort()
-        self.elements = self.sortedIntersection(with: other).elements
-        self.sortType = .keySorted
-        self.unique = true
-    }
-
-    /// Form intersection of key-sorted and deduped sequences. Operands not affected.
-    private func sortedIntersection(with other: PersonSet) -> PersonSet {
         let result = PersonSet()
-        var i = startIndex
-        var j = other.startIndex
+        let otherKeys = Set(other.elements.map(\.key))
+        var seen = Set<RecordKey>()
 
-        while i < endIndex && j < other.endIndex {
-            let elem1 = self[i]
-            let elem2 = other[j]
-            if elem1.key < elem2.key {
-                i += 1
-            } else if elem1.key > elem2.key {
-                j += 1
-            } else {
-                result.append(elem1)
-                i += 1
-                j += 1
+        for element in elements {
+            if otherKeys.contains(element.key),
+               seen.insert(element.key).inserted {
+                result.append(element)
             }
         }
-        result.sortType = .keySorted
-        result.unique = true
         return result
     }
-}
 
-/// Difference operations.
-extension PersonSet {
+    /// Return difference of two PersonSets with duplicate keys removed.
 
-    /// Find the difference between this person set and an other.
     func difference(_ other: PersonSet) -> PersonSet {
-        self.keySort()
-        other.keySort()
-        return self.sortedDifference(with: other)
-    }
 
-    /// Find the difference between this person set and an other.
-    func formDifference(_ other: PersonSet) {
-        self.keySort()
-        other.keySort()
-        self.elements = self.sortedDifference(with: other).elements
-        self.sortType = .keySorted
-        self.unique = true
-    }
-
-    /// Form difference of key-sorted sets.
-    private func sortedDifference(with other: PersonSet) -> PersonSet {
         let result = PersonSet()
-        var i = startIndex
-        var j = other.startIndex
+        let otherKeys = Set(other.elements.map(\.key))
+        var seen = Set<RecordKey>()
 
-        while i < endIndex && j < other.endIndex {
-            let elem1 = self[i]
-            let elem2 = other[j]
-
-            if elem1.key < elem2.key {
-                result.append(elem1)
-                i += 1
-            } else if elem1.key > elem2.key {
-                j += 1
-            } else {
-                i += 1
-                j += 1
+        for element in elements {
+            if !otherKeys.contains(element.key),
+               seen.insert(element.key).inserted {
+                result.append(element)
             }
         }
-        while i < endIndex {
-            result.append(self[i])
-            i += 1
-        }
-        result.sortType = .keySorted
-        result.unique = true
         return result
     }
-}
 
-/// Subset operations.
-extension PersonSet {
+    /// Determine if this PersonSet is a subset of another.
 
-    /// Determine if this person set is a subset of another.
     func isSubset(of other: PersonSet) -> Bool {
-        var i = startIndex
-        var j = other.startIndex
 
-        while i < endIndex && j < other.endIndex {
-            let elem1 = self[i]
-            let elem2 = other[j]
+        let otherKeys = Set(other.elements.map(\.key))
 
-            if elem1.key < elem2.key {  // Self has a key not in other.
+        for element in elements {
+            if !otherKeys.contains(element.key) {
                 return false
-            } else if elem1.key > elem2.key {
-                j += 1
-            } else {  // Keys match.
-                i += 1
-                j += 1
             }
         }
-        return i == endIndex  // If didn't consume self, not a subset.
+        return true
     }
 
-    /// Determine if this person set is a superset of another.
+    /// Determine if this PersonSet is a superset of another.
+
     func isSuperset(of other: PersonSet) -> Bool {
+
         return other.isSubset(of: self)
     }
 }

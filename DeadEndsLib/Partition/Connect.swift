@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 31 March 2026.
+//  Last changed on 22 September 2026.
 //
 
 import Foundation
@@ -187,17 +187,25 @@ extension RecordIndex {
 
 extension RecordIndex {
 
-    /// Require a node to have a key value, require the key to a root, and
-    /// return the node.
+    /// Require a GedcomNode to have a record's key value, require the record to
+    /// exist and have the right type (e.g., INDI, FAM), and return the root
+    /// GedcomNode of the record. Must succeed else fatal error.
+
+    /// TODO: THIS METHOD SHOULD BE MOVED TO A BETTER LOCATION.
+
     func requireRoot(from node: GedcomNode, tag: Tag) -> Root {
         
         guard let key = node.val, let root = self[key], root.tag == tag
-        else { fatalError("expected \(tag) record referenced by \(node)") }
+        else {
+            fatalError("expected \(tag) record referenced by \(node)")
+        }
         return root
     }
 
     /// Require a key to map to a root of optional type, and return that root.
+
     func requireRoot(from key: RecordKey, tag: Tag? = nil) -> Root {
+        
         guard let root = self[key], root.tag == tag
         else { fatalError("expected root \(key) to refer to a root") }
         if tag == nil { return root }
@@ -214,12 +222,20 @@ func dedupeKeys(_ keys: [RecordKey]) -> [RecordKey] {
 }
 
 /// Require a root node to have a key. Must succeed.
+
 func requireKey(on root: GedcomNode, tag: Tag? = nil) -> RecordKey {
+
     guard let key = root.key
-    else { fatalError("expected root \(root) to have a key") }
-    if tag == nil { return key }
+    else {
+        fatalError("expected root \(root) to have a key")
+    }
+    if tag == nil {
+        return key
+    }
     guard tag! == root.tag
-    else { fatalError("expected root \(root) to have key \(tag!)") }
+    else {
+        fatalError("expected root \(root) to have key \(tag!)")
+    }
     return key
 }
 
@@ -241,3 +257,9 @@ func requireFamilyKey(on root: GedcomNode) -> RecordKey {
     return requireKey(on: root, tag: GedcomTag.FAM)
 }
 
+extension GedcomNode {
+
+    var requireKey: String {
+        DeadEndsLib.requireKey(on: self)
+    }
+}
