@@ -221,26 +221,6 @@ func dedupeKeys(_ keys: [RecordKey]) -> [RecordKey] {
     return keys.filter { seen.insert($0).inserted }
 }
 
-/// Require a root node to have a key. Must succeed.
-
-func requireKey(on root: GedcomNode, tag: Tag? = nil) -> RecordKey {
-
-    guard let key = root.key
-    else {
-        fatalError("expected root \(root) to have a key")
-    }
-    if tag == nil {
-        return key
-    }
-    guard tag! == root.tag
-    else {
-        fatalError("expected root \(root) to have key \(tag!)")
-    }
-    return key
-}
-
-
-
 /// Require a node to be a person root node and have a key.
 func requirePersonKey(on root: GedcomNode) -> RecordKey {
     return requireKey(on: root, tag: GedcomTag.INDI)
@@ -259,9 +239,4 @@ func requireFamilyKey(on root: GedcomNode) -> RecordKey {
     return requireKey(on: root, tag: GedcomTag.FAM)
 }
 
-extension GedcomNode {
 
-    var requireKey: String {
-        DeadEndsLib.requireKey(on: self)
-    }
-}

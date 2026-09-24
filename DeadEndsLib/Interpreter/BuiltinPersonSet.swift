@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 23 September 2026.
+//  Last changed on 24 September 2026.
 //
 
 import Foundation
@@ -224,7 +224,7 @@ extension Program {
             throw RuntimeError("gengedcom: arg must be a personset", line: args[0].line)
         }
         let persons = set.map { $0.person }
-        let index = personsToRecordIndex(persons: persons, in: recordIndex)
+        let index = personsToRecordIndex(persons, in: recordIndex)
 
         for record in index.values {
             let recordText = record.root.gedcomText(level: 0, indent: false)

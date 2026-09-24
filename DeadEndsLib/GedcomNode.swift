@@ -13,22 +13,30 @@ public typealias Tag = String
 
 /// A GedcomNode holds a single Gedcom line. The key, tag and val are from the Gedcom line;
 /// lev is computed. The sib, kid and dad fields hold the tree structure. Each node has a
-/// UUID, required by the user interface. The names sib, kid and dad were chosen to avoid
-/// conflict with the inter-record terms sibling, child and parent. GedcomNode is a class
-/// object with reference semantics.
+/// UUID, required by the user interface. The unfortunate names sib, kid and dad were chosen
+/// to avoid conflict with the inter-record terms sibling, child and parent. GedcomNode is
+/// a class so has reference semantics.
 
 final public class GedcomNode: Identifiable, CustomStringConvertible {
 
-    public let id = UUID() // id -- unique identifier of the node.
-    public var key: RecordKey? // key -- record key required on level 0 nodes.
-    public var tag: String // tag -- Gedcom tag required on all nodes.
-    public var val: String? // val -- Gedcom value required on some nodes.
-    public var sib: GedcomNode? // sib -- next sibling in Gedcom tree.
-    public var kid: GedcomNode? // kid -- first child in Gedcom tree.
-    public weak var dad: GedcomNode? // dad -- parent node in tree, required on non-roots.
+    public let id = UUID()           // Unique identifier of the node.
+
+    public var key: RecordKey?       // Record key required on level 0 nodes.
+
+    public var tag: String           // Gedcom tag required on all nodes.
+
+    public var val: String?          // Gedcom value required on some nodes.
+
+    public var sib: GedcomNode?      // Next sibling in Gedcom tree.
+
+    public var kid: GedcomNode?      // First child in Gedcom tree.
+
+    public weak var dad: GedcomNode? // Parent node in tree, required on non-roots.
 
     /// Return the kids of a node as an array of nodes.
+
     public var kids: [GedcomNode] {
+
         var results: [GedcomNode] = []
         var node = kid
         while let current = node {
@@ -39,6 +47,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     }
 
     /// Return the sibs of a node as an array of nodes.
+
     public var sibs: [GedcomNode] {
         var results: [GedcomNode] = []
         var node = sib
@@ -50,7 +59,9 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     }
 
     /// Return a description of a single node; does not recurse.
+
     public var description: String {
+
         var description = "\(lev) "
         if let key { description += "\(key) " }
         description += "\(tag)"
@@ -59,6 +70,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     }
 
     /// Create an unlinked Gedcom node.
+
     public init(key: RecordKey? = nil, tag: String, val: String? = nil) {
         self.key = key
         self.tag = tag
@@ -69,7 +81,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 
     public var lev: Int {
 
-        var level = -1
+        var level = 0
         var node: GedcomNode? = self
         while let current = node, level < 100 {
             level += 1
@@ -91,10 +103,13 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 }
 
 /// Methods that return kid nodes or their values.
+
 public extension GedcomNode {
 
     /// Return the first kid with the given tag.
+
     func kid(withTag tag: String) -> GedcomNode? {
+
         var node = kid
         while let current = node {
             if current.tag == tag {
@@ -105,8 +120,10 @@ public extension GedcomNode {
         return nil
     }
 
-    /// Return the first kid with tag from a list of tags.
+    /// Return the first kid with a tag from a list of tags.
+
     func kid(withTags tags: [String]) -> GedcomNode? {
+
         let tagSet = Set(tags)
         var node = kid
         while let current = node {
@@ -119,7 +136,9 @@ public extension GedcomNode {
     }
 
     /// Return all kids with the given tag.
+
     func kids(withTag tag: String) -> [GedcomNode] {
+
         var results: [GedcomNode] = []
         var node = kid
         while let curr = node {
@@ -132,7 +151,9 @@ public extension GedcomNode {
     }
 
     /// Return all kids with tags from a tag list.
+
     func kids(withTags tags: [String]) -> [GedcomNode] {
+
         let tagSet = Set(tags)
         var results: [GedcomNode] = []
         var node = kid
@@ -146,6 +167,7 @@ public extension GedcomNode {
     }
 
     /// Return the val of first kid with a given tag.
+
     func kidVal(forTag tag: String) -> String? {
         return kid(withTag: tag)?.val
     }
@@ -236,8 +258,9 @@ extension GedcomNode {
 
 extension GedcomNode {
 
-    /// Return all nodes below a node. This returns an array of references to the nodes
-    /// that are in the tree. They are not copies.
+    /// Return all GedcomNodes below a node. This returns an array of references to the
+    /// GedcomNodes that are in the tree -- they are not copies.
+
     public var subnodes: [GedcomNode] {
 
         var result: [GedcomNode] = []
@@ -255,64 +278,46 @@ extension GedcomNode {
 
 public extension GedcomNode {
 
-    /// Return whether node has kids.
+    /// Return whether a GedcomNode has kids.
+
     var hasKids: Bool {
+        
         self.kid != nil
     }
 
-    /// Create and add a new first kid to this node.
+    /// Create and add a new first kid to this GedcomNode.
+
     @discardableResult
     func addKid(tag: String, val: String? = nil) -> GedcomNode {
+
         let child = GedcomNode(tag: tag, val: val)
         return addKid(child)
     }
 
-    /// Add Gedcom node as this node's new first kid.
+    /// Add a GedcomNode as self GedcomNode's new first kid.
+
     @discardableResult
     func addKid(_ kid: GedcomNode) -> GedcomNode {
-        kid.dad = self
-        kid.kid = nil
-        kid.sib = nil
-        if self.kid != nil {
-            kid.sib = self.kid
-        }
-        self.kid = kid
+
+        kid.requireDisconnected()
+        let dad = self  // Makes code easier to read.
+
+        kid.dad = dad
+        kid.sib = dad.kid
+        dad.kid = kid
+
         return kid
     }
 
-    /// Adds a single node as a new kid of a node.
-    @discardableResult
-    func adddBareKid(_ kid: GedcomNode) -> GedcomNode {
-        kid.dad = self
-        kid.kid = nil
-        kid.sib = nil
-        if self.kid == nil {
-            self.kid = kid
-        } else {
-            kid.sib = self.kid
-            self.kid = kid
-        }
-        return kid
-    }
+    /// addBareKid -- REMOVED -- Add a single GedcomNode as a new kid of a node.
+    /// addSubtree -- REMOVED -- Add an existing subtree, preserving its internal structure.
 
-    /// Adds an existing subtree, preserving its internal structure.
-    @discardableResult
-    func addSubtree(_ kid: GedcomNode) -> GedcomNode {
-
-        kid.dad = self
-        if self.kid == nil {
-            self.kid = kid
-        } else {
-            kid.sib = self.kid
-            self.kid = kid
-        }
-        return kid
-    }
-
-    /// Adds kid as a new kid of .self, after the given sib.
+    /// Add kid as a new kid of .self, after the given sib.
     /// If sib is nil, kid becomes the first kid.
     /// Asserts if sib is not a kid of .self when non-nil.
+
     func addKidAfter(_ kid: GedcomNode, sib: GedcomNode?) {
+
         // Kid should not be attached.
         assert(kid.dad == nil && kid.sib == nil, "addKidAfter: cannot add a kid with links")
 
@@ -342,8 +347,10 @@ public extension GedcomNode {
         sib.sib = kid
     }
 
-    /// Return the last kid of the Gedcom nodes.
+    /// Return the last kid of a GedcomNode.
+
     func lastKid() -> GedcomNode? {
+
         var node = self.kid
         while let next = node?.sib {
             node = next
@@ -353,8 +360,11 @@ public extension GedcomNode {
 
     /// Remove a kid from its parent.
     /// TODO: Should return the removed kid.
-    func removeKid() {
-        guard let dad = dad else { return }
+
+    @discardableResult
+    func removeKid() -> GedcomNode? {
+
+        guard let dad else { return nil }
 
         if dad.kid === self {  // Remove first child.
             dad.kid = sib
@@ -369,9 +379,10 @@ public extension GedcomNode {
         // Disconnect removed node.
         self.dad = nil
         self.sib = nil
+        return nil
     }
 
-    /// Returns the previous sib of a node.
+    /// Return the previous sib of a GedcomNode.
 
     var prevSib: GedcomNode? {
 
@@ -422,8 +433,26 @@ public extension GedcomNode {
     }
 
 
-    /// Replace one child of this node with another; return true if successful.
-    /// New node cannot be a forest.
+    /// Replace this GedcomNode with a disconnected GedcomNode.
+    /// Return this node, disconnected from its original tree.
+
+    @discardableResult
+    func replace(_ new: GedcomNode) -> GedcomNode {
+
+        new.requireDisconnected()
+        new.dad = self.dad
+        new.sib = self.sib
+
+        if let prev = self.prevSib {
+            prev.sib = new
+        } else {
+            self.dad?.kid = new
+        }
+        self.dad = nil
+        self.sib = nil
+        return self
+    }
+
     @discardableResult
     func replace(old oldNode: GedcomNode, with newNode: GedcomNode) -> Bool {
         if newNode.sib != nil { fatalError("new node cannot be a forest") }
@@ -449,31 +478,30 @@ public extension GedcomNode {
         return true
     }
 
-    /// Insert sib immediately after this node in the sibling chain.
-    /// The sib node must not already be part of a sibling list or have a parent.
-    ///
-    /// After this call:
-    /// - self.sib will point to sib
-    /// - sib.dad will be set to self.dad
-    /// - sib.sib will point to the old self.sib
+    /// Add a GedcomNode, and any descendants, after this GedcomNode in the dad's
+    /// sibling chain. The sib node must be detached.
+
     func addSib(_ sib: GedcomNode) {
-        precondition(sib.sib == nil && sib.dad == nil, "Cannot add a node that is part of a tree")
-        precondition(sib !== self, "Cannot add a node as a sibling to itself")
+
+        sib.requireDisconnected()
 
         sib.dad = self.dad
         sib.sib = self.sib
         self.sib = sib
     }
 
-    /// Removes and returns the node's next sibling, if any. The sib is detached from
-    /// the tree. This does not recursively remove the subtree under the sib.
+    /// Remove and return self's next sibling, including its descendants.
+    /// The returned node is disconnected.
+
     @discardableResult
     func removeSib() -> GedcomNode? {
-        guard let sib = self.sib else { return nil }
+
+        guard let sib = self.sib else {
+            return nil  // No next sibling.
+        }
         self.sib = sib.sib
         sib.dad = nil
         sib.sib = nil
-        // Do not erase sib.kid; the caller may need to keep the subtree.
         return sib
     }
 
@@ -497,12 +525,18 @@ public extension GedcomNode {
         }
     }
 
-    /// Moves this node one position earlier in its dad's kid list.
-    /// Does nothing if it's already the first child or has no parent.
+    /// Move this GedcomNode one position earlier in its dad's kid list; does nothing
+    /// if it is already the first child or has no parent.
+
     @discardableResult
     func moveUp() -> Bool {
-        guard let dad = dad else { return false }
-        guard let first = dad.kid, first !== self else { return false } // already first
+
+        guard let dad = dad else {  // Has no dad
+            return false
+        }
+        guard let first = dad.kid, first !== self else {  // Is already the first child.
+            return false
+        }
 
         var prevPrev: GedcomNode? = nil
         var prev: GedcomNode? = first
@@ -616,6 +650,17 @@ extension GedcomNode {
 
 extension GedcomNode {
 
+    /// Require a GedcomNode to have a key and optionally a tag. Must succeed.
+
+    func requireKey(tag: Tag? = nil) -> RecordKey {
+
+        DeadEndsLib.requireKey(on: self, tag: tag)
+    }
+
+    var requireKey: RecordKey {
+        DeadEndsLib.requireKey(on: self)
+    }
+
     // Require a GedcomNode val to hold a link key.
 
     var requireLink: RecordKey {
@@ -624,5 +669,34 @@ extension GedcomNode {
             fatalError("GedcomNode does not contain a valid link")
         }
         return val
+    }
+}
+
+
+/// Require a root node to have a key. Must succeed.
+
+func requireKey(on root: GedcomNode, tag: Tag? = nil) -> RecordKey {
+
+    guard let key = root.key else {
+        fatalError("expected root \(root) to have a key")
+    }
+    if tag == nil {
+        return key
+    }
+    guard tag! == root.tag else {
+        fatalError("expected root \(root) to have key \(tag!)")
+    }
+    return key
+}
+
+extension GedcomNode {
+
+    /// Require that a GedcomNode do not have a dad or a sib link.
+
+    func requireDisconnected() {
+
+        guard dad == nil, sib == nil else {
+            fatalError("GedcomNode \"\(self)\" must be disconnected")
+        }
     }
 }

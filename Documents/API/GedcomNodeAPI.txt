@@ -41,7 +41,6 @@ public extension GedcomNode
     var hasKids: Bool -- Return whether node has kids.
     func addKid(tag: String, val: String? = nil) -> GedcomNode -- Create and add new first kid for this node.
     func addKid(_ kid: GedcomNode) -> GedcomNode -- Adds existing node as this node's new first kid.
-    func addBareKid(_ kid: GedcomNode) -> GedcomNode -- Add newly created, unlinked kid (defensive).
     func addSubtree(_ kid: GedcomNode) -> GedcomNode -- Add an existing subtree, preserving internal structure.
     func addKidAfter(_ kid: GedcomNode, sib: GedcomNode?) -- Add kid as a new kid of node, after the given sib.
     func lastKid() -> GedcomNode? -- Return node's last kid.

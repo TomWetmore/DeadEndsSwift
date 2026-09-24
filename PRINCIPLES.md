@@ -70,7 +70,6 @@ There are several other methods on GedcomNode:
 
     func addKid(tag: String, val: String? = nil) -> GedcomNode
     func addKid(_ kid: GedcomNode) -> GedcomNode
-    func addBareKid(_ kid: GedcomNode) -> GedcomNode
     func addSubtree(_ kid: GedcomNode) -> GedcomNode
     func addKidAfter(_ kid: GedcomNode, sib: GedcomNode?)
     func lastKid() -> GedcomNode?
