@@ -3,27 +3,27 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 April 2026.
-//  Last changed on 22 September 2026.
+//  Last changed on 23 September 2026.
 //
 
 import Foundation
 
-/// From a list of Persons return an index holding the records needed to generate the Gedcom
-/// file for the Persons.
+/// From a list of Persons return a RecordIndex that holds the records needed to generate
+/// a Gedcom file for the Persons.
 
-func personsToRecordIndex(in index: RecordIndex, persons: [Person]) -> [RecordKey: Record] {
+func personsToRecordIndex(persons: [Person], in index: RecordIndex) -> [RecordKey: Record] {
 
     let personKeys = Set(persons.map(\.key))
     var newIndex = [RecordKey: Record]()
 
     // Make deep copies of the persons.
     for person in persons {
-        let copy = Person(person.root.deepCopy())
+        let copy = person.deepCopy()
         newIndex[copy.key] = copy
     }
 
     // Make deep copies of the families referred to by the persons.
-    var seenFamilies = Set<RecordKey>()
+    var seenFamilyKeys = Set<RecordKey>()
     for person in persons {
 
         let familyNodes = person.kids(withTags: ["FAMC", "FAMS"])
@@ -31,20 +31,20 @@ func personsToRecordIndex(in index: RecordIndex, persons: [Person]) -> [RecordKe
 
             let familyRoot = index.requireRoot(from: familyNode, tag: "FAM")
             let familyKey = familyRoot.requireKey
-            guard seenFamilies.insert(familyKey).inserted else {
+            guard seenFamilyKeys.insert(familyKey).inserted else {
                 continue
             }
             let copy = Family(familyRoot.deepCopy())
 
+            // Remove HUSB, WIFE and CHIL links to Persons not in list.
             for node in copy.kids(withTags: ["HUSB", "WIFE", "CHIL"]) {
-                if !personKeys.contains(node.requireKey) {
+                if !personKeys.contains(node.requireLink) {
                     node.remove()
                 }
             }
             newIndex[copy.key] = copy
         }
     }
-
     return newIndex
 }
 
@@ -66,7 +66,7 @@ extension GedcomNode {
         return node
     }
 
-    /// Cleanly remove a GedcomNode from anywhere in a GedcomNode tree.
+    /// Cleanly remove a GedcomNode (and those below it) from anywhere in a GedcomNode tree.
 
     func remove() {
 

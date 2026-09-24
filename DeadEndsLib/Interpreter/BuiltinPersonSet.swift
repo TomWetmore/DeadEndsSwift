@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 20 September 2026.
+//  Last changed on 23 September 2026.
 //
 
 import Foundation
@@ -212,5 +212,24 @@ extension Program {
             throw RuntimeError("descendentset: arg must be a personset", line: args[0].line)
         }
         return .personset(set.descendants(in: recordIndex))
+    }
+
+    /// Built-in that generates Gedcom text from a PersonSet.
+    /// gengedcom(personset) -> string
+
+    func bltinGenGedcom(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let setValue = try await evaluate(args[0])
+        guard case let .personset(set) = setValue else {
+            throw RuntimeError("gengedcom: arg must be a personset", line: args[0].line)
+        }
+        let persons = set.map { $0.person }
+        let index = personsToRecordIndex(persons: persons, in: recordIndex)
+
+        for record in index.values {
+            let recordText = record.root.gedcomText(level: 0, indent: false)
+            output.writeLine(recordText)
+        }
+        return .null
     }
 }

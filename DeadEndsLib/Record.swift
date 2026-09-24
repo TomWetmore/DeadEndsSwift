@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 15 September 2025.
-//  Last changed on 10 September 2026.
+//  Last changed on 24 September 2026.
 //
 
 import Foundation
@@ -24,6 +24,15 @@ public protocol Record {
 
     var root: Root { get }  // Record root.
     var key: String { get }  // Record key.
+
+    init(_ root: Root)
+}
+
+public extension Record {
+    
+    func deepCopy() -> Self {
+        Self(root.deepCopy())
+    }
 }
 
 /// Gedcom node properties that are forwarded to the root node.

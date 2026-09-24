@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 8 September 2026.
+//  Last changed on 24 September 2026.
 //
 
 import Foundation
@@ -154,7 +154,7 @@ public extension Person {
         for family in childFamilies(in: index) {
             for spouNode in family.kids(withTags: [GedcomTag.HUSB, GedcomTag.WIFE]) {
                 let spouRoot = index.requireRoot(from: spouNode, tag: GedcomTag.INDI)
-                let parent = requirePerson(with: spouRoot, in: index)
+                let parent = requirePerson(from: spouRoot, in: index)
                 if seen.insert(parent.root.key!).inserted { result.append(parent) }
             }
         }
@@ -237,20 +237,24 @@ func requireFamily(for key: RecordKey, in index: RecordIndex) -> Family {
     return family
 }
 
-/// Return the person a key refers to. Fatal error if it cannot be done.
+/// Return the Person a RecordKey refers to. Fatal error if it cannot be done.
+
 public func requirePerson(with key: RecordKey, in index: RecordIndex) -> Person {
 
-    guard let person = index.person(for: key), person.root.tag == GedcomTag.INDI
-    else { fatalError("key \(key) must refer to a person") }
+    guard let person = index.person(for: key), person.root.tag == "INDI" else {
+        fatalError("key \(key) must refer to a person")
+    }
     return person
 }
 
-/// Return the person a node is the root of. Fatal error if it cannot be done.
-public func requirePerson(with root: Root, in index: RecordIndex) -> Person {
+/// Return the Person a GedcomNode is the root of. Fatal error if it cannot be done.
+
+public func requirePerson(from root: Root, in index: RecordIndex) -> Person {
 
     let key = requireKey(on: root)
-    guard let person = index.person(for: key), person.root.tag == GedcomTag.INDI
-    else { fatalError("root \(root) must be the root of a person") }
+    guard let person = index.person(for: key), person.root.tag == "INDI" else {
+        fatalError("root \(root) must be the root of a person")
+    }
     return person
 }
 

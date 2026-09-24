@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 15 September 2026.
+//  Last changed on 23 September 2026.
 //
 
 import Foundation
@@ -173,6 +173,7 @@ extension Program {
             "descendents": Builtin(min: 1, max: 1) { try await self.bltinDescendentSet($0)},
             "namesort": Builtin(min: 1, max: 1) { try await self.bltinNameSort($0)},
             "keysort": Builtin(min: 1, max: 1) { try await self.bltinKeySort($0)},
+            "gengedcom": Builtin(min: 1, max: 1) { try await self.bltinGenGedcom($0)},
 
             // String operations.
             "strcmp": Builtin(min: 2, max: 2) { try await self.bltinStrcmp($0)},
@@ -297,7 +298,7 @@ enum BuiltinInfo {
        // Personsets.
        "personset", "addtoset" , "removefromset", "union", "intersect", "difference",
        "parentset" , "childset" , "spouseset", "siblingset", "ancestorset",
-       "ancestors", "descendentset", "descendents", "namesort", "keysort",
+       "ancestors", "descendentset", "descendents", "namesort", "keysort", "gengedcom",
        // Strings.
        "strcmp",
        // Metas.

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 21 August 2026.
+//  Last changed on 24 September 2026.
 //
 
 import Foundation
@@ -611,5 +611,18 @@ extension GedcomNode {
         }
 
         return firstCopy
+    }
+}
+
+extension GedcomNode {
+
+    // Require a GedcomNode val to hold a link key.
+
+    var requireLink: RecordKey {
+
+        guard let val, val.isKey else {
+            fatalError("GedcomNode does not contain a valid link")
+        }
+        return val
     }
 }

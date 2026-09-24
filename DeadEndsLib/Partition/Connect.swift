@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 22 September 2026.
+//  Last changed on 23 September 2026.
 //
 
 import Foundation
@@ -238,6 +238,8 @@ func requireKey(on root: GedcomNode, tag: Tag? = nil) -> RecordKey {
     }
     return key
 }
+
+
 
 /// Require a node to be a person root node and have a key.
 func requirePersonKey(on root: GedcomNode) -> RecordKey {

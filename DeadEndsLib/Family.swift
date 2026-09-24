@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 2 April 2026.
+//  Last changed on 24 Seotenber 2026.
 //
 
 import Foundation
@@ -27,7 +27,7 @@ extension Family {
     /// Return all persons with a specific role in this family in Gedcom order.
     private func people(in index: RecordIndex, role: Tag) -> [Person] {
         root.kids(withTag: role).map { node in
-            requirePerson(with: index.requireRoot(from: node, tag: GedcomTag.INDI), in: index)
+            requirePerson(from: index.requireRoot(from: node, tag: GedcomTag.INDI), in: index)
         }
     }
 
