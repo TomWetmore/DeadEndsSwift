@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 April 2026.
-//  Last changed on 24 September 2026.
+//  Last changed on 25 September 2026.
 //
 
 import Foundation
@@ -48,32 +48,3 @@ func personsToRecordIndex(_ persons: [Person], in index: RecordIndex) -> [Record
     return newIndex
 }
 
-extension GedcomNode {
-
-    /// Create and return a deep copy of a GedcomNode and the full tree below it.
-
-    func deepCopy(dad: GedcomNode? = nil) -> GedcomNode {
-
-        let node = GedcomNode(key: key, tag: tag, val: val)
-        node.dad = dad
-
-        if let kid {
-            node.kid = kid.deepCopy(dad: node)
-        }
-        if let sib {
-            node.sib = sib.deepCopy(dad: dad)
-        }
-        return node
-    }
-
-    /// Cleanly remove a GedcomNode (and those below it) from anywhere in a GedcomNode tree.
-
-    func remove() {
-
-        if let prev = prevSib {
-            prev.sib = sib
-        } else {
-            dad?.kid = sib
-        }
-    }
-}

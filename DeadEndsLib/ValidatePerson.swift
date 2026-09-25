@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 December 2024.
-//  Last changed on 21 August 2026.
+//  Last changed on 25 September 2026.
 //
 
 import Foundation
@@ -146,29 +146,6 @@ enum PersonRole: String {
 	case husband = "HUSB"
 	case wife = "WIFE"
 	case child = "CHILD"
-}
-
-// Methods on nodes at any level
-extension GedcomNode {
-
-	// traverseChildren is a method that traverses all children of a node and performs an action on each.
-//	func traverseChildren(action: (Node) -> Void) {
-//		var currentNode = self.firstChild
-//		while let node = currentNode {
-//			action(node)
-//			currentNode = node.nextSibling
-//		}
-//	}
-//
-//	// traverseChildrenBool traverses the children of a Node performing a Boolean action, ending
-//	// the loop if the action returns true.
-//	func traverseChildrenBool(action: (Node) -> Bool) {
-//		var current = self.firstChild
-//		while let child = current {
-//			if action(child) { return }
-//			current = child.nextSibling
-//		}
-//	}
 }
 
 // Methods on families.

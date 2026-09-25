@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 1 December 2025.
-//  Last changed on 4 March 2026.
+//  Last changed on 25 September 2026.
 //
 
 import SwiftUI
@@ -63,7 +63,7 @@ struct TransferGedcomTree: Transferable, Codable {
             newNode.addKid(child.toGedcomNode())
         }
         print("[TransferGedcomTree.toGedcomNode] Reconstructed GedcomNode tree:") // Debug.
-        newNode.debugPrintTree(prefix: "  ")  // Debug.
+        newNode.printTree()  // Debug.
         return newNode
     }
 
@@ -74,12 +74,5 @@ struct TransferGedcomTree: Transferable, Codable {
         for child in children {
             child.debugPrintSubtree(indent: indent + "  ")
         }
-    }
-}
-
-extension GedcomNode {
-
-    func debugPrintTree(prefix: String = "") {
-        self.printTree()
     }
 }

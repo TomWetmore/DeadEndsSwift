@@ -3,7 +3,7 @@
 //  DeadEndsTest
 //
 //  Created by Thomas Wetmore on 4 September 2025.
-//  Last changed on 30 March 2026.
+//  Last changed on 25 September 2026.
 //
 
 import Foundation
@@ -36,7 +36,7 @@ func loadDatabase() -> Database {
 
 /// Return deep copies of all values in a record index.
 func deepCopies(index: RecordIndex) -> RootList {
-    index.values.map { $0.deepTreeCopy() }
+    index.values.map { $0.deepCopy() }
 }
 
 // TODO: MOVE SOMEWHERE APPROPRIATE.
