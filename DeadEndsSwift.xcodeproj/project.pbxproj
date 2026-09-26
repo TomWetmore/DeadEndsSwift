@@ -176,7 +176,6 @@
 				RecordIndex.swift,
 				Search.swift,
 				SplitJoin.swift,
-				ToBeMoved.swift,
 				Traverse.swift,
 				ValidateFamily.swift,
 				ValidateGedcomTree.swift,

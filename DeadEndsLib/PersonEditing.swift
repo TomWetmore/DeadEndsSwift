@@ -3,16 +3,16 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 23 August 2026.
-//  Last changed on 28 August 2026.
+//  Last changed on 26 September 2026.
 //
 
 import Foundation
 
-/// Attempt to update a person in the database with a modified version of the person.
-/// The first version arrives as a person structure; the second version arrives as a
-/// string. That string is parsed into new version of the person. The new version is
-/// then checked to see if it can become a new version. If so the database is changed.
-/// If updating is not possible, one or more error strings are returned that say why.
+/// Update a Person in the Database with a modified version of the Person. The first
+/// version arrives as a Person structure; the second arrives as a String. The String
+/// parsed into the new Person. The new version is validated and if it is the Database
+/// is updated. If updating is not possible error strings are returned that say why.
+
 public func updatePerson(oldPerson: Person, newString: String, in database: Database) -> [String] {
 
     // Get a person by parsing the string.
@@ -20,7 +20,7 @@ public func updatePerson(oldPerson: Person, newString: String, in database: Data
     if results.errors.count > 0 {
         return results.errors
     }
-    // Get person info for the two versions.
+    // Get the PersonInfo for both versions.
     let (oldinfo, _) = getPersonInfo(for: oldPerson)
     let newPerson = results.person!
     let (newinfo, errors) = getPersonInfo(for: newPerson)
@@ -32,7 +32,7 @@ public func updatePerson(oldPerson: Person, newString: String, in database: Data
     if !policyErrors.isEmpty {
         return policyErrors
     }
-    // There are no errors so update the database with new version of person.
+    // There are no errors so update the Database with the new version of the Person.
     database.applyPersonUpdates(old: oldinfo, new: newinfo)
     return []
 }
@@ -53,7 +53,9 @@ func getPersonFromString(from string: String) -> (person: Person?, errors: [Stri
 }
 
 /// Validate the person changes -- Make sure all changes are okay.
-func validatePersonChanges(old: PersonInfo, new: PersonInfo, in index: RecordIndex) -> [String] {
+
+func validatePersonChanges(old: PersonInfo, new: PersonInfo,
+                           in index: RecordIndex) -> [String] {
 
     var errors: [String] = []
 
@@ -73,7 +75,7 @@ func validatePersonChanges(old: PersonInfo, new: PersonInfo, in index: RecordInd
         errors.append("FAMS relationships cannot be added or removed")
     }
     if new.key != old.key {
-        errors.append("Person key cannot be changed")
+        errors.append("Person key cannot change")
     }
 
     for node in new.person.root.subnodes {
@@ -87,7 +89,8 @@ func validatePersonChanges(old: PersonInfo, new: PersonInfo, in index: RecordInd
     return errors
 }
 
-/// Update the database after successfully editing a person.
+/// Update the database after successfully editing a Person.
+
 extension Database {
 
     func applyPersonUpdates(old: PersonInfo, new: PersonInfo) {
@@ -104,7 +107,7 @@ extension Database {
             nameIndex.add(value: name, recordKey: key)
         }
 
-        // Update date index.
+        // Update DateIndex.
         let addedDates = new.dateKeys.subtracting(old.dateKeys)
         let removedDates = old.dateKeys.subtracting(new.dateKeys)
         for dateKey in removedDates {
@@ -114,7 +117,7 @@ extension Database {
             dateIndex.add(year: dateKey.year, event: dateKey.event, recordKey: key)
         }
 
-        // Update place index.
+        // Update PlaceIndex.
         let addedPlaces = new.placeKeys.subtracting(old.placeKeys)
         let removedPlaces = old.placeKeys.subtracting(new.placeKeys)
         for placeKey in removedPlaces {
@@ -124,12 +127,13 @@ extension Database {
             placeIndex.add(part: placeKey.part, event: placeKey.event, recordKey: key)
         }
 
-        // Update the database with the edited person keeping the same Person root.
-        old.person.root.replaceChildren(with: new.person.kid)
+        // Update the Database with the new Person keeping the same Person root.
+        old.person.root.replaceKids(with: new.person.kid)
     }
 }
 
-/// Structure holding Person information that is used when validating.
+/// Structure holding Person validation information.
+
 struct PersonInfo: CustomStringConvertible {
 
     let person: Person
@@ -150,7 +154,8 @@ struct PersonInfo: CustomStringConvertible {
     }
 }
 
-/// Return the person info struct for a person; the person is not affected.
+/// Return the PersonInfo for a Person. The Person is not affected.
+
 func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
 
     var names: Set<String> = []
@@ -170,12 +175,14 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
         let line = node.index + 1  // For error messages.
 
         switch tag {
+
         case "NAME":
             if let val = val {
                 names.insert(val)
             } else {
                 errors.append("\(line): Missing value for NAME line")
             }
+
         case "SEX":
             sexCount += 1
             if let val {
@@ -185,18 +192,21 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
             } else {
                 errors.append("\(line): Missing value for SEX line")
             }
+
         case "FAMC":
             if let val = val {
                 famcKeys.insert(val)
             } else {
                 errors.append("\(line): Missing value for FAMC line")
             }
+
         case "FAMS":
             if let val = val {
                 famsKeys.insert(val)
             } else {
                 errors.append( "\(line): Missing value for FAMS line")
             }
+
         case "BIRT":
             for value in node.kidVals(forTag: "DATE") {
                 guard let year = year(from: value) else { continue }
@@ -207,6 +217,7 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
                     placeKeys.insert(PlaceKey(part: part, event: .birth))
                 }
             }
+
         case "DEAT":
             for value in node.kidVals(forTag: "DATE") {
                 guard let year = year(from: value) else { continue }
@@ -217,6 +228,7 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
                     placeKeys.insert(PlaceKey(part: part, event: .death))
                 }
             }
+
         default: break
         }
         current = node.sib  // Next level 1 node.
@@ -227,4 +239,21 @@ func getPersonInfo(for person: Person) -> (info: PersonInfo, errors: [String]) {
                           names: names, famcKeys: famcKeys, famsKeys: famsKeys,
                           dateKeys: dateKeys, placeKeys: placeKeys)
     return (info, errors)
+}
+
+/// Extension to GedcomNode.
+extension GedcomNode {
+
+    /// Replace this GedcomNode's kids.
+    /// TODO: Should this return the replaced kids as a disconnected forest.
+
+    func replaceKids(with newKid: GedcomNode?) {
+
+        var kid = newKid
+        while let node = kid {
+            node.dad = self
+            kid = node.sib
+        }
+        self.kid = newKid
+    }
 }
