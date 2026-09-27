@@ -324,13 +324,13 @@ public extension GedcomNode {
         return addKid(child)
     }
 
-    /// Add a GedcomNode as self GedcomNode's new first kid.
+    /// Add a GedcomNode as self's new first kid.
 
     @discardableResult
     func addKid(_ kid: GedcomNode) -> GedcomNode {
 
         kid.requireDisconnected()
-        let dad = self  // Makes code easier to read.
+        let dad = self  // Make code easier to read.
 
         kid.dad = dad
         kid.sib = dad.kid
@@ -374,6 +374,24 @@ public extension GedcomNode {
         sib.sib = kid
     }
 
+    func addKidAfter(_ kid: GedcomNode, sib: GedcomNode?) {
+
+        kid.requireDisconnected()
+
+        if let sib {
+            if sib.dad !== self {
+                fatalError("addKidAfter: sib is not a child of self")
+            }
+            kid.sib = sib.sib
+            sib.sib = kid
+        } else {
+            kid.sib = self.kid
+            self.kid = kid
+        }
+
+        kid.dad = self
+    }
+
     /// Return the last kid of a GedcomNode.
 
     func lastKid() -> GedcomNode? {
@@ -385,27 +403,7 @@ public extension GedcomNode {
         return node
     }
 
-    func addKidAfter(_ kid: GedcomNode, sib: GedcomNode?) {
-
-        precondition(kid.dad == nil && kid.sib == nil,
-                     "addKidAfter: kid is already attached")
-
-        if let sib {
-            precondition(sib.dad === self,
-                         "addKidAfter: sib is not a child of self")
-
-            kid.dad = self
-            kid.sib = sib.sib
-            sib.sib = kid
-        } else {
-            kid.dad = self
-            kid.sib = self.kid
-            self.kid = kid
-        }
-    }
-
-    /// Remove a kid from its parent.
-    /// TODO: Should return the removed kid.
+    /// Remove a kid from its parent. Return the disconnected self.
 
     @discardableResult
     func removeKid() -> GedcomNode? {
@@ -425,7 +423,7 @@ public extension GedcomNode {
         // Disconnect removed node.
         self.dad = nil
         self.sib = nil
-        return nil
+        return self
     }
 
     /// Return the previous sib of a GedcomNode.

@@ -16,12 +16,13 @@ GedcomNode is a Swift class central to DeadEnds. DeadEnds records are composed o
 
 ```swift
 typealias RecordKey = String
+typealias Tag = String
 
 final public class GedcomNode: Identifiable, CustomStringConvertible {
     public let id = UUID()
     
     public var key: RecordKey?
-    public var tag: String
+    public var tag: Tag
     public var val: String?
 
     public var sib: GedcomNode?
@@ -29,7 +30,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     public weak var dad: GedcomNode?
     
     public var lev: Int
-    public init(key: RecordKey? = nil, tag: String, val: String? = nil)
+    public init(key: RecordKey? = nil, tag: Tag, val: String? = nil)
     ...
 }
 ```
@@ -41,16 +42,16 @@ Here are some more properties of GedcomNodes:
 ```swift
     ...
     public var kids: [GedcomNode]
-    public func kid(withTag tag: String) -> GedcomNode?
-    public func kid(withTags tags: [String]) -> GedcomNode?
-    public func kids(withTag tag: String) -> [GedcomNode]
-    public func kids(withTags tags: [String]) -> [GedcomNode]
-    public func kidVal(forTag tag: String) -> String? 
-    public func kidVal(forTags tags: [String]) -> String?
-    public func kidVals(forTag tag: String) -> [String]
-    public func kidVals(forTags tags: [String]) -> [String]
-    public func kid(atPath path: [String]) -> GedcomNode?
-    public func kidVal(atPath path: [String]) -> String?
+    public func kid(withTag tag: Tag) -> GedcomNode?
+    public func kid(withTags tags: [Tag]) -> GedcomNode?
+    public func kids(withTag tag: Tag) -> [GedcomNode]
+    public func kids(withTags tags: [Tag]) -> [GedcomNode]
+    public func kidVal(forTag tag: Tag) -> String? 
+    public func kidVal(forTags tags: [Tag]) -> String?
+    public func kidVals(forTag tag: Tag) -> [String]
+    public func kidVals(forTags tags: [Tag]) -> [String]
+    public func kid(atPath path: [Tag]) -> GedcomNode?
+    public func kidVal(atPath path: [Tag]) -> String?
     ...
 ```
 

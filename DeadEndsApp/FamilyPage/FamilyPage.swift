@@ -63,7 +63,7 @@ struct FamilyPage: View {
         .navigationTitle("Family")
     }
 
-    private func resolveRole(_ tag: String) -> Person? {
+    private func resolveRole(_ tag: Tag) -> Person? {
         guard let key = family.kid(withTag: tag)?.val else { return nil }
         return model.database?.recordIndex.person(for: key)
     }
