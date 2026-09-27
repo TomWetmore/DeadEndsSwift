@@ -88,8 +88,10 @@ public extension Record {
         root.kidVals(forTags: tags)
     }
 
-    func gedcomText(level: Int = 0, indent: Bool = false) -> String {
-        root.gedcomText(level: level, indent: indent)
+    //func gedcomText(level: Int = 0, indent: Bool = false) -> String {
+    func gedcomText(indent: String = "") -> String {
+        //root.gedcomText(level: level, indent: indent)
+        root.gedcomText(indent: indent)
     }
 }
 

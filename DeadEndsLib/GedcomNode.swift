@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 26 September 2026.
+//  Last changed on 27 September 2026.
 //
 
 import Foundation
@@ -11,11 +11,10 @@ import Foundation
 public typealias Root = GedcomNode
 public typealias Tag = String
 
-/// A GedcomNode holds a single Gedcom line. The key, tag and val are from the Gedcom line;
-/// lev is computed. The sib, kid and dad fields hold the tree structure. Each node has a
-/// UUID, required by the user interface. The unfortunate names sib, kid and dad were chosen
-/// to avoid conflict with the inter-record terms sibling, child and parent. GedcomNode is
-/// a class so has reference semantics.
+/// A GedcomNode holds a single Gedcom line. The key, tag and val fields hold the Gedcom;
+/// lev is computed. The sib, kid and dad fields hold the tree structure. Each node has
+/// a UUID that may be used by the user interface. The unfortunate names sib, kid and dad
+/// avoid conflict with the inter-record terms sibling, child and parent.
 
 final public class GedcomNode: Identifiable, CustomStringConvertible {
 
@@ -33,8 +32,19 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 
     public weak var dad: GedcomNode? // Parent node in tree, required on non-roots.
 
+    public var lev: Int {            // Level of the node in its tree.
+
+        var level = 0
+        var node = self.dad
+        while let current = node, level < 100 {
+            level += 1
+            node = current.dad
+        }
+        return level
+    }
+
     /// Return the kids of a GedcomNode as an array of nodes. They are not copied and their
-    /// structural properties are not affected.
+    /// structural links are not affected.
 
     public var kids: [GedcomNode] {
 
@@ -48,7 +58,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     }
 
     /// Return the sibs of a GedcomNode as an array of nodes. They are not copied and their
-    /// structural properties are not affected.
+    /// structural links are not affected.
 
     public var sibs: [GedcomNode] {
         var results: [GedcomNode] = []
@@ -65,9 +75,13 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
     public var description: String {
 
         var description = "\(lev) "
-        if let key { description += "\(key) " }
+        if let key {
+            description += "\(key) "
+        }
         description += "\(tag)"
-        if let val { description += " \(val) " }
+        if let val {
+            description += " \(val) "
+        }
         return description
     }
 
@@ -78,33 +92,6 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         self.key = key
         self.tag = tag
         self.val = val
-    }
-
-    /// Return the level of a GedcomNode by counting steps to the root; cycles are detected.
-
-    public var lev: Int {
-
-        var level = 0
-        var node: GedcomNode? = self
-        while let current = node, level < 100 {
-            level += 1
-            node = current.dad
-        }
-        return level
-    }
-
-    /// Print a GedcomNode tree to stdout; recurse to kids and sibs.
-
-    public func printTree(level: Int = 0, indent: String = "") {
-
-        if level < 0 || level > 100 {
-            return
-        }
-        let space = String(repeating: indent, count: level)
-        print("\(space)\(level) \(self)")
-        
-        kid?.printTree(level: level + 1, indent: indent)
-        sib?.printTree(level: level, indent: indent)
     }
 }
 
@@ -217,34 +204,6 @@ public extension GedcomNode {
     func kidVal(atPath path: [Tag]) -> String? {
 
         path.reduce(self) { node, tag in node?.kid(withTag: tag) }?.val
-    }
-}
-
-public extension GedcomNode {
-
-    /// Convert a GedcomNode tree to Gedcom text.
-
-    func gedcomText(level: Int = 0, indent: Bool = false) -> String {
-        
-        var lines: [String] = []
-
-        let space = indent ? String(repeating: "  ", count: level) : ""
-        var line = space + "\(level)"
-        if level == 0, let k = self.key {
-            line += " \(k)"
-        }
-        line += " \(self.tag)"
-        if let value = self.val, !value.isEmpty {
-            line += " \(value)"
-        }
-        lines.append(line)
-
-        var child = self.kid
-        while let node = child {
-            lines.append(node.gedcomText(level: level + 1, indent: indent))
-            child = node.sib
-        }
-        return lines.joined(separator: "\n")
     }
 }
 
@@ -709,6 +668,49 @@ extension GedcomNode {
             prev.sib = sib
         } else {
             dad?.kid = sib
+        }
+    }
+}
+
+public extension GedcomNode {
+
+    /// Generate each line of a Gedcom tree and pass it on to a function.
+
+    private func forEachGedcomLine(level: Int = 0, indent: String = "", _ body: (String) -> Void) {
+
+        let space = String(repeating: indent, count: level)
+        var line = "\(space)\(level)"
+        if level == 0, let key {
+            line += " \(key)"
+        }
+        line += " \(tag)"
+        if let val, !val.isEmpty {
+            line += " \(val)"
+        }
+        body(line)  // Here be the magic.
+
+        var child = kid
+        while let node = child {
+            node.forEachGedcomLine(level: level + 1, indent: indent, body)
+            child = node.sib
+        }
+    }
+
+    /// Convert a GedcomNode tree to Gedcom text.
+
+    func gedcomText(indent: String = "") -> String {
+        var lines: [String] = []
+        forEachGedcomLine(indent: indent) {
+            lines.append($0)
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Print a GedcomNode tree to stdout; recurse to kids and sibs.
+
+    func printTree(indent: String = "") {
+        forEachGedcomLine(indent: indent) {
+            print($0)
         }
     }
 }

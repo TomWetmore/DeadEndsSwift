@@ -3,7 +3,7 @@
 //  DeadEndsSwift
 //
 //  Created by Thomas Wetmore on 16 July 2025.
-//  Last changed on 28 August 2026.
+//  Last changed on 27 September 2026.
 //
 
 import SwiftUI
@@ -31,7 +31,7 @@ struct PersonEditSheet: View {
     init(person: Person) {
 
         self.person = person
-        _editedText = State(initialValue: person.gedcomText(indent: true))
+        _editedText = State(initialValue: person.gedcomText(indent: "  "))
     }
 
     private func presentErrorSheet(errors: [String]) {

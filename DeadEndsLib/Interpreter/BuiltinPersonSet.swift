@@ -227,7 +227,8 @@ extension Program {
         let index = personsToRecordIndex(persons, in: recordIndex)
 
         for record in index.values {
-            let recordText = record.root.gedcomText(level: 0, indent: false)
+            //let recordText = record.root.gedcomText(level: 0, indent: false)
+            let recordText = record.root.gedcomText(indent: "")
             output.writeLine(recordText)
         }
         return .null
