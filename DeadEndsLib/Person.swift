@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 24 September 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -15,23 +15,27 @@ public enum SexType: String {
     case unknown = "U"
 }
 
-/// Person structure. A person is a wrapped 0 INDI root node with methods.
+/// Person structure. A Person is a wrapped 0 INDI root node with methods.
+
 public struct Person: Record {
 
-    public let root: Root  // Only stored property of a person.
+    public let root: Root  // Only stored property.
 }
 
 extension Person {
 
     /// Create a person from a root node. Fatal error if not possible.
+
     public init(_ root: Root) {
 
-        guard root.tag == GedcomTag.INDI, root.key != nil
-        else { fatalError("Root \(root) is not a valid 0 INDI node") }
+        guard root.tag == GedcomTag.INDI, root.key != nil else {
+            fatalError("Root \(root) is not a valid 0 INDI node")
+        }
         self.root = root
     }
 
-    /// Return the person's key.
+    /// Return A Person's key.
+
     public var key: String {
 
         guard let key = root.key else { fatalError("person must have a key") }
@@ -41,12 +45,14 @@ extension Person {
 
 extension Person {
 
-    /// Return display name from the first 1 NAME node.
+    /// Return a display name for the Person.
+
     public var name: String {
 
         guard let nameNode = root.kid(withTag: GedcomTag.NAME),
-              let gedcomName = GedcomName(from: nameNode)
-        else { return "no name" }
+              let gedcomName = GedcomName(from: nameNode) else {
+            return "no name"
+        }
         return gedcomName.displayName()
     }
 
@@ -59,12 +65,14 @@ extension Person {
 
     }
 
-    /// Return a single line display summary of a person.
+    /// Return a single line display summary for this Person.
+
     public var displayLine: String {
 
         let name = displayName()
         let birth = birthEvent?.summary
         let death = deathEvent?.summary
+
         switch (birth, death) {
         case let (b?, d?): return "\(name) (born \(b) — died \(d))"
         case let (b?, nil): return "\(name) (born \(b))"
@@ -74,16 +82,19 @@ extension Person {
     }
 }
 
-/// Event API.
+/// Event operations on a Person.
+
 extension Person {
 
-    /// Return first birth event.
+    /// Return the first birth event of this Person.
+
     public var birthEvent: Event? {
 
         root.eventOfKind(.birth)
     }
 
-    /// Return first death event.
+    /// Return the first death event of this Person.
+
     public var deathEvent: Event? {
 
         root.eventOfKind(.death)
@@ -91,15 +102,18 @@ extension Person {
 }
 
 /// Person is Equatable and Hashable.
+
 extension Person: Equatable, Hashable {
 
-    /// Equate two persons.
+    /// Equate two Persons.
+
     public static func == (lhs: Person, rhs: Person) -> Bool {
 
         lhs.root.key == rhs.root.key
     }
 
-    /// Return person hash.
+    /// Return hash of Person.
+
     public func hash(into hasher: inout Hasher) {
 
         hasher.combine(root.key)
@@ -144,6 +158,7 @@ public extension Person {
 }
 
 /// Extension for Parents, Mothers, and Fathers.
+
 public extension Person {
 
     /// Return all person's parents.
@@ -161,7 +176,8 @@ public extension Person {
         return result
     }
 
-    /// Return person's parents.
+    /// Return Person's parents.
+
     private func parents(in index: RecordIndex, role: Tag) -> [Person] {
 
         var result: [Person] = []
@@ -178,7 +194,8 @@ public extension Person {
         return result
     }
 
-    /// Return person's father from first husband in person's first FAMC with a husband.
+    /// Return Person's father from first husband in Person's first FAMC with a husband.
+
     func father(in index: RecordIndex) -> Person? {
 
         parents(in: index, role: GedcomTag.HUSB).first
@@ -251,7 +268,7 @@ public func requirePerson(with key: RecordKey, in index: RecordIndex) -> Person 
 
 public func requirePerson(from root: Root, in index: RecordIndex) -> Person {
 
-    let key = requireKey(on: root)
+    let key = root.requireKey(tag: "INDI")
     guard let person = index.person(for: key), person.root.tag == "INDI" else {
         fatalError("root \(root) must be the root of a person")
     }

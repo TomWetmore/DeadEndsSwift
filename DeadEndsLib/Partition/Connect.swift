@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 23 September 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -41,7 +41,7 @@ extension RecordIndex {
     public func connections(partition: [Root]) -> ConnectIndex {
         var connectIndex: ConnectIndex = [:]
         for root in partition {  // Add an empty connect data entry for every.
-            let key = requireKey(on: root)
+            let key = root.requireKey()
             if root.tag != GedcomTag.INDI { continue }
             connectIndex[key] = ConnectData()
         }
@@ -113,7 +113,7 @@ extension RecordIndex {
 
     /// Find all ancestors of a person from its root node.
     public func ancestors(of personRoot: Root) -> [Root] {
-        let startKey = requireKey(on: personRoot)
+        let startKey = personRoot.requireKey()
         var seen: Set<RecordKey> = []
         var queue: [RecordKey] = parentKeys(ofPersonKey: startKey)
         var next = 0
@@ -151,7 +151,7 @@ extension RecordIndex {
 
     /// Find all descendants of a person from its root node.
     public func descendants(of personRoot: Root) -> [Root] {
-        let startKey = requireKey(on: personRoot)
+        let startKey = personRoot.requireKey()
         var seen: Set<RecordKey> = []
         var queue: [RecordKey] = childrenKeys(ofPersonKey: startKey)
         var next = 0
@@ -223,7 +223,7 @@ func dedupeKeys(_ keys: [RecordKey]) -> [RecordKey] {
 
 /// Require a node to be a person root node and have a key.
 func requirePersonKey(on root: GedcomNode) -> RecordKey {
-    return requireKey(on: root, tag: GedcomTag.INDI)
+    return root.requireKey(tag: "INDI")
 }
 
 /// Require a node to have a key value.
@@ -236,7 +236,7 @@ func requireKeyValue(onNode node: GedcomNode) -> RecordKey {
 
 /// Require a node to be a family root and have a key.
 func requireFamilyKey(on root: GedcomNode) -> RecordKey {
-    return requireKey(on: root, tag: GedcomTag.FAM)
+    return root.requireKey(tag: "FAM")
 }
 
 

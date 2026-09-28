@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 24 Seotenber 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -40,7 +40,7 @@ extension Family {
 
             let root = index.requireRoot(from: node, tag: GedcomTag.INDI)
             let person = Person(root)
-            let key = requireKey(on: root)
+            let key = root.requireKey()
 
             return seen.insert(key).inserted ? person : nil
         }

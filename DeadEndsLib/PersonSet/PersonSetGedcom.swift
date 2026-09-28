@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 April 2026.
-//  Last changed on 25 September 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -30,7 +30,7 @@ func personsToRecordIndex(_ persons: [Person], in index: RecordIndex) -> [Record
         for familyNode in familyNodes {
 
             let familyRoot = index.requireRoot(from: familyNode, tag: "FAM")
-            let familyKey = familyRoot.requireKey
+            let familyKey = familyRoot.requireKey()
             guard seenFamilyKeys.insert(familyKey).inserted else {
                 continue
             }

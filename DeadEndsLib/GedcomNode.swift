@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 27 September 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -591,16 +591,21 @@ public extension GedcomNode {
 
 extension GedcomNode {
 
-    /// Require a GedcomNode to have a key and optionally a tag. Must succeed.
+    /// Require a root GedcomNode to have a key. The user can provide the tag the node must
+    /// also have. The method must succed.
 
     func requireKey(tag: Tag? = nil) -> RecordKey {
 
-        DeadEndsLib.requireKey(on: self, tag: tag)
-    }
-
-    var requireKey: RecordKey {
-
-        DeadEndsLib.requireKey(on: self)
+        guard let key = self.key else {
+            fatalError("expected root \(self) to have a key")
+        }
+        guard let tag else {
+            return key
+        }
+        guard tag == self.tag else {
+            fatalError("expected root \(self) to have key \(tag)")
+        }
+        return key
     }
 
     // Require a GedcomNode val to hold a link key.
@@ -614,25 +619,9 @@ extension GedcomNode {
     }
 }
 
-/// Require a root node to have a key. Must succeed.
-
-func requireKey(on root: GedcomNode, tag: Tag? = nil) -> RecordKey {
-
-    guard let key = root.key else {
-        fatalError("expected root \(root) to have a key")
-    }
-    if tag == nil {
-        return key
-    }
-    guard tag! == root.tag else {
-        fatalError("expected root \(root) to have key \(tag!)")
-    }
-    return key
-}
-
 extension GedcomNode {
 
-    /// Require that a GedcomNode do not have a dad or a sib link.
+    /// Require that a GedcomNode not have a dad or a sib link.
 
     func requireDisconnected() {
 
@@ -674,9 +663,10 @@ extension GedcomNode {
 
 public extension GedcomNode {
 
-    /// Generate each line of a Gedcom tree and pass it on to a function.
+    /// Generate each line of a Gedcom tree and pass it to an action.
 
-    private func forEachGedcomLine(level: Int = 0, indent: String = "", _ body: (String) -> Void) {
+    private func forEachGedcomLine(level: Int = 0, indent: String = "",
+                                   _ action: (String) -> Void) {
 
         let space = String(repeating: indent, count: level)
         var line = "\(space)\(level)"
@@ -687,11 +677,11 @@ public extension GedcomNode {
         if let val, !val.isEmpty {
             line += " \(val)"
         }
-        body(line)  // Here be the magic.
+        action(line)
 
         var child = kid
         while let node = child {
-            node.forEachGedcomLine(level: level + 1, indent: indent, body)
+            node.forEachGedcomLine(level: level + 1, indent: indent, action)
             child = node.sib
         }
     }

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 16 March 2026.
-//  Last changed on 31 March 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -31,7 +31,7 @@ extension RecordIndex {
         for root in personRoots {
             // If the key has been seen before this root and all those related
             // to it are already in a partition.
-            let key = requireKey(on: root)
+            let key = root.requireKey()
             if seen.contains(key) { continue }
             // The key has not been seen before so create its partition
             let partition = partition(containing: root, seen: &seen,
@@ -54,7 +54,7 @@ extension RecordIndex {
             let root = queue[next]
             next += 1
             // If root's key has been seen before continue to next root.
-            let key = requireKey(on: root)
+            let key = root.requireKey()
             if seen.contains(key) { continue }
 
             // Seeing node and key for the first time.
