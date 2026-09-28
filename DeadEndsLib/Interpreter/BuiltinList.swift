@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 15 September 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -230,22 +230,31 @@ extension Program {
         return .list(ListValue(siblings.map { ProgramValue.person($0)}))
     }
 
-    /// Return the list of spouses of a person or family.
+    /// Return the list of spouses of a person, family, or personset.
+    /// spouses(person|family|null) -> list
+    /// spouses(personset) -> personset
+
     func bltinSpouses(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
         var spouses = [Person]()
 
         switch try await evaluate(args[0]) {
+
         case .person(let person):
             spouses = person.spouses(in: recordIndex)
+
         case .family(let family):
             spouses = family.spouses(in: recordIndex)
+
+        case .personset(let set):
+            return .personset(set.spouses(in: recordIndex))
+
         case .null:
             return .emptyList
+
         default:
-            throw RuntimeError("spouses: arg must be a person or family",
-                                                line: line)
+            throw RuntimeError("spouses: arg must be a person, family, or personset", line: line)
         }
         return .list(ListValue(spouses.map { ProgramValue.person($0) }))
     }

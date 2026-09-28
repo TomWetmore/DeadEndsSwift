@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 21 September 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -28,6 +28,20 @@ extension PersonSet {
             }
         }
         return result
+    }
+
+    /// Add the elements of another PersonSet to this PersonSet,
+    /// ignoring duplicate keys.
+
+    func formUnion(_ other: PersonSet) {
+
+        var seen = Set(elements.map(\.key))
+
+        for element in other.elements {
+            if seen.insert(element.key).inserted {
+                append(element)
+            }
+        }
     }
 
     /// Return intersection of two PersonSets with duplicte keys removed.

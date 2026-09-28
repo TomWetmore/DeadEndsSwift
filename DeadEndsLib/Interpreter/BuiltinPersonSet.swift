@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 24 September 2026.
+//  Last changed on 28 September 2026.
 //
 
 import Foundation
@@ -24,7 +24,7 @@ extension Program {
     /// value the third argument can be omitted.
     /// addtoset(personset, person[, any]) -> null
 
-    func bltinAddToSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func oldbltinAddToSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let personSet = try await evalPersonSet(args[0],
                                     errMsg: "addtoset: 1st arg must be a personset")
@@ -35,6 +35,39 @@ extension Program {
             any = try await evaluate(args[2])
         }
         personSet.append(person, value: any)
+        return .null
+    }
+
+    /// Add a person or the persons in a PersonSet to a PersonSet.
+    /// An associated value may be supplied when adding a single person.
+    /// addtoset(personset, person[, any]) -> null
+    /// addtoset(personset, personset) -> null
+
+    func bltinAddToSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let personSet = try await evalPersonSet(args[0],
+            errMsg: "addtoset: 1st arg must be a personset")
+
+        let value = try await evaluate(args[1])
+
+        switch value {
+
+        case .person(let person):
+            let any = args.count == 3 ? try await evaluate(args[2]) : .null
+            personSet.append(person, value: any)
+
+        case .personset(let other):
+            guard args.count == 2 else {
+                throw RuntimeError(
+                    "addtoset: associated value not allowed when adding personset"
+                )
+            }
+            personSet.formUnion(other)
+
+        default:
+            throw RuntimeError("addtoset: 2nd arg must be a person or personset")
+        }
+
         return .null
     }
 
@@ -227,7 +260,6 @@ extension Program {
         let index = personsToRecordIndex(persons, in: recordIndex)
 
         for record in index.values {
-            //let recordText = record.root.gedcomText(level: 0, indent: false)
             let recordText = record.root.gedcomText(indent: "")
             output.writeLine(recordText)
         }
