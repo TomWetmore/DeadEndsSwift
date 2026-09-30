@@ -70,7 +70,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return results
     }
 
-    /// Return a description of a single GedcomNode.
+    /// Return a description of a GedcomNode.
 
     public var description: String {
 
@@ -99,7 +99,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 
 public extension GedcomNode {
 
-    /// Return the first kid with the given tag.
+    /// Return the first kid node with the given tag.
 
     func kid(withTag tag: Tag) -> GedcomNode? {
 
@@ -113,7 +113,7 @@ public extension GedcomNode {
         return nil
     }
 
-    /// Return the first kid with a tag from a list of tags.
+    /// Return the first kid node with a tag from a list of tags.
 
     func kid(withTags tags: [Tag]) -> GedcomNode? {
 
@@ -128,7 +128,7 @@ public extension GedcomNode {
         return nil
     }
 
-    /// Return all kids with the given tag.
+    /// Return all kid nodes with the given tag.
 
     func kids(withTag tag: Tag) -> [GedcomNode] {
 
@@ -143,7 +143,7 @@ public extension GedcomNode {
         return results
     }
 
-    /// Return all kids with tags from a tag list.
+    /// Return all kid nodes with tags from a tag list.
 
     func kids(withTags tags: [Tag]) -> [GedcomNode] {
 
@@ -159,14 +159,14 @@ public extension GedcomNode {
         return results
     }
 
-    /// Return the val of first kid with a given tag.
+    /// Return the val of first kid node with a given tag.
 
     func kidVal(forTag tag: Tag) -> String? {
 
         return kid(withTag: tag)?.val
     }
 
-    /// Return the val of first kid with a tag from a list of tags.
+    /// Return the val of first kid node with a tag from a list of tags.
 
     func kidVal(forTags tags: [Tag]) -> String? {
 
@@ -347,7 +347,6 @@ public extension GedcomNode {
             kid.sib = self.kid
             self.kid = kid
         }
-
         kid.dad = self
     }
 
@@ -401,41 +400,6 @@ public extension GedcomNode {
         return nil
     }
 
-    /// Insert a forest (one node or a sib chain) into this node's kid list.
-    /// - Parameters:
-    ///   - first: first root of the forest to insert (may be a single node).
-    ///   - after: existing child after which to insert; if nil, inserts at front.
-    ///
-    /// Preconditions:
-    /// - every root in the inserted forest has dad == nil
-    /// - if after != nil, then after.dad === self
-    func insertKidForest(_ first: GedcomNode, after: GedcomNode? = nil) {
-
-        if let after {
-            precondition(after.dad === self, "insertKidForest: 'after' is not a child of this node")
-        }
-
-        // Walk the forest: set each root's dad, and find the last root.
-        var last: GedcomNode = first
-        var cur: GedcomNode? = first
-        while let node = cur {
-            precondition(node.dad == nil, "insertKidForest: cannot insert a node that already has a parent")
-            node.dad = self
-            last = node
-            cur = node.sib
-        }
-
-        // Splice the forest into the kid list.
-        if let after {
-            last.sib = after.sib
-            after.sib = first
-        } else {
-            last.sib = self.kid
-            self.kid = first
-        }
-    }
-
-
     /// Replace this GedcomNode with a disconnected GedcomNode.
     /// Return this node, disconnected from its original tree.
 
@@ -454,31 +418,6 @@ public extension GedcomNode {
         self.dad = nil
         self.sib = nil
         return self
-    }
-
-    @discardableResult
-    func replace(old oldNode: GedcomNode, with newNode: GedcomNode) -> Bool {
-        if newNode.sib != nil { fatalError("new node cannot be a forest") }
-        newNode.dad = self
-        newNode.sib = oldNode.sib
-
-        if kid === oldNode {
-            // Case: old node was the first child
-            kid = newNode
-        } else {
-            // Find the previous sibling
-            var prev = kid
-            while let s = prev?.sib, s !== oldNode {
-                prev = s
-            }
-            guard prev?.sib === oldNode else { return false }
-            prev?.sib = newNode
-        }
-
-        // Detach old node
-        oldNode.dad = nil
-        oldNode.sib = nil
-        return true
     }
 
     /// Add a GedcomNode, and any descendants, after this GedcomNode in the dad's

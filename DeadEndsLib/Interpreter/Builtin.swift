@@ -121,6 +121,8 @@ extension Program {
             "spouses": Builtin(min: 1, max: 1) { try await self.bltinSpouses($0)},
             "nspouses": Builtin(min: 1, max: 1) { try await self.bltinNSpouses($0)},
             "parents": Builtin(min: 1, max: 1) { try await self.bltinParents($0)},
+            //fathers
+            //mothers
 
             // Event operations.
             "date":  Builtin(min: 1, max: 1) { try await self.bltinDate($0)},
@@ -163,14 +165,9 @@ extension Program {
             "union": Builtin(min: 2, max: 2) { try await self.bltinUnion($0)},
             "intersect": Builtin(min: 2, max: 2) { try await self.bltinIntersect($0)},
             "difference": Builtin(min: 2, max: 2) { try await self.bltinDifference($0)},
-            "parentset" : Builtin(min: 1, max: 1) { try await self.bltinParentSet($0)},
-            "childset" : Builtin(min: 1, max: 1) { try await self.bltinChildSet($0)},
-            "spouseset": Builtin(min: 1, max: 1) { try await self.bltinSpouseSet($0)},
-            "siblingset": Builtin(min: 1, max: 1) { try await self.bltinSiblingSet($0)},
-            "ancestorset": Builtin(min: 1, max: 1) { try await self.bltinAncestorSet($0)},
-            "ancestors": Builtin(min: 1, max: 1) { try await self.bltinAncestorSet($0)},
-            "descendentset": Builtin(min: 1, max: 1) { try await self.bltinDescendentSet($0)},
-            "descendents": Builtin(min: 1, max: 1) { try await self.bltinDescendentSet($0)},
+            "ancestors": Builtin(min: 1, max: 1) { try await self.bltinAncestors($0)},
+            "descendants": Builtin(min: 1, max: 1) { try await self.bltinDescendants($0)},
+            "descendents": Builtin(min: 1, max: 1) { try await self.bltinDescendants($0)},
             "namesort": Builtin(min: 1, max: 1) { try await self.bltinNameSort($0)},
             "keysort": Builtin(min: 1, max: 1) { try await self.bltinKeySort($0)},
             "gengedcom": Builtin(min: 1, max: 1) { try await self.bltinGenGedcom($0)},

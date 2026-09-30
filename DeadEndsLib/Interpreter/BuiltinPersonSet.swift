@@ -34,7 +34,7 @@ extension Program {
         if args.count == 3 {
             any = try await evaluate(args[2])
         }
-        personSet.append(person, value: any)
+        personSet.insert(person, value: any)
         return .null
     }
 
@@ -54,7 +54,7 @@ extension Program {
 
         case .person(let person):
             let any = args.count == 3 ? try await evaluate(args[2]) : .null
-            personSet.append(person, value: any)
+            personSet.insert(person, value: any)
 
         case .personset(let other):
             guard args.count == 2 else {
@@ -178,73 +178,102 @@ extension Program {
     /// Built-in that returns the parent person set of a person set.
     /// parentset(personset) -> personset
 
-    func bltinParentSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let setValue = try await evaluate(args[0])
-        guard case let .personset(set) = setValue else {
-            throw RuntimeError("parentset: arg must be a personset", line: args[0].line)
-        }
-        return .personset(set.parents(in: recordIndex))
-    }
+//    func bltinParentSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//
+//        let setValue = try await evaluate(args[0])
+//        guard case let .personset(set) = setValue else {
+//            throw RuntimeError("parentset: arg must be a personset", line: args[0].line)
+//        }
+//        return .personset(set.parents(in: recordIndex))
+//    }
 
     /// Built-in that returns the children person set of a person set.
     /// childset(personset) -> personset
 
-    func bltinChildSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let setValue = try await evaluate(args[0])
-        guard case let .personset(set) = setValue else {
-            throw RuntimeError("childset: arg must be a personset", line: args[0].line)
-        }
-        return .personset(set.children(in: recordIndex))
-    }
+//    func bltinChildSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//
+//        let setValue = try await evaluate(args[0])
+//        guard case let .personset(set) = setValue else {
+//            throw RuntimeError("childset: arg must be a personset", line: args[0].line)
+//        }
+//        return .personset(set.children(in: recordIndex))
+//    }
 
     /// Built-in that return the sibling person set of a person set.
     /// siblingset(personset) -> personset
 
-    func bltinSiblingSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let setValue = try await evaluate(args[0])
-        guard case let .personset(set) = setValue else {
-            throw RuntimeError("siblingset: arg must be a personset", line:args[0].line)
-        }
-        return .personset(set.siblings(in: recordIndex))
-    }
+//    func bltinSiblingSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//
+//        let setValue = try await evaluate(args[0])
+//        guard case let .personset(set) = setValue else {
+//            throw RuntimeError("siblingset: arg must be a personset", line:args[0].line)
+//        }
+//        return .personset(set.siblings(in: recordIndex))
+//    }
 
     /// Built-in that returns the spouse person set of a person set.
     /// spouseset(personset) -> personset
 
-    func bltinSpouseSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//    func bltinSpouseSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+//
+//        let setValue = try await evaluate(args[0])
+//        guard case let .personset(set) = setValue else {
+//            throw RuntimeError("spouseset: arg must be a personset", line: args[0].line)
+//        }
+//        return .personset(set.spouses(in: recordIndex))
+//    }
 
-        let setValue = try await evaluate(args[0])
-        guard case let .personset(set) = setValue else {
-            throw RuntimeError("spouseset: arg must be a personset", line: args[0].line)
-        }
-        return .personset(set.spouses(in: recordIndex))
-    }
-
+    /// MADE GENERIC BY ALLOWING PERSON ARGUMENTS.
     /// Built-in that returns the ancestor person set of a person set.
+    /// ancestors(person) -> list<person>
     /// ancestorset(personset) -> personset
+    /// ancestorset(null) -> null
 
-    func bltinAncestorSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func bltinAncestors(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let setValue = try await evaluate(args[0])
-        guard case let .personset(set) = setValue else {
-            throw RuntimeError("ancestorset: arg must be a personset", line: args[0].line)
+        let value = try await evaluate(args[0])
+        switch value {
+
+        // In the person case we want to create a .list of .persons
+        case .person(let person):
+            let values = person.ancestors(in: recordIndex).map { ProgramValue.person($0) }
+            return .list(ListValue(values))
+
+        /// In the personset case we want to create a .personset
+        case .personset(let set):
+            return .personset(set.ancestors(in: recordIndex))
+
+        case .null:
+            return .null
+
+        default:
+            throw RuntimeError("ancestors: arg must be a person or personset", line: args[0].line)
         }
-        return .personset(set.ancestors(in: recordIndex))
     }
 
     /// Built-in that returns the descendant person set of a person set.
-    /// descend[a|e]ntset(personset) -> personset
+    /// descendantset(personset) -> personset
 
-    func bltinDescendentSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    func bltinDescendants(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let setValue = try await evaluate(args[0])
-        guard case let .personset(set) = setValue else {
-            throw RuntimeError("descendentset: arg must be a personset", line: args[0].line)
+        let value = try await evaluate(args[0])
+        switch value {
+
+        // In the person case we want to create a .list of .persons
+        case .person(let person):
+            let values = person.descendants(in: recordIndex).map { ProgramValue.person($0) }
+            return .list(ListValue(values))
+
+        /// In the personset case we want to create a .personset
+        case .personset(let set):
+            return .personset(set.descendants(in: recordIndex))
+
+        case .null:
+            return .null
+
+        default:
+            throw RuntimeError("ancestors: arg must be a person or personset", line: args[0].line)
         }
-        return .personset(set.descendants(in: recordIndex))
     }
 
     /// Built-in that generates Gedcom text from a PersonSet.

@@ -142,23 +142,40 @@ extension Program {
 /// Builtins that return lists of persons or families.
 extension Program {
 
-    /// Return the children of a person or family as a List.
+    /// Return the children of a .person or .family as a .list or the children of a .personset as a
+    /// .personset
+    /// children(person|family) -> list<person>
+    /// children(personset) -> personset
+    /// children(null) -> null
     func bltinChildren(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
-        var children = [Person]()
 
         switch try await evaluate(args[0]) {
+
         case .person(let person):
-            children = person.children(in: recordIndex)
+            let children = person.children(in: recordIndex)
+            return .list(ListValue(children.map { ProgramValue.person($0) }))
+
         case .family(let family):
-            children = family.children(in: recordIndex)
+            let children = family.children(in: recordIndex)
+            return .list(ListValue(children.map { ProgramValue.person($0) }))
+
+        case .personset(let set):
+            let children = PersonSet()
+            for element in set.elements {
+                for child in element.person.children(in: recordIndex) {
+                    children.insert(child)
+                }
+            }
+            return .personset(children)
+
         case .null:
             return .emptyList
+
         default:
             throw RuntimeError("children: arg must be a person or family", line: line)
         }
-        return .list(ListValue(children.map { ProgramValue.person($0) }))
     }
 
     /// Return the number of children or a person or family.
@@ -166,68 +183,106 @@ extension Program {
 
         let children = try await bltinChildren(args)
         switch children {
+
         case .null:
             return .null
+
         case .list(let l):
             return .integer(l.count);
         default:
+
             throw RuntimeError("nchildren: arg must be a person or family",
                                line: args[0].line)
         }
     }
 
-    /// Return the list of husbands of a person or family.
+    /// Return the list or personset of husbands of a person, family, or personset.
+
     func bltinHusbands(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
-        var husbands = [Person]()
 
         switch try await evaluate(args[0]) {
+            
         case .person(let person):
-            husbands = person.husbands(in: recordIndex)
+            let husbands = person.husbands(in: recordIndex)
+            return .list(ListValue(husbands.map { ProgramValue.person($0)}))
+
         case .family(let family):
-            husbands = family.husbands(in: recordIndex)
+            let husbands = family.husbands(in: recordIndex)
+            return .list(ListValue(husbands.map { ProgramValue.person($0)}))
+
+        case .personset(let set):
+            let husbandSet = PersonSet()
+            for element in set.elements {
+                for husband in element.person.husbands(in: recordIndex) {
+                    husbandSet.insert(husband)
+                }
+            }
+            return .personset(husbandSet)
+
         case .null:
             return .emptyList
+
         default:
-            throw RuntimeError("husbands: arg must be a person or family", line: line)
+            throw RuntimeError("husbands: arg must be a person, family, or personset", line: line)
         }
-        return .list(ListValue(husbands.map { ProgramValue.person($0)}))
     }
 
-    /// Return the list of wives of a person or family.
+    /// Return the list of wives of a person, family, or the personset of wives of a personset.
+
     func bltinWives(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         let line = args[0].line
-        var wives = [Person]()
 
         switch try await evaluate(args[0]) {
+
         case .person(let person):
-            wives = person.wives(in: recordIndex)
+            let wives = person.wives(in: recordIndex)
+            return .list(ListValue(wives.map { ProgramValue.person($0)}))
+
         case .family(let family):
-            wives = family.wives(in: recordIndex)
+            let wives = family.wives(in: recordIndex)
+            return .list(ListValue(wives.map { ProgramValue.person($0)}))
+
+        case .personset(let set):
+            let wives = PersonSet()
+            for element in set.elements {
+                for wife in element.person.wives(in: recordIndex) {
+                    wives.insert(wife)
+                }
+            }
+            return .personset(wives)
+
         case .null:
             return .emptyList
+
         default:
-            throw RuntimeError("wives: arg must be a person or family", line: line)
+            throw RuntimeError("wives: arg must be a person, family, or person set", line: line)
         }
-        return .list(ListValue(wives.map { ProgramValue.person($0)}))
     }
 
-    /// Return the list of siblings of a person.
+    /// Return the list of siblings of a Person or PersonSet.
+
     func bltinSiblings(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
-        var siblings = [Person]()
 
         switch try await evaluate(args[0]) {
+            
         case .person(let person):
-            siblings = person.siblings(in: recordIndex)
+            let siblings = person.siblings(in: recordIndex)
+            return .list(ListValue(siblings.map { ProgramValue.person($0)}))
+
+        case .personset(let set):
+            return .personset(set.siblings(in: recordIndex))
+
         case .null:
             return .emptyList
+
         default:
             throw RuntimeError("siblings: arg must be a person", line: line)
         }
-        return .list(ListValue(siblings.map { ProgramValue.person($0)}))
     }
 
     /// Return the list of spouses of a person, family, or personset.
@@ -237,15 +292,16 @@ extension Program {
     func bltinSpouses(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
-        var spouses = [Person]()
 
         switch try await evaluate(args[0]) {
 
         case .person(let person):
-            spouses = person.spouses(in: recordIndex)
+            let spouses = person.spouses(in: recordIndex)
+            return .list(ListValue(spouses.map { ProgramValue.person($0) }))
 
         case .family(let family):
-            spouses = family.spouses(in: recordIndex)
+            let spouses = family.spouses(in: recordIndex)
+            return .list(ListValue(spouses.map { ProgramValue.person($0) }))
 
         case .personset(let set):
             return .personset(set.spouses(in: recordIndex))
@@ -256,45 +312,65 @@ extension Program {
         default:
             throw RuntimeError("spouses: arg must be a person, family, or personset", line: line)
         }
-        return .list(ListValue(spouses.map { ProgramValue.person($0) }))
+
     }
 
-    /// Return the number of spouses or a person or family.
+    /// Return the number of spouses of a Person or Family.
+
     func bltinNSpouses(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let spouses = try await bltinSpouses(args)
         switch spouses {
+
         case .null:
             return .null
+
         case .list(let l):
+
             return .integer(l.count);
+            
         default:
             throw RuntimeError("nchildren: arg must be a person or family",
                                line: args[0].line)
         }
     }
 
-    /// Return the list of parents of a person or family (the spouses).
+    /// Return the list of parents of a Person or Family or PersonSet.
+    ///
     func bltinParents(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
-        var parents = [Person]()
 
         switch try await evaluate(args[0]) {
+
         case .person(let person):
-            parents = person.parents(in: recordIndex)
+            let parents = person.parents(in: recordIndex)
+            return .list(ListValue(parents.map { ProgramValue.person($0) }))
+
         case .family(let family):
-            parents = family.spouses(in: recordIndex) // Define parents of a family and the spouses.
+            let parents = family.spouses(in: recordIndex) // Define parents of a family and the spouses.
+            return .list(ListValue(parents.map { ProgramValue.person($0) }))
+
+        case .personset(let set):
+            let parents = PersonSet()
+            for element in set.elements {
+                for parent in element.person.parents(in: recordIndex) {
+                    parents.insert(parent)
+                }
+            }
+            return .personset(parents)
+
         case .null:
             return .emptyList
+
         default:
             throw RuntimeError("parents: arg must be a person", line: line)
         }
-        return .list(ListValue(parents.map { ProgramValue.person($0) }))
     }
 
     /// Return the list of families a person is in as a spouse.
     /// families(person) -> list<family>
+
     func bltinFamilyList(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line

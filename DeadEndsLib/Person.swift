@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 28 September 2026.
+//  Last changed on 29 September 2026.
 //
 
 import Foundation
@@ -353,6 +353,7 @@ public extension Person {
 }
 
 /// Extension for Siblings.
+
 extension Person {
 
     /// Return person's siblings from all FAMC families, deduped and in gedcom order.
@@ -408,22 +409,25 @@ public extension Person {
 }
 
 /// Extension for ancestors and descendants.
+
 public extension Person {
+
+    /// Return the ancestors of a Person as an array of Persons.
 
     func ancestors(in index: RecordIndex) -> [Person] {
 
-        index.ancestors(ofPersonRoot: root).map { ancestorRoot in
+        index.ancestors(ofPerson: root).map { ancestorRoot in
             Person(ancestorRoot)
         }
     }
 
+    /// Return the descendents of a Person as an array of Persons.
     func descendants(in index: RecordIndex) -> [Person] {
 
-        index.descendants(ofPersonRoot: root).map { descendantRoot in
+        index.descendants(ofPerson: root).map { descendantRoot in
             Person(descendantRoot)
         }
     }
-
 }
 
 extension Database {

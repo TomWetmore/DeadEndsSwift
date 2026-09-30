@@ -3,76 +3,56 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 28 September 2026.
+//  Last changed on 29 September 2026.
 //
 
 import Foundation
 
 extension PersonSet {
 
-    /// Return the union of two PersonSets with duplicate keys removed.
+    /// Return the union of two PersonSets.
 
     func union(_ other: PersonSet) -> PersonSet {
 
-        let result = PersonSet()
-        var seen = Set<RecordKey>()
-
-        for element in elements {
-            if seen.insert(element.key).inserted {
-                result.append(element)
-            }
-        }
+        let result = self.copy()
         for element in other.elements {
-            if seen.insert(element.key).inserted {
-                result.append(element)
-            }
+            result.insert(element)
         }
         return result
     }
 
-    /// Add the elements of another PersonSet to this PersonSet,
-    /// ignoring duplicate keys.
+    /// Insert the elements of another PersonSet into this PersonSet.
 
     func formUnion(_ other: PersonSet) {
 
-        var seen = Set(elements.map(\.key))
-
         for element in other.elements {
-            if seen.insert(element.key).inserted {
-                append(element)
-            }
+            insert(element)
         }
     }
 
-    /// Return intersection of two PersonSets with duplicte keys removed.
+    /// Return the intersection of two PersonSets.
 
     func intersection(_ other: PersonSet) -> PersonSet {
 
         let result = PersonSet()
-        let otherKeys = Set(other.elements.map(\.key))
-        var seen = Set<RecordKey>()
 
         for element in elements {
-            if otherKeys.contains(element.key),
-               seen.insert(element.key).inserted {
-                result.append(element)
+            if other.keys.contains(element.key) {
+                result.insert(element)
             }
         }
         return result
     }
 
-    /// Return difference of two PersonSets with duplicate keys removed.
+    /// Return the difference of two PersonSets.
 
     func difference(_ other: PersonSet) -> PersonSet {
 
         let result = PersonSet()
-        let otherKeys = Set(other.elements.map(\.key))
-        var seen = Set<RecordKey>()
 
         for element in elements {
-            if !otherKeys.contains(element.key),
-               seen.insert(element.key).inserted {
-                result.append(element)
+            if !other.keys.contains(element.key) {
+                result.insert(element)
             }
         }
         return result
@@ -82,14 +62,7 @@ extension PersonSet {
 
     func isSubset(of other: PersonSet) -> Bool {
 
-        let otherKeys = Set(other.elements.map(\.key))
-
-        for element in elements {
-            if !otherKeys.contains(element.key) {
-                return false
-            }
-        }
-        return true
+        return keys.isSubset(of: other.keys)
     }
 
     /// Determine if this PersonSet is a superset of another.

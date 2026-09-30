@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 20 September 2026.
+//  Last changed on 29 September 2026.
 //
 //  PersonSets are the objects used by the programming system to hold
 //  rich collections of persons.
@@ -100,6 +100,8 @@ public class PersonSet: Collection {
 
     var elements: [PersonSetElement] = []
 
+    var keys: Set<RecordKey> = []
+
     var sortType: SortType = .notSorted
 
     public var startIndex: Int { elements.startIndex }
@@ -114,20 +116,27 @@ public class PersonSet: Collection {
     
     public var isEmpty: Bool { elements.isEmpty }
 
-    /// Append an existing PersonSetElement to the PersonSet.
+    /// Insert a PersonSetElement into a PersonSet. Not added if the RecordKey is already
+    /// used.
 
-    func append(_ element: PersonSetElement) {
+    @discardableResult
+    func insert(_ element: PersonSetElement) -> Bool {
 
-        elements.append(element)
-        sortType = .notSorted
+        if keys.insert(element.key).inserted {
+            elements.append(element)
+            sortType = .notSorted
+            return true
+        }
+        return false
     }
 
-    /// Create and append a new PersonSetElement to the PersonSet.
+    /// Create and insert a new PersonSetElement in a PersonSet. Not added if the Person's
+    /// RecordKey is already used.
 
-    func append(_ person: Person, value: ProgramValue? = nil) {
+    @discardableResult
+    func insert(_ person: Person, value: ProgramValue? = nil) -> Bool {
 
-        append(PersonSetElement(person, value: value))
-        sortType = .notSorted
+        insert(PersonSetElement(person, value: value))
     }
 
     /// Return a deep copy of a PersonSet.
@@ -136,6 +145,7 @@ public class PersonSet: Collection {
         
         let copy = PersonSet()
         copy.elements = self.elements
+        copy.keys = keys
         copy.sortType = self.sortType
         return copy
     }
@@ -144,36 +154,20 @@ public class PersonSet: Collection {
 
     func isInPersonSet(key: RecordKey) -> Bool {
 
-        if sortType == .keySorted {
-            var low = 0
-            var high = elements.count
-
-            while low < high {
-                let mid = (low + high) / 2
-                let midKey = elements[mid].key
-
-                if key == midKey {
-                    return true
-                } else if key < midKey {
-                    high = mid
-                } else {
-                    low = mid + 1
-                }
-            }
-            return false
-        }
-
-        return elements.contains { $0.key == key }
+        keys.contains(key)
     }
 
-    /// Remove all PersonSetElements with a specific key from a PersonSet.
+    /// Remove all PersonSetElements with a specific key from a PersonSet. There can be only
+    /// one.
 
     @discardableResult
-    func remove(key: String) -> Bool {
+    func remove(key: RecordKey) -> Bool {
 
-        let oldCount = elements.count
+        guard keys.remove(key) != nil else {
+            return false
+        }
         elements.removeAll { $0.key == key }
-        return elements.count != oldCount
+        return true
     }
 
     /// Remove all PersonSetElements from a PersonSet.
@@ -181,6 +175,7 @@ public class PersonSet: Collection {
     func clear() {
 
         elements.removeAll(keepingCapacity: true)
+        keys.removeAll(keepingCapacity: true)
     }
 
     /// Sort a PersonSet by name.
@@ -191,16 +186,6 @@ public class PersonSet: Collection {
             elements.sort { $0.nameSortsBefore($1) }
         }
         sortType = .nameSorted
-    }
-
-    /// Remove duplicates from a PersonSet.
-
-    func removeDuplicates() {
-
-        var seenKeys = Set<String>()
-        elements = elements.filter { element in
-            seenKeys.insert(element.key).inserted
-        }
     }
 }
 
@@ -213,7 +198,7 @@ extension PersonSet {
     public convenience init(persons: [Person]) {
 
         self.init()
-        persons.forEach { self.elements.append(PersonSetElement($0)) }
+        persons.forEach { insert($0) }
     }
 
     /// Create a PersonSet from a Person.
@@ -221,7 +206,7 @@ extension PersonSet {
     public convenience init(person: Person) {
 
         self.init()
-        self.elements.append(PersonSetElement(person))
+        insert(person)
     }
 }
 
