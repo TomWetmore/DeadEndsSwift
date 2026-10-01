@@ -121,8 +121,10 @@ extension Program {
             "spouses": Builtin(min: 1, max: 1) { try await self.bltinSpouses($0)},
             "nspouses": Builtin(min: 1, max: 1) { try await self.bltinNSpouses($0)},
             "parents": Builtin(min: 1, max: 1) { try await self.bltinParents($0)},
-            //fathers
-            //mothers
+            "father": Builtin(min: 1, max: 1) { try await self.bltinFather($0)},
+            "mother": Builtin(min: 1, max: 1) { try await self.bltinMother($0)},
+            "fathers": Builtin(min: 1, max: 1) { try await self.bltinFathers($0)},
+            "mothers": Builtin(min: 1, max: 1) { try await self.bltinMothers($0)},
 
             // Event operations.
             "date":  Builtin(min: 1, max: 1) { try await self.bltinDate($0)},

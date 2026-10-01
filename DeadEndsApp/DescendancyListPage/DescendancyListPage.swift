@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 23 August 2025.
-//  Last changed on 29 May 2026.
+//  Last changed on 30 September 2026.
 
 import SwiftUI
 import DeadEndsLib
@@ -154,11 +154,13 @@ struct DescendancyListPage: View {
 
     /// Render person row.
     private func personRow(_ person: Person, events: Events) -> some View {
+
         let color: Color = {
             switch person.sex {
             case .male:   return palette.male
             case .female: return palette.female
             case .unknown: return palette.unknown
+            case .undetermined: return palette.unknown
             }
         }()
 

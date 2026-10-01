@@ -135,11 +135,30 @@ extension Program {
     /// Return the first father of a person.
     func bltinFather(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let person = try await evalPersonOpt(args[0], errMsg: "father: arg must be a person")
-        guard let father = person?.father(in: self.recordIndex) else {
+        let value = try await evaluate(args[0])
+
+        switch value {
+        case .person(let person):
+            if let father = person.father(in: recordIndex) {
+                return .person(father)
+            } else {
+                return .null
+            }
+        case .family(let family):
+            if let father = family.father(in: recordIndex) {
+                return .person(father)
+            } else {
+                return .null
+            }
+//        case .personset(let set):
+//            return .personset(PersonSet(set.fathers(in: recordIndex, first: true)))
+
+        case .null:
             return .null
+
+        default: RuntimeError("father: arg must be a person, family, personset, or null",
+                              line: args[0].line)
         }
-        return .person(father)
     }
 
     /// Return the first mother of a person.
@@ -253,6 +272,27 @@ extension Program {
     /// pronoun(person|null, int) -> string|null
     func builtinPronouns(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtInPronouns not implemented")
+        return .null
+    }
+}
+
+/// Fathers and Mothers.
+
+extension Program {
+
+    func builtinFather(_ args: [ParsedExpr]) throws -> ProgramValue {
+        return .null
+    }
+
+    func builtinMother(_ args: [ParsedExpr]) throws -> ProgramValue {
+        return .null
+    }
+
+    func builtinFathers(_ args: [ParsedExpr]) throws -> ProgramValue {
+        return .null
+    }
+
+    func builtinMothers(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .null
     }
 }
