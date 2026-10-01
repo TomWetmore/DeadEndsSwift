@@ -70,27 +70,58 @@ extension PersonSet {
 
     public func ancestors(in index: RecordIndex) -> PersonSet {
 
-        var ancestors = [Person]()
+        let result = PersonSet()
 
         for element in elements {
             for ancestor in element.person.ancestors(in: index) {
-                ancestors.append(ancestor)
+                result.insert(ancestor)
             }
         }
-        return PersonSet(persons: ancestors)
+
+        return result
     }
 
     /// Return the descendants PersonSet of a PersonSet.
 
     public func descendants(in index: RecordIndex) -> PersonSet {
 
-        var descendants = [Person]()
+        let result = PersonSet()
 
         for element in elements {
             for descendant in element.person.descendants(in: index) {
-                descendants.append(descendant)
+                result.insert(descendant)
             }
         }
-        return PersonSet(persons: descendants)
+        return result
+    }
+
+    /// Return the fathers PersonSet of a PersonSet.
+
+    public func fathers(in index: RecordIndex, first: Bool) -> PersonSet {
+
+        let result = PersonSet()
+
+        for element in elements {
+
+            for father in element.person.fathers(in: index) {
+                result.insert(father)
+            }
+        }
+        return result
+    }
+
+    /// Return the mothers PersonSet of a PersonSet.
+
+    public func mothers(in index: RecordIndex, first: Bool) -> PersonSet {
+
+        let result = PersonSet()
+
+        for element in elements {
+
+            for mother in element.person.mothers(in: index) {
+                result.insert(mother)
+            }
+        }
+        return result
     }
 }

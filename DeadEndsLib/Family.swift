@@ -33,7 +33,7 @@ extension Family {
     private func people(in index: RecordIndex, role: Tag) -> [Person] {
 
         root.kids(withTag: role).map { node in
-            requirePerson(from: index.requireRoot(from: node, tag: GedcomTag.INDI), in: index)
+            requirePerson(from: index.requireRoot(from: node, tag: "INDI"), in: index)
         }
     }
 
@@ -44,9 +44,10 @@ extension Family {
         var seen = Set<RecordKey>()
 
         return root.kids.compactMap { node in
-            guard roles.contains(node.tag) else { return nil }
-
-            let root = index.requireRoot(from: node, tag: GedcomTag.INDI)
+            guard roles.contains(node.tag) else {
+                return nil
+            }
+            let root = index.requireRoot(from: node, tag: "INDI")
             let person = Person(root)
             let key = root.requireKey()
 
@@ -57,18 +58,21 @@ extension Family {
     /// Return the first husband in this family in Gedcom order.
 
     public func husband(in index: RecordIndex) -> Person? {
+
         people(in: index, role: GedcomTag.HUSB).first
     }
 
     /// Return the first wife in this family in Gedcom order.
 
     public func wife(in index: RecordIndex) -> Person? {
+
         people(in: index, role: GedcomTag.WIFE).first
     }
 
     /// Return all children in this family in Gedcom order.
 
     public func children(in index: RecordIndex) -> [Person] {
+
         people(in: index, role: GedcomTag.CHIL)
     }
 
@@ -122,7 +126,57 @@ extension Family {
     }
 
     func father(in index: RecordIndex) -> Person? {
-        return nil
+
+        return fathers(in: index).first
+    }
+
+    func mother(in index: RecordIndex) -> Person? {
+
+        return mothers(in: index).first
+    }
+
+    /// Return all fathers in the Family.
+    /// A father is a HUSB or WIFE with SEX male.
+
+    func fathers(in index: RecordIndex) -> [Person] {
+
+        var result: [Person] = []
+        var seen: Set<RecordKey> = []
+
+        for tag in ["HUSB", "WIFE"] {
+            for key in kidVals(forTag: tag) {
+                guard seen.insert(key).inserted,
+                      let parent = index.person(for: key),
+                      parent.sex == .male
+                else {
+                    continue
+                }
+                result.append(parent)
+            }
+        }
+        return result
+    }
+
+    /// Return all mothers in the Family.
+    /// A father is a HUSB or WIFE with SEX male.
+
+    func mothers(in index: RecordIndex) -> [Person] {
+
+        var result: [Person] = []
+        var seen: Set<RecordKey> = []
+
+        for tag in ["HUSB", "WIFE"] {
+            for key in kidVals(forTag: tag) {
+                guard seen.insert(key).inserted,
+                      let parent = index.person(for: key),
+                      parent.sex == .female
+                else {
+                    continue
+                }
+                result.append(parent)
+            }
+        }
+        return result
     }
 }
 

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 29 September 2026.
+//  Last changed on 1 October 2026.
 //
 //  PersonSets are the objects used by the programming system to hold
 //  rich collections of persons.
@@ -19,7 +19,6 @@ enum SortType {
     case notSorted
     case keySorted
     case nameSorted
-
 }
 
 /// Element of a PersonSet. It contains a Person, the Person's key, and an optional
@@ -41,8 +40,9 @@ public struct PersonSetElement: Hashable, CustomStringConvertible {
 
     public init(_ person: Person, value: ProgramValue? = nil) {
 
-        guard person.tag == GedcomTag.INDI
-        else { fatalError("person \(person.root) must be a keyed 0 INDI person") }
+        guard person.tag == "INDI" else {
+            fatalError("person \(person.root) must be a keyed 0 INDI person")
+        }
         self.person = person
         self.key = person.key
         self.value = value
@@ -117,7 +117,7 @@ public class PersonSet: Collection {
     public var isEmpty: Bool { elements.isEmpty }
 
     /// Insert a PersonSetElement into a PersonSet. Not added if the RecordKey is already
-    /// used.
+    /// in the PersonSet.
 
     @discardableResult
     func insert(_ element: PersonSetElement) -> Bool {
@@ -130,8 +130,8 @@ public class PersonSet: Collection {
         return false
     }
 
-    /// Create and insert a new PersonSetElement in a PersonSet. Not added if the Person's
-    /// RecordKey is already used.
+    /// Create a PersonSetElement from a Person and insert it into a PersonSet. Not added
+    /// if the RecordKey is already in the PersonSet.
 
     @discardableResult
     func insert(_ person: Person, value: ProgramValue? = nil) -> Bool {

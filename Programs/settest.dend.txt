@@ -1,0 +1,25 @@
+proc main () {
+
+    set(me, person("I1"))
+    set(set, personset())
+    addtoset(set, me)
+
+    call showset(set)
+
+    addtoset(set, descendents(set))
+    call showset(set)
+    addtoset(set, spouses(set))
+    call showset(set)
+
+    addtoset(set, fathers(set))
+    call showset(set)
+    addtoset(set, mothers(set))
+    call showset(set)
+
+}
+
+proc showset(set) {
+    foreach(set, person, n) {
+        d(n) "  " name(person) nl()
+    }
+}

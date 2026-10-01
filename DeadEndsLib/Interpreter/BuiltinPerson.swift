@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 15 September 2026.
+//  Last changed on 1 October 2026.
 //
 
 import Foundation
@@ -150,13 +150,13 @@ extension Program {
             } else {
                 return .null
             }
-//        case .personset(let set):
-//            return .personset(PersonSet(set.fathers(in: recordIndex, first: true)))
+        case .personset(let set):
+            return .personset(set.fathers(in: recordIndex, first: true))
 
         case .null:
             return .null
 
-        default: RuntimeError("father: arg must be a person, family, personset, or null",
+        default: throw RuntimeError("father: arg must be a person, family, personset, or null",
                               line: args[0].line)
         }
     }
@@ -288,35 +288,71 @@ extension Program {
         return .null
     }
 
-    func builtinFathers(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return .null
+
+    func bltinFathers(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let value = try await evaluate(args[0])
+        switch value {
+
+        // In the .person case we want to create a .list of .persons
+        case .person(let person):
+            let values = person.fathers(in: recordIndex).map { ProgramValue.person($0) }
+            return .list(ListValue(values))
+
+        // In the .personset case we want to create a .personset.
+        case .personset(let set):
+            return .personset(set.fathers(in: recordIndex, first: false))
+
+        // In the .family case we want to create a .list of .persons.
+        case .family(let family):
+            let values = family.fathers(in: recordIndex).map { ProgramValue.person($0) }
+            return .list(ListValue(values))
+
+        case .null:
+            return .null
+
+        default:
+            throw RuntimeError("fathers: arg must be a person or personset", line: args[0].line)
+        }
     }
 
-    func builtinMothers(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return .null
+    func bltinMothers(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        let value = try await evaluate(args[0])
+        switch value {
+
+        // In the .person case we want to create a .list of .persons
+        case .person(let person):
+            let values = person.mothers(in: recordIndex).map { ProgramValue.person($0) }
+            return .list(ListValue(values))
+
+        // In the .personset case we want to create a .personset.
+        case .personset(let set):
+            return .personset(set.mothers(in: recordIndex, first: false))
+
+        // In the .family case we want to create a .list of .persons.
+        case .family(let family):
+            let values = family.mothers(in: recordIndex).map { ProgramValue.person($0) }
+            return .list(ListValue(values))
+
+        case .null:
+            return .null
+
+        default:
+            throw RuntimeError("mothers: arg must be a person or personset", line: args[0].line)
+        }
     }
 }
 
 extension Program {
 
-    func builtinNSpouses(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinNSpouses not implemented")
-        return .null
-    }
 
-    func builtinNFamilies(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinNFamilies not implemented")
-        return .null
-    }
-
-    func builtinTitle(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinTitle(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtinTitle not implemented")
         return .null
     }
 
-    
-
-    func builtinSoundex(_ args: [ParsedExpr]) throws -> ProgramValue {
+    func bltinSoundex(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtinSoundes not implemented")
         return .null
     }
