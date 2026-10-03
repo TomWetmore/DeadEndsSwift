@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 1 October 2026.
+//  Last changed on 2 October 2026.
 //
 
 import Foundation
@@ -132,78 +132,9 @@ extension Program {
 /// Relationship reated built-ins.
 extension Program {
 
-    /// Return the first father of a person.
-    func bltinFather(_ args: [ParsedExpr]) async throws -> ProgramValue {
+    
 
-        let value = try await evaluate(args[0])
-
-        switch value {
-        case .person(let person):
-            if let father = person.father(in: recordIndex) {
-                return .person(father)
-            } else {
-                return .null
-            }
-        case .family(let family):
-            if let father = family.father(in: recordIndex) {
-                return .person(father)
-            } else {
-                return .null
-            }
-        case .personset(let set):
-            return .personset(set.fathers(in: recordIndex, first: true))
-
-        case .null:
-            return .null
-
-        default: throw RuntimeError("father: arg must be a person, family, personset, or null",
-                              line: args[0].line)
-        }
-    }
-
-    /// Return the first mother of a person.
-    func bltinMother(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let person = try await evalPersonOpt(args[0], errMsg: "mother: arg must be a person")
-        guard let mother = person?.mother(in: self.recordIndex) else {
-            return .null
-        }
-        return .person(mother)
-    }
-
-    /// Generic. Return the first husband of a person or family.
-    func bltinHusband(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let value = try await evaluate(args[0])
-        switch value {
-        case .person(let person):
-            return person.husband(in: recordIndex).map { .person($0) } ?? .null
-        case .family(let family):
-            return family.husband(in: recordIndex).map { .person($0) } ?? .null
-        case .null:
-            return .null
-        default:
-            throw RuntimeError("husband: arg must be a person or family",
-                               line: args[0].line)
-        }
-    }
-
-    /// Generic. Return the first wife of a person or family.
-    func bltinWife(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let value = try await evaluate(args[0])
-        switch value {
-        case .person(let person):
-            return person.wife(in: recordIndex).map { .person($0) } ?? .null
-        case .family(let family):
-            return family.wife(in: recordIndex).map { .person($0) } ?? .null
-        case .null:
-            return .null
-        default:
-            throw RuntimeError("wife: arg must be a person or family",
-                               line: args[0].line)
-        }
-    }
+    
 
     /// Return the next sibling of a person.
     func bltinNextSib(_ args: [ParsedExpr]) async throws -> ProgramValue {
@@ -289,59 +220,7 @@ extension Program {
     }
 
 
-    func bltinFathers(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let value = try await evaluate(args[0])
-        switch value {
-
-        // In the .person case we want to create a .list of .persons
-        case .person(let person):
-            let values = person.fathers(in: recordIndex).map { ProgramValue.person($0) }
-            return .list(ListValue(values))
-
-        // In the .personset case we want to create a .personset.
-        case .personset(let set):
-            return .personset(set.fathers(in: recordIndex, first: false))
-
-        // In the .family case we want to create a .list of .persons.
-        case .family(let family):
-            let values = family.fathers(in: recordIndex).map { ProgramValue.person($0) }
-            return .list(ListValue(values))
-
-        case .null:
-            return .null
-
-        default:
-            throw RuntimeError("fathers: arg must be a person or personset", line: args[0].line)
-        }
-    }
-
-    func bltinMothers(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let value = try await evaluate(args[0])
-        switch value {
-
-        // In the .person case we want to create a .list of .persons
-        case .person(let person):
-            let values = person.mothers(in: recordIndex).map { ProgramValue.person($0) }
-            return .list(ListValue(values))
-
-        // In the .personset case we want to create a .personset.
-        case .personset(let set):
-            return .personset(set.mothers(in: recordIndex, first: false))
-
-        // In the .family case we want to create a .list of .persons.
-        case .family(let family):
-            let values = family.mothers(in: recordIndex).map { ProgramValue.person($0) }
-            return .list(ListValue(values))
-
-        case .null:
-            return .null
-
-        default:
-            throw RuntimeError("mothers: arg must be a person or personset", line: args[0].line)
-        }
-    }
+    
 }
 
 extension Program {

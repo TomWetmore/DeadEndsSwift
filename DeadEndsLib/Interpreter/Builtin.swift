@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 23 September 2026.
+//  Last changed on 2 October 2026.
 //
 
 import Foundation
@@ -27,12 +27,9 @@ extension Program {
             "nl": Builtin(min: 0, max: 0) { try self.bltinNl($0)},
             "qt": Builtin(min: 0, max: 0) { try self.bltinQuote($0)},
             "set": Builtin(min: 2, max: 2) { try await self.bltinSet($0)},
-            "ord": Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
-            "card": Builtin(min: 1, max: 1) { try await self.bltinCard($0) },
-            "roman": Builtin(min: 1, max: 1) { try await self.bltinRoman($0) },
-            "null": Builtin(min: 0, max: 0) { try await self.bltinNull($0) },
-            "true": Builtin(min: 0, max: 0) { try await self.bltinTrue($0) },
-            "false": Builtin(min: 0, max: 0) { try await self.bltinFalse($0) },
+            "null": Builtin(min: 0, max: 0) { try await self.bltinNull($0)},
+            "true": Builtin(min: 0, max: 0) { try await self.bltinTrue($0)},
+            "false": Builtin(min: 0, max: 0) { try await self.bltinFalse($0)},
 
             // String operations.
             "upper": Builtin(min: 1, max: 1) { try await self.bltinUpper($0)},
@@ -95,9 +92,6 @@ extension Program {
             "death": Builtin(min: 1, max: 1) { try await self.bltinDeath($0)},
             "baptism": Builtin(min: 1, max: 1) { try await self.bltinBaptism($0)},
             "burial": Builtin(min: 1, max: 1) { try await self.bltinBurial($0)},
-            //"father": Builtin(min: 1, max: 1) { try await self.bltinFather($0)},
-            //"mother":  Builtin(min: 1, max: 1) { try await self.bltinMother($0)},
-            "siblings": Builtin(min: 1, max: 1) { try await self.bltinSiblings($0)},
             "nextsib": Builtin(min: 1, max: 1) { try await self.bltinNextSib($0)},
             "prevsib": Builtin(min: 1, max: 1) { try await self.bltinPrevSib($0)},
             "families": Builtin(min: 1, max: 1) { try await self.bltinFamilyList($0)},
@@ -111,26 +105,33 @@ extension Program {
             "divorce": Builtin(min: 1, max: 1) { try await self.bltinDivorce($0)},
             "allfamilies": Builtin(min: 0, max: 0) { try self.bltinAllFamilies($0)},
 
-            /// Generic operations on persons and families.
-            "husband": Builtin(min: 1, max: 1) { try await self.bltinHusband($0)},
-            "wife": Builtin(min: 1, max: 1) { try await self.bltinWife($0)},
-            "husbands": Builtin(min: 1, max: 1) { try await self.bltinHusbands($0)},
-            "wives": Builtin(min: 1, max: 1) { try await self.bltinWives($0)},
+            /// Relationship operations on Persons, Families, and PersonSets.
             "children": Builtin(min: 1, max: 1) { try await self.bltinChildren($0)},
-            "nchildren": Builtin(min: 1, max: 1) { try await self.bltinNChildren($0)},
-            "spouses": Builtin(min: 1, max: 1) { try await self.bltinSpouses($0)},
-            "nspouses": Builtin(min: 1, max: 1) { try await self.bltinNSpouses($0)},
             "parents": Builtin(min: 1, max: 1) { try await self.bltinParents($0)},
-            "father": Builtin(min: 1, max: 1) { try await self.bltinFather($0)},
-            "mother": Builtin(min: 1, max: 1) { try await self.bltinMother($0)},
             "fathers": Builtin(min: 1, max: 1) { try await self.bltinFathers($0)},
             "mothers": Builtin(min: 1, max: 1) { try await self.bltinMothers($0)},
+            "father": Builtin(min: 1, max: 1) { try await self.bltinFather($0)},
+            "mother": Builtin(min: 1, max: 1) { try await self.bltinMother($0)},
+            "spouses": Builtin(min: 1, max: 1) { try await self.bltinSpouses($0)},
+            "husbands": Builtin(min: 1, max: 1) { try await self.bltinHusbands($0)},
+            "wives": Builtin(min: 1, max: 1) { try await self.bltinWives($0)},
+            "husband": Builtin(min: 1, max: 1) { try await self.bltinHusband($0)},
+            "wife": Builtin(min: 1, max: 1) { try await self.bltinWife($0)},
+            "siblings": Builtin(min: 1, max: 1) { try await self.bltinSiblings($0)},
+            "ancestors": Builtin(min: 1, max: 1) { try await self.bltinAncestors($0)},
+            "descendants": Builtin(min: 1, max: 1) { try await self.bltinDescendants($0)},
+            "sons": Builtin(min: 1, max: 1) { try await self.bltinSons($0)},
+            "daughters": Builtin(min: 1, max: 1) { try await self.bltinDaughters($0)},
+            "brothers": Builtin(min: 1, max: 1) { try await self.bltinBrothers($0)},
+            "sisters": Builtin(min: 1, max: 1) { try await self.bltinSisters($0)},
+            "nchildren": Builtin(min: 1, max: 1) { try await self.bltinNChildren($0)},
+            "nspouses": Builtin(min: 1, max: 1) { try await self.bltinNSpouses($0)},
 
             // Event operations.
             "date":  Builtin(min: 1, max: 1) { try await self.bltinDate($0)},
             "place": Builtin(min: 1, max: 1) { try await self.bltinPlace($0)},
 
-            // Generic operations on lists, tables and person sets.
+            // Generic operations on lists, tables, and personsets.
             "empty": Builtin(min: 1, max: 1) { try await self.bltinEmpty($0)},
             "length": Builtin(min: 1, max: 1) { try await self.bltinLength($0)},
             "clear": Builtin(min: 1, max: 1) { try await self.bltinClear($0)},
@@ -149,7 +150,7 @@ extension Program {
             "removelast": Builtin(min: 1, max: 1) { try await self.bltinRemoveLast($0)},
             "copy": Builtin(min: 1, max: 1) { try await self.bltinCopy($0)},
 
-            // Tuple shorthands for lists.
+            // Tuple operations.
             "pair":  Builtin(min: 2, max: 2) { try await self.bltinPair($0)},
             "first": Builtin(min: 1, max: 1) { try await self.bltinFirst($0)},
             "second": Builtin(min: 1, max: 1) { try await self.bltinSecond($0)},
@@ -167,17 +168,17 @@ extension Program {
             "union": Builtin(min: 2, max: 2) { try await self.bltinUnion($0)},
             "intersect": Builtin(min: 2, max: 2) { try await self.bltinIntersect($0)},
             "difference": Builtin(min: 2, max: 2) { try await self.bltinDifference($0)},
-            "ancestors": Builtin(min: 1, max: 1) { try await self.bltinAncestors($0)},
-            "descendants": Builtin(min: 1, max: 1) { try await self.bltinDescendants($0)},
-            "descendents": Builtin(min: 1, max: 1) { try await self.bltinDescendants($0)},
             "namesort": Builtin(min: 1, max: 1) { try await self.bltinNameSort($0)},
             "keysort": Builtin(min: 1, max: 1) { try await self.bltinKeySort($0)},
             "gengedcom": Builtin(min: 1, max: 1) { try await self.bltinGenGedcom($0)},
 
             // String operations.
             "strcmp": Builtin(min: 2, max: 2) { try await self.bltinStrcmp($0)},
+            "ord": Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
+            "card": Builtin(min: 1, max: 1) { try await self.bltinCard($0)},
+            "roman": Builtin(min: 1, max: 1) { try await self.bltinRoman($0)},
 
-            // Meta operations.
+            // Debugging operations.
             "showframe": Builtin(min: 0, max: 0) { try self.bltinShowFrame($0)},
             "showstack": Builtin(min: 0, max: 0) { try self.bltinShowStack($0)},
             "valueof": Builtin(min: 1, max: 1) { try await self.bltinValueOf($0)},
@@ -196,8 +197,9 @@ extension Program {
 
 extension Program {
     
-    /// Returns an integer as a string.
+    /// Return an integer as a string.
     /// d(int) -> string|null
+
     func bltinD(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let value = try await self.evaluate(args[0])
@@ -209,20 +211,29 @@ extension Program {
         return .string(String(integer))
     }
     
-    /// Returns a newline character.
+    /// Return a newline character as a string.
+    /// nl() -> string
+
     func bltinNl(_ args: [ParsedExpr]) throws -> ProgramValue {
+        
         return .string("\n")
     }
 
-    /// Returns an ascii double quote.
+    /// Return an ascii double quote character as a string.
+    /// qt() -> string
+
     func bltinQuote(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .string("\"")
     }
 
-    /// Assignment 'statement' of the scripting language; side effect only.
+    /// Assignment 'statement'.
+    /// set(ident, any) -> null
+
     func bltinSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
         guard case let .identifier(name) = args[0].kind else {
-            throw RuntimeError("set() expects a variable as its first argument", line: args[0].line)
+            throw RuntimeError("set() expects a variable as its first argument",
+                               line: args[0].line)
         }
         let value = try await evaluate(args[1])
         assignToSymbol(name, value: value)
@@ -230,18 +241,26 @@ extension Program {
     }
 
     /// Return a .null program value.
+    /// null() -> null
+
     func bltinNull(_ args: [ParsedExpr]) async throws -> ProgramValue {
         .null
     }
 
+    /// Return a true program value.
+    /// true() -> bool
+
     func bltinTrue(_ args: [ParsedExpr]) async throws -> ProgramValue {
         return .boolean(true)
     }
+
+    /// Return a false program value.
+    /// false() -> bool
+
     func bltinFalse(_ args: [ParsedExpr]) async throws -> ProgramValue {
         return .boolean(false)
     }
 }
-
 
 public final class Pair {
     

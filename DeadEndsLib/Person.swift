@@ -287,7 +287,7 @@ public extension Person {
 }
 
 /// Require a key to refer to a Family. Fatal error if it does not. Return the Family.
-
+///
 func requireFamily(for key: RecordKey, in index: RecordIndex) -> Family {
 
     guard let family = index.family(for: key), family.root.tag == GedcomTag.FAM else {
@@ -297,8 +297,7 @@ func requireFamily(for key: RecordKey, in index: RecordIndex) -> Family {
 }
 
 /// Require a key to refer to a Person. Fatal error if it does not. Return the Person.
-
-
+///
 public func requirePerson(with key: RecordKey, in index: RecordIndex) -> Person {
 
     guard let person = index.person(for: key), person.root.tag == "INDI" else {
@@ -309,7 +308,7 @@ public func requirePerson(with key: RecordKey, in index: RecordIndex) -> Person 
 
 /// Require a GedcomNode to be the root of a Person. Fatal error if it does not.
 /// Return the Person.
-
+///
 public func requirePerson(from root: Root, in index: RecordIndex) -> Person {
 
     let key = root.requireKey(tag: "INDI")
@@ -341,21 +340,21 @@ public extension Person {
     }
 
     /// Return the first husband of a Person. The Person can be male or female.
-
+    ///
     func husband(in index: RecordIndex) -> Person? {
 
         spouse(in: index, roles: [GedcomTag.HUSB])
     }
 
     /// Return the first wife of a Person. The Person can be male or female.
-
+    ///
     func wife(in index: RecordIndex) -> Person? {
 
         spouse(in: index, roles: [GedcomTag.WIFE])
     }
 
     /// Return all spouses of a Person, filtered by roles, deduped, in Gedcom order.
-
+    ///
     func spouses(in index: RecordIndex,
                  roles: [Tag] = [GedcomTag.HUSB,GedcomTag.WIFE]) -> [Person] {
 
@@ -426,7 +425,36 @@ extension Person {
         return result
     }
 
+    public func brothers(in index: RecordIndex) -> [Person] {
+        var seen: Set<RecordKey> = []
+        var result: [Person] = []
+
+        for family in childFamilies(in: index) {
+            for child in family.children(in: index) where child.key != self.key && child.isMale {
+                if seen.insert(child.key).inserted {
+                    result.append(child)
+                }
+            }
+        }
+        return result
+    }
+
+    public func sisters(in index: RecordIndex) -> [Person] {
+        var seen: Set<RecordKey> = []
+        var result: [Person] = []
+
+        for family in childFamilies(in: index) {
+            for child in family.children(in: index) where child.key != self.key && child.isFemale {
+                if seen.insert(child.key).inserted {
+                    result.append(child)
+                }
+            }
+        }
+        return result
+    }
+
     /// Return person's previous sibling in person's first FAMC.
+    ///
     public func previousSibling(in index: RecordIndex) -> Person? {
 
         guard let family = self.childFamilies(in: index).first else { return nil }
@@ -436,7 +464,8 @@ extension Person {
         return children[indexOfSelf + 1]
     }
 
-    // Return person's next sibling in person's first FAMC.
+    /// Return person's next sibling in person's first FAMC.
+    ///
     public func nextSibling(in index: RecordIndex) -> Person? {
 
         guard let family = self.childFamilies(in: index).first else { return nil }
@@ -457,7 +486,43 @@ public extension Person {
 
         for family in spouseFamilies(in: index) {
             for child in family.children(in: index) {
-                if seen.insert(child.key).inserted { result.append(child) }
+                if seen.insert(child.key).inserted {
+                    result.append(child)
+                }
+            }
+        }
+        return result
+    }
+
+    /// Return the sons of self, in all FAMS families, deduped in Gedcom order.
+    ///
+    func sons(in index: RecordIndex) -> [Person] {
+
+        var seen: Set<RecordKey> = []
+        var result: [Person] = []
+
+        for family in spouseFamilies(in: index) {
+            for child in family.children(in: index) {
+                if child.isMale && seen.insert(child.key).inserted {
+                    result.append(child)
+                }
+            }
+        }
+        return result
+    }
+
+    /// Return the daughters of self, in all FAMS families, deduped in Gedcom order.
+    ///
+    func daughters(in index: RecordIndex) -> [Person] {
+
+        var seen: Set<RecordKey> = []
+        var result: [Person] = []
+
+        for family in spouseFamilies(in: index) {
+            for child in family.children(in: index) {
+                if child.isFemale && seen.insert(child.key).inserted {
+                    result.append(child)
+                }
             }
         }
         return result

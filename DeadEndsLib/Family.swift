@@ -3,19 +3,20 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 30 September 2026.
+//  Last changed on 2 October 2026.
 //
 
 import Foundation
 
 /// Family structure.
+///
 public struct Family: Record {
 
     public let root: Root
 
     /// Create a Family from a 0 FAM node. Fatal error if not possible. A Family is
     /// a wrapped Root GedcomNode with and a few methods.
-
+    ///
     public init(_ root: Root) {
 
         guard root.tag == GedcomTag.FAM, root.key != nil
@@ -29,16 +30,14 @@ public struct Family: Record {
 /// Extension for husbands, wives and children.
 extension Family {
 
-    /// Return all persons with a specific role in this family in Gedcom order.
+    /// Return all persons with a specific role in this family, deduped, in Gedcom order.
+    ///
     private func people(in index: RecordIndex, role: Tag) -> [Person] {
-
-        root.kids(withTag: role).map { node in
-            requirePerson(from: index.requireRoot(from: node, tag: "INDI"), in: index)
-        }
+        people(in: index, roles: [role])
     }
 
     /// Return all persons with a set of roles in this family in Gedcom order.
-
+    ///
     private func people(in index: RecordIndex, roles: Set<Tag>) -> [Person] {
 
         var seen = Set<RecordKey>()
@@ -56,49 +55,61 @@ extension Family {
     }
 
     /// Return the first husband in this family in Gedcom order.
-
+    ///
     public func husband(in index: RecordIndex) -> Person? {
 
         people(in: index, role: GedcomTag.HUSB).first
     }
 
     /// Return the first wife in this family in Gedcom order.
-
+    ///
     public func wife(in index: RecordIndex) -> Person? {
 
         people(in: index, role: GedcomTag.WIFE).first
     }
 
     /// Return all children in this family in Gedcom order.
-
+    ///
     public func children(in index: RecordIndex) -> [Person] {
 
         people(in: index, role: GedcomTag.CHIL)
     }
 
-    /// Return all spouses in the family in Gedcom order; same as parents.
+    /// Return all sons in this family in Gedcom order.
+    ///
+    public func sons(in index: RecordIndex) -> [Person] {
+        people(in: index, role: "CHIL").filter { $0.isMale }
+    }
 
+    /// Return all daughters in this family in Gedcom order.
+    ///
+    public func daughters(in index: RecordIndex) -> [Person] {
+        people(in: index, role: "CHIL").filter { $0.isFemale }
+    }
+
+    /// Return all parents in the family in Gedcom order; same as spouses.
+    ///
     public func parents(in index: RecordIndex) -> [Person] {
 
         spouses(in: index)
     }
     
     /// Return all husbands in this family in Gedcom order.
-
+    ///
     public func husbands(in index: RecordIndex) -> [Person] {
 
         people(in: index, role: GedcomTag.HUSB)
     }
 
     /// Return all wives in this family in Gedcom order.
-
+    ///
     public func wives(in index: RecordIndex) -> [Person] {
 
         people(in: index, role: GedcomTag.WIFE)
     }
 
     /// Return all spouses in this family in Gedcom order.
-
+    ///
     func spouses(in index: RecordIndex) -> [Person] {
 
         people(in: index, roles: [GedcomTag.HUSB, GedcomTag.WIFE])

@@ -146,6 +146,7 @@
 				Interpreter/BuiltinNode.swift,
 				Interpreter/BuiltinPerson.swift,
 				Interpreter/BuiltinPersonSet.swift,
+				Interpreter/BuiltinRelations.swift,
 				Interpreter/BuiltinString.swift,
 				Interpreter/BuiltinTable.swift,
 				Interpreter/Evaluate.swift,

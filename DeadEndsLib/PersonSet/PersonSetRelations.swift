@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 21 September 2026.
+//  Last changed on 2 October 2026.
 //
 
 import Foundation
@@ -97,7 +97,7 @@ extension PersonSet {
 
     /// Return the fathers PersonSet of a PersonSet.
 
-    public func fathers(in index: RecordIndex, first: Bool) -> PersonSet {
+    public func fathers(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
 
@@ -112,7 +112,7 @@ extension PersonSet {
 
     /// Return the mothers PersonSet of a PersonSet.
 
-    public func mothers(in index: RecordIndex, first: Bool) -> PersonSet {
+    public func mothers(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
 
@@ -120,6 +120,112 @@ extension PersonSet {
 
             for mother in element.person.mothers(in: index) {
                 result.insert(mother)
+            }
+        }
+        return result
+    }
+}
+
+/// Ancestors, descendents, siblings.
+
+extension PersonSet {
+
+}
+
+/// Sons, daughters, brothers, sisters
+
+extension PersonSet {
+
+    public func sons(in index: RecordIndex) -> PersonSet {
+
+        let result = PersonSet()
+
+        for element in elements {
+            for child in element.person.sons(in: index) {
+                result.insert(child)
+            }
+        }
+        return result
+    }
+
+    public func daughters(in index: RecordIndex) -> PersonSet {
+
+        let result = PersonSet()
+
+        for element in elements {
+            for child in element.person.daughters(in: index) {
+                result.insert(child)
+            }
+        }
+        return result
+    }
+
+    public func brothers(in index: RecordIndex) -> PersonSet {
+
+        let result = PersonSet()
+
+        for element in elements {
+            for child in element.person.brothers(in: index) {
+                result.insert(child)
+            }
+        }
+        return result
+    }
+
+    public func sisters(in index: RecordIndex) -> PersonSet {
+
+        let result = PersonSet()
+
+        for element in elements {
+            for child in element.person.sisters(in: index) {
+                result.insert(child)
+            }
+        }
+        return result
+    }
+}
+
+/// Discovered missing by ChatGPT
+///
+/// children
+/// husband
+/// wives
+///
+
+
+extension PersonSet {
+
+//    public func children(in index: RecordIndex) -> PersonSet {
+//
+//        let result = PersonSet()
+//
+//        for element in elements {
+//            for child in element.person.children(in: index) {
+//                result.insert(child)
+//            }
+//        }
+//        return result
+//    }
+
+    public func husbands(in index: RecordIndex) -> PersonSet {
+
+        let result = PersonSet()
+
+        for element in elements {
+            for child in element.person.husbands(in: index) {
+                result.insert(child)
+            }
+        }
+        return result
+    }
+
+    public func wives(in index: RecordIndex) -> PersonSet {
+
+        let result = PersonSet()
+
+        for element in elements {
+            for child in element.person.wives(in: index) {
+                result.insert(child)
             }
         }
         return result

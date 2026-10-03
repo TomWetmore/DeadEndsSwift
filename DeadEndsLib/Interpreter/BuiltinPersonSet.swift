@@ -223,58 +223,8 @@ extension Program {
 //        return .personset(set.spouses(in: recordIndex))
 //    }
 
-    /// MADE GENERIC BY ALLOWING PERSON ARGUMENTS.
-    /// Built-in that returns the ancestor person set of a person set.
-    /// ancestors(person) -> list<person>
-    /// ancestorset(personset) -> personset
-    /// ancestorset(null) -> null
 
-    func bltinAncestors(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let value = try await evaluate(args[0])
-        switch value {
-
-        // In the person case we want to create a .list of .persons
-        case .person(let person):
-            let values = person.ancestors(in: recordIndex).map { ProgramValue.person($0) }
-            return .list(ListValue(values))
-
-        /// In the personset case we want to create a .personset
-        case .personset(let set):
-            return .personset(set.ancestors(in: recordIndex))
-
-        case .null:
-            return .null
-
-        default:
-            throw RuntimeError("ancestors: arg must be a person or personset", line: args[0].line)
-        }
-    }
-
-    /// Built-in that returns the descendant person set of a person set.
-    /// descendantset(personset) -> personset
-
-    func bltinDescendants(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let value = try await evaluate(args[0])
-        switch value {
-
-        // In the person case we want to create a .list of .persons
-        case .person(let person):
-            let values = person.descendants(in: recordIndex).map { ProgramValue.person($0) }
-            return .list(ListValue(values))
-
-        /// In the personset case we want to create a .personset
-        case .personset(let set):
-            return .personset(set.descendants(in: recordIndex))
-
-        case .null:
-            return .null
-
-        default:
-            throw RuntimeError("ancestors: arg must be a person or personset", line: args[0].line)
-        }
-    }
+   
 
     /// Built-in that generates Gedcom text from a PersonSet.
     /// gengedcom(personset) -> string
