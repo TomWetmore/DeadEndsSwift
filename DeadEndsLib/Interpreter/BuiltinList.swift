@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 2 October 2026.
+//  Last changed on 3 October 2026.
 //
 
 import Foundation
@@ -12,6 +12,8 @@ import Foundation
 extension Program {
 
     /// Create and return an empty list.
+    /// list() -> list
+    ///
     func bltinList(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .emptyList
     }
@@ -21,14 +23,19 @@ extension Program {
     func bltinEmpty(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
+
         case .list(let list):
             return list.count == 0 ? .trueProgramValue : .falseProgramValue
+
         case .table(let table):
             return table.count == 0 ? .trueProgramValue : .falseProgramValue
+
         case .personset(let set):
             return set.count == 0 ? .trueProgramValue : .falseProgramValue
+
         case .string(let string):
             return string.isEmpty ? .trueProgramValue : .falseProgramValue
+
         default:
             throw RuntimeError(
                 "empty: arg must be a list, table, personset, or string",
@@ -39,18 +46,23 @@ extension Program {
 
     /// Clear the contents of a list, table, or personset.
     /// clear(list|table|personset) -> (list|table|personset)
+    ///
     func bltinClear(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
+
         case .list(let list):
             list.clear()
             return .list(list)
+
         case .table(let table):
             table.clear()
             return .table(table)
+
         case .personset(let personset):
             personset.clear()
             return .personset(personset)
+
         default:
             throw RuntimeError("clear: arg must be a list, table, or personset",
                                line: args[0].line)
@@ -59,17 +71,23 @@ extension Program {
 
     /// Return the length of a list, table, personset or string.
     /// length(list|table|personset|string) -> int
+    ///
     func bltinLength(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
+
         case .list(let list):
             return .integer(list.count)
+
         case .table(let table):
             return .integer(table.count)
+
         case .personset(let set):
+
             return .integer(set.count)
         case .string(let string):
             return .integer(string.count)
+            
         default:
             throw RuntimeError("length: arg must be a list, table, personset, or string",
                                line: args[0].line)
@@ -142,34 +160,30 @@ extension Program {
 /// Builtins that return lists of persons or families.
 extension Program {
 
-    
-
-    /// Return the number of children or a person or family.
+    /// Return the number of children or a Person or Family.
+    /// nchildren(person|family) -> integer
+    /// nchildren(null) -> null
+    ///
     func bltinNChildren(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let children = try await bltinChildren(args)
-        switch children {
+        switch try await bltinChildren(args) {
 
         case .null:
             return .null
 
         case .list(let l):
-            return .integer(l.count);
-        default:
+            return .integer(l.count)
 
+        default:
             throw RuntimeError("nchildren: arg must be a person or family",
                                line: args[0].line)
         }
     }
 
-    
-
-    
-
-    
-
     /// Return the number of spouses of a Person or Family.
-
+    /// nspouses(person|family) -> integer
+    /// nspouses(null) -> null
+    ///
     func bltinNSpouses(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let spouses = try await bltinSpouses(args)
@@ -179,7 +193,6 @@ extension Program {
             return .null
 
         case .list(let l):
-
             return .integer(l.count);
             
         default:
@@ -188,21 +201,23 @@ extension Program {
         }
     }
 
-    
-
-    /// Return the list of families a person is in as a spouse.
+    /// Return the list of Families a Person is in as a spouse.
     /// families(person) -> list<family>
-
+    /// families(null) -> empty list
+    ///
     func bltinFamilyList(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
         var families = [Family]()
 
         switch try await evaluate(args[0]) {
+
         case .person(let person):
             families = person.spouseFamilies(in: recordIndex)
+
         case .null:
             return .emptyList
+            
         default:
             throw RuntimeError("families: arg must be a person", line: line)
         }
@@ -231,7 +246,7 @@ extension Program {
 
         switch sequenceValue { // Get the list or person set from the first arg.
         case .list(let list):
-            guard list.values.indices.contains(internalIndex) else {
+            guard list.elements.indices.contains(internalIndex) else {
                 throw RuntimeError("subscript: index \(index) is out of range",
                                    line: args[1].line)
             }
@@ -254,8 +269,6 @@ extension Program {
                                line: args[0].line)
         }
     }
-
-    
 }
 
 /// Tuple support.
@@ -290,6 +303,7 @@ extension Program {
 
     /// Return a shallow copy of a list.
     /// copy(list|null) -> list
+    ///
     func bltinCopy(_ args: [ParsedExpr]) async throws -> ProgramValue {
         guard let list = try await evaluateListOpt(args[0],
                                         errMsg: "copy: arg must be a list") else {
@@ -302,82 +316,83 @@ extension Program {
 /// Structure that holds the programming language's list values. These are the
 /// enumerated .list elements that have an array of program values for their
 /// associated types.
+/// 
 public class ListValue {
 
     /// A list program value is an array of program values.
-    var values: [ProgramValue] = []
+    var elements: [ProgramValue] = []
 
     /// The number of program values in this list.
-    var count: Int { values.count }
+    var count: Int { elements.count }
 
     /// Create a list from an array of program values.
     public init(_ values: [ProgramValue] = []) {
-        self.values = values
+        self.elements = values
     }
 
     /// Push a program value onto a list (treated as a stack).
     func push(_ element: ProgramValue) {
-        values.insert(element, at: 0)
+        elements.insert(element, at: 0)
     }
 
     /// Pop a program value from a list (treated as a stack).
     func pop() -> ProgramValue? {
-        guard !values.isEmpty else { return nil }
-        return values.removeFirst()
+        guard !elements.isEmpty else { return nil }
+        return elements.removeFirst()
     }
 
     /// Enqueue a program value on a list (treated as a queue).
     func enqueue(_ element: ProgramValue) {
-        values.append(element)
+        elements.append(element)
     }
 
     /// Dequeue a program value from a list (treated as a queue).
     func dequeue() -> ProgramValue? {
-        guard !values.isEmpty else { return nil }
-        return values.removeFirst()
+        guard !elements.isEmpty else { return nil }
+        return elements.removeFirst()
     }
 
     /// Append a program value to a list.
     func append(_ element: ProgramValue) {
-        values.append(element)
+        elements.append(element)
     }
 
     /// Prepend a program value to a list.
     func prepend(_ element: ProgramValue) {
-        values.insert(element, at: 0)
+        elements.insert(element, at: 0)
     }
 
     /// Remove the first program value from a list
     func removeFirst() -> ProgramValue? {
-        guard !values.isEmpty else { return nil }
-        return self.values.removeFirst()
+        guard !elements.isEmpty else { return nil }
+        return self.elements.removeFirst()
     }
 
     /// Remove the last program value from a list.
     func removeLast() -> ProgramValue? {
-        guard !values.isEmpty else { return nil }
-        return self.values.removeLast()
+        guard !elements.isEmpty else { return nil }
+        return self.elements.removeLast()
     }
 
     /// Remove all program values from a list.
     func clear() {
-        values.removeAll(keepingCapacity: false)
+        elements.removeAll(keepingCapacity: false)
     }
 
     /// Returns a shallow copy of a list.
     public func copy() -> ListValue {
-        ListValue(values)
+        ListValue(elements)
     }
 
     /// Simple subscript operation for a list.
     subscript(index: Int) -> ProgramValue {
-        get { values[index] }
-        set { values[index] = newValue }
+        get { elements[index] }
+        set { elements[index] = newValue }
     }
 
     /// Sort the program values in a list using a comparison function.
     func sort(by areInIncreasingOrder: (ProgramValue, ProgramValue) -> Bool) {
-        values.sort(by: areInIncreasingOrder)
+        elements.sort(by: areInIncreasingOrder)
     }
 }
 
@@ -385,6 +400,6 @@ public class ListValue {
 extension ListValue: Sequence {
     
     public func makeIterator() -> IndexingIterator<[ProgramValue]> {
-        values.makeIterator()
+        elements.makeIterator()
     }
 }

@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 17 April 2026.
-//  Last changed on 28 September 2026.
+//  Last changed on 3 October 2026.
 //
 
 import Foundation
@@ -14,47 +14,43 @@ extension Program {
 
     /// Built-in that creates and returns a PersonSet.
     /// personset() -> personset
-
+    ///
     func bltinPersonSet(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         return .personset(PersonSet())
     }
 
-    /// Built-in that adds a new PersonSetElement to a PersonSet. If there is no associated
-    /// value the third argument can be omitted.
-    /// addtoset(personset, person[, any]) -> null
-
-    func oldbltinAddToSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
-
-        let personSet = try await evalPersonSet(args[0],
-                                    errMsg: "addtoset: 1st arg must be a personset")
-        let person = try await evalPerson(args[1],
-                                    errMsg: "addtoset: 2nd arg must be a person")
-        var any = ProgramValue.null
-        if args.count == 3 {
-            any = try await evaluate(args[2])
-        }
-        personSet.insert(person, value: any)
-        return .null
-    }
-
-    /// Add a person or the persons in a PersonSet to a PersonSet.
+    /// Add a Person or Persons in a PersonSet or a List to a PersonSet.
     /// An associated value may be supplied when adding a single person.
     /// addtoset(personset, person[, any]) -> null
+    /// addtoset(personset, list<person>) -> null
     /// addtoset(personset, personset) -> null
-
+    ///
     func bltinAddToSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let personSet = try await evalPersonSet(args[0],
             errMsg: "addtoset: 1st arg must be a personset")
 
-        let value = try await evaluate(args[1])
-
-        switch value {
+        switch try await evaluate(args[1]) {
 
         case .person(let person):
             let any = args.count == 3 ? try await evaluate(args[2]) : .null
             personSet.insert(person, value: any)
+
+        case .list(let list):
+            guard args.count == 2 else {
+                throw RuntimeError(
+                    "addtoset: associated value not allowed when adding list"
+                )
+            }
+            for value in list.elements {
+                guard case .person(let person) = value else {
+                    throw RuntimeError(
+                        "addtoset: list must contain only persons"
+                    )
+                }
+                personSet.insert(person)
+            }
 
         case .personset(let other):
             guard args.count == 2 else {
@@ -67,15 +63,12 @@ extension Program {
         default:
             throw RuntimeError("addtoset: 2nd arg must be a person or personset")
         }
-
         return .null
     }
 
-    /// Built-in that deletes an element from a PersonSet.
-    /// TODO: Current definitions allows the same person to be in the set multiple times!!!!!
-    /// What are the ramifications of this???
+    /// Delete an element from a PersonSet.
     /// deletefromset(personset, person) -> null
-
+    ///
     func bltinDeleteFromSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let set = try await evalPersonSet(args[0],
@@ -86,9 +79,9 @@ extension Program {
         return .null
     }
 
-    /// Built-in that sorts a PersonSet by name.
+    /// Sort a PersonSet by name.
     /// namesort(personset) -> null
-
+    ///
     func bltinNameSort(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let set = try await evalPersonSet(args[0],
@@ -97,9 +90,9 @@ extension Program {
         return .null
     }
 
-    /// Builtin that sorts a person set by key.
+    /// Sort a PersonSet by key.
     /// keysort(personset) -> null
-
+    ///
     func bltinKeySort(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let set = try await evalPersonSet(args[0],
@@ -107,24 +100,15 @@ extension Program {
         set.keySort()
         return .null
     }
-
-    /// Built-in that uniques a personset.
-    /// uniqueset(personset) -> null
-
-    func builtinUniqueset(_ args: [ParsedExpr]) throws -> ProgramValue {
-
-        
-        throw RuntimeError("uniqueset: not implemented", line: args[0].line)
-    }
 }
 
 /// General set operations on person sets.
 
 extension Program {
 
-    /// Built-in that returns the union of two person sets.
+    /// Return the union of two PersonSets.
     /// union(personset, personset) -> personset
-
+    ///
     func bltinUnion(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let set1Value = try await evaluate(args[0])
@@ -138,9 +122,9 @@ extension Program {
         return .personset(set1.union(set2))
     }
 
-    /// Built-in that returns the intersection of two person sets.
+    /// Return the intersection of two PersonSets.
     /// intersect(personset, personset) -> personset
-
+    ///
     func bltinIntersect(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let set1Value = try await evaluate(args[0])
@@ -154,9 +138,9 @@ extension Program {
         return .personset(set1.intersection(set2))
     }
 
-    /// Built-in that returns the difference of two person sets.
+    /// Return the set difference of two PersonSets.
     /// difference(personset, personset) -> personset
-
+    ///
     func bltinDifference(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let set1Value = try await evaluate(args[0])
@@ -175,60 +159,9 @@ extension Program {
 
 extension Program {
 
-    /// Built-in that returns the parent person set of a person set.
-    /// parentset(personset) -> personset
-
-//    func bltinParentSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
-//
-//        let setValue = try await evaluate(args[0])
-//        guard case let .personset(set) = setValue else {
-//            throw RuntimeError("parentset: arg must be a personset", line: args[0].line)
-//        }
-//        return .personset(set.parents(in: recordIndex))
-//    }
-
-    /// Built-in that returns the children person set of a person set.
-    /// childset(personset) -> personset
-
-//    func bltinChildSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
-//
-//        let setValue = try await evaluate(args[0])
-//        guard case let .personset(set) = setValue else {
-//            throw RuntimeError("childset: arg must be a personset", line: args[0].line)
-//        }
-//        return .personset(set.children(in: recordIndex))
-//    }
-
-    /// Built-in that return the sibling person set of a person set.
-    /// siblingset(personset) -> personset
-
-//    func bltinSiblingSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
-//
-//        let setValue = try await evaluate(args[0])
-//        guard case let .personset(set) = setValue else {
-//            throw RuntimeError("siblingset: arg must be a personset", line:args[0].line)
-//        }
-//        return .personset(set.siblings(in: recordIndex))
-//    }
-
-    /// Built-in that returns the spouse person set of a person set.
-    /// spouseset(personset) -> personset
-
-//    func bltinSpouseSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
-//
-//        let setValue = try await evaluate(args[0])
-//        guard case let .personset(set) = setValue else {
-//            throw RuntimeError("spouseset: arg must be a personset", line: args[0].line)
-//        }
-//        return .personset(set.spouses(in: recordIndex))
-//    }
-
-
-   
-
     /// Built-in that generates Gedcom text from a PersonSet.
     /// gengedcom(personset) -> string
-
+    ///
     func bltinGenGedcom(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let setValue = try await evaluate(args[0])

@@ -1,0 +1,119 @@
+proc main () {
+
+    "tests at the person level\n"
+
+    set(me, person("I1"))
+"DAUGHTERS/PERSON\n"
+    foreach(daughters(me), dau, n) {
+        d(n) " " name(dau) nl()
+    }
+"SONS/PERSON\n"
+    foreach(sons(me), son, n) {
+        d(n) " " name(son) nl()
+    }
+"CHILDREN/PERSON\n"
+    foreach(children(me), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"SPOUSES/PERSON\n"
+    foreach(spouses(me), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"SPOUSES/PERSON\n"
+    foreach(spouses(me), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"BROTHERS/PERSON\n"
+    foreach(brothers(me), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"SISTERS/PERSON\n"
+    foreach(sisters(me), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"FATHERS/PERSON\n"
+    foreach(fathers(me), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"MOTHERS/PERSON\n"
+    foreach(mothers(me), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"DESCENDANTS/\n"
+    foreach(descendants(me), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"GRANDCHILDREN/PERSON\n"
+    set(index, 1)
+    foreach(children(me), pers, n) {
+        foreach(children(pers), gkid, m) {
+            d(index) " " name(gkid) nl()
+            incr(index)
+        }
+    }
+
+/* TEST THE FAMILY LEVEL */
+    set(fam, family("F1"))
+
+"CHILDREN/FAMILY\n"
+    foreach(children(fam), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"PARENTS/FAMILY\n"
+    foreach(parents(fam), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"SPOUSES/FAMILY\n"
+    foreach(spouses(fam), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"SONS/FAMILY\n"
+    foreach(sons(fam), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"DAUGHTERS/FAMILY\n"
+    foreach(daughters(fam), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+
+"HUSBANDS/FAMILY\n"
+    foreach(husbands(fam), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+"WIVES/FAMILY\n"
+    foreach(wives(fam), pers, n) {
+        d(n) " " name(pers) nl()
+    }
+
+/* TEST THE PERSON SET LEVEL */
+
+    set(set, personset())
+    addtoset(set, person("I1"))
+"PARENTS/CHILDREN/SET\n"
+    set(set, parents(set))
+    call showset(set)
+    set(set, parents(set))
+    call showset(set)
+    set(set, children(set))
+    call showset(set)
+    set(set, children(set))
+    call showset(set)
+
+    call addtosetoverloadtest(person("I2"))
+}
+
+proc showset(set) {
+    foreach(set, per, n) {
+        d(n) " " name(per) nl()
+    }
+    nl()
+}
+
+proc addtosetoverloadtest(per) {
+
+    set(ancestorlist, ancestors(per)) /* create list of ancestors */
+    valueof(ancestorlist) /* show the list to prove it is a list */
+    set(set, personset()) /* create an empty personset */
+    addtoset(set, ancestorlist) /* try out the new overload */
+    call showset(set) /* prove that the new overload works */
+}
