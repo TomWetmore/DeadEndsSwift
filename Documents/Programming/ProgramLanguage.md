@@ -1,6 +1,6 @@
 ## DeadEnds Programming Language
 
-DeadEnds includes a programming language for writing genealogical programs. Originally intended for report generation, it soon became clear that it was a general-purpose programming language with special features for genealogy. Features that make it particularly useful for genealogy are its full support for the collection types needed for genealogical operations (e.g., lists, tables, and person sets), and its rich set of built-in library functions devoted to genealogy. In addition to standard data types, the language has genealogical data types such as persons, families, and Gedcom tree nodes; they can be operated on directly rather than being represented indirectly.
+DeadEnds includes a programming language for writing genealogical programs. Originally intended for report generation, it soon evolved into a general-purpose programming language with special features for genealogy. Features making it particularly useful for genealogy are its support for the collection types needed for genealogical operations (e.g., lists, tables, and person sets), and a rich set of built-in library functions devoted to genealogy. The language has genealogical data types such as persons, families, and Gedcom tree nodes.
 
 DeadEnds programs are stored in files. You can edit them with a text editor, but the DeadEnds application has an IDE page that makes it simple to create, edit, compile, debug, and run programs.
 
@@ -42,11 +42,11 @@ It declares the identifier to be a variable with global scope. Global variables 
 
 #### Expression Statements
 
-The DeadEnds language has several kinds statements. The simplest is the *expression* statement, an expression that is not part of any other statement or expression.
+The DeadEnds language has several kinds of statements. The simplest is the *expression* statement, an expression that is not part of any other statement or expression.
 
-When an expression statement is evaluated, if its value is a string it is written directly to the output stream. This is part of DeadEnds's legacy. The original language was intended as a report generator where it was natural to have string expressions written directly to output. This behavior is convenient and was kept as the language became more general. As a consequence the language does not have print statements.
+When an expression statement is evaluated, if its value is a string it is written directly to the output stream. This is part of DeadEnds's legacy. The original language was intended as a report generator where it was natural for string expressions to be written directly to output. This behavior is convenient and was kept as the language generalized. As a consequence the language does not have print statements.
 
-For example, the expression *name(person)*, where *person* is a person, returns the person’s name as a string, so it is written to the output stream. On the other hand, the expression *set(n, nspouses(person))* assigns the identifier *n* the number of spouses that the *person* has; *set* returns *null*, so nothing is written.
+For example, the expression statement, *name(person)*, where *person* is a person, returns the person’s name as a string, so it is written to the output stream. On the other hand, the statement expression *set(n, nspouses(person))* assigns the identifier *n* the number of spouses that the *person* has; *set* returns *null*, so nothing is written.
 
 #### If and While Statements
 
@@ -72,7 +72,7 @@ The call statement provides procedure calls. Its format is:
 
 #### Foreach Statement
 
-The LifeLines language had seperate iterators for different data structures and data sources. DeadEnds consolidates those iterators into a single *foreach* statement. It has the format:
+The LifeLines language had seperate iterators for different data structures and data sources. DeadEnds consolidates them into a the *foreach* statement. It has the format:
 
 ​    foreach (*source, element[, value], index*) { *statements* }
 
@@ -112,7 +112,7 @@ There are three forms of expressions: *literals*, *identifiers* (variables), and
 
 A *literal* is an integer constant, floating-point number, or Unicode string enclosed in quotes. A literal evaluates to its value.
 
-An *identifier* names a location in a local or global symbol table. Values are assigned to identifiers during execution, and an identifier evaluates to the last value assigned to it. Identifiers do not have fixed types; however, every value has a known type.
+An *identifier* names a variable in a local or global symbol table. Values are assigned to identifiers during execution, and an identifier evaluates to the last value assigned to it. Identifiers do not have fixed types; however, every value has a known type.
 
 A *function call* consists of a function name followed by a comma-separated list of expressions enclosed in parentheses. DeadEnds provides a large library of built-in functions. User-defined functions are called with the same syntax.
 
@@ -124,7 +124,7 @@ Here `a`, `2`, `b`, and `1` are expressions, `mul(a, 2)` and `sub(b, 1)` are exp
 
 #### Built-in Functions
 
-There is a long list of built-in functions, and it will grow for some time. The first subsection below describes the value types used in DeadEnds programs; these are the types of variables, function parameters and function return values. In the remaining sections the built-in functions are separated into logical categories and described.
+There is a long list of built-in functions, and it grows. The first subsection below describes the value types used in DeadEnds programs; these are the types of variables, function parameters and function return values. In the remaining sections the built-in functions are separated into logical categories and described.
 
 ##### Program Value Types
 

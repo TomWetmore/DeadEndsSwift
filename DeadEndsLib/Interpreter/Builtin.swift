@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 2 October 2026.
+//  Last changed on 4 October 2026.
 //
 
 import Foundation
@@ -37,6 +37,10 @@ extension Program {
             "capitalize": Builtin(min: 1, max: 1) { try await self.bltinCapitalize($0)},
             "words": Builtin(min: 1, max: 1) { try await self.bltinWords($0)},
             "tokens": Builtin(min: 1, max: 1) { try await self.bltinTokens($0)},
+            "strcmp": Builtin(min: 2, max: 2) { try await self.bltinStrcmp($0)},
+            "ord": Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
+            "card": Builtin(min: 1, max: 1) { try await self.bltinCard($0)},
+            "roman": Builtin(min: 1, max: 1) { try await self.bltinRoman($0)},
             // "trim": Builtin(min: 1, max: 1) { try await self.bltinTrim($0)},
             // "rjustify": Builtin(min: 1, max: 1) { try await self.bltinRJustify($0)},
 
@@ -172,12 +176,6 @@ extension Program {
             "keysort": Builtin(min: 1, max: 1) { try await self.bltinKeySort($0)},
             "gengedcom": Builtin(min: 1, max: 1) { try await self.bltinGenGedcom($0)},
 
-            // String operations.
-            "strcmp": Builtin(min: 2, max: 2) { try await self.bltinStrcmp($0)},
-            "ord": Builtin(min: 1, max: 1) { try await self.bltinOrd($0)},
-            "card": Builtin(min: 1, max: 1) { try await self.bltinCard($0)},
-            "roman": Builtin(min: 1, max: 1) { try await self.bltinRoman($0)},
-
             // Debugging operations.
             "showframe": Builtin(min: 0, max: 0) { try self.bltinShowFrame($0)},
             "showstack": Builtin(min: 0, max: 0) { try self.bltinShowStack($0)},
@@ -205,15 +203,14 @@ extension Program {
         let value = try await self.evaluate(args[0])
         if value == .null { return .null }  // Allow null propagation.
         guard case let .integer(integer) = value else {
-            //throw RuntimeError("d: arg must be an integer", line: args[0].line)
             return .null
         }
         return .string(String(integer))
     }
     
-    /// Return a newline character as a string.
+    /// Return an ascii newline character as a string.
     /// nl() -> string
-
+    ///
     func bltinNl(_ args: [ParsedExpr]) throws -> ProgramValue {
         
         return .string("\n")
@@ -221,14 +218,14 @@ extension Program {
 
     /// Return an ascii double quote character as a string.
     /// qt() -> string
-
+    ///
     func bltinQuote(_ args: [ParsedExpr]) throws -> ProgramValue {
         return .string("\"")
     }
 
     /// Assignment 'statement'.
     /// set(ident, any) -> null
-
+    ///
     func bltinSet(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard case let .identifier(name) = args[0].kind else {
@@ -242,21 +239,21 @@ extension Program {
 
     /// Return a .null program value.
     /// null() -> null
-
+    ///
     func bltinNull(_ args: [ParsedExpr]) async throws -> ProgramValue {
         .null
     }
 
     /// Return a true program value.
     /// true() -> bool
-
+    ///
     func bltinTrue(_ args: [ParsedExpr]) async throws -> ProgramValue {
         return .boolean(true)
     }
 
     /// Return a false program value.
     /// false() -> bool
-
+    ///
     func bltinFalse(_ args: [ParsedExpr]) async throws -> ProgramValue {
         return .boolean(false)
     }
@@ -277,52 +274,68 @@ enum BuiltinInfo {
     
     static let names: Set<String> = [
         // Miscellaneous.
-       "d", "nl", "qt", "set", "ord", "card", "roman", "null", "true", "false",
+       "d", "nl", "qt", "set",  "null", "true", "false",
+
        // Strings.
-       "upper", "lower", "capitalize", "words", "tokens",
-       // "trim",
-       // "rjustify",
+       "upper", "lower", "capitalize", "words", "tokens", "strcmp", "ord", "card", "roman",
+       // "trim", "rjustify",
+       
        // Arithmetic.
        "add", "sub", "mul", "div", "mod", "neg",
+
        // Increment and decrement.
        "incr", "decr",
+
        // Comparison.
        "eq", "ne", "lt", "le", "gt", "ge",
+
        // Logical.
        "and", "or", "not",
+
        // Gedcom nodes.
        "key", "tag", "val", "lev", "kid", "sib", "kids", "sibs", "dad", "root",
        "kidwithtag", "kidswithtag",
+
        // Persons.
        "person", "name", "sex", "fullname", "givens", "surname", "trimname", "title",
-       "birth", "death", "baptism", "burial", "father", "mother", "siblings", "nextsib",
-       "prevsib", "families", "allpersons", "male", "female",
+       "birth", "death", "baptism", "burial", "nextsib", "prevsib", "families",
+       "male", "female","allpersons",
+
        // Families.
        "family", "marriage", "divorce", "allfamilies",
-       /// Generic operations on persons and families.
-       "husband", "wife", "husbands", "wives", "children", "nchildren", "spouses",
-       "nspouses", "parents",
+
+       /// Relationship operations on Persons, Families, and PersonSets.
+       "children", "parents", "fathers", "mothers", "father", "mother", "spouses",
+       "husbands", "wives", "husband", "wife", "siblings", "ancestors",
+       "descendants", "sons", "daughters", "brothers", "sisters", "nchildren",
+       "nspouses",
+
        // Events.
        "date", "place",
+
        // Generics.
        "empty", "length", "clear", "subscript", "traverse",
+
        // Lists.
        "list", "append", "prepend", "push", "pop", "enqueue", "dequeue", "removefirst",
        "removelast", "copy",
+
        // Tuples.
        "pair", "first", "second",
+
        // Tables.
        "table", "insert", "lookup", "contains",
+
        // Personsets.
        "personset", "addtoset" , "removefromset", "union", "intersect", "difference",
-       "parentset" , "childset" , "spouseset", "siblingset", "ancestorset",
-       "ancestors", "descendentset", "descendents", "namesort", "keysort", "gengedcom",
-       // Strings.
-       "strcmp",
+       "namesort", "keysort", "gengedcom",
+
        // Metas.
        "showframe", "showstack", "valueof",
+
        // User interface.
        "getperson", "getinteger", "getstring",
+       
        // Extracts.
        "extractname", "extractplace",
     ]

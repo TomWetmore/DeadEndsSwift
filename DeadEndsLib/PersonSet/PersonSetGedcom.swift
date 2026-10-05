@@ -3,14 +3,14 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 April 2026.
-//  Last changed on 28 September 2026.
+//  Last changed on 4 October 2026.
 //
 
 import Foundation
 
-/// From a list of Persons return a RecordIndex that holds the records needed to generate
-/// a Gedcom file for the Persons.
-
+/// From a list of Persons return a RecordIndex that holds the records, Persons and
+/// Families, needed to generate a Gedcom file holding just those Persons.
+///
 func personsToRecordIndex(_ persons: [Person], in index: RecordIndex) -> [RecordKey: Record] {
 
     let personKeys = Set(persons.map(\.key))

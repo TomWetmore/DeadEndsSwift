@@ -9,7 +9,8 @@
 import Foundation
 
 
-/// Built-ins for children and parents.
+/// Built-ins for children, sons, daughters, brothers, sisters, parents, fathers,
+/// mothers, father, and mother.
 
 extension Program {
 
@@ -301,7 +302,7 @@ extension Program {
     }
 }
 
-/// Built-ins for spouses, husbands and wives.
+/// Built-ins for spouses, husbands, wives, husband, and wife.
 ///
 extension Program {
 

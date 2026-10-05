@@ -155,11 +155,11 @@ extension Program {
     }
 }
 
-/// Genealogical operations on person sets.
+/// Genealogical operations on PersonSets.
 
 extension Program {
 
-    /// Built-in that generates Gedcom text from a PersonSet.
+    /// Generate Gedcom text from a PersonSet.
     /// gengedcom(personset) -> string
     ///
     func bltinGenGedcom(_ args: [ParsedExpr]) async throws -> ProgramValue {

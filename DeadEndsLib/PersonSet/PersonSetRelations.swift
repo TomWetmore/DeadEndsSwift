@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 March 2026.
-//  Last changed on 2 October 2026.
+//  Last changed on 4 October 2026.
 //
 
 import Foundation
@@ -11,7 +11,7 @@ import Foundation
 extension PersonSet {
 
     /// Return the children PersonSet of a PersonSet.
-
+    ///
     public func children(in index: RecordIndex) -> PersonSet {
 
         var children = [Person]()
@@ -25,7 +25,7 @@ extension PersonSet {
     }
 
     /// Return the parents PersonSet of a PersonSet.
-
+    ///
     public func parents(in index: RecordIndex) -> PersonSet {
 
         var parents = [Person]()
@@ -39,7 +39,7 @@ extension PersonSet {
     }
 
     /// Return the spouses PersonSet of a PersonSet.
-
+    ///
     public func spouses(in index: RecordIndex) -> PersonSet {
 
         var spouses = [Person]()
@@ -52,8 +52,8 @@ extension PersonSet {
         return PersonSet(persons: spouses)
     }
 
-    /// Return the sibling PersonSet of a PersonSet.
-
+    /// Return the siblings PersonSet of a PersonSet.
+    ///
     public func siblings(in index: RecordIndex) -> PersonSet {
 
         var siblings: [Person] = []
@@ -67,7 +67,7 @@ extension PersonSet {
     }
 
     /// Return the ancestors PersonSet of a PersonSet.
-
+    ///
     public func ancestors(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -82,7 +82,7 @@ extension PersonSet {
     }
 
     /// Return the descendants PersonSet of a PersonSet.
-
+    ///
     public func descendants(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -96,7 +96,7 @@ extension PersonSet {
     }
 
     /// Return the fathers PersonSet of a PersonSet.
-
+    ///
     public func fathers(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -111,7 +111,7 @@ extension PersonSet {
     }
 
     /// Return the mothers PersonSet of a PersonSet.
-
+    ///
     public func mothers(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -126,16 +126,12 @@ extension PersonSet {
     }
 }
 
-/// Ancestors, descendents, siblings.
-
-extension PersonSet {
-
-}
-
 /// Sons, daughters, brothers, sisters
 
 extension PersonSet {
 
+    /// Return the sons PersonSet of a PersonSet.
+    ///
     public func sons(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -148,6 +144,8 @@ extension PersonSet {
         return result
     }
 
+    /// Return the daughters PersonSet of a PersonSet.
+    ///
     public func daughters(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -160,6 +158,8 @@ extension PersonSet {
         return result
     }
 
+    /// Return the brothers PersonSet of a PersonSet.
+    ///
     public func brothers(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -172,6 +172,8 @@ extension PersonSet {
         return result
     }
 
+    /// Return the sisters PersonSet of a PersonSet.
+    ///
     public func sisters(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -185,28 +187,10 @@ extension PersonSet {
     }
 }
 
-/// Discovered missing by ChatGPT
-///
-/// children
-/// husband
-/// wives
-///
-
-
 extension PersonSet {
 
-//    public func children(in index: RecordIndex) -> PersonSet {
-//
-//        let result = PersonSet()
-//
-//        for element in elements {
-//            for child in element.person.children(in: index) {
-//                result.insert(child)
-//            }
-//        }
-//        return result
-//    }
-
+    /// Return the husbands PersonSet of a PersonSet.
+    ///
     public func husbands(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
@@ -219,6 +203,8 @@ extension PersonSet {
         return result
     }
 
+    /// Return the wives PersonSet of a PersonSet.
+    ///
     public func wives(in index: RecordIndex) -> PersonSet {
 
         let result = PersonSet()
