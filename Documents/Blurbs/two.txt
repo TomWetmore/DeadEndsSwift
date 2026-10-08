@@ -3,7 +3,7 @@ I think a good example of a DeadEnds program that can demonstrate some of the po
 
 /* cousins 6.0 —- Last chaged on 23 May 2026. */
 /* Finds the relationship between two persons in a DeadEnds database.  If there is no common ancestor or
-   descendent, the program tries to find a sequence of genetic relations that link the two persons. If the
+   descendant, the program tries to find a sequence of genetic relations that link the two persons. If the
    two persons are genetically related (have a common ancestor) that relationship is shown. If the two
    persons are not genetically related, the program tries to find a sequence of genetic relationships that
    link the two persons.  For example, the program will find the the relationship between your two
@@ -126,7 +126,7 @@ proc foundpath (key) {
     set(again, 1)
 
         /* Create the nexus list, the persons where relationships change direction; a nexus person is
-           the first person, last person, or common ancestor or descendent of two other nexus persons. */
+           the first person, last person, or common ancestor or descendant of two other nexus persons. */
 
     while (again) {
                 /* Get the next person from the path. */
@@ -184,7 +184,7 @@ proc foundpath (key) {
         } elsif (gt(len, 0)) {
 
 /* If the nexus list has only one remaining entry then show the (last-1)th nexus person as a
-   descendent of the last nexus person. */
+   descendant of the last nexus person. */
 
             if (eq(1, llen)) {
                 set(two, dequeue(nexkeys))

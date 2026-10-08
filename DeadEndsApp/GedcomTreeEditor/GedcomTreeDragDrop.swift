@@ -47,7 +47,7 @@ struct TransferGedcomTree: Transferable, Codable {
     var val: String?
     var children: [TransferGedcomTree]
 
-    /// Create transfer Gedcom tree from Gedcom node and its descendents.
+    /// Create transfer Gedcom tree from Gedcom node and its descendants.
     init(node: GedcomNode) {
         self.tag = node.tag
         self.val = node.val

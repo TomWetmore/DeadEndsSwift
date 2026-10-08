@@ -1,9 +1,9 @@
 //
-//  DescendentsTree.swift
+//  DescendantsTree.swift
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 20 August 2025.
-//  Last changed on 16 September 2025.
+//  Last changed on 5 October 2025.
 //
 //  Still in experimental form. Intended to show family trees as graphs.
 

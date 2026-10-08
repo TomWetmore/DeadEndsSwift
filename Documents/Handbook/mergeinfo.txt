@@ -25,7 +25,7 @@ GedcomViews/
         			.if(allowDrag && !consumed.contains(node.id)) { view in view.draggable({
             	    		consumeSubtree(node) // Marks it consumed as soon as drag starts
                 			return DraggedGedcomSubtree(node: node) }())
-			private func consumeSubtree(_ node: GedcomNode) -- Marks node and descendents as consummed
+			private func consumeSubtree(_ node: GedcomNode) -- Marks node and descendants as consummed
 			Views for indentView, chevronView, levelView, keyView, tagText, valueText
 			private func toggleExpansion(node) -- toggles expansion state of a node
 		------------------------------

@@ -264,7 +264,7 @@ childset (peronsset)              -> personset    Children set of set
 spouseset (personset)             -> personset    Spouse set of set
 siblingset (personset)            -> personset    Sibling set of set
 ancestorset (personset)           -> personset    Ancestor set of set
-descendentset (personset)         -> personset    Descendant set of set
+descendantset (personset)         -> personset    Descendant set of set
 namesort (personset)              -> null         Sort set by name
 keysort (personset)               -> null         Sort set by key
 ```

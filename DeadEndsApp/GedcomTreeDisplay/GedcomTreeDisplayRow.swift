@@ -59,7 +59,7 @@ struct GedcomTreeDisplayRow: View {
         .allowsHitTesting(!consumed.contains(node.id))
     }
 
-    /// Marks a node and all its descendents as consumed.
+    /// Marks a node and all its descendants as consumed.
     private func consumeSubtree(_ node: GedcomNode) {
         consumed.insert(node.id)
         for child in node.kids {

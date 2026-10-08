@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 2 October 2026.
+//  Last changed on 5 October 2026.
 //
 
 import Foundation
@@ -11,8 +11,9 @@ import Foundation
 /// Name related built-ins.
 extension Program {
 
-    /// Lookup a person in the database by key; the @-signs may be omitted.
+    /// Lookup a Person in the database by key; the @-signs may be omitted.
     /// person(string|null) -> person|null
+    ///
     func bltinPerson(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
@@ -34,8 +35,9 @@ extension Program {
         return .person(Person(root))
     }
 
-    /// Return a basic version of a person's name.
+    /// Return a basic version of a Person's name.
     /// name(person|null) -> string|null
+    ///
     func bltinName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let value = try await evalPersonOpt(args[0], errMsg: "name: arg must be a person")
@@ -45,8 +47,9 @@ extension Program {
         return .null
     }
 
-    /// Return a person's name with some formatting.
+    /// Return a Person's name with some formatting.
     /// fullname(person, bool, bool, int) -> string
+    ///
     func bltinFullName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
@@ -66,8 +69,9 @@ extension Program {
 
     }
 
-    /// Return a person's surname from the first 1 NAME line in the record.
+    /// Return a Person's surname from the first 1 NAME line in the record.
     /// surname(person|null) -> string|null
+    ///
     func bltinSurname(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
@@ -81,9 +85,10 @@ extension Program {
 
     }
 
-    /// Return a person's given names from the first 1 NAME line in the record. The name
+    /// Return a Person's given names from the first 1 NAME line in the record. The name
     /// parts are returned in a .list.
     /// givens(person|null) -> list<string>
+    ///
     func bltinGivens(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "givens: arg must be a person")
@@ -103,6 +108,7 @@ extension Program {
 
     /// Return the trimmed name of a person.
     /// trimname(person|null, int) -> string|null
+    /// 
     func bltinTrimName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
@@ -114,8 +120,9 @@ extension Program {
         return .string(person.displayName(limit: len))
     }
 
-    /// Return the title of a person, the value of the first 1 TITL node in the person.
+    /// Return the title of a Person, the value of the first 1 TITL node in the person.
     /// title(person|null) -> string|null
+    ///
     func bltinTitle(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0], errMsg: "title: arg must be a person")
@@ -125,35 +132,36 @@ extension Program {
         else { return .null }
 
         return .string(title)
-
     }
 }
 
 /// Relationship reated built-ins.
 extension Program {
 
-    
-
-    
-
-    /// Return the next sibling of a person.
+    /// Return the next sibling of a Person.
+    ///
     func bltinNextSib(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let value = try await evaluate(args[0])
-        switch value {
+
+        switch try await evaluate(args[0]) {
+
         case .person(let person):
             return person.nextSibling(in: recordIndex).map { .person($0) } ?? .null
+
         default:
             throw RuntimeError("nextsibling: arg must be a person",
                                line: args[0].line)
         }
     }
 
-    /// Return the previohs sibling of a person.
+    /// Return the previous sibling of a Person.
+    ///
     func bltinPrevSib(_ args: [ParsedExpr]) async throws -> ProgramValue {
-        let value = try await evaluate(args[0])
-        switch value {
+
+        switch try await evaluate(args[0]) {
+
         case .person(let person):
             return person.previousSibling(in: recordIndex).map { .person($0) } ?? .null
+
         default:
             throw RuntimeError("nextsibling: arg must be a person",
                                line: args[0].line)
@@ -164,81 +172,63 @@ extension Program {
 /// Sex and role related built-ins.
 extension Program {
 
-    /// Return the sex of a person, M, F, or U as a string.
+    /// Return the sex of a Person, M, F, or U as a string.
     /// sex(person|null) -> string|null
+    ///
     func bltinSex(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                        errMsg: "sex: arg must be a person")
-        else { return .null }
-
+                                        errMsg: "sex: arg must be a person") else {
+            return .null
+        }
         switch person.sex {
+
         case .male: return .string("M")
+
         case .female: return .string("F")
+            
         default: return .string("U")
         }
     }
 
-    /// Return true if a person is male.
+    /// Return true if a Person is male.
     /// male(person|null) -> bool|null
+    ///
     func bltinMale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                        errMsg: "male: arg must be a person")
-        else { return .null }
+                                        errMsg: "male: arg must be a person") else {
+            return .null
+        }
         return person.isMale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
-    /// Return true if a person is female.
+    /// Return true if a Person is female.
     /// female(person|null) -> bool|null
+    ///
     func bltinFemale(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let person = try await evalPersonOpt(args[0],
-                                        errMsg: "female: arg must be a person")
-        else { return .null }
+                                        errMsg: "female: arg must be a person") else {
+            return .null
+        }
         return person.isFemale ? ProgramValue.trueProgramValue : ProgramValue.falseProgramValue
     }
 
     /// Return a pronoun to refer to a person.
     /// pronoun(person|null, int) -> string|null
+    /// 
     func builtinPronouns(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtInPronouns not implemented")
         return .null
     }
 }
 
-/// Fathers and Mothers.
-
 extension Program {
-
-    func builtinFather(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return .null
-    }
-
-    func builtinMother(_ args: [ParsedExpr]) throws -> ProgramValue {
-        return .null
-    }
-
-
-    
-}
-
-extension Program {
-
-
-    func bltinTitle(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinTitle not implemented")
-        return .null
-    }
-
-    func bltinSoundex(_ args: [ParsedExpr]) throws -> ProgramValue {
-        print("builtinSoundes not implemented")
-        return .null
-    }
 
     /// Built-in that returns the root node of a record.
     /// root(person|family|null) -> gnode|null
-
+    ///
     func bltinRoot(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
@@ -255,16 +245,20 @@ extension Program {
         }
     }
 
-    /// Normalize a Gedcom key (add @-signs if not present).
+    /// Normalize a Gedcom key, that is, add @-signs if they are not present.
     ///
     func normalizeGedcomKey(_ key: String) -> String {
 
         var k = key.trimmingCharacters(in: .whitespacesAndNewlines)
+
         if !k.hasPrefix("@") { k = "@" + k }
         if !k.hasSuffix("@") { k = k + "@" }
         return k
     }
 
+    /// Return the first Person in the database.
+    /// firstindi() -> Person
+    /// 
     func builtinFirstIndi(_ args: [ParsedExpr]) throws -> ProgramValue {
         print("builtinFirstIndi not implemented")
         return .null
@@ -290,18 +284,5 @@ extension Program {
     func bltinAllFamilies(_ args: [ParsedExpr]) throws -> ProgramValue {
         
         return .allFamilies
-    }
-}
-
-extension Program {
-
-    // Extract an event from a .gnode associated ProgramNode.
-    func extractPersonEvent(from arg: ParsedExpr, tag: String, functionName: String) throws -> ProgramValue {
-        //        // Get the person with the requested event.
-        //        let person = try personFromProgramNode(arg, errorMessage: "\(functionName)() expects a person root node")
-        //        // Get the first child node with the even's tag in the person's tree.
-        //        return person.kid(withTag: tag).map { .gnode($0) } ?? .null
-
-        return .null
     }
 }

@@ -157,7 +157,7 @@ childset (set)                 -> set   Children set of set
 spouseset (set)                -> set   Spouse set of set
 siblingset (set)               -> set   Sibling set of set
 ancestorset (set)              -> set   Ancestor set of set
-descendentset (set)            -> set   Descendant set of set
+descendantset (set)            -> set   Descendant set of set
 namesort (set)                 -> null  Sort set by name
 keysort (set)                  -> null  Sort set by key
 ```

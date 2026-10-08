@@ -3,14 +3,13 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 2 October 2026.
-//  Last changed on 2 October 2026.
+//  Last changed on 7 October 2026.
 //
 
 import Foundation
 
-
-/// Built-ins for children, sons, daughters, brothers, sisters, parents, fathers,
-/// mothers, father, and mother.
+/// Builtins for children, sons, daughters, siblings, brothers, sisters, parents,
+/// fathers, mothers, father, and mother.
 
 extension Program {
 
@@ -25,11 +24,11 @@ extension Program {
 
         case .person(let person):
             let children = person.children(in: recordIndex)
-            return .list(ListValue(children.map { ProgramValue.person($0) }))
+            return .list(ListValue(children.map { .person($0) }))
 
         case .family(let family):
             let children = family.children(in: recordIndex)
-            return .list(ListValue(children.map { ProgramValue.person($0) }))
+            return .list(ListValue(children.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.children(in: recordIndex))
@@ -54,11 +53,11 @@ extension Program {
 
         case .person(let person):
             let sons = person.sons(in: recordIndex)
-            return .list(ListValue(sons.map {ProgramValue.person($0)}))
+            return .list(ListValue(sons.map { .person($0) }))
 
         case .family(let family):
             let sons = family.sons(in: recordIndex)
-            return .list(ListValue(sons.map {ProgramValue.person($0)}))
+            return .list(ListValue(sons.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.sons(in: recordIndex))
@@ -83,11 +82,11 @@ extension Program {
 
         case .person(let person):
             let daughters = person.daughters(in: recordIndex)
-            return .list(ListValue(daughters.map {ProgramValue.person($0)}))
+            return .list(ListValue(daughters.map { .person($0) }))
 
         case .family(let family):
             let daughters = family.daughters(in: recordIndex)
-            return .list(ListValue(daughters.map {ProgramValue.person($0)}))
+            return .list(ListValue(daughters.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.daughters(in: recordIndex))
@@ -111,7 +110,7 @@ extension Program {
 
         case .person(let person):
             let brothers = person.brothers(in: recordIndex)
-            return .list(ListValue(brothers.map {ProgramValue.person($0)}))
+            return .list(ListValue(brothers.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.brothers(in: recordIndex))
@@ -135,7 +134,7 @@ extension Program {
 
         case .person(let person):
             let sisters = person.sisters(in: recordIndex)
-            return .list(ListValue(sisters.map {ProgramValue.person($0)}))
+            return .list(ListValue(sisters.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.sisters(in: recordIndex))
@@ -162,11 +161,11 @@ extension Program {
 
         case .person(let person):
             let parents = person.parents(in: recordIndex)
-            return .list(ListValue(parents.map { ProgramValue.person($0) }))
+            return .list(ListValue(parents.map { .person($0) }))
 
         case .family(let family):
             let parents = family.spouses(in: recordIndex) // Define parents of a family and the spouses.
-            return .list(ListValue(parents.map { ProgramValue.person($0) }))
+            return .list(ListValue(parents.map { .person($0) }))
 
         case .personset(let set):
             let parents = PersonSet()
@@ -317,11 +316,11 @@ extension Program {
 
         case .person(let person):
             let spouses = person.spouses(in: recordIndex)
-            return .list(ListValue(spouses.map { ProgramValue.person($0) }))
+            return .list(ListValue(spouses.map { .person($0) }))
 
         case .family(let family):
             let spouses = family.spouses(in: recordIndex)
-            return .list(ListValue(spouses.map { ProgramValue.person($0) }))
+            return .list(ListValue(spouses.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.spouses(in: recordIndex))
@@ -346,11 +345,11 @@ extension Program {
 
         case .person(let person):
             let husbands = person.husbands(in: recordIndex)
-            return .list(ListValue(husbands.map { ProgramValue.person($0)}))
+            return .list(ListValue(husbands.map { .person($0) }))
 
         case .family(let family):
             let husbands = family.husbands(in: recordIndex)
-            return .list(ListValue(husbands.map { ProgramValue.person($0)}))
+            return .list(ListValue(husbands.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.husbands(in: recordIndex))
@@ -375,11 +374,11 @@ extension Program {
 
         case .person(let person):
             let wives = person.wives(in: recordIndex)
-            return .list(ListValue(wives.map { ProgramValue.person($0)}))
+            return .list(ListValue(wives.map { .person($0) }))
 
         case .family(let family):
             let wives = family.wives(in: recordIndex)
-            return .list(ListValue(wives.map { ProgramValue.person($0)}))
+            return .list(ListValue(wives.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.wives(in: recordIndex))
@@ -453,7 +452,7 @@ extension Program {
 
         case .person(let person):
             let siblings = person.siblings(in: recordIndex)
-            return .list(ListValue(siblings.map { ProgramValue.person($0)}))
+            return .list(ListValue(siblings.map { .person($0) }))
 
         case .personset(let set):
             return .personset(set.siblings(in: recordIndex))

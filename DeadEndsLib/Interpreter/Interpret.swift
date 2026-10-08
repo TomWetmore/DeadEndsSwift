@@ -5,12 +5,12 @@
 //  Created by Thomas Wetmore on 7 April 2026.
 //  Last changed on 12 September 2026.
 //
-//  This file has the interpreters for all statement types except the
-//  foreach statement
+//  This file has the interpreters for all statement types except foreach.
 
 import Foundation
 
 /// Result values returned by the interpreter methods.
+///
 public enum InterpResult: Sendable {
 
     case okay  // Normal.
@@ -21,18 +21,24 @@ public enum InterpResult: Sendable {
 }
 
 /// Interpreters for all statements except foreach.
+///
 extension Program {
 
-    /// Interpret a statement list.
+    /// Interpret a list of statements.
+    ///
     func interpStmtList(_ stmts: [ParsedStatement]) async throws -> InterpResult {
 
         for stmt in stmts {
             let result = try await interpStatement(stmt)
+            
             switch result {
+
             case .okay:
                 continue
+
             case .returning, .breaking, .continuing:
                 return result
+                
             case .error:
                 return .error
             }
@@ -42,6 +48,7 @@ extension Program {
 
     /// Interpret a statement. The method checks the statement type and calls the type's
     /// interpreter.
+    ///
     func interpStatement(_ stmt: ParsedStatement) async throws -> InterpResult {
         
         try await tick(line: stmt.line)  // Lazy man infinite loop protection.
@@ -79,6 +86,7 @@ extension Program {
     }
 
     /// Interpret a while statement.
+    ///
     func interpWhile(_ whileStmt: ParsedWhileStmt) async throws -> InterpResult {
 
         while true {
@@ -87,6 +95,7 @@ extension Program {
             let result = try await interpStmtList(whileStmt.body)
 
             switch result {
+
             case .breaking:
                 return .okay
 
@@ -104,6 +113,7 @@ extension Program {
     }
 
     /// Interpret an if statement.
+    ///
     func interpIf(_ ifStmt: ParsedIfStmt) async throws -> InterpResult {
 
         if try await evalCondition(ifStmt.condition) {
@@ -121,6 +131,7 @@ extension Program {
     }
 
     /// Interpret a return statement.
+    ///
     func interpReturn(_ stmt: ParsedReturnStmt) async throws -> InterpResult {
 
         if stmt.values.isEmpty { return .returning(nil) }
@@ -128,6 +139,7 @@ extension Program {
     }
 
     /// Interpret a procedure call statement.
+    ///
     func interpProcCall(_ procCall: ParsedCallStatement) async throws -> InterpResult {
 
         let name = procCall.name
@@ -141,18 +153,18 @@ extension Program {
                 line: procCall.line
             )
         }
-        // Eval the args in the caller's context; add their values to a symbol table.
+        // Evaluate the args in the caller's context; add the values to a symbol table.
         var table: SymbolTable = [:]
         for (param, arg) in zip(procDef.params, procCall.args) {
             table[param] = try await evaluate(arg)
         }
-        // Create the run time frame for the callee.
+        // Create callee's run time frame.
         let frame = RuntimeFrame(name: name, kind: .proc, defnLine: procDef.line,
                                  callLine: procCall.line, params: procDef.params, symbols: table)
         pushCallFrame(frame)
         defer { popCallFrame() }
         
-        // Interpret the body of the proc.
+        // Interpret the body of the procedure.
         let result = try await interpStmtList(procDef.body)
 
         switch result {

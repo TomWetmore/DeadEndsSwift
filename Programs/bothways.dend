@@ -297,7 +297,7 @@ proc showancs (one, two, len)
     pword "of\n  " name(person(two)) ".\n"
 }
 
-/* showdesc -- Show a direct descendent relation. */
+/* showdesc -- Show a direct descendant relation. */
 proc showdesc (one, two, len) {
     set(indi, person(one))
     if (male(indi))         { set(pword, "son ") }

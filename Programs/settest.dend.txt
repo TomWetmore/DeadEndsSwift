@@ -6,7 +6,7 @@ proc main () {
 
     call showset(set)
 
-    addtoset(set, descendents(set))
+    addtoset(set, descendants(set))
     call showset(set)
     addtoset(set, spouses(set))
     call showset(set)

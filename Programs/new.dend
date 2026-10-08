@@ -102,7 +102,7 @@ proc foundpath (key) {
     set(again, 1)
 
     /* Create the nexus list, the persons where relationships change direction; a nexus person is
-       the first person, last person, or common ancestor or descendent of two other nexus persons. */
+       the first person, last person, or common ancestor or descendant of two other nexus persons. */
 
     while (again) {
                 /* Get the next person from the path. */
@@ -160,7 +160,7 @@ proc foundpath (key) {
         } elsif (gt(len, 0)) {
 
 /* If the nexus list has only one remaining entry then show the (last-1)th nexus person as a
-   descendent of the last nexus person. */
+   descendant of the last nexus person. */
 
             if (eq(1, llen)) {
                 set(two, dequeue(nexkeys))

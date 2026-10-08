@@ -81,7 +81,7 @@ I assume that in our architecture the GedcomTreeEditorModel is doing both of:
 
 SCENARIO.
 1. User changes the value of a node.
-2. User removes the dad of the node (so all the descendents of the dad as well)
+2. User removes the dad of the node (so all the descendants of the dad as well)
 3. User decides to undo the removal operation.
 4. User decides to undo the value change.
 

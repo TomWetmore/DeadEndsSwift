@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 3 October 2026.
+//  Last changed on 5 October 2026.
 //
 
 import Foundation
@@ -20,6 +20,7 @@ extension Program {
 
     /// Return whether a list, table, personset or string is empty.
     /// empty(list|table|personset|string) -> bool
+    /// 
     func bltinEmpty(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         switch try await evaluate(args[0]) {
@@ -109,32 +110,45 @@ extension Program {
 
         guard let list = try await evaluateListOpt(args[0],
                                                    errMsg: "prepend: 1st arg must be a list")
-        else { return .null }
+        else {
+            return .null
+        }
         await list.prepend(try evaluate(args[1]))
         return .list(list)
     }
 
-    /// Remove the first value from a list.
+    /// Remove the first element from a list.
+    ///
     func bltinRemoveFirst(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let list = try await evaluateListOpt(args[0],
                                                    errMsg: "removefirst: 1st arg must be a list")
-        else { return .null }
-        guard let first = list.removeFirst() else { return .null }
+        else {
+            return .null
+        }
+        guard let first = list.removeFirst() else {
+            return .null
+        }
         return first
     }
 
-    /// Remove the last value from a list.
+    /// Remove the last element from a list.
+    ///
     func bltinRemoveLast(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let list = try await evaluateListOpt(args[0],
                                                    errMsg: "removelast: 1st arg must be a list")
-        else { return .null }
-        guard let last = list.removeLast() else { return .null }
+        else {
+            return .null
+        }
+        guard let last = list.removeLast() else {
+            return .null
+        }
         return last
     }
 
     /// Evaluate an expression and be sure it is a list.
+    ///
     func evaluateList(_ expr: ParsedExpr, errMsg: String) async throws -> ListValue {
 
         guard case let .list(list) = try await evaluate(expr) else {
@@ -144,13 +158,17 @@ extension Program {
     }
 
     /// Evaluate an expression and be sure it is a list or nil.
+    /// 
     func evaluateListOpt(_ expr: ParsedExpr, errMsg: String) async throws -> ListValue? {
 
         switch try await evaluate(expr) {
+
         case .list(let list):
             return list
+
         case .null:
             return nil
+
         default:
             throw RuntimeError(errMsg, line: expr.line)
         }
@@ -158,9 +176,10 @@ extension Program {
 }
 
 /// Builtins that return lists of persons or families.
+///
 extension Program {
 
-    /// Return the number of children or a Person or Family.
+    /// Return the number of children of a Person or Family.
     /// nchildren(person|family) -> integer
     /// nchildren(null) -> null
     ///
@@ -186,8 +205,7 @@ extension Program {
     ///
     func bltinNSpouses(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let spouses = try await bltinSpouses(args)
-        switch spouses {
+        switch try await bltinSpouses(args) {
 
         case .null:
             return .null
@@ -207,7 +225,6 @@ extension Program {
     ///
     func bltinFamilyList(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let line = args[0].line
         var families = [Family]()
 
         switch try await evaluate(args[0]) {
@@ -219,7 +236,7 @@ extension Program {
             return .emptyList
             
         default:
-            throw RuntimeError("families: arg must be a person", line: line)
+            throw RuntimeError("families: arg must be a person", line: args[0].line)
         }
         let result = ListValue(families.map { ProgramValue.family($0)})
         return .list(result)

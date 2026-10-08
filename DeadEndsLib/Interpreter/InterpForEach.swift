@@ -13,6 +13,7 @@ extension Program {
     /// Interpret a foreach statement. Foreach statements handle lists, person sets, tables,
     /// strings, persons, families, and sub-nodes.
     /// foreach(List|PersonSet|Table|String|Persons|Families|Nodes, String, String?, String)
+    ///
     func interpForEach(_ stmt: ParsedForEachStmt) async throws -> InterpResult {
 
         let line = stmt.listExpr.line
@@ -83,9 +84,11 @@ extension Program {
     }
 
     /// Interpret the body of an iteration.
+    ///
     private func interpBody(_ stmt: ParsedForEachStmt, element: ProgramValue,
                             payload: ProgramValue, index: Int) async throws -> InterpResult {
 
+        // Assign values to the two or three loop identifiers.
         assignToSymbol(stmt.elementVar, value: element)
         if let valueVar = stmt.valueVar {
             assignToSymbol(valueVar, value: payload)
@@ -96,24 +99,31 @@ extension Program {
         return result
     }
 
+    /// Handle the end of loop result.
+    ///
     private func handleLoopResult(_ result: InterpResult) -> InterpResult? {
+
         switch result {
+
         case .okay, .continuing:
-            return nil          // keep looping
+            return nil          // Keep looping
+
         case .breaking:
-            return .okay        // consume the break
+            return .okay        // Consume break.
+
         case .returning:
-            return result       // propagate return upward
+            return result       // Propagate return.
+
         case .error:
-            return result       // propagate error upward
+            return result       // Propagate error.
         }
     }
 }
 
 extension GedcomNode {
 
-    /// Return a GedcomNode and its descendants in pre-order order for use
-    /// in foreach statements.
+    /// Return a GedcomNode and descendants in pre-order (for use in foreach statements).
+    ///
     func preorderNodes() -> [GedcomNode] {
 
         var result: [GedcomNode] = []

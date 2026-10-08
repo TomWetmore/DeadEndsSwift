@@ -24,7 +24,7 @@ The goal of the project is to show a person and all their desendents as a Henry 
 1 2 1 1 2 1 2 Roy Dexter Kimble
 ```
 
-Each Henry number is unique and is assigned to descendents based on their relationship to person 1. For example, person (1 a b c) is the c'th child of the b'th child of the a'th child of person 1.
+Each Henry number is unique and is assigned to descendants based on their relationship to person 1. For example, person (1 a b c) is the c'th child of the b'th child of the a'th child of person 1.
 
 Below is the full program. The main proc is:
 ```
@@ -77,6 +77,6 @@ proc showperson(person, code) {
 
 That is all there is to it. As usual, recursive problems break down into very little code. This is a simple program that shows the power of the DeadEnds programming language. The program exploits the *personset* datatype with its *associated value*s that can be of any type needed for an application.
 
-There is an issue with this program, though it might seem minor. It is possible for descendents to show up in multiple places in a descendency, that is, a descendency is not really a tree, but a directed graph. Imagine that two great-grandchilren of the top person married and had children (a second cousin marriage). All their descendents, by this program, would show up twice, with different Henry numbers, as descendents of the two second cousins.
+There is an issue with this program, though it might seem minor. It is possible for descendants to show up in multiple places in a descendency, that is, a descendancy is not really a tree, but a directed graph. Imagine that two great-grandchilren of the top person married and had children (a second cousin marriage). All their descendants, by this program, would show up twice, with different Henry numbers, as descendants of the two second cousins.
 
 Is this an error or just an inconvenience? Should we do something about it? What do you think? Personally I would fix it. This was going to the the programming problem three assignment.

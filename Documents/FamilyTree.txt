@@ -2,7 +2,7 @@ Question to ChatGPT
 ----------------------------------------
 Another ambitious goal that is possible with SwiftUI that I couldn't have contemplated with LifeLines:
 
-A tree view of relationships. At any time one person is probably the "point of focus" with the tree built up around him/her, with ancestors above for a generation or two and descendents below for a generation or two. Spouses included also. When some person in the chart is then selected the tree refocuses around that person.
+A tree view of relationships. At any time one person is probably the "point of focus" with the tree built up around him/her, with ancestors above for a generation or two and descendants below for a generation or two. Spouses included also. When some person in the chart is then selected the tree refocuses around that person.
 
 Algorithms for laying out trees like this are considerable more complex that for pedigrees and descendency lists. I've seen lots of apps that do it (Ancestry.com, FamilySearch). I think it would be very fun to get involved with those algorithms.
 

@@ -10,19 +10,19 @@
 
 import Foundation
 
-/// Gedcom node properties.
+/// GedcomNode properties.
+/// 
 extension Program {
 
-    /// Built-in that returns the key of a person, family, or a root node.
+    /// Return the key of a person, family, or a root node.
     /// key(person|family|gnode|null) -> string|null
-
+    ///
     func bltinKey(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let line = args[0].line
-        let value = try await evaluate(args[0])
         let node: GedcomNode
 
-        switch value {
+        switch try await evaluate(args[0]) {
 
         case .person(let person): node = person.root
 
@@ -40,9 +40,9 @@ extension Program {
         return .string(key)
     }
 
-    /// Built-in that returns the tag of a node.
+    /// Return the tag of a node.
     /// tag(node|null) -> string|null
-
+    ///
     func bltinTag(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let node = try await evalGedcomNodeOpt(args[0], errMsg: "tag: arg must be a node")
@@ -52,9 +52,9 @@ extension Program {
         return .null
     }
 
-    /// Built-in that returns the value of a node; returns null if value is null.
+    /// Return the value of a node; return null if there is no value.
     /// val(node|null) -> string|null
-
+    ///
     func bltinVal(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let node = try await evalGedcomNodeOpt(args[0], errMsg: "val: arg must be a node")
@@ -64,9 +64,9 @@ extension Program {
         return .null
     }
 
-    /// Built-in that returns the level of a node; returns null if the the node is null.
+    /// Return the level of a node; returns null if the the node is null.
     /// level(node|null) -> int|null
-
+    ///
     func bltinLev(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let node = try await evalGedcomNodeOpt(args[0], errMsg: "lev: arg must be a node")
@@ -76,10 +76,10 @@ extension Program {
         return .null
     }
 
-    /// Built-in that returns the kid (first child) of a node; returns null if the node is null or
+    /// Return the kid (first child) of a node; return null if the node is null or
     /// there is no kid.
     /// kid(node|null) -> node|null
-
+    ///
     func bltinKid(_ args: [ParsedExpr]) async throws -> ProgramValue {
         
         let node = try await evalGedcomNodeOpt(args[0], errMsg: "kid: arg must be a node")
@@ -89,10 +89,10 @@ extension Program {
         return .null
     }
 
-    /// Built-in that returns the sib (next sibling) of a node; returns null if the node is null
+    /// Return the sib (next sibling) of a node; return null if the node is null
     /// or there is no sib.
     /// sib(node|null) -> node|null
-
+    ///
     func bltinSib(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let node = try await evalGedcomNodeOpt(args[0],
@@ -103,10 +103,9 @@ extension Program {
         return .null
     }
 
-    /// Builtin that returns the dad (parent) of a node; returns null if the node is null or
-    /// has no dad.
+    /// Returns the dad (parent) of a node; returns null if the node is null or has no dad.
     /// dad(node|null) -> node|null
-
+    ///
     func bltinDad(_ args: [ParsedExpr]) async throws -> ProgramValue {
         
         let node = try await evalGedcomNodeOpt(args[0],
@@ -117,9 +116,9 @@ extension Program {
         return .null
     }
 
-    /// Built-in that returns the list of kids of a node.
+    /// Return the list of kids of a node.
     /// kids(node|null) -> list<node>
-
+    ///
     func bltinKids(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         guard let node = try await evalGedcomNodeOpt(args[0], errMsg: "kids: arg must be a node")

@@ -466,7 +466,8 @@ extension Person {
 
 public extension Person {
 
-    /// Return children of self, in all FAMS families, deduped in Gedcom order.
+    /// Return children of self, from all FAMS families, deduped in Gedcom order.
+    ///
     func children(in index: RecordIndex) -> [Person] {
 
         var seen: Set<RecordKey> = []
@@ -482,7 +483,7 @@ public extension Person {
         return result
     }
 
-    /// Return the sons of self, in all FAMS families, deduped in Gedcom order.
+    /// Return the sons of a Person as an array of Persons.
     ///
     func sons(in index: RecordIndex) -> [Person] {
 
@@ -499,7 +500,7 @@ public extension Person {
         return result
     }
 
-    /// Return the daughters of self, in all FAMS families, deduped in Gedcom order.
+    /// Return the daughters of a Person as as array of Persons.
     ///
     func daughters(in index: RecordIndex) -> [Person] {
 
@@ -530,7 +531,7 @@ public extension Person {
         }
     }
 
-    /// Return the descendents of a Person as an array of Persons.
+    /// Return the descendants of a Person as an array of Persons.
     ///
     func descendants(in index: RecordIndex) -> [Person] {
 

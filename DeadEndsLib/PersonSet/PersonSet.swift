@@ -3,11 +3,10 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 December 2024.
-//  Last changed on 1 October 2026.
+//  Last changed on 7 October 2026.
 //
-//  PersonSets are the objects used by the programming system to hold
-//  rich collections of persons.
-//  PersonSets are not used within the main (non-programming) part of DeadEnds.
+//  PersonSets are the objects used by the programming system to hold rich collections of
+//  Persons.
 //
 
 import Foundation
@@ -22,8 +21,9 @@ enum SortType {
 }
 
 /// Element of a PersonSet. It contains a Person, the Person's key, and an optional
-/// ProgramValue.
-
+/// ProgramValue. This type evolved from a C implementation. There is probably no reason
+/// why the key field is needed.
+///
 public struct PersonSetElement: Hashable, CustomStringConvertible {
 
     let person: Person
@@ -118,7 +118,7 @@ public class PersonSet: Collection {
 
     /// Insert a PersonSetElement into a PersonSet. Not added if the RecordKey is already
     /// in the PersonSet.
-
+    ///
     @discardableResult
     func insert(_ element: PersonSetElement) -> Bool {
 
@@ -132,7 +132,7 @@ public class PersonSet: Collection {
 
     /// Create a PersonSetElement from a Person and insert it into a PersonSet. Not added
     /// if the RecordKey is already in the PersonSet.
-
+    ///
     @discardableResult
     func insert(_ person: Person, value: ProgramValue? = nil) -> Bool {
 
@@ -140,7 +140,7 @@ public class PersonSet: Collection {
     }
 
     /// Return a deep copy of a PersonSet.
-
+    ///
     func copy() -> PersonSet {
         
         let copy = PersonSet()
@@ -151,7 +151,7 @@ public class PersonSet: Collection {
     }
 
     /// Check if a PersonSet contains a PersonSetElement with a specific key.
-
+    ///
     func isInPersonSet(key: RecordKey) -> Bool {
 
         keys.contains(key)
@@ -159,7 +159,7 @@ public class PersonSet: Collection {
 
     /// Remove all PersonSetElements with a specific key from a PersonSet. There can be only
     /// one.
-
+    ///
     @discardableResult
     func remove(key: RecordKey) -> Bool {
 

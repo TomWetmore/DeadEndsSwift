@@ -162,7 +162,7 @@ A *list* is a list of program values. The values can have any type and do not ha
 
 A *table* is a hash table that maps strings to program values. The values can have any type and do not have to be the same.
 
-A *personset* is a set of persons; each person may have an *associated value*. There are many built-in functions for personsets: they are a useful genealogical data structure. Associated values can have any type. One of the example programs below finds the Henry numbers for all descendents of a person. The Henry numbers are implemented as lists of integers which are the associated values of the elements of the personset of descendents.
+A *personset* is a set of persons; each person may have an *associated value*. There are many built-in functions for personsets: they are a useful genealogical data structure. Associated values can have any type. One of the example programs below finds the Henry numbers for all descendants of a person. The Henry numbers are implemented as lists of integers which are the associated values of the elements of the personset of descendants.
 
 Each built-in function summary shows its argument and return types. In three cases (*set*, *incr*, *decr*) an argument to a built-in function must be an identifier. These are the only examples where a built-in argument is not evaluated (the identifer is being used as an *L-value*).
 

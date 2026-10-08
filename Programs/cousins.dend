@@ -1,7 +1,7 @@
 /* cousins.dend —- Original one-way version -- Last changed on 6 June 2026.
 
    Finds the relationship between two persons in a DeadEnds database. If there is a common ancestor or
-   common descendent that relationship is shown. If there is no direct relationship, the program tries
+   common descendant that relationship is shown. If there is no direct relationship, the program tries
    to find a sequence of genetic relations to link the two persons. For example, the program will find
    the relationship between your two grandmothers as a sequence of two genetic relations with a
    grandchild as the link between.  Two persons may be related to each other in many ways; this program
@@ -139,7 +139,7 @@ proc foundpath (key) {
     set(again, 1)
 
     /* Create the nexus list, the persons where relationships change direction; a nexus person is
-       the first person, last person, or common ancestor or descendent of two other nexus persons. */
+       the first person, last person, or common ancestor or descendant of two other nexus persons. */
 
     while (again) {
                 /* Get the next person from the path. */
@@ -197,7 +197,7 @@ proc foundpath (key) {
         } elsif (gt(len, 0)) {
 
 /* If the nexus list has only one remaining entry then show the (last-1)th nexus person as a
-   descendent of the last nexus person. */
+   descendant of the last nexus person. */
 
             if (eq(1, llen)) {
                 set(two, dequeue(nexkeys))
