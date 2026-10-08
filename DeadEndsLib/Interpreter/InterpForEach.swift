@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 1 May 2026.
-//  Last changed on 20 September 2026.
+//  Last changed on 8 October 2026.
 //
 
 import Foundation
@@ -15,6 +15,19 @@ extension Program {
     /// foreach(List|PersonSet|Table|String|Persons|Families|Nodes, String, String?, String)
     ///
     func interpForEach(_ stmt: ParsedForEachStmt) async throws -> InterpResult {
+
+        // Handle cases where the foreach identifiers hide identifiers already in use.
+        let savedElement = lookupLocal(stmt.elementVar)
+        let savedValue = stmt.valueVar.map { lookupLocal($0) }
+        let savedIndex = lookupLocal(stmt.indexVar)
+
+        defer {
+            restoreLocal(stmt.elementVar, value: savedElement)
+            if let valueVar = stmt.valueVar {
+                restoreLocal(valueVar, value: savedValue!)
+            }
+            restoreLocal(stmt.indexVar, value: savedIndex)
+        }
 
         let line = stmt.listExpr.line
 
@@ -88,13 +101,14 @@ extension Program {
     private func interpBody(_ stmt: ParsedForEachStmt, element: ProgramValue,
                             payload: ProgramValue, index: Int) async throws -> InterpResult {
 
-        // Assign values to the two or three loop identifiers.
-        assignToSymbol(stmt.elementVar, value: element)
+        // Assign values to the loop identifiers.
+        assignLocal(stmt.elementVar, value: element)
         if let valueVar = stmt.valueVar {
-            assignToSymbol(valueVar, value: payload)
+            assignLocal(valueVar, value: payload)
         }
-        assignToSymbol(stmt.indexVar, value: .integer(index))
+        assignLocal(stmt.indexVar, value: .integer(index))
 
+        // Interpret the body.
         let result = try await interpStmtList(stmt.body)
         return result
     }

@@ -3,12 +3,12 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 April 2026.
-//  Last changed on 28 April 2026.
+//  Last changed on 8 October 2026.
 //
 
 import Foundation
 
-public typealias SymbolTable = [String : ProgramValue?]
+public typealias SymbolTable = [String : ProgramValue]
 
 /// The kind of routines.
 enum RoutineKind: String {
@@ -77,6 +77,32 @@ extension Program {
             globalSymbolTable[name] = value
         } else {
             callStack[callStack.count - 1].symbols[name] = value
+        }
+    }
+
+    /// Return the value of a local identifier, or nil if it does not exist.
+    ///
+    func lookupLocal(_ name: String) -> ProgramValue? {
+
+        callStack.last?.symbols[name]
+    }
+
+    /// Remove an identifier from the local symbol table.
+
+    func removeLocal(_ name: String) {
+
+        guard !callStack.isEmpty else {
+            fatalError("No frame available")
+        }
+        callStack[callStack.count - 1].symbols.removeValue(forKey: name)
+    }
+
+    func restoreLocal(_ name: String, value: ProgramValue?) {
+
+        if let value {
+            assignLocal(name, value: value)
+        } else {
+            removeLocal(name)
         }
     }
 }
