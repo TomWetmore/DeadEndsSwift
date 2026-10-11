@@ -3,9 +3,9 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 12 September 2026.
+//  Last changed on 8October 2026.
 //
-//  This file has the interpreters for all statement types except foreach.
+//  This file has the interpreters for all statements except foreach.
 
 import Foundation
 
@@ -38,7 +38,7 @@ extension Program {
 
             case .returning, .breaking, .continuing:
                 return result
-                
+
             case .error:
                 return .error
             }
@@ -46,7 +46,7 @@ extension Program {
         return .okay
     }
 
-    /// Interpret a statement. The method checks the statement type and calls the type's
+    /// Interpret a statement. Check the statement type and call the right
     /// interpreter.
     ///
     func interpStatement(_ stmt: ParsedStatement) async throws -> InterpResult {

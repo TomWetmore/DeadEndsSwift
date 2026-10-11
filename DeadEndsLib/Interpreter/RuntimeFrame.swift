@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 April 2026.
-//  Last changed on 8 October 2026.
+//  Last changed on 9 October 2026.
 //
 
 import Foundation
@@ -20,8 +20,8 @@ enum RoutineKind: String {
 /// Frames on the run time stack.
 struct RuntimeFrame {
 
-    let name: String  // Name of proc or func.
-    let kind: RoutineKind  // Whether proc or func.
+    let name: String  // Name of procedure or function.
+    let kind: RoutineKind  // Whether procedure or function.
     let defnLine: Int  // Line where routine defined.
     let callLine: Int  // Line where routine called.
     let params: [String]  // Params as string identifiers.
@@ -30,13 +30,15 @@ struct RuntimeFrame {
 
 extension Program {
 
-    /// Push a new frame when a proc or func is called.
+    /// Push a frame when a procedure or function is called.
+    ///
     func pushCallFrame(_ frame: RuntimeFrame) {
 
         callStack.append(frame)
     }
 
-    /// Pop the current frame when a proc or func returns.
+    /// Pop the current frame when a procedure or function returns.
+    ///
     func popCallFrame() {
 
         precondition(!callStack.isEmpty, "Cannot pop empty call stack")
@@ -45,6 +47,7 @@ extension Program {
 
     /// Look up an identifier in the local symbol table; if not there try
     /// the global table.
+    ///
     func lookupSymbol(_ name: String) -> ProgramValue? {
 
         if let localValue = callStack.last?.symbols[name] {
@@ -57,6 +60,7 @@ extension Program {
     }
 
     /// Assign a value to an identifier in the local symbol table.
+    ///
     func assignLocal(_ name: String, value: ProgramValue) {
         
         guard !callStack.isEmpty else {
@@ -66,6 +70,7 @@ extension Program {
     }
 
     /// Update or add a new entry to the local or global symbol table.
+    ///
     func assignToSymbol(_ name: String, value: ProgramValue) {
 
         guard !callStack.isEmpty else {
@@ -88,7 +93,7 @@ extension Program {
     }
 
     /// Remove an identifier from the local symbol table.
-
+    ///
     func removeLocal(_ name: String) {
 
         guard !callStack.isEmpty else {
@@ -97,6 +102,7 @@ extension Program {
         callStack[callStack.count - 1].symbols.removeValue(forKey: name)
     }
 
+    /// Restore a local identifier from a saved value.
     func restoreLocal(_ name: String, value: ProgramValue?) {
 
         if let value {

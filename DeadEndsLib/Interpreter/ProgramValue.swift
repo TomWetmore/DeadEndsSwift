@@ -3,15 +3,16 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 20 September 2026.
+//  Last changed on 10 October 2026.
 //
-//  ProgramValue is the type of evaluated expression in the DeadEnds
-//  programming language.
+//  ProgramValue is the type of evaluated expressions in the DeadEnds
+//  programming language. Every ProgramValue has a known type and value.
 //
 
 import Foundation
 
 /// Values of DeadEnds program expressions.
+///
 public enum ProgramValue: @unchecked Sendable, Equatable {
 
     case null
@@ -106,7 +107,8 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
         }
     }
 
-    /// Conform program values to equatable.
+    /// Conform ProgramValue to Equatable.
+    ///
     public static func == (lhs: ProgramValue, rhs: ProgramValue) -> Bool {
 
         switch (lhs, rhs) {
@@ -123,7 +125,8 @@ public enum ProgramValue: @unchecked Sendable, Equatable {
     }
 }
 
-/// Constant values for booleans.
+/// Constant ProgramValues for boolean constants.
+///
 extension ProgramValue {
 
     static let trueProgramValue: ProgramValue = .boolean(true)
@@ -132,7 +135,8 @@ extension ProgramValue {
 
 extension ProgramValue {
 
-    /// Convert any ProgramValue to a boolean program value using C rules.
+    /// Convert any ProgramValue to a boolean ProgramValue using C-like rules.
+    ///
     var toBool: Bool {
 
         switch self {
@@ -152,7 +156,8 @@ extension ProgramValue {
 /// Numeric string operations.
 extension ProgramValue {
 
-    // Add two program numeric or string program values.
+    /// Add two numeric or string ProgramValues.
+    ///
     public static func addPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
 
         switch (val1, val2) {
@@ -165,7 +170,8 @@ extension ProgramValue {
         }
     }
 
-    /// Subtract two numeric program values.
+    /// Subtract two numeric ProgramValues.
+    ///
     static func subPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
 
         switch (val1, val2) {
@@ -177,7 +183,8 @@ extension ProgramValue {
         }
     }
 
-    /// Multiply two numeric program values.
+    /// Multiply two numeric Program Values.
+    ///
     static func mulPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
         switch (val1, val2) {
         case let (.integer(i1), .integer(i2)): return .integer(i1 * i2)
@@ -188,7 +195,8 @@ extension ProgramValue {
         }
     }
 
-    /// Divide two numeric program values.
+    /// Divide two numeric ProgramValues.
+    ///
     static func divPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
 
         switch (val1, val2) {
@@ -200,77 +208,119 @@ extension ProgramValue {
         }
     }
 
-    /// Takes the modulus of two integers.
+    /// Take the modulus of two integer ProgramValues.
+    ///
     static func modPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
 
         switch (val1, val2) {
-        case let (.integer(i1), .integer(i2)) where i2 != 0: return .integer(i1 % i2)
-        default: return .null
+
+        case let (.integer(i1), .integer(i2)) where i2 != 0:
+            return .integer(i1 % i2)
+
+        default:
+            return .null
         }
     }
 
-    /// Negate a numeric program value.
+    /// Negate a numeric ProgramValue.
+    ///
     static func negPValue(_ val: ProgramValue) -> ProgramValue {
 
         switch val {
-        case let .integer(i): return .integer(-i)
-        case let .double(f):  return .double(-f)
-        default:              return .null
+
+        case let .integer(i):
+            return .integer(-i)
+
+        case let .double(f):
+            return .double(-f)
+
+        default:
+            return .null
         }
     }
 
-    /// Raise the first program value by the second.
+    /// Raise the first ProgramValue by the second.
+    ///
     static func expPValues(_ base: ProgramValue, _ exponent: ProgramValue) -> ProgramValue {
+        
         switch (base, exponent) {
-        case let (.integer(b), .integer(e)) where e >= 0: return .integer(Int(pow(Double(b), Double(e))))
-        case let (.double(b), .integer(e)) where e >= 0:  return .double(pow(b, Double(e)))
-        default:                                          return .null
+
+        case let (.integer(b), .integer(e)) where e >= 0:
+            return .integer(Int(pow(Double(b), Double(e))))
+
+        case let (.double(b), .integer(e)) where e >= 0:
+            return .double(pow(b, Double(e)))
+
+        default:
+            return .null
         }
     }
 }
 
-/// Comparison operations.
+/// Comparison operations for ProgramValues.
+///
 extension ProgramValue {
 
-    /// Generic compare function for program values.
+    /// Generic compare function for ProgramValues.
+    ///
     static func compare(_ val1: ProgramValue, _ val2: ProgramValue,
                         using comparator: (Int, Int) -> Bool) -> ProgramValue {
 
         switch (val1, val2) {
-        case let (.integer(i1), .integer(i2)): return .boolean(comparator(i1, i2))
-        case let (.double(f1), .double(f2)):   return .boolean(comparator(Int(f1), Int(f2)))
-        case let (.string(s1), .string(s2)):   return .boolean(comparator(s1.compare(s2).rawValue, 0))
-        default:                               return .null
+
+        case let (.integer(i1), .integer(i2)):
+            return .boolean(comparator(i1, i2))
+
+        case let (.double(f1), .double(f2)):
+            return .boolean(comparator(Int(f1), Int(f2)))
+
+        case let (.string(s1), .string(s2)):
+            return .boolean(comparator(s1.compare(s2).rawValue, 0))
+
+        default:
+            return .null
         }
     }
 
-    /// Check that the first program value is less than the second.
+    /// Check if the first ProgramValue is less than the second.
+    ///
     static func ltPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
+
         compare(val1, val2, using: { $0 < $1 })
     }
 
-    /// Check that the first program value is less than or equal to the the second.
+    /// Check if the first ProgramValue is less than or equal to the the second.
+    ///
     static func lePValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
+
         compare(val1, val2, using: { $0 <= $1 })
     }
 
-    /// Check that the first program value is greater than the second.
+    /// Check if the first ProgramValue is greater than the second.
+    ///
     static func gtPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
+
         compare(val1, val2, using: { $0 > $1 })
     }
 
-    /// Check that the first program value is greater than or equal to the second.
+    /// Check if the first ProgramValue is greater than or equal to the second.
+    ///
     static func gePValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
+
         compare(val1, val2, using: { $0 >= $1 })
     }
 
-    /// Check that the two programs values are equal.
+    /// Check that two programs values are equal.
+    ///
     static func eqPValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
+
         compare(val1, val2, using: { $0 == $1 })
     }
 
-    /// Check that the two program values are not equal.
+    /// Check that two ProgramValues are not equal.
+    ///
     static func nePValues(_ val1: ProgramValue, _ val2: ProgramValue) -> ProgramValue {
+
         compare(val1, val2, using: { $0 != $1 })
     }
 }
@@ -278,11 +328,14 @@ extension ProgramValue {
 /// Logical operations.
 extension ProgramValue {
 
-    /// Check that a program value is numeric (integer or double).
+    /// Check that a PrograValue is numeric (integer or double).
     static func isNumeric(_ value: ProgramValue) -> Bool {
+
         switch value {
+
         case .integer, .double:
             return true
+
         default:
             return false
         }
@@ -290,9 +343,9 @@ extension ProgramValue {
 }
 
 extension ProgramValue {
-    
+
+    /// Provide an empty list value.
     static var emptyList: ProgramValue {
-        
         .list(ListValue())
     }
 }

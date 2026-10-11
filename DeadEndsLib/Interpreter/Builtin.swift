@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 4 October 2026.
+//  Last changed on 10 October 2026.
 //
 
 import Foundation
@@ -19,6 +19,7 @@ extension Program {
     }
 
     /// Build the dictionary of built-in functions.
+    ///
     func setupBuiltins() {
 
         builtins = [
@@ -154,7 +155,7 @@ extension Program {
             "removelast": Builtin(min: 1, max: 1) { try await self.bltinRemoveLast($0)},
             "copy": Builtin(min: 1, max: 1) { try await self.bltinCopy($0)},
 
-            // Tuple operations.
+            // Pair operations.
             "pair":  Builtin(min: 2, max: 2) { try await self.bltinPair($0)},
             "first": Builtin(min: 1, max: 1) { try await self.bltinFirst($0)},
             "second": Builtin(min: 1, max: 1) { try await self.bltinSecond($0)},
@@ -165,7 +166,7 @@ extension Program {
             "lookup": Builtin(min: 2, max: 2) { try await self.bltinLookup($0)},
             "contains": Builtin(min: 2, max: 2) { try await self.bltinContains($0)},
 
-            // Person set operations.
+            // PersonSet operations.
             "personset": Builtin(min: 0, max: 0) { try self.bltinPersonSet($0)},
             "addtoset" : Builtin(min: 2, max: 3) { try await self.bltinAddToSet($0)},
             "removefromset": Builtin(min: 2, max: 2) { try await self.bltinDeleteFromSet($0)},
@@ -186,7 +187,7 @@ extension Program {
             "getinteger": Builtin(min: 1, max: 1) { try await self.bltinGetInteger($0)},
             "getstring": Builtin(min: 1, max: 1) { try await self.bltinGetString($0)},
 
-            // Extract built-ins.
+            // Extract operations.
             "extractname": Builtin(min: 1, max: 1) { try await self.bltinExtractName($0)},
             "extractplace": Builtin(min: 1, max: 1) { try await self.bltinExtractPlace($0)},
         ]
@@ -197,7 +198,7 @@ extension Program {
     
     /// Return an integer as a string.
     /// d(int) -> string|null
-
+    ///
     func bltinD(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let value = try await self.evaluate(args[0])

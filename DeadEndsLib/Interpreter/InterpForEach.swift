@@ -16,12 +16,12 @@ extension Program {
     ///
     func interpForEach(_ stmt: ParsedForEachStmt) async throws -> InterpResult {
 
-        // Handle cases where the foreach identifiers hide identifiers already in use.
+        // Save the local identifiers that are hidden by the loop identifiers.
         let savedElement = lookupLocal(stmt.elementVar)
         let savedValue = stmt.valueVar.map { lookupLocal($0) }
         let savedIndex = lookupLocal(stmt.indexVar)
 
-        defer {
+        defer {  // Restore the local identifiers that were hidden by the loop.
             restoreLocal(stmt.elementVar, value: savedElement)
             if let valueVar = stmt.valueVar {
                 restoreLocal(valueVar, value: savedValue!)
@@ -31,14 +31,20 @@ extension Program {
 
         let line = stmt.listExpr.line
 
+        // The different collections are handled in different ways.
         switch try await evaluate(stmt.listExpr) {
+
+        // List of any kinds of ProgramValues.
         case .list(let list):
             for (i, value) in list.enumerated() {
-                let result = try await interpBody(stmt, element: value, payload: .null, index: i + 1)
+                let result = try await interpBody(stmt, element: value, payload: .null,
+                                                  index: i + 1)
                 if let final = handleLoopResult(result) {
                     return final
                 }
             }
+
+        // PersonSet of PersonSetElements.
         case .personset(let set):
             for (i, element) in set.enumerated() {
                 let result = try await interpBody(stmt, element: .person(element.person),
@@ -47,6 +53,8 @@ extension Program {
                     return final
                 }
             }
+
+        // Table of String to ProgramValue mappings.
         case .table(let table):
             for (i, entry) in table.elements.enumerated() {
                 let result = try await interpBody(stmt, element: .string(entry.key),
@@ -55,6 +63,8 @@ extension Program {
                     return final
                 }
             }
+
+        // List of all Persons in the Database.
         case .allPersons:
             for (i, element) in database.persons.enumerated() {
                 let result = try await interpBody(stmt, element: .person(Person(element)),
@@ -63,6 +73,8 @@ extension Program {
                     return final
                 }
             }
+
+        // List of all Families in the Database.
         case .allFamilies:
             for (i, element) in database.families.enumerated() {
                 let result = try await interpBody(stmt, element: .family(Family(element)),
@@ -71,6 +83,8 @@ extension Program {
                     return final
                 }
             }
+
+        // All GedcomNodes at and below a GedcomNode, in pre-order.
         case .traverse(let node):
             let nodes = node.preorderNodes()
             for (i, node) in nodes.enumerated() {
@@ -80,6 +94,8 @@ extension Program {
                     return final
                 }
             }
+
+        // All characters in a String.
         case .string(let string):
             for (i, character) in string.enumerated() {
                 let result = try await interpBody(stmt, element: .string(String(character)),
@@ -88,8 +104,10 @@ extension Program {
                     return final
                 }
             }
+
         case .null:
             return .okay
+
         default:
             throw RuntimeError("foreach: 1st arg must be a sequence", line: line)
         }
@@ -120,7 +138,7 @@ extension Program {
         switch result {
 
         case .okay, .continuing:
-            return nil          // Keep looping
+            return nil          // Keep looping.
 
         case .breaking:
             return .okay        // Consume break.

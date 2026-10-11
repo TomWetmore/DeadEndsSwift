@@ -5,7 +5,7 @@
 //  Created by Thomas Wetmore on 26 May 2026.
 //  Last changed on 19 September 2026.
 //
-//  This file has the built-in methods for Gedcom nodes.
+//  This file has the built-in methods for GedcomNodes.
 
 
 import Foundation

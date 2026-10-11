@@ -10,11 +10,12 @@ import Foundation
 
 extension Program {
 
-    /// This built-in extract parts of a Gedcom name value. The arg may be a
-    /// person, a node with a NAME kid, a NAME node itself, or a string.
-    /// It returns a pair where first is the list of parts, and second is the
-    /// surname index.
-    /// extractname(person|node|string) -> pair(list(string), int)
+    /// Extract the parts of a Gedcom name value. The arg may be a Person, a GedcomNode
+    /// with a NAME kid, a NAME node itself, or a String. It returns a .pair ProgramValue
+    /// where the first component is the .list of the parts, and the second is the .integer
+    /// index of the surname among the parts.
+    /// extractname(person|node|string) -> pair(list<string>, int)
+    ///
     func bltinExtractName(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let gedcomName = try await evaluateGedcomNameOpt(

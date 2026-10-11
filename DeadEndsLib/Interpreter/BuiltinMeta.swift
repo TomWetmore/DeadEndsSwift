@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 April 2026.
-//  Last changed on 19 Septermber 2026.
+//  Last changed on 9 October 2026.
 //
 //  The built-ins in this file inspect running programs. They are useful for debugging
 //  DeadEnds programs.
@@ -12,26 +12,27 @@ import Foundation
 
 extension Program {
 
-    /// Builtin function that shows the run time frame.
+    /// Show the current run time frame.
     /// showframe() -> String
+    ///
     func bltinShowFrame(_ args: [ParsedExpr]) throws -> ProgramValue {
         
         showFrame()
         return .null
     }
 
-    /// Builtin function that shows the run times stack and global symbol table.
+    /// Show the run time stack and global symbol table.
     /// showstack() -> String
-
+    ///
     func bltinShowStack(_ args: [ParsedExpr]) throws -> ProgramValue {
 
         showRuntimeStack()
         return .null
     }
 
-    /// Builtin function that returns the type and value of an evaluated expression
+    /// Return the type and value of an evaluated expression.
     /// valueOf(any) -> string
-
+    ///
     func bltinValueOf(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let value = try await evaluate(args[0])
@@ -42,7 +43,7 @@ extension Program {
 extension Program {
 
     /// Output the contents of the run time stack.
-
+    ///
     func showRuntimeStack() {
 
         guard !callStack.isEmpty else {
@@ -60,7 +61,7 @@ extension Program {
     }
 
     /// Format the contents of a frame into a string.
-
+    ///
     private func formatFrame(_ frame: RuntimeFrame) -> String {
 
         var lines: [String] = []
@@ -82,7 +83,7 @@ extension Program {
     }
 
     /// Format the contents of a symbol table into a string.
-
+    ///
     private func formatSymbolTable(_ table: SymbolTable, indent: String = "") -> String {
 
         if table.isEmpty {
@@ -96,7 +97,7 @@ extension Program {
     }
 
     /// Format a program value as a string.
-
+    ///
     private func formatProgramValue(_ value: ProgramValue?) -> String {
 
         let v = value ?? .null

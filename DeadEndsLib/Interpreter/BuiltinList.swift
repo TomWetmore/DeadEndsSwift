@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 5 October 2026.
+//  Last changed on 10 October 2026.
 //
 
 import Foundation
@@ -288,10 +288,13 @@ extension Program {
     }
 }
 
-/// Tuple support.
+/// Pair support.
+///
 extension Program {
 
-    /// Built-in that creates a pair ProgramValue
+    /// Create a pair ProgramValue.
+    /// pair(any, any) -> pair
+    ///
     func bltinPair(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
         let first = try await evaluate(args[0])
@@ -299,7 +302,9 @@ extension Program {
         return .pair(Pair(first, second))
     }
 
-    /// Built-in that returns the first component of a pair.
+    /// Return the first component of a pair.
+    /// first(pair) -> any
+    ///
     func bltinFirst(_ args: [ParsedExpr]) async throws -> ProgramValue {
         guard case let .pair(pair) = try await evaluate(args[0]) else {
             throw RuntimeError("first: arg must be a pair", line: args[0].line)
@@ -307,10 +312,12 @@ extension Program {
         return pair.first
     }
 
-    /// Built-in that returns the second component of a pair.
+    /// Return the second component of a pair.
+    /// second(pair) -> any
+    ///
     func bltinSecond(_ args: [ParsedExpr]) async throws -> ProgramValue {
         guard case let .pair(pair) = try await evaluate(args[0]) else {
-            throw RuntimeError("second: arg must be pair", line: args[0].line)
+            throw RuntimeError("second: arg must be a pair", line: args[0].line)
         }
         return pair.second
     }
@@ -330,93 +337,91 @@ extension Program {
     }
 }
 
-/// Structure that holds the programming language's list values. These are the
-/// enumerated .list elements that have an array of program values for their
-/// associated types.
+/// Structure that holds the associated values of the programming language's .list
+/// ProgramValue.
 /// 
 public class ListValue {
 
-    /// A list program value is an array of program values.
+    /// A ListValue is an array of ProgramValues.
+    ///
     var elements: [ProgramValue] = []
 
     /// The number of program values in this list.
     var count: Int { elements.count }
 
-    /// Create a list from an array of program values.
+    /// Create a ListValue from an array of ProgramValues.
+    ///
     public init(_ values: [ProgramValue] = []) {
+
         self.elements = values
     }
 
-    /// Push a program value onto a list (treated as a stack).
-    func push(_ element: ProgramValue) {
-        elements.insert(element, at: 0)
-    }
-
-    /// Pop a program value from a list (treated as a stack).
-    func pop() -> ProgramValue? {
-        guard !elements.isEmpty else { return nil }
-        return elements.removeFirst()
-    }
-
-    /// Enqueue a program value on a list (treated as a queue).
-    func enqueue(_ element: ProgramValue) {
-        elements.append(element)
-    }
-
-    /// Dequeue a program value from a list (treated as a queue).
-    func dequeue() -> ProgramValue? {
-        guard !elements.isEmpty else { return nil }
-        return elements.removeFirst()
-    }
-
-    /// Append a program value to a list.
+    /// Append a ProgramValue to a ListValue.
+    ///
     func append(_ element: ProgramValue) {
+
         elements.append(element)
     }
 
-    /// Prepend a program value to a list.
+    /// Prepend a ProgramValue to a ListValue.
+    ///
     func prepend(_ element: ProgramValue) {
+
         elements.insert(element, at: 0)
     }
 
-    /// Remove the first program value from a list
+    /// Remove the first ProgramValue from a ListValue.
+    ///
     func removeFirst() -> ProgramValue? {
+
         guard !elements.isEmpty else { return nil }
         return self.elements.removeFirst()
     }
 
-    /// Remove the last program value from a list.
+    /// Remove the last ProgramValue from a ListValue.
+    ///
     func removeLast() -> ProgramValue? {
+
         guard !elements.isEmpty else { return nil }
         return self.elements.removeLast()
     }
 
-    /// Remove all program values from a list.
+    /// Remove all ProgramValues from a ListValue.
+    ///
     func clear() {
+
         elements.removeAll(keepingCapacity: false)
     }
 
-    /// Returns a shallow copy of a list.
+    /// Returns a shallow copy of a ListValue.
+    ///
     public func copy() -> ListValue {
+
         ListValue(elements)
     }
 
-    /// Simple subscript operation for a list.
+    /// Subscript operation for a list.
+    ///
     subscript(index: Int) -> ProgramValue {
+
         get { elements[index] }
         set { elements[index] = newValue }
     }
 
-    /// Sort the program values in a list using a comparison function.
+    /// Sort the ProgramValues in a ListValue using a comparison function.
+    ///
     func sort(by areInIncreasingOrder: (ProgramValue, ProgramValue) -> Bool) {
+
         elements.sort(by: areInIncreasingOrder)
     }
 }
 
-/// Needed to make List mappable.
+/// Make ListValue mappable.
+///
 extension ListValue: Sequence {
     
     public func makeIterator() -> IndexingIterator<[ProgramValue]> {
+
         elements.makeIterator()
     }
 }
