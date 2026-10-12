@@ -1,0 +1,4 @@
+proc main() {
+    set(me, person("I1"))
+    name(me) nl()
+}
