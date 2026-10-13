@@ -1,0 +1,86 @@
+
+You can get just the rubber-band rectangle drawing and disappearing without touching selection, without any PreferenceKey, and without even knowing card frames yet.
+
+The only things you need are:
+	1.	a place to attach a drag gesture that only fires on the desktop background
+	2.	two @State vars to remember start point and current rect
+	3.	an overlay that draws the rect while you’re dragging
+
+Minimal marquee: draw during drag, vanish on end
+
+In DesktopView.swift, add:
+
+@State private var marqueeStart: CGPoint? = nil
+@State private var marqueeRect: CGRect? = nil
+
+Then, on your desktop background layer (whatever you currently use that you tap to deselect—often a Color.clear with .contentShape(Rectangle())), attach this gesture:
+
+.contentShape(Rectangle())
+.gesture(
+    DragGesture(minimumDistance: 0)
+        .onChanged { value in
+            if marqueeStart == nil {
+                marqueeStart = value.startLocation
+            }
+            let s = marqueeStart ?? value.startLocation
+            marqueeRect = CGRect(
+                x: min(s.x, value.location.x),
+                y: min(s.y, value.location.y),
+                width: abs(value.location.x - s.x),
+                height: abs(value.location.y - s.y)
+            )
+        }
+        .onEnded { _ in
+            marqueeStart = nil
+            marqueeRect = nil
+        }
+)
+
+Now add a drawing overlay somewhere above the background but below (or above—either is fine) the cards. Easiest is to put it in your outer ZStack:
+
+.overlay(alignment: .topLeading) {
+    if let rect = marqueeRect {
+        Rectangle()
+            .fill(.primary.opacity(0.10))
+            .frame(width: rect.width, height: rect.height)
+            .position(x: rect.midX, y: rect.midY)
+
+        Rectangle()
+            .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 3]))
+            .frame(width: rect.width, height: rect.height)
+            .position(x: rect.midX, y: rect.midY)
+    }
+}
+.allowsHitTesting(false) // put this on the overlay container if needed
+
+That’s it: drag on empty desktop → rectangle appears; release → it disappears.
+
+Two tiny “gotchas” to watch for
+
+1) Make sure the drag is on the background, not the ZStack as a whole
+
+If you put the gesture on the outer ZStack, you’ll fight with card-drag and resize gestures.
+
+Put it on your background view, like:
+
+ZStack {
+    desktopBackground   // gesture goes here
+    cardsLayer
+    marqueeOverlay
+}
+
+2) Ensure the background is hittable
+
+SwiftUI ignores gestures on fully transparent views unless you give them a hit-test shape:
+
+Color.clear
+    .contentShape(Rectangle())
+    .gesture(...)
+
+(You already do this for tap-to-deselect, so you’re likely set.)
+
+⸻
+
+When you’ve got that rectangle behaving nicely, the next increment is just: “while dragging, compute which cards intersect the rect.” That’s where we introduce PreferenceKey only to harvest frames, but not until you’re ready.
+
+If you paste your current DesktopView background section (the part where you clear selection on tap), I can tell you the exact line to hang the drag gesture on so it doesn’t interfere with card draggin.

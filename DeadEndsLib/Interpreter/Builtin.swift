@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 11 April 2026.
-//  Last changed on 10 October 2026.
+//  Last changed on 13 October 2026.
 //
 
 import Foundation
@@ -181,6 +181,9 @@ extension Program {
             "showframe": Builtin(min: 0, max: 0) { try self.bltinShowFrame($0)},
             "showstack": Builtin(min: 0, max: 0) { try self.bltinShowStack($0)},
             "valueof": Builtin(min: 1, max: 1) { try await self.bltinValueOf($0)},
+            "timer": Builtin(min: 0, max: 0) { try await self.bltinTimer($0)},
+            "elapsed": Builtin(min: 1, max: 1) { try await self.bltinElapsed($0)},
+            "tick": Builtin(min: 0, max: 0) { try await self.bltinTick($0)},
 
             // User interface.
             "getperson": Builtin(min: 1, max: 1) { try await self.bltinGetPerson($0)},
@@ -332,7 +335,7 @@ enum BuiltinInfo {
        "namesort", "keysort", "gengedcom",
 
        // Metas.
-       "showframe", "showstack", "valueof",
+       "showframe", "showstack", "valueof", "timer", "elapsed",
 
        // User interface.
        "getperson", "getinteger", "getstring",

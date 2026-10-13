@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 27 April 2026.
-//  Last changed on 9 October 2026.
+//  Last changed on 13 October 2026.
 //
 //  The built-ins in this file inspect running programs. They are useful for debugging
 //  DeadEnds programs.
@@ -37,6 +37,46 @@ extension Program {
 
         let value = try await evaluate(args[0])
         return .string("\(value.typeName): \(value.displayValue)")
+    }
+}
+
+///  Builtin Timing
+///
+extension Program {
+
+    /// Return the current value of the program's monotonic timer in seconds.
+    /// timer() -> double
+    ///
+    func bltinTimer(_ args: [ParsedExpr]) async throws -> ProgramValue {
+        return .double(timerValue)
+    }
+
+    /// Return the elapsed time since a timer value as a formatted string.
+    /// elapsed(double) -> string
+    ///
+    func bltinElapsed(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        guard case let .double(start) = try await evaluate(args[0]) else {
+            throw RuntimeError(
+                "elapsed: arg must be a timer value",
+                line: args[0].line
+            )
+        }
+
+        let seconds = timerValue - start
+
+        if seconds < 0.001 {
+            return .string(String(format: "%.3f µs", seconds * 1_000_000))
+        } else if seconds < 1.0 {
+            return .string(String(format: "%.3f ms", seconds * 1_000))
+        } else {
+            return .string(String(format: "%.3f s", seconds))
+        }
+    }
+
+    func bltinTick(_ args: [ParsedExpr]) async throws -> ProgramValue {
+
+        return .integer(Int(stepCount))
     }
 }
 

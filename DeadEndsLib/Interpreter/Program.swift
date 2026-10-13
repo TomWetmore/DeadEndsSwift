@@ -3,38 +3,35 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 7 April 2026.
-//  Last changed on 18 September 2026.
+//  Last changed on 13 October 2026.
 //
 
 import Foundation
 
-/// A Program object combines both static program parts
-/// and runtime parts.
+/// A Program combines static program parts with runtime parts.
 ///
-/// To run a DeadEnds Program create a Program object and
-/// then call its interpret method.
+/// To run a DeadEnds Program create a Program object and then call its
+/// main procedure.
+///
 @MainActor
 final public class Program {
 
     var builtins: [String: Builtin] = [:]  // Built-in library.
     let procTable: [String: ParsedProcDefn]  // User defined procs.
     let funcTable: [String: ParsedFuncDefn]  // User defined funcs.
-    var hasRun = false
     var globalSymbolTable: SymbolTable = [:]  // Global symbols.
     var database: Database  // Database.
     let output: ProgramOutput  // Program output sink.
     let userInterface: UserInterface // Program UI channel.
     var callStack: [RuntimeFrame] = []  // Runtime stack.
+    private let timerOrigin = ContinuousClock.now  // Time when Program is created.
 
     var recordIndex: RecordIndex { database.recordIndex }
 
-    private var stepCount = 0
-    private let maxSteps = 750_000  // TODO: Remove?
+    var stepCount = 0  // Counts number of statements interpreted.
+    private let maxSteps = 100_000_000  // TODO: Remove?
 
-    /// Symbol table in the current frame.
-
-    var localSymbolTable: SymbolTable {
-
+    var localSymbolTable: SymbolTable { // Symbol table in current frame.
         callStack.last?.symbols ?? [:]
     }
 
@@ -43,18 +40,22 @@ final public class Program {
     var currentFrame: RuntimeFrame {
 
         get {
-            guard let frame = callStack.last else { fatalError("No frame available") }
+            guard let frame = callStack.last else {
+                fatalError("No frame available")
+            }
             return frame
         }
         set {
-            guard !callStack.isEmpty else { fatalError("No frame available") }
+            guard !callStack.isEmpty else {
+                fatalError("No frame available")
+            }
             callStack[callStack.count - 1] = newValue
         }
     }
 
-    /// Create a runnable program from a parsed program, database, output sink
-    /// and user interface conformance.
-
+    /// Create a runnable Program from a ParsedProgram, Database, ProgramOutput,
+    /// and UserInterface.
+    ///
     public init(parsedProgram: ParsedProgram, database: Database,
                 output: ProgramOutput, userInterface: UserInterface) {
 
@@ -69,14 +70,20 @@ final public class Program {
         var includes: [String] = []
 
         for defn in parsedProgram.defns {
+
             switch defn {
+
             case .procDefn(let procDef):
                 procTable[procDef.name] = procDef
+
             case .funcDefn(let funcDef):
                 funcTable[funcDef.name] = funcDef
+
+            // Add identifier to the global SymbolTable with a .null value.
             case .global(let globalDef):
                 globals[globalDef.name] = .null
-            // In the final version these may have all been consumed.
+
+            // In the final version these will have been consumed.
             case .include(let includeFile):
                 includes.append(includeFile.name)
             }
@@ -85,10 +92,24 @@ final public class Program {
         self.funcTable = funcTable
         self.globalSymbolTable = globals
 
-        // Create the array of builtins with the current program in their closures.
-        // Because of the approach used here, a new array has to be created for every
-        // program that gets interpreted.
+        // Create the array of builtins with the current Program in their closures.
+        // Because of the approach used here, a separate array is needed for every
+        // Program.
         setupBuiltins()
+    }
+}
+
+extension Program {
+
+    /// Return the elapsed time since this Program was created.
+    ///
+    public var timerValue: Double {
+
+        let duration = timerOrigin.duration(to: ContinuousClock.now)
+        let components = duration.components
+
+        return Double(components.seconds) +
+            Double(components.attoseconds) / 1.0e18
     }
 }
 
@@ -127,6 +148,7 @@ public final class ConsoleOutput: ProgramOutput {
 }
 
 /// Run time errors.
+///
 public struct RuntimeError: Error, CustomStringConvertible {
 
     public let message: String
@@ -142,22 +164,14 @@ public struct RuntimeError: Error, CustomStringConvertible {
     }
 }
 
-/// Interpreter for interpretProgram method.
+/// Interpreter for the main procedure.
+///
 extension Program {
 
-    /// Run the program by calling its main procedure.
+    /// Run the Program by calling its main procedure.
     @discardableResult
     public func interpretProgram() async throws -> InterpResult {
 
-        guard !hasRun else {  // TODO: Rethink the 'has run' idea.
-            throw RuntimeError("programs can only be run once", line: 0)
-        }
-        hasRun = true
-        let mainProc = try requireProcDefn("main", line: 0)
-        if mainProc.params.count != 0 {
-            throw RuntimeError("main: cannot have params", line: mainProc.line)
-        }
-        // Bootstrap the interpreter with a synthetic call to main.
         let mainCall = ParsedCallStatement(name: "main", args: [], line: 0)
         return try await interpProcCall(mainCall)
     }
@@ -189,6 +203,7 @@ extension Program {
 
     /// Called when a statement is interpreted.
     func tick(line: Int) async throws {
+
         stepCount += 1
         if stepCount % 6000 == 0 { await output.flush() }
         if stepCount > maxSteps {
