@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 21 August 2026.
+//  Last changed on 14 October 2026.
 //
 
 import Foundation
@@ -12,16 +12,20 @@ public typealias RecordKey = String
 public typealias KeyMap = [RecordKey : Int]  // Maps keys to line numbers.
 public typealias RootList = [Root]
 
-/// DeadEnds in-RAM database.
+/// A DeadEnds Database is composed of four in-memory indexes: a RecordIndex, NameIndex,
+/// DateIndex, and Place Index. A Database is created by reading a Gedcom file and
+/// creating a GedcomNode tree from each record in the file. The indexes are created from
+/// those records. The Gedcom file is the persistant form of the Database.
+///
 final public class Database: CustomStringConvertible {
 
-	public internal(set) var recordIndex: RecordIndex
-    public private(set) var header: Root?
+	public internal(set) var recordIndex: RecordIndex // Wrapped [RecordKey: Root]
+	public private(set) var nameIndex: NameIndex   // Wrapped [NameKey: Set<RecordKey>]
+    public private(set) var dateIndex: DateIndex   // Wrapped [DateKey : Set<RecordKey>]
+    public private(set) var placeIndex: PlaceIndex // Wrapped [PlaceKey : Set<RecordKey>]
     public private(set) var persons: RootList = []
     public private(set) var families: RootList = []
-	public private(set) var nameIndex: NameIndex
-    public private(set) var dateIndex: DateIndex
-    public private(set) var placeIndex: PlaceIndex
+    public private(set) var header: Root?  // Header record from Gedcom file.
     public private(set) var path: String?
     var dirty: Bool = false
 
@@ -29,6 +33,7 @@ final public class Database: CustomStringConvertible {
     var familyCount: Int { families.count }
 
     /// Description of database.
+    ///
     public var description: String {
         var summary = "Database Summary:"
         summary += "\n    Number of keyed records: \(recordIndex.count)"
@@ -44,17 +49,20 @@ final public class Database: CustomStringConvertible {
         return summary
     }
 
-    /// Size of database in nodes.
+    /// Size of Database in GedcomNodes.
+    ///
     var size: Int {
         recordIndex.values.reduce(0) { $0 + $1.count }
     }
 
-    /// Size of a record list in nodes. Maybe should be elsewhere.
+    /// Size of a RootList in nodes. Maybe should be elsewhere.
+    ///
     func size(of roots: RootList) -> Int {
         roots.reduce(0) { $0 + $1.count }
     }
 
-    /// Create a database from an array of validated records.
+    /// Create a Database from an array of validated records.
+    ///
     init(records: RootList, path: String? = nil) {
 
         self.path = path
@@ -74,24 +82,33 @@ final public class Database: CustomStringConvertible {
     }
 }
 
-/// Load a database from a Gedcom file; if there are errors no database is created.
+/// Load a Database from a Gedcom file; if there are errors no Database is created.
+/// This is the best interface for creating a DeadEnds Database. All you need is a
+/// Gedcom file.
+///
 public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? {
+
     loadDatabase(from: FileGedcomSource(path: path), path: path, errLog: &errlog)
 }
 
-/// Load a database from a source; keyMap is used in error messages.
+/// Load a Database from a GedcomSource.
+///
 private func loadDatabase(from source: GedcomSource, path: String? = nil,
                           errLog: inout ErrorLog) -> Database? {
+
     var keyMap = KeyMap()  // Maps record keys to their defining lines in source.
     guard let roots = loadValidRecords(from: source, keyMap: &keyMap, errlog: &errLog)
-    else { return nil }
+    else {
+        return nil
+    }
     return Database(records: roots, path: path)
 }
 
 extension Database {
 
-    /// Return a new database identical to self except that all keys are replaced with
+    /// Return a new Database identical to self except that all keys are replaced with
     /// random values.
+    ///
     public func rekeyDatabase() -> Database? {
 
         var rekeyMap: [RecordKey: RecordKey] = [:]  // Map from old to new keys.
@@ -108,8 +125,12 @@ extension Database {
         return Database(records: newRoots)  // Return new database.
     }
 
-    /// Deep copy Gedcom tree rewriting keys and key refs; recurse kids and iterate sibs.
-    private func copyTreeRekeying(_ node: GedcomNode, keyTable: [RecordKey: RecordKey]) -> GedcomNode {
+    /// Deep copy a GedcomNode tree, rewriting the keys and key references; recurse kids
+    /// and iterate sibs.
+    ///
+    private func copyTreeRekeying(_ node: GedcomNode, keyTable: [RecordKey: RecordKey])
+                                                -> GedcomNode {
+                                                    
         let newNode = GedcomNode(key: rekeyKey(node.key, keyTable: keyTable), tag: node.tag,
                                  val: rekeyVal(node.val, keyTable: keyTable))
         var oldKid = node.kid

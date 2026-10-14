@@ -335,7 +335,7 @@ enum BuiltinInfo {
        "namesort", "keysort", "gengedcom",
 
        // Metas.
-       "showframe", "showstack", "valueof", "timer", "elapsed",
+       "showframe", "showstack", "valueof", "timer", "elapsed", "tick",
 
        // User interface.
        "getperson", "getinteger", "getstring",

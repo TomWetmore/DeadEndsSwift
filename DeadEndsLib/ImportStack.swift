@@ -9,20 +9,28 @@
 import Foundation
 
 /// Source of Gedcom lines.
+///
 public protocol GedcomSource {
+
     var name: String { get }
     func makeLineIterator() -> AnyIterator<String>
 }
 
 /// Gedcom source for files.
+///
 public struct FileGedcomSource: GedcomSource {
+
     public let path: String
     public var name: String { path }
 
     /// Make iterator to return lines from a file.
+    ///
     public func makeLineIterator() -> AnyIterator<String> {
+
         guard let contents = try? String(contentsOfFile: path, encoding: .utf8)
-        else { return AnyIterator { nil } }
+        else {
+            return AnyIterator { nil }
+        }
         var lines = contents.split(separator: "\n", omittingEmptySubsequences: false)
             .map(String.init).makeIterator()
         return AnyIterator { lines.next() }
@@ -30,17 +38,22 @@ public struct FileGedcomSource: GedcomSource {
 }
 
 /// Gedcom source for strings.
+///
 public struct StringGedcomSource: GedcomSource {
+
     public let name: String
     public let content: String
 
     public init(name: String, content: String) {
+
         self.name = name
         self.content = content
     }
 
     /// Make iterator to return lines from a string.
+    ///
     public func makeLineIterator() -> AnyIterator<String> {
+
         var lines = content.split(separator: "\n", omittingEmptySubsequences: false)
             .map(String.init).makeIterator()
         return AnyIterator { lines.next() }
@@ -48,6 +61,7 @@ public struct StringGedcomSource: GedcomSource {
 }
 
 /// Reduce the parameters used by the validation functions.
+///
 struct ValidationContext {
     
     let index: RecordIndex
@@ -55,42 +69,55 @@ struct ValidationContext {
     let source: String
 }
 
-/// Load and validate records from a source.
+/// Load and validate records from a GedcomSource.
+///
 func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
                       errlog: inout ErrorLog) -> RootList? {
+
     // Parse source into unvalidated records.
-    guard let roots = loadRecords(from: source, keyMap: &keyMap, errlog: &errlog)
-    else { return nil }
+    guard let roots = loadRecords(from: source, keyMap: &keyMap, errlog: &errlog) else {
+        return nil
+    }
 
     // Check key closure.
     checkKeysAndReferences(records: roots, path: source.name, keymap: keyMap, errlog: &errlog)
 
-    // Need index for inter-record validation.
+    // Make index for inter-record validation.
     var index = RecordIndex()
     for root in roots {
-        if let key = root.key { index[key] = root }
+        if let key = root.key {
+            index[key] = root
+        }
     }
+
     // Validate.
     let context = ValidationContext(index: index, keymap: keyMap, source: source.name)
     validateRecords(roots: roots, context: context, errlog: &errlog)
     return errlog.count == 0 ? roots : nil
 }
 
-/// Load records from source; convert lines to data nodes, and data nodes to records.
+/// Load records from a GedcomSource; converting lines to data nodes, and data nodes to records.
+///
 public func loadRecords(from source: GedcomSource, keyMap: inout KeyMap,
                         errlog: inout ErrorLog) -> RootList? {
+
     guard let dataNodes = loadDataNodes(from: source, keyMap: &keyMap, errlog: &errlog)
-    else { return nil }
+    else {
+        return nil
+    }
     return buildRecords(from: dataNodes, keymap: keyMap, errlog: &errlog)
 }
 
-/// Load records from source; differs from previous by creating a key map.
+/// Load records from a GedcomSource; differs from the previous by creating a key map.
+///
 public func loadRecords(from source: GedcomSource, errlog: inout ErrorLog) -> RootList? {
+    
     var keyMap = KeyMap()
     return loadRecords(from: source, keyMap: &keyMap, errlog: &errlog)
 }
 
 /// Load a single record from a string. No semantic validation is done.
+///
 public func loadRecordFromString(from string: String) -> (root: Root?, errlog: ErrorLog) {
 
     let source = StringGedcomSource(name: "edit view", content: string)
@@ -110,8 +137,10 @@ public func loadRecordFromString(from string: String) -> (root: Root?, errlog: E
 }
 
 /// Load data nodes from source; levs not checked.
+///
 func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
                    errlog: inout ErrorLog) -> DataNodes<Int>? {
+
     var nodes = DataNodes<Int>()
     var lineno = 0
     let lines = source.makeLineIterator()
@@ -124,15 +153,18 @@ func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
             nodes.add(node: node, data: level)
             if level == 0, let key = key { keyMap[key] = lineno }
         case .failure(errmsg: let errmsg):
-            let error = DeadEndsError(type: .syntax, severity: .severe, source: source.name, line: lineno, message: errmsg)
+            let error = DeadEndsError(type: .syntax, severity: .severe, source: source.name,
+                                      line: lineno, message: errmsg)
             errlog.append(error)
         }
     }
     return nodes
 }
 
-/// Process data nodes to build record list; uses lev-based state machine.
-func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout ErrorLog) -> RootList {
+/// Process DataNodes to build a RootList; uses a level-based state machine.
+///
+func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout ErrorLog)
+        -> RootList {
 
     enum State { case initial, main, error }
     var state: State = .initial
@@ -143,7 +175,9 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
     var curRoot: GedcomNode? = nil
 
     for (curNode, curLev) in dataNodes {  // Run state machine.
+
         switch state {
+
         case .initial:  // Handle first pair.
             if (curLev == 0) {
                 curRoot = curNode;  // Set curRoot and goto .main.
@@ -153,6 +187,7 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
                 errlog.append(error)
                 state = .error
             }
+
         case .main: // Building records.
             if (curLev == 0) { // Next root.
                 results.append(curRoot!) // Save record.
@@ -163,7 +198,7 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
             } else if (curLev == prevLev + 1) { // Found kid.
                 curNode.dad = prevNode
                 prevNode!.kid = curNode
-            } else if (curLev < prevLev) { // Found uncle.
+            } else if (curLev < prevLev) { // Found unc.
                 var count = 0;
                 while (curLev < prevLev) {
                     count += 1
@@ -184,7 +219,8 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
                 errlog.append(error)
                 state = .error
             }
-        case .error: // Skip nodes til next 0 lev.
+
+        case .error: // Skip nodes til next 0 level.
             if curLev == 0 {
                 curRoot = curNode  // Root of the next record.
                 state = .main
@@ -200,6 +236,7 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
 }
 
 /// Result returned by parseLine; on success holds Gedcom fields; on failure holds error message.
+///
 enum ParseResult {
     
     case success(lev: Int, key: String?, tag: String, val: String?)
@@ -207,6 +244,7 @@ enum ParseResult {
 }
 
 /// Lexer for Gedcom lines; extracts lev, key, tag and val; returns them in a parse result.
+///
 func parseLine(from line: String) -> ParseResult {
     let trim = line.trimmingCharacters(in: .whitespacesAndNewlines)
 

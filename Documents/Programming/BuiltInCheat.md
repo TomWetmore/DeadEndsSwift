@@ -166,6 +166,9 @@ keysort (set)                  -> null  Sort set by key
 showframe()  -> string           Show current frame
 showstack()  -> string           Show full run time stack
 valueof(any) -> string           Eval arg and show its type and value
+timer() -> double                Create a timer
+elapsed(double) -> string        Return the elaspsed time of a timer as a string
+tick() -> int                    Return the number of statements executed so far
 ```
 ###### User Interface
 
@@ -176,7 +179,7 @@ getstring(string)  -> string | null    Request user to enter a string
 ```
 ###### Information Extraction
 ```
-extractname(node, list, int, int) -> null  Extract a GedcomName
+extractname(person|node|string) -> pair(list<string>, int)   Extract a Gedcom Name.
 extractdate ----------TBD
 extractplace ---------TBD
 ```

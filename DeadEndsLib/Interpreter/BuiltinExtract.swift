@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 25 May 2026.
-//  Last changed on 15 September 2026.
+//  Last changed on 14 October 2026.
 //
 
 import Foundation
@@ -33,27 +33,30 @@ extension Program {
         return .pair(Pair(.emptyList, .integer(0)))
     }
 
-    /// Built-in that extract the parts from a place string.
-    /// extractplace(node|string) -> list(string)
+    /// Extract the parts of a place string.
+    /// extractplace(node|string) -> list<string>
+    ///
     func bltinExtractPlace(_ args: [ParsedExpr]) async throws -> ProgramValue {
 
-        let value = try await evaluateGedcomPlaceOpt(
-            args[0],
-            errMsg: "extractplace: arg must find a string"
-        )
+        let value = try await evaluateGedcomPlaceOpt(args[0],
+                                    errMsg: "extractplace: arg must find a string")
 
         switch value {
+
+        // If it is a string break it into a .list of parts.
         case .string(let place):
             let values = extractPlaceParts(place).map(ProgramValue.string)
             return .list(ListValue(values))
+
+        // Support null forwarding.
         case .null:
             return .emptyList
+
         default:
             throw RuntimeError("extractplace: arg must find a string", line: args[0].line)
         }
     }
 }
-
 
 extension Program {
     
@@ -75,9 +78,14 @@ extension Program {
         }
     }
 
-    func evaluateGedcomPlaceOpt(_ expr: ParsedExpr, errMsg: String) async throws -> ProgramValue {
+    /// Evaluate a ParsedExpr looking for a place value; return the value as a .string
+    ///
+    func evaluateGedcomPlaceOpt(_ expr: ParsedExpr, errMsg: String)
+            async throws -> ProgramValue {
 
         switch try await evaluate(expr) {
+
+        // If the expression is a GedcomNode is must be a PLAC node or the dad of a PLAC node.
         case .gnode(let node):
             if node.tag == GedcomTag.PLAC {
                 return node.val.map(ProgramValue.string) ?? .null
@@ -85,11 +93,16 @@ extension Program {
             if let plac = node.kid(withTag: GedcomTag.PLAC) {
                 return plac.val.map(ProgramValue.string) ?? .null
             }
-            return .null
+            return .null // TODO: Should this throw a RuntimeError?
+
+        // If the expression is a string use it as is as the place value.
         case .string(let value):
             return .string(value)
+
+        // Null forwarding supported.
         case .null:
             return .null
+
         default:
             throw RuntimeError(errMsg, line: expr.line)
         }
