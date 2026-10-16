@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 14 October 2026.
+//  Last changed on 15 October 2026.
 //
 
 import Foundation
@@ -71,37 +71,23 @@ final public class Database: CustomStringConvertible {
         families = RootList()
         header = nil
         for root in records {
-            if let key = root.key { recordIndex[key] = root }
-            if root.tag == GedcomTag.INDI { persons.append(root) }
-            else if root.tag == GedcomTag.FAM { families.append(root) }
-            else if root.tag == GedcomTag.HEAD { header = root }
+            if let key = root.key {
+                recordIndex[key] = root
+            }
+            if root.tag == "INDI" {
+                persons.append(root)
+
+            } else if root.tag == "FAM" {
+                families.append(root)
+
+            } else if root.tag == "HEAD" {
+                header = root
+            }
         }
         nameIndex = buildNameIndex(from: persons)
         dateIndex = buildDateIndex(from: recordIndex)
         placeIndex = buildPlaceIndex(from: recordIndex)
     }
-}
-
-/// Load a Database from a Gedcom file; if there are errors no Database is created.
-/// This is the best interface for creating a DeadEnds Database. All you need is a
-/// Gedcom file.
-///
-public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? {
-
-    loadDatabase(from: FileGedcomSource(path: path), path: path, errLog: &errlog)
-}
-
-/// Load a Database from a GedcomSource.
-///
-private func loadDatabase(from source: GedcomSource, path: String? = nil,
-                          errLog: inout ErrorLog) -> Database? {
-
-    var keyMap = KeyMap()  // Maps record keys to their defining lines in source.
-    guard let roots = loadValidRecords(from: source, keyMap: &keyMap, errlog: &errLog)
-    else {
-        return nil
-    }
-    return Database(records: roots, path: path)
 }
 
 extension Database {
@@ -151,24 +137,31 @@ extension Database {
 
     /// Rewrite root key if in key table.
     private func rekeyKey(_ key: RecordKey?, keyTable: [RecordKey: RecordKey]) -> RecordKey? {
-        guard let key else { return nil }
+        guard let key else {
+            return nil
+        }
         return keyTable[key] ?? key
     }
 
     /// Rewrite node val if in key table.
     private func rekeyVal(_ val: String?, keyTable: [RecordKey: RecordKey]) -> String? {
-        guard let val else { return nil }
+        guard let val else {
+            return nil
+        }
         return keyTable[val] ?? val
     }
 }
 
 private func typeLetter(_ tag: String) -> String {
+
     return String(tag.first?.uppercased() ?? "X")
 }
 
-// Generate a random record key using Gedcom rules.
+/// Generate a random RecordKey using Gedcom rules.
+///
 public func generateRandomKey(prefix: String, map: [String : String],
                               length: Int = 8) -> RecordKey {
+
     let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
     while true {  // Loop until unique key is generated.

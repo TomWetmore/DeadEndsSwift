@@ -3,64 +3,35 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 19 December 2024.
-//  Last changed on 16 March 2026.
+//  Last changed on 15 October 2026.
 //
 
 import Foundation
 
-/// Source of Gedcom lines.
+/// Load a Database from a GedcomSource. If there are errors no Database is created, and
+/// an log of the errors is returned.
 ///
-public protocol GedcomSource {
+private func loadDatabase(from source: GedcomSource, path: String? = nil,
+                          errLog: inout ErrorLog) -> Database? {
 
-    var name: String { get }
-    func makeLineIterator() -> AnyIterator<String>
+    var keyMap = KeyMap()  // Maps record keys to their defining lines in source.
+    guard let roots = loadValidRecords(from: source, keyMap: &keyMap, errlog: &errLog)
+    else {
+        return nil
+    }
+    return Database(records: roots, path: path)
 }
 
-/// Gedcom source for files.
+/// Load a Database from a Gedcom file; if there are errors no Database is created.
+/// This is the best interface for creating a DeadEnds Database. All you need is a
+/// Gedcom file.
 ///
-public struct FileGedcomSource: GedcomSource {
+public func loadDatabase(from path: String, errlog: inout ErrorLog) -> Database? {
 
-    public let path: String
-    public var name: String { path }
-
-    /// Make iterator to return lines from a file.
-    ///
-    public func makeLineIterator() -> AnyIterator<String> {
-
-        guard let contents = try? String(contentsOfFile: path, encoding: .utf8)
-        else {
-            return AnyIterator { nil }
-        }
-        var lines = contents.split(separator: "\n", omittingEmptySubsequences: false)
-            .map(String.init).makeIterator()
-        return AnyIterator { lines.next() }
-    }
+    loadDatabase(from: FileGedcomSource(path: path), path: path, errLog: &errlog)
 }
 
-/// Gedcom source for strings.
-///
-public struct StringGedcomSource: GedcomSource {
-
-    public let name: String
-    public let content: String
-
-    public init(name: String, content: String) {
-
-        self.name = name
-        self.content = content
-    }
-
-    /// Make iterator to return lines from a string.
-    ///
-    public func makeLineIterator() -> AnyIterator<String> {
-
-        var lines = content.split(separator: "\n", omittingEmptySubsequences: false)
-            .map(String.init).makeIterator()
-        return AnyIterator { lines.next() }
-    }
-}
-
-/// Reduce the parameters used by the validation functions.
+/// ValidationContext reduces the numbers parameters needed by the validation functions.
 ///
 struct ValidationContext {
     
@@ -69,7 +40,8 @@ struct ValidationContext {
     let source: String
 }
 
-/// Load and validate records from a GedcomSource.
+/// Load and validate records from a GedcomSource. Returns a list of root GedcomNodes.
+/// If there are errors the list is empty and the ErrorLog holds the errors.
 ///
 func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
                       errlog: inout ErrorLog) -> RootList? {
@@ -79,7 +51,7 @@ func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
         return nil
     }
 
-    // Check key closure.
+    // Check key closure. All keys mentioned must refer to existing records.
     checkKeysAndReferences(records: roots, path: source.name, keymap: keyMap, errlog: &errlog)
 
     // Make index for inter-record validation.
@@ -96,7 +68,7 @@ func loadValidRecords(from source: GedcomSource, keyMap: inout KeyMap,
     return errlog.count == 0 ? roots : nil
 }
 
-/// Load records from a GedcomSource; converting lines to data nodes, and data nodes to records.
+/// Load records from a GedcomSource; converting lines to DataNodes, and DataNodes to records.
 ///
 public func loadRecords(from source: GedcomSource, keyMap: inout KeyMap,
                         errlog: inout ErrorLog) -> RootList? {
@@ -126,7 +98,9 @@ public func loadRecordFromString(from string: String) -> (root: Root?, errlog: E
     guard let nodes = loadRecords(from: source, errlog: &errlog) else {
         return (nil, errlog)
     }
-    if errlog.count > 0 { return (nil, errlog) }
+    if errlog.count > 0 {
+        return (nil, errlog)
+    }
     guard nodes.count == 1 else {
         let error = DeadEndsError(type: .gedcom, severity: .severe,
                                   message: "Expected one record in string; found \(nodes.count)")
@@ -136,22 +110,31 @@ public func loadRecordFromString(from string: String) -> (root: Root?, errlog: E
     return (nodes[0], errlog)
 }
 
-/// Load data nodes from source; levs not checked.
+/// Load DataNodes from a GedcomSource; levels are not checked.
 ///
 func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
                    errlog: inout ErrorLog) -> DataNodes<Int>? {
 
+    // Associated values are the levels on the Gedcom lines. They are not kept
+    // in the GedcomNode object so are needed until the GedcomNodes are built
+    // into tree.
     var nodes = DataNodes<Int>()
     var lineno = 0
     let lines = source.makeLineIterator()
+
     while let line = lines.next() {
+
         lineno += 1
         if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
         switch parseLine(from: line) {
+
         case .success(lev: let level, key: let key, tag: let tag, val: let value):
             let node = GedcomNode(key: key, tag: tag, val: value)
             nodes.add(node: node, data: level)
-            if level == 0, let key = key { keyMap[key] = lineno }
+            if level == 0, let key = key {
+                keyMap[key] = lineno
+            }
+
         case .failure(errmsg: let errmsg):
             let error = DeadEndsError(type: .syntax, severity: .severe, source: source.name,
                                       line: lineno, message: errmsg)
@@ -161,12 +144,12 @@ func loadDataNodes(from source: GedcomSource, keyMap: inout KeyMap,
     return nodes
 }
 
-/// Process DataNodes to build a RootList; uses a level-based state machine.
+/// Process the DataNodes to build a RootList; uses a level-based state machine.
 ///
 func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout ErrorLog)
         -> RootList {
 
-    enum State { case initial, main, error }
+    enum State { case initial, main, error }  // This function is a three state machine.
     var state: State = .initial
 
     var results = RootList()
@@ -183,7 +166,8 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
                 curRoot = curNode;  // Set curRoot and goto .main.
                 state = .main;
             } else {  // Add error and goto .error.
-                let error = DeadEndsError(type: .syntax, severity: .fatal, message: "First line must have level 0")
+                let error = DeadEndsError(type: .syntax, severity: .fatal,
+                                          message: "First line must have level 0")
                 errlog.append(error)
                 state = .error
             }
@@ -235,78 +219,4 @@ func buildRecords(from dataNodes: DataNodes<Int>, keymap: KeyMap, errlog: inout 
     return results;
 }
 
-/// Result returned by parseLine; on success holds Gedcom fields; on failure holds error message.
-///
-enum ParseResult {
-    
-    case success(lev: Int, key: String?, tag: String, val: String?)
-    case failure(errmsg: String)
-}
 
-/// Lexer for Gedcom lines; extracts lev, key, tag and val; returns them in a parse result.
-///
-func parseLine(from line: String) -> ParseResult {
-    let trim = line.trimmingCharacters(in: .whitespacesAndNewlines)
-
-    guard !trim.isEmpty else { return .failure(errmsg: "Empty string") }
-    guard trim.count <= 255 else { return .failure(errmsg: "Gedcom line is too long") }
-    var index = trim.startIndex
-
-    /// Local function to skip white space.
-    func skipWhiteSpace() {
-        while index < trim.endIndex, trim[index].isWhitespace {
-            index = trim.index(after: index)
-        }
-    }
-
-    // Lev.
-    skipWhiteSpace()
-    guard index < trim.endIndex, trim[index].isNumber
-    else { return .failure(errmsg: "Line does not begin with level") }
-    var levString = ""
-    while index < trim.endIndex, trim[index].isNumber {
-        levString.append(trim[index])
-        index = trim.index(after: index)
-    }
-    guard let lev = Int(levString)
-    else { return .failure(errmsg: "Invalid level") }
-
-    // Key if present.
-    skipWhiteSpace()
-    if index >= trim.endIndex {
-        return .failure(errmsg: "Gedcom line is incomplete")
-    }
-    var key: String? = nil
-    if trim[index] == "@" {
-        let keyStart = index
-        index = trim.index(after: index)
-        guard index < trim.endIndex, trim[index] != "@"
-        else { return .failure(errmsg: "Illegal key (@@)") }
-        while index < trim.endIndex, trim[index] != "@" {
-            index = trim.index(after: index)
-        }
-        guard index < trim.endIndex
-        else { return .failure(errmsg: "Gedcom line is incomplete") }
-        index = trim.index(after: index) // Skip closing '@'
-        guard index < trim.endIndex, trim[index].isWhitespace
-        else { return .failure(errmsg: "There must be a space between the key and tag") }
-        key = String(trim[keyStart..<index])
-        index = trim.index(after: index) // Skip the space
-    }
-    skipWhiteSpace()
-    guard index < trim.endIndex
-    else { return .failure(errmsg: "The line is incomplete") }
-
-    // Tag.
-    let tagStart = index
-    while index < trim.endIndex, !trim[index].isWhitespace {
-        index = trim.index(after: index)
-    }
-    let tag = String(trim[tagStart..<index])
-
-    // Val.
-    skipWhiteSpace()
-    let val = index < trim.endIndex ? String(trim[index...]) : nil
-
-    return .success(lev: lev, key: key, tag: tag, val: val)
-}

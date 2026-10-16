@@ -7,23 +7,28 @@
 
 import Foundation
 
-/// Index of Gedcom records. Wraps a dictionary that maps RecordKeys (Strings) to
+/// A RecordIndex wraps a Dictionary that maps RecordKeys (Strings) to
 /// Roots (0 level GedcomNodes).
-
+///
 public struct RecordIndex {
 
     private var table: [RecordKey: Root] = [:]  // Representation.
 
-    /// Returns a record index with an empty table.
+    /// Return a RecordIndex with an empty Dictionary.
+    ///
     public init() {}
 
-    /// Returns a record index with an established table.
+    /// Return a RecordIndex with an existing Dictionary
+    ///
     public init(_ table: [RecordKey: Root]) {
+
         self.table = table
     }
 
-    /// Passes the subscript operator down to the table.
+    /// Pass the subscript operator down to the Dictionary.
+    ///
     public subscript(key: RecordKey) -> Root? {
+
         get { table[key] }
         set { table[key] = newValue }
     }
@@ -76,16 +81,26 @@ extension Root {
 
 extension RecordIndex {
 
-    /// Return all persons with a set of roles in the family in Gedcom order.
+    /// Return all Persons with a set of roles in the Family in Gedcom order.
+    ///
     private func people(in family: Family, roles: Set<Tag>) -> [Person] {
+
         var out: [Person] = []
         var seen = Set<RecordKey>()
 
         for node in family.root.kids {
-            guard roles.contains(where: { $0 == node.tag }) else { continue }
-            guard let key = node.val else { continue }
-            guard seen.insert(key).inserted else { continue }
-            if let person = person(for: key) { out.append(person) }
+            guard roles.contains(where: { $0 == node.tag }) else {
+                continue
+            }
+            guard let key = node.val else {
+                continue
+            }
+            guard seen.insert(key).inserted else {
+                continue
+            }
+            if let person = person(for: key) {
+                out.append(person)
+            }
         }
         return out
     }
@@ -94,32 +109,41 @@ extension RecordIndex {
 /// Children key level.
 extension RecordIndex {
 
-    /// Return the keys of the children of a person with the given key.
+    /// Return the RecordKeys of the children of the Person with the given RecordKey.
+    ///
     func childrenKeys(ofPersonKey key: RecordKey) -> [RecordKey] {
+
         let perRoot = requireRoot(from: key, tag: GedcomTag.INDI)
         var results: [RecordKey] = []
 
         for famsNode in perRoot.kids(withTag: GedcomTag.FAMS) {
+
             let famsRoot = requireRoot(from: famsNode, tag: GedcomTag.FAM)
             for chilNode in famsRoot.kids(withTag: GedcomTag.CHIL) {
+
                 let chilRoot = requireRoot(from: chilNode, tag: GedcomTag.INDI)
-                guard let chilKey = chilRoot.key
-                else { fatalError("child root \(chilRoot) without a key") }
+                guard let chilKey = chilRoot.key else {
+                    fatalError("child root \(chilRoot) without a key")
+                }
                 results.append(chilKey)
             }
         }
         return dedupeKeys(results)
     }
 
-    /// Return the children of a family using keys.
+    /// Return the RecordKeys of the children of the Famiy with the given RecordKey.
+    ///
     func childrenKeys(ofFamilyKey key: RecordKey) -> [RecordKey] {
+
         let famRoot = requireRoot(from: key, tag: GedcomTag.FAM)
         var result: [RecordKey] = []
 
         for chilNode in famRoot.kids(withTag: GedcomTag.CHIL) {
+            
             let chilRoot = requireRoot(from: chilNode, tag: GedcomTag.INDI)
-            guard let chilKey = chilRoot.key
-            else { fatalError("child root \(chilRoot) without a key")}
+            guard let chilKey = chilRoot.key else {
+                fatalError("child root \(chilRoot) without a key")
+            }
             result.append(chilKey)
         }
         return dedupeKeys(result)
@@ -303,7 +327,7 @@ extension RecordIndex {
 extension RecordIndex {
 
     /// Find the ancestors of a Person from its root GedcomNode.
-
+    ///
     public func ancestors(ofPerson root: Root) -> [Root] {
 
         let startKey = root.requireKey()
@@ -324,22 +348,22 @@ extension RecordIndex {
     }
 
     /// Find the ancestors of a Person.
-
+    ///
     public func ancestors(ofPerson person: Person) -> [Person] {
 
         let roots = ancestors(ofPerson: person.root)
         return roots.compactMap { $0.key.flatMap { self.person(for: $0) } }
     }
 
-    /// Return the number of ancestors of a Person from its root GedcomNode.
-
+    /// Return the number of ancestors a Person has from its root GedcomNode.
+    ///
     public func numAncestors(ofPerson root: Root) -> Int {
 
         return ancestors(ofPerson: root).count
     }
 
-    /// Return the number of ancestors of a Person.
-
+    /// Return the number of ancestors a Person has.
+    ///
     public func numAncestors(ofPerson person: Person) -> Int {
 
         ancestors(ofPerson: person.root).count
@@ -348,8 +372,8 @@ extension RecordIndex {
 
 extension RecordIndex {
 
-    /// Find all descendants of a person from its root node.
-
+    /// Find all descendants a person has from its root node.
+    ///
     public func descendants(ofPerson root: Root) -> [Root] {
 
         let startKey = root.requireKey()
@@ -369,21 +393,21 @@ extension RecordIndex {
         return result
     }
 
-    /// Find all descendants of a person.
-
+    /// Find all descendants a person has.
+    ///
     public func descendants(ofPerson person: Person) -> [Person] {
         let roots = descendants(ofPerson: person.root)
         return roots.compactMap { $0.key.flatMap { self.person(for: $0) } }
     }
 
-    /// Return the number of descendants of a person from its root node.
-
+    /// Return the number descendants a Person has from its root.
+    ///
     public func numDescendants(ofPerson root: Root) -> Int {
 
         return descendants(ofPerson: root).count
     }
 
-    /// Return the number of descendants of a person.
+    /// Return the number of descendants a Person has.
     ///
     public func numDescendants(ofPerson person: Person) -> Int {
         
@@ -409,42 +433,49 @@ extension RecordIndex {
 
     /// Require a key to map to a Database record, and if a tag is supplied, to
     /// be of that type.
-
+    ///
     func requireRoot(from key: RecordKey, tag: Tag? = nil) -> Root {
 
-        guard let root = self[key], root.tag == tag else {
-            fatalError("expected root \(key) to refer to a root")
+        guard let root = self[key] else {
+            fatalError("expected \(key) to refer to a root")
         }
-        if tag == nil {
-            return root
-        }
-        guard tag! == root.tag else {
-            fatalError("expected root \(root) to have tag \(tag!)")
+        if let tag {
+            guard root.tag == tag else {
+                fatalError("expected root \(root) to have tag \(tag)")
+            }
         }
         return root
     }
 }
 
 /// Dedupe the keys in a list while keeping order.
+///
 func dedupeKeys(_ keys: [RecordKey]) -> [RecordKey] {
+
     var seen = Set<RecordKey>()
     return keys.filter { seen.insert($0).inserted }
 }
 
-/// Require a node to be a person root node and have a key.
+/// Require a GedcomNode to be a Person root and have a key.
+///
 func requirePersonKey(on root: GedcomNode) -> RecordKey {
+
     return root.requireKey(tag: "INDI")
 }
 
-/// Require a node to have a key value.
+/// Require a GedcomNode to have a key value.
+///
 func requireKeyValue(onNode node: GedcomNode) -> RecordKey {
+
     guard let key = node.val, key.isKey
     else { fatalError("expected node \(node) to have a key value") }
     return key
 }
 
-/// Require a node to be a family root and have a key.
+/// Require a GedcomNode to be a Family root and have a key.
+///
 func requireFamilyKey(on root: GedcomNode) -> RecordKey {
+
     return root.requireKey(tag: "FAM")
 }
 
