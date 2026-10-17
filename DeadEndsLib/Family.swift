@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 13 April 2025.
-//  Last changed on 2 October 2026.
+//  Last changed on 16 October 2026.
 //
 
 import Foundation
@@ -14,29 +14,29 @@ public struct Family: Record {
 
     public let root: Root
 
-    /// Create a Family from a 0 FAM node. Fatal error if not possible. A Family is
-    /// a wrapped Root GedcomNode with and a few methods.
+    /// Create a Family from a 0 FAM node. Fatal error if not possible. A Family is a
+    /// wrapped Root GedcomNode with a few methods.
     ///
     public init(_ root: Root) {
 
-        guard root.tag == GedcomTag.FAM, root.key != nil
-        else {
+        guard root.tag == GedcomTag.FAM, root.key != nil else {
             fatalError("Root \(root) is not a valid 0 FAM node")
         }
         self.root = root
     }
 }
 
-/// Extension for husbands, wives and children.
+/// Husbands, wives and children.
+///
 extension Family {
 
-    /// Return all persons with a specific role in this family, deduped, in Gedcom order.
+    /// Return the Persons with a specific role in this Family, deduped, in Gedcom order.
     ///
     private func people(in index: RecordIndex, role: Tag) -> [Person] {
         people(in: index, roles: [role])
     }
 
-    /// Return all persons with a set of roles in this family in Gedcom order.
+    /// Return the Persons with a set of roles in this Family in Gedcom order.
     ///
     private func people(in index: RecordIndex, roles: Set<Tag>) -> [Person] {
 
@@ -112,35 +112,39 @@ extension Family {
     ///
     func spouses(in index: RecordIndex) -> [Person] {
 
-        people(in: index, roles: [GedcomTag.HUSB, GedcomTag.WIFE])
+        people(in: index, roles: ["HUSB", "WIFE"])
     }
 
     /// Return all spouses except the given Person in this Family in Gedcom order.
-
+    ///
     func spouses(excluding person: Person, in index: RecordIndex) -> [Person] {
 
         spouses(in: index).filter { $0.key != person.key }
     }
 
     /// Return the first spouse other than the given person in this family.
-
+    ///
     public func spouse(of person: Person, in index: RecordIndex) -> Person? {
         
         spouses(excluding: person, in: index).first
     }
 
     /// Return true if a Person is a spouse in this Family.
-
+    ///
     func hasSpouse(_ person: Person, in index: RecordIndex) -> Bool {
 
         spouses(in: index).contains(where: { $0.key == person.key })
     }
 
+    /// Return the first father (person with male sex).
+    ///
     func father(in index: RecordIndex) -> Person? {
 
         return fathers(in: index).first
     }
 
+    /// Return the first mother (person with female sex).
+    ///
     func mother(in index: RecordIndex) -> Person? {
 
         return mothers(in: index).first
@@ -148,7 +152,7 @@ extension Family {
 
     /// Return all fathers in the Family.
     /// A father is a HUSB or WIFE with SEX male.
-
+    ///
     func fathers(in index: RecordIndex) -> [Person] {
 
         var result: [Person] = []
@@ -169,8 +173,8 @@ extension Family {
     }
 
     /// Return all mothers in the Family.
-    /// A father is a HUSB or WIFE with SEX male.
-
+    /// A mother is a HUSB or WIFE with SEX female.
+    ///
     func mothers(in index: RecordIndex) -> [Person] {
 
         var result: [Person] = []
@@ -191,7 +195,8 @@ extension Family {
     }
 }
 
-/// Extension to meet protocols
+/// Extension to meet protocols.
+///
 extension Family: Equatable, Hashable, Identifiable {
 
     public static func == (lhs: Family, rhs: Family) -> Bool {
@@ -205,6 +210,8 @@ extension Family: Equatable, Hashable, Identifiable {
     public var id: String { key }
 }
 
+/// Family events.
+///
 extension Family {
 
 	/// Return the first marriage event in this family.

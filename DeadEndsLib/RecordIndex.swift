@@ -74,36 +74,36 @@ extension RecordIndex {
 extension Root {
 
     /// Return a person with the root self.
-    var asPerson: Person {
-        return Person(self)
-    }
+//    var asPerson: Person {
+//        return Person(self)
+//    }
 }
 
 extension RecordIndex {
 
     /// Return all Persons with a set of roles in the Family in Gedcom order.
     ///
-    private func people(in family: Family, roles: Set<Tag>) -> [Person] {
-
-        var out: [Person] = []
-        var seen = Set<RecordKey>()
-
-        for node in family.root.kids {
-            guard roles.contains(where: { $0 == node.tag }) else {
-                continue
-            }
-            guard let key = node.val else {
-                continue
-            }
-            guard seen.insert(key).inserted else {
-                continue
-            }
-            if let person = person(for: key) {
-                out.append(person)
-            }
-        }
-        return out
-    }
+//    private func people(in family: Family, roles: Set<Tag>) -> [Person] {
+//
+//        var out: [Person] = []
+//        var seen = Set<RecordKey>()
+//
+//        for node in family.root.kids {
+//            guard roles.contains(where: { $0 == node.tag }) else {
+//                continue
+//            }
+//            guard let key = node.val else {
+//                continue
+//            }
+//            guard seen.insert(key).inserted else {
+//                continue
+//            }
+//            if let person = person(for: key) {
+//                out.append(person)
+//            }
+//        }
+//        return out
+//    }
 }
 
 /// Children key level.
@@ -323,10 +323,11 @@ extension RecordIndex {
     }
 }
 
-
+/// Ancestors and Descendants.
+///
 extension RecordIndex {
 
-    /// Find the ancestors of a Person from its root GedcomNode.
+    /// Find all ancestors of a Person from its root GedcomNode.
     ///
     public func ancestors(ofPerson root: Root) -> [Root] {
 
@@ -347,14 +348,6 @@ extension RecordIndex {
         return result
     }
 
-    /// Find the ancestors of a Person.
-    ///
-    public func ancestors(ofPerson person: Person) -> [Person] {
-
-        let roots = ancestors(ofPerson: person.root)
-        return roots.compactMap { $0.key.flatMap { self.person(for: $0) } }
-    }
-
     /// Return the number of ancestors a Person has from its root GedcomNode.
     ///
     public func numAncestors(ofPerson root: Root) -> Int {
@@ -362,17 +355,7 @@ extension RecordIndex {
         return ancestors(ofPerson: root).count
     }
 
-    /// Return the number of ancestors a Person has.
-    ///
-    public func numAncestors(ofPerson person: Person) -> Int {
-
-        ancestors(ofPerson: person.root).count
-    }
-}
-
-extension RecordIndex {
-
-    /// Find all descendants a person has from its root node.
+    /// Find all descendants a Person has from its root node.
     ///
     public func descendants(ofPerson root: Root) -> [Root] {
 
@@ -393,25 +376,11 @@ extension RecordIndex {
         return result
     }
 
-    /// Find all descendants a person has.
-    ///
-    public func descendants(ofPerson person: Person) -> [Person] {
-        let roots = descendants(ofPerson: person.root)
-        return roots.compactMap { $0.key.flatMap { self.person(for: $0) } }
-    }
-
     /// Return the number descendants a Person has from its root.
     ///
     public func numDescendants(ofPerson root: Root) -> Int {
 
         return descendants(ofPerson: root).count
-    }
-
-    /// Return the number of descendants a Person has.
-    ///
-    public func numDescendants(ofPerson person: Person) -> Int {
-        
-        descendants(ofPerson: person.root).count
     }
 }
 

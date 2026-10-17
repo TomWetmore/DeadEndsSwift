@@ -3,7 +3,7 @@
 //  DeadEndsApp
 //
 //  Created by Thomas Wetmore on 22 September 2025.
-//  Last changed on 26 November 2025.
+//  Last changed on 16 October 2026.
 //
 
 import SwiftUI
@@ -52,7 +52,7 @@ struct GedcomTreeView: View {
             .padding(.leading, CGFloat(node.lev) * 16)
 
             if isExpanded {
-                ForEach(children(of: node), id: \.id) { child in
+                ForEach(node.kids, id: \.id) { child in
                     AnyView(treeRow(for: child))   // 👈 type-erasure here
                 }
             }
@@ -67,14 +67,4 @@ struct GedcomTreeView: View {
             expandedNodes.insert(id)
         }
     }
-}
-
-private func children(of node: GedcomNode) -> [GedcomNode] {
-    var result: [GedcomNode] = []
-    var current = node.kid
-    while let c = current {
-        result.append(c)
-        current = c.sib
-    }
-    return result
 }

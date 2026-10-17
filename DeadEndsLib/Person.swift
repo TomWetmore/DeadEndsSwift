@@ -519,7 +519,7 @@ public extension Person {
 }
 
 /// Extension for ancestors and descendants.
-
+///
 public extension Person {
 
     /// Return the ancestors of a Person as an array of Persons.

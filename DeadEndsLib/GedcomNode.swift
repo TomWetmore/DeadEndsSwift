@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 18 Devember 2024.
-//  Last changed on 28 September 2026.
+//  Last changed on 16 October 2026.
 //
 
 import Foundation
@@ -32,7 +32,9 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 
     public weak var dad: GedcomNode? // Parent node in tree, required on non-roots.
 
-    public var lev: Int {            // Level of the node in its tree.
+    /// Return the level of this GedcomNode in its tree.
+    ///
+    public var lev: Int {
 
         var level = 0
         var node = self.dad
@@ -43,9 +45,9 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
         return level
     }
 
-    /// Return the kids of a GedcomNode as an array of nodes. They are not copied and their
-    /// structural links are not affected.
-
+    /// Return the kids of a GedcomNode as an array of GedcomNodes. They are not copied and
+    /// their structural links are not affected.
+    ///
     public var kids: [GedcomNode] {
 
         var results: [GedcomNode] = []
@@ -59,7 +61,7 @@ final public class GedcomNode: Identifiable, CustomStringConvertible {
 
     /// Return the sibs of a GedcomNode as an array of nodes. They are not copied and their
     /// structural links are not affected.
-
+    ///
     public var sibs: [GedcomNode] {
         var results: [GedcomNode] = []
         var node = sib
@@ -144,7 +146,7 @@ public extension GedcomNode {
     }
 
     /// Return all kid nodes with tags from a tag list.
-
+    ///
     func kids(withTags tags: [Tag]) -> [GedcomNode] {
 
         let tagSet = Set(tags)

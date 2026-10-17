@@ -3,7 +3,7 @@
 //  DeadEndsLib
 //
 //  Created by Thomas Wetmore on 22 November 2025.
-//  Last changed on 27 August 2026.
+//  Last changed on 16 October 2026.
 //
 //  Birth, death and marriage places are indexed. Keys combine
 //  place parts and event types. Values are the sets of
@@ -13,15 +13,16 @@
 import Foundation
 
 /// Place index keys combine a place part with an event kind.
+///
 struct PlaceKey: Hashable {
 
     let part: String
     let event: EventKind
 }
 
-/// Place index for DeadEnds database. The index is built when
-/// the database is built. It is modified when the user changes
-/// the database.
+/// Place index for DeadEnds database. The index is built when the fatabase is built.
+/// It is modified when the user changes the Database.
+///
 final public class PlaceIndex {
 
     /// Dictionary that holds the index.
@@ -32,6 +33,7 @@ final public class PlaceIndex {
 
     /// Add entries to the index; place is the value of a PLAC node. It is expanded
     /// into parts which are added individually.
+    ///
     public func add(place: String, event: EventKind, recordKey: RecordKey) {
 
         for part in placeParts(place) {
@@ -39,7 +41,8 @@ final public class PlaceIndex {
         }
     }
 
-    /// Add an entry to the index; part is a component extracted fromba PLAC value.
+    /// Add an entry to the index; part is a component extracted from a PLAC value.
+    ///
     public func add(part: String, event: EventKind, recordKey: RecordKey) {
 
         index[PlaceKey(part: part, event: event), default: Set()].insert(recordKey)
@@ -47,6 +50,7 @@ final public class PlaceIndex {
 
     /// Remove entries from the index; place is the value of a PLAC node. It is expanded
     /// into parts that are removed individually.
+    ///
     func remove(place: String, event: EventKind, recordKey: RecordKey) {
 
         for part in placeParts(place) {
@@ -55,6 +59,7 @@ final public class PlaceIndex {
     }
 
     /// Remove an entry from the index; part is a component extracted from a PLAC value.
+    ///
     func remove(part: String, event: EventKind, recordKey: RecordKey) {
 
         let placeKey = PlaceKey(part: part, event: event)
@@ -66,6 +71,7 @@ final public class PlaceIndex {
 
     /// Expand a PLAC value into parts and return the array of dictionaries that
     /// map those parts to record keys.
+    ///
     func recordKeys(place: String, event: EventKind) -> [String : Set<RecordKey>] {
 
         var partMap: [String : Set<RecordKey>] = [:]
@@ -79,6 +85,7 @@ final public class PlaceIndex {
     }
 
     /// Return the set of record keys that match a specific part and event.
+    ///
     func recordKeys(part: String, event: EventKind) -> Set<RecordKey> {
 
         return index[PlaceKey(part: part, event: event)] ?? []
@@ -87,12 +94,14 @@ final public class PlaceIndex {
 
 /// Return the array of parts extracted from a Gedcom PLAC value. Both placeComponents
 /// and placeKeys perform non-trivial text manipulation.
+///
 func placeParts(_ raw: String) -> [String] {
 
     placeComponents(raw).flatMap(placeKeys(phrase:))
 }
 
 /// Expand a PLAC value into the initial set of components.
+///
 private func placeComponents(_ raw: String) -> [String] {
 
     // Lowercase and clean whitespace.
@@ -151,6 +160,7 @@ private func placeComponents(_ raw: String) -> [String] {
 }
 
 /// Convert place phrases to final form.
+///
 private func placeKeys(phrase: String) -> [String] {
 
     var results: [String] = [phrase]  // Keep original phrase.
@@ -187,7 +197,8 @@ private func placeKeys(phrase: String) -> [String] {
     return Array(Set(results)) // Dedupe.
 }
 
-/// Builds a PlaceIndex from a RecordList.
+/// Build a PlaceIndex from a RecordList.
+///
 public func buildPlaceIndex(from recordIndex: RecordIndex) -> PlaceIndex {
     let placeIndex = PlaceIndex()
 
@@ -206,7 +217,8 @@ public func buildPlaceIndex(from recordIndex: RecordIndex) -> PlaceIndex {
 
 extension PlaceIndex {
 
-    /// Index the place (PLAC) nodes in an event tree.
+    /// Index the place (PLAC) GedcomNodes in an event tree.
+    ///
     private func indexPlaces(in eventNode: GedcomNode, kind: EventKind, recordKey: RecordKey) {
 
     // Find every PLAC node in the event.
@@ -217,6 +229,7 @@ extension PlaceIndex {
     }
 
     /// Index the birth and death places of a person.
+    ///
     func indexPlaces(from person: Person) {
 
         // Get the person's key.
@@ -230,6 +243,7 @@ extension PlaceIndex {
     }
 
     /// Index the marriage places of a family.
+    ///
     func indexPlaces(from family: Family) {
 
         guard let key = family.root.key else { return }
@@ -239,9 +253,12 @@ extension PlaceIndex {
     }
 }
 
+/// Testing and Debugging
+///
 extension PlaceIndex {
 
-    /// Print contents of a PlaceIndex; for testing and debug.
+    /// Print the contents of a PlaceIndex; for testing and debug.
+    ///
     func showContents(using recordIndex: RecordIndex) {
         let sortedEntries = index.sorted { $0.key.part < $1.key.part }
 
@@ -261,6 +278,7 @@ extension PlaceIndex {
     }
 
     /// Show the frequency table of a place index; for testing and debug.
+    ///
     public func showPlaceFrequencyTable() {
         var total: Int = 0
         let sorted = index.sortedByValueCount()
@@ -283,7 +301,10 @@ extension Dictionary where Value: Collection {
     }
 }
 
+/// Test place indexing.
+///
 public func testPlaceIndexing() {
+
     let values = ["New London, New London County, State of Connecticut, United States",
                   "near Pittsburgh, Pennsylvania, USA",
                   "New London, Connecticut Colony",
@@ -292,6 +313,7 @@ public func testPlaceIndexing() {
                   ]
 
     for value in values {
+
         let parts = placeParts(value)
         print("\(value): {\(parts)}")
     }
